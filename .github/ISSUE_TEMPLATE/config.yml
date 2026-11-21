@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/Shadowsx3/bihua/security/advisories/new
+    about: Please report vulnerabilities privately.
+  - name: Read the method
+    url: https://shadowsx3.github.io/bihua/method.html
+    about: The design and learning principles behind Bihua.

@@ -12,7 +12,7 @@ sharing between identical glyphs. No streaks and no cloud account.
 
 ```bash
 source scripts/env.sh          # JDK 17 is required
-make check                     # compile, 129 unit tests, debug APK, verify
+make check                     # compile, 131 unit tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make run                       # check, install, launch on the selected device
@@ -96,12 +96,10 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 ## Publishing
 
-- Private source: `Shadowsx3/bihua`; public site: `Shadowsx3/bihua-site`.
+- Public source and Pages: `Shadowsx3/bihua`; site lives in `docs/`.
 - The upload keystore lives at `~/Documents/bihua-keystore/bihua-upload.jks`
   and `keystore.properties` points Gradle at it. Never commit either file.
-- GitHub Pages requires a public repo on the Free plan; keep source out of
-  `bihua-site`.
-- Release APKs go to the public site release, not the private source repo.
+- Release APKs are attached to the `Shadowsx3/bihua` GitHub release.
 
 ## Theme
 
