@@ -107,7 +107,7 @@ private enum class StatusFilter(val label: String, val status: StudyStatus?) {
     LEARNING("Learning", StudyStatus.LEARNING),
     REVIEW("Review", StudyStatus.REVIEW),
     KNOWN("Known", StudyStatus.KNOWN),
-    LEECH("Leeches", StudyStatus.LEECH),
+    LEECH("Tricky", StudyStatus.LEECH),
 }
 
 /**
@@ -1052,7 +1052,7 @@ private fun CharacterDetail(
                         )
                     }
                 }
-                Text("toward Known", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Text("${entry.knownDots}/2 to Known", style = MaterialTheme.typography.labelSmall, color = InkSoft)
             }
         }
         if (sharedModes.size > 1) {
@@ -1119,7 +1119,7 @@ private fun CharacterDetail(
                 if (variants.isNotEmpty()) {
                     DetailRow("Variants", variants.take(8).joinToString(" "))
                 }
-                if (entry.writingSet) DetailRow("Writing set", "Handwritten in HSK 3.0")
+                if (entry.writingSet) DetailRow("Handwriting", "HSK 3.0 set")
                 meta?.radical?.takeIf { it.isNotBlank() }?.let { DetailRow("Radical", it) }
                 meta?.decomposition
                     ?.takeIf { structureText(it) != "—" }
@@ -1290,9 +1290,9 @@ private fun CharacterDetail(
 
         SoftCard(Modifier.fillMaxWidth()) {
             Column {
-                Text("SRS level", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                Text("Memory level", style = MaterialTheme.typography.titleMedium, color = InkDark)
                 Text(
-                    "Set this yourself if you already know the character. A manual level adds no XP and no review log.",
+                    "Use this if you already know the character. It does not add XP or a review.",
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
@@ -1345,7 +1345,7 @@ private fun CharacterDetail(
             Column {
                 Text("Found in words", style = MaterialTheme.typography.titleMedium, color = InkDark)
                 Text(
-                    "Words for context only.",
+                    "Tap Write to practise a word on the canvas.",
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
@@ -1383,15 +1383,24 @@ private fun CharacterDetail(
                                     color = InkSoft,
                                 )
                                 Spacer(Modifier.weight(1f))
-                                IconButton(
+                                TextButton(
                                     onClick = { onPracticeWord(word) },
-                                    modifier = Modifier.size(32.dp),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp,
+                                    ),
                                 ) {
                                     Icon(
                                         Icons.Rounded.Brush,
-                                        contentDescription = "Write this word",
+                                        contentDescription = null,
                                         tint = InkSoft,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(15.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "Write",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = InkSoft,
                                     )
                                 }
                             }

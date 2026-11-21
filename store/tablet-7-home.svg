@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <radialGradient id="bg" cx="12%" cy="5%" r="95%">
+      <stop offset="0" stop-color="#254b36"/><stop offset=".55" stop-color="#12251a"/><stop offset="1" stop-color="#080f0b"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000" flood-opacity=".35"/></filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <circle cx="1728" cy="108" r="367" fill="#7fd3a1" opacity=".10"/>
+  <circle cx="96" cy="1026" r="302" fill="#e89a6b" opacity=".08"/>
+  <g filter="url(#shadow)">
+    <rect x="92" y="-4" width="1736" height="1088" rx="10" fill="#050a06"/>
+    <image href="tablet-1-home.png" x="96" y="0" width="1728" height="1080" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+</svg>

@@ -14,12 +14,26 @@ package com.bassmd.bihua.content
  */
 object Curriculum {
 
+    /**
+     * A gentler first run inside each level. The list stays within HSK/Jōyō/geup
+     * blocks; it only moves simple, high-value shapes ahead of their level-mates.
+     */
+    private val STARTER_ORDER = listOf(
+        "一", "二", "三", "十", "人", "大", "个", "個", "小", "口",
+        "日", "月", "山", "水", "火", "木", "土", "上", "下", "中",
+        "女", "子", "我", "你", "他", "她", "好", "不", "是", "有",
+        "在", "这", "這", "那", "吗", "嗎", "的", "了", "天", "生",
+        "学", "學", "习", "習", "手", "心", "目", "耳",
+    )
+    private val STARTER_RANK = STARTER_ORDER.withIndex().associate { it.value to it.index }
+
     fun order(characters: List<CharacterEntry>, order: CharacterOrder): List<CharacterEntry> {
         val indexed = characters.withIndex()
         return when (order) {
             CharacterOrder.CURRICULUM -> indexed
                 .sortedWith(
                     compareBy<IndexedValue<CharacterEntry>> { it.value.level }
+                        .thenBy { STARTER_RANK[it.value.character] ?: Int.MAX_VALUE }
                         .thenBy { strokeWeight(it.value) }
                         .thenBy { it.index }
                 )

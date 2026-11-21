@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -108,9 +109,9 @@ import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
 
 private enum class Step(val label: String) {
-    INTRODUCE("Introduce"),
+    INTRODUCE("Meet"),
     TRACE("Trace"),
-    RECALL("Recall"),
+    RECALL("Write"),
 }
 
 private val steps = Step.entries
@@ -171,6 +172,7 @@ fun LearnScreen(
     var showOrder by remember { mutableStateOf(showStrokeNumbers) }
     val scope = rememberCoroutineScope()
     val pageScroll = rememberScrollState()
+    val sideScroll = rememberScrollState()
 
     val index = session.current ?: -1
     val currentItem = items.getOrNull(index)
@@ -324,11 +326,13 @@ fun LearnScreen(
         recognition = null
         if (step == Step.RECALL) recallStartedAt = System.currentTimeMillis()
     }
-    LaunchedEffect(revealed) {
+    LaunchedEffect(revealed, recognition) {
         if (revealed) {
-            // Let the grade panel be measured, then bring it into view.
-            kotlinx.coroutines.delay(150)
+            // The result panel grows when recognition arrives. Re-run then so the
+            // answer and feedback are not left below the fold.
+            kotlinx.coroutines.delay(180)
             pageScroll.animateScrollTo(pageScroll.maxValue)
+            sideScroll.animateScrollTo(sideScroll.maxValue)
         }
     }
     LaunchedEffect(index, repository, task) {
@@ -387,10 +391,10 @@ fun LearnScreen(
                 }
                 return@Column
             }
-            val cue = remember(item.id, drawingRound, recallCue) {
+            val cue = remember(item.id, recallCue) {
                 RecallPrompt.choose(
                     setting = recallCue,
-                    seed = item.id.hashCode() + drawingRound,
+                    seed = item.id.hashCode(),
                 )
             }
             var cueWord by remember(item.id) {
@@ -454,7 +458,7 @@ fun LearnScreen(
                         modifier = Modifier
                             .width(370.dp)
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(sideScroll),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         PromptPanel(
@@ -482,7 +486,7 @@ fun LearnScreen(
                             )
                             if (step == Step.RECALL && !revealed && !showReference) {
                                 Text(
-                                    "Need a hint? Tap Show guide, or continue from memory.",
+                                    "Need a hint? Tap Guide, or continue from memory.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = InkSoft,
                                 )
@@ -492,16 +496,6 @@ fun LearnScreen(
                                 target = item.character,
                                 recognizing = recognizing,
                             )
-                            OutlinedButton(
-                                onClick = { checkWriting() },
-                                enabled = ink.strokes.isNotEmpty() && !recognizing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = CircleShape,
-                            ) {
-                                Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(if (recognizing) "Reading your writing…" else "Check handwriting")
-                            }
                         }
                         when (step) {
                             Step.INTRODUCE -> Button(
@@ -513,7 +507,7 @@ fun LearnScreen(
                                 ActionRow(
                                     secondary = "Draw again",
                                     onSecondary = { drawingRound++ },
-                                    primary = "Next: recall",
+                                    primary = "Next: write",
                                     primaryEnabled = ink.strokes.isNotEmpty(),
                                     onPrimary = { stepOrdinal++ },
                                 )
@@ -530,37 +524,30 @@ fun LearnScreen(
                                     ActionRow(
                                         secondary = "Draw again",
                                         onSecondary = { drawingRound++ },
-                                        primary = "Check",
+                                        primary = "Check & grade",
                                         primaryEnabled = ink.strokes.isNotEmpty(),
                                         onPrimary = {
                                             com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                                             revealed = true
                                         },
                                     )
-                                    if (ink.strokes.isEmpty()) {
-                                        Text(
-                                            "Draw at least one stroke before checking.",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = InkSoft,
-                                        )
-                                    }
+                                    Text(
+                                        if (ink.strokes.isEmpty()) {
+                                            "Write at least one stroke first."
+                                        } else {
+                                            "The answer appears next, then choose Again, Hard, Good, or Easy."
+                                        },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = InkSoft,
+                                    )
                                 } else {
                                     RevealAnswer(
-                                        item = item,
-                                        ink = ink,
-                                        recommender = recommender,
-                                        recognition = recognition,
-                                        recognizing = recognizing,
-                                        onGrade = { grade -> advance(item, index, grade) },
                                         onDrawAgain = {
                                             drawingRound++
                                             revealed = false
                                         },
-                                        practiceOnly = (attempts[index] ?: 0) > 1,
-                                        targetVariants = targetVariants,
                                         evidence = evidence,
                                         orderCheck = orderCheck,
-                                        mode = mode,
                                         player = player,
                                         drawingTool = drawingTool,
                                         brush = brush,
@@ -574,10 +561,30 @@ fun LearnScreen(
 
                     }
                 }
+                if (step == Step.RECALL && revealed) {
+                    StickyGradeBar(
+                        item = item,
+                        mode = mode,
+                        ink = ink,
+                        recommender = recommender,
+                        recognition = recognition,
+                        targetVariants = targetVariants,
+                        evidence = evidence,
+                        orderCheck = orderCheck,
+                        practiceOnly = (attempts[index] ?: 0) > 1,
+                        onGrade = { grade -> advance(item, index, grade) },
+                        onDrawAgain = {
+                            drawingRound++
+                            revealed = false
+                        },
+                    )
+                }
             } else {
+                Column(Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .verticalScroll(pageScroll)
                         .padding(horizontal = 20.dp, vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -612,6 +619,26 @@ fun LearnScreen(
                             shape = CircleShape,
                         ) { Text("Next: trace") }
                     } else {
+                        // Keep the guide and ink controls above the canvas so they
+                        // are never hidden behind the sticky action bar.
+                        CanvasTools(
+                            player = player,
+                            showReference = showReference,
+                            onToggleReference = { showReference = it },
+                            ink = ink,
+                            playback = playback,
+                            showOrder = showOrder,
+                            onToggleOrder = { showOrder = it },
+                            orderAvailable = player.strokeCount > 0,
+                        )
+                        if (step == Step.RECALL && !revealed && !showReference) {
+                            Text(
+                                "Need a hint? Tap Guide, or continue from memory.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
                         CanvasStage(
                             item = item,
                             ink = ink,
@@ -632,24 +659,6 @@ fun LearnScreen(
                             onStrokeStart = { trimReplay() },
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Spacer(Modifier.height(8.dp))
-                        CanvasTools(
-                            player = player,
-                            showReference = showReference,
-                            onToggleReference = { showReference = it },
-                            ink = ink,
-                            playback = playback,
-                            showOrder = showOrder,
-                            onToggleOrder = { showOrder = it },
-                            orderAvailable = player.strokeCount > 0,
-                        )
-                        if (step == Step.RECALL && !revealed && !showReference) {
-                            Text(
-                                "Need a hint? Tap Show guide, or continue from memory.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = InkSoft,
-                            )
-                        }
                         Spacer(Modifier.height(10.dp))
                         WritingFeedback(
                             result = recognition,
@@ -657,64 +666,15 @@ fun LearnScreen(
                             recognizing = recognizing,
                         )
                         if (recognition != null || recognizing) Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { checkWriting() },
-                            enabled = ink.strokes.isNotEmpty() && !recognizing,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = CircleShape,
-                        ) {
-                            Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (recognizing) "Reading your writing…" else "Check handwriting")
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        if (step == Step.TRACE) {
-                            ActionRow(
-                                secondary = "Draw again",
-                                onSecondary = { drawingRound++ },
-                                primary = "Next: recall",
-                                primaryEnabled = ink.strokes.isNotEmpty(),
-                                onPrimary = { stepOrdinal++ },
-                            )
-                            if (ink.strokes.isEmpty()) {
-                                Text(
-                                    "Trace at least one stroke to continue.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                )
-                            }
-                        } else if (!revealed) {
-                            ActionRow(
-                                secondary = "Draw again",
-                                onSecondary = { drawingRound++ },
-                                primary = "Check",
-                                primaryEnabled = ink.strokes.isNotEmpty(),
-                                onPrimary = { revealed = true },
-                            )
-                            if (ink.strokes.isEmpty()) {
-                                Text(
-                                    "Draw at least one stroke before checking.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                )
-                            }
-                        } else {
+
+                        if (revealed) {
                             RevealAnswer(
-                                item = item,
-                                ink = ink,
-                                recommender = recommender,
-                                recognition = recognition,
-                                recognizing = recognizing,
-                                onGrade = { grade -> advance(item, index, grade) },
                                 onDrawAgain = {
                                     drawingRound++
                                     revealed = false
                                 },
-                                practiceOnly = (attempts[index] ?: 0) > 1,
-                                targetVariants = targetVariants,
                                 evidence = evidence,
                                 orderCheck = orderCheck,
-                                mode = mode,
                                 player = player,
                                 drawingTool = drawingTool,
                                 brush = brush,
@@ -724,7 +684,48 @@ fun LearnScreen(
                             )
                         }
                     }
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(80.dp))
+                }
+                if (step == Step.TRACE || (step == Step.RECALL && !revealed)) {
+                    StickyActionBar(
+                        secondary = "Draw again",
+                        onSecondary = { drawingRound++ },
+                        primary = if (step == Step.TRACE) "Next: write" else "Check & grade",
+                        primaryEnabled = ink.strokes.isNotEmpty(),
+                        hint = when {
+                            step == Step.TRACE && ink.strokes.isEmpty() -> "Trace at least one stroke to continue."
+                            step == Step.TRACE -> "Trace one stroke, then write it from memory."
+                            ink.strokes.isEmpty() -> "Write at least one stroke first."
+                            else -> "The answer appears next, then choose Again, Hard, Good, or Easy."
+                        },
+                        onPrimary = {
+                            if (step == Step.TRACE) {
+                                stepOrdinal++
+                            } else {
+                                com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+                                revealed = true
+                            }
+                        },
+                    )
+                }
+                if (step == Step.RECALL && revealed) {
+                    StickyGradeBar(
+                        item = item,
+                        mode = mode,
+                        ink = ink,
+                        recommender = recommender,
+                        recognition = recognition,
+                        targetVariants = targetVariants,
+                        evidence = evidence,
+                        orderCheck = orderCheck,
+                        practiceOnly = (attempts[index] ?: 0) > 1,
+                        onGrade = { grade -> advance(item, index, grade) },
+                        onDrawAgain = {
+                            drawingRound++
+                            revealed = false
+                        },
+                    )
+                }
                 }
             }
         }
@@ -864,7 +865,7 @@ private fun IntroCharacter(
             Text(
                 listOfNotNull(
                     item.levelLabel.takeIf { it.isNotBlank() },
-                    "${item.strokeCount} strokes".takeIf { item.strokeCount > 0 },
+                    "${item.strokeCount} ${if (item.strokeCount == 1) "stroke" else "strokes"}".takeIf { item.strokeCount > 0 },
                 ).joinToString("  ·  "),
                 style = MaterialTheme.typography.labelMedium,
                 color = InkSoft,
@@ -944,10 +945,6 @@ private fun PromptPanel(
 ) {
     SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Pill(step.label, PinkFor(mode).copy(alpha = 0.42f))
-            }
-            Spacer(Modifier.height(6.dp))
             Text(
                 when (step) {
                     Step.INTRODUCE -> "Meet ${item.character}"
@@ -966,7 +963,7 @@ private fun PromptPanel(
                         GuideScaffold.OUTLINE -> "The stroke paths are hidden. Trace the outline from memory."
                         GuideScaffold.HIDDEN -> "No guide this time. Write it once from memory, then check."
                     }
-                    Step.RECALL -> "The guide starts hidden. Show it if you need a hint, then tap Check. You still choose the grade."
+                    Step.RECALL -> "Write it from the cue. Tap Check & grade when you are ready. The guide starts hidden, and you choose the grade."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
@@ -1040,18 +1037,9 @@ private fun WritingFeedback(
 
 @Composable
 private fun RevealAnswer(
-    item: LearnItem,
-    ink: InkState,
-    recommender: GradeRecommender,
-    recognition: RecognitionResult?,
-    recognizing: Boolean,
-    onGrade: (Grade) -> Unit,
     onDrawAgain: () -> Unit,
-    practiceOnly: Boolean = false,
-    targetVariants: Set<String> = emptySet(),
     evidence: com.bassmd.bihua.ink.StrokeEvidence? = null,
     orderCheck: com.bassmd.bihua.ink.OrderAssessment? = null,
-    mode: StudyMode,
     player: StrokeOrderPlayer,
     drawingTool: DrawingTool = DrawingTool.INK,
     brush: com.bassmd.bihua.settings.BrushConfig = com.bassmd.bihua.settings.BrushConfig(),
@@ -1059,63 +1047,11 @@ private fun RevealAnswer(
     allowFinger: Boolean = false,
     gridStyle: GridStyle = GridStyle.MI_ZI,
 ) {
-    val recognitionGrade = when {
-        recognition == null || recognition.candidates.isEmpty() -> null
-        recognition.best == item.character -> Grade.GOOD
-        recognition.best in targetVariants -> Grade.HARD
-        item.character in recognition.candidates.take(3) -> Grade.HARD
-        recognition.candidates.take(3).any { it in targetVariants } -> Grade.HARD
-        else -> Grade.AGAIN
-    }
-    val evidenceGrade = evidence?.suggestedGrade?.let { suggested ->
-        when (suggested) {
-            com.bassmd.bihua.ink.EvidenceGrade.AGAIN -> Grade.AGAIN
-            com.bassmd.bihua.ink.EvidenceGrade.HARD -> Grade.HARD
-            com.bassmd.bihua.ink.EvidenceGrade.GOOD -> Grade.GOOD
-        }
-    }
-    val orderGrade = orderCheck?.suggestedGrade?.let { suggested ->
-        when (suggested) {
-            com.bassmd.bihua.ink.EvidenceGrade.AGAIN -> Grade.AGAIN
-            com.bassmd.bihua.ink.EvidenceGrade.HARD -> Grade.HARD
-            com.bassmd.bihua.ink.EvidenceGrade.GOOD -> Grade.GOOD
-        }
-    }
-    val suggestion = recommender.recommend(item, ink)
-        ?: recognitionGrade?.let { GradeSuggestion(it) }
-        ?: orderGrade?.let { GradeSuggestion(it) }
-        ?: evidenceGrade?.let { GradeSuggestion(it) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            if (practiceOnly) "Your grade · practice pass" else "Your grade",
-            style = MaterialTheme.typography.labelLarge,
-            color = InkDark,
-        )
-        if (practiceOnly) {
-            Text(
-                "This character is already scheduled. Passing here only ends this loop; the schedule does not change.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InkSoft,
-            )
-        }
-        GradeChoices(
-            suggestion = suggestion,
-            enabled = true,
-            onGrade = onGrade,
-        )
-        Text(
-            if (suggestion != null) {
-                "Suggested: ${suggestion.grade.label}."
-            } else {
-                "No suggestion yet."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = InkSoft,
-        )
         orderCheck?.let { check ->
             Text(
                 buildString {
-                    append("Order ${check.matched} of ${check.expected}")
+                    append("Stroke order: ${check.matched} of ${check.expected}")
                     if (check.reversed.isNotEmpty()) append(" · ${check.reversed.size} reversed")
                     if (check.misplaced.isNotEmpty()) append(" · ${check.misplaced.size} out of order")
                     if (check.missing.isNotEmpty()) append(" · ${check.missing.size} missing")
@@ -1159,15 +1095,10 @@ private fun RevealAnswer(
         }
         evidence?.let { check ->
             Text(
-                "Shape ${(check.shapeScore * 100).toInt()}% · ${check.drawnStrokes} of ${check.expectedStrokes} strokes · ${check.shapeLabel}",
+                "Shape: ${check.shapeLabel} · ${check.drawnStrokes} of ${check.expectedStrokes} ${if (check.expectedStrokes == 1) "stroke" else "strokes"}",
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
             )
-        }
-        OutlinedButton(onClick = onDrawAgain, modifier = Modifier.fillMaxWidth(), shape = CircleShape) {
-            Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Draw again")
         }
     }
 }
@@ -1488,7 +1419,7 @@ private fun PronunciationReview(
                             result = ReadingCheck.check(mode, item.reading, input)
                         },
                         enabled = input.isNotBlank(),
-                    ) { Text("Check") }
+                    ) { Text("Check reading") }
                 }
                 result?.let { checked ->
                     Text(
@@ -1526,9 +1457,15 @@ private fun PronunciationReview(
             ) { Text("Show answer") }
         }
         Text(
-            "Your grade",
-            style = MaterialTheme.typography.labelLarge,
+            "Choose a grade",
+            style = MaterialTheme.typography.titleMedium,
             color = InkDark,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            "Tap one to continue. It sets the next review date.",
+            style = MaterialTheme.typography.bodySmall,
+            color = InkSoft,
             modifier = Modifier.fillMaxWidth(),
         )
         GradeChoices(
@@ -1578,7 +1515,7 @@ private fun DonePanel(
         Spacer(Modifier.height(6.dp))
         Text(
             if (learned == total) {
-                "$total characters passed. Their reviews are scheduled; only the first pass counts toward the schedule."
+                "$total characters passed. Their next reviews are scheduled; extra passes in this session are practice only."
             } else {
                 "$learned of $total passed before you stopped. The rest stay in your next session."
             },
@@ -1622,25 +1559,6 @@ private fun CanvasTools(
     orderAvailable: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(
-            onClick = {
-                onToggleReference(true)
-                player.play()
-            },
-            enabled = player.strokeCount > 0,
-            modifier = Modifier.fillMaxWidth(),
-            shape = CircleShape,
-        ) {
-            Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(4.dp))
-            Text(
-                when {
-                    player.isPlaying -> "Playing stroke ${(player.progress + 1).toInt().coerceAtMost(player.strokeCount)} of ${player.strokeCount}"
-                    player.strokeCount > 0 -> "Play stroke order · ${player.strokeCount} strokes"
-                    else -> "No stroke guide"
-                }
-            )
-        }
         if (!orderAvailable) {
             Text(
                 "No stroke-order source for this character. Trace the outline instead.",
@@ -1648,21 +1566,37 @@ private fun CanvasTools(
                 color = InkSoft,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = {
+                    onToggleReference(true)
+                    player.play()
+                },
+                enabled = player.strokeCount > 0,
+            ) {
+                Icon(
+                    Icons.Rounded.PlayArrow,
+                    contentDescription = "Play stroke order",
+                    tint = if (player.strokeCount > 0) InkDark else InkSoft.copy(alpha = 0.35f),
+                )
+            }
             com.bassmd.bihua.ui.components.TonalAction(
-                text = if (showReference) "Hide guide" else "Show guide",
+                text = "Guide",
                 onClick = { onToggleReference(!showReference) },
                 modifier = Modifier.weight(1f),
-                icon = if (showReference) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                accent = Mint.copy(alpha = 0.55f),
+                icon = if (showReference) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                accent = if (showReference) Mint.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surfaceVariant,
             )
             com.bassmd.bihua.ui.components.TonalAction(
-                text = if (showOrder) "Order on" else "Order off",
+                text = "Order",
                 onClick = { onToggleOrder(!showOrder) },
                 enabled = showReference && orderAvailable,
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.FormatListNumbered,
-                accent = Lilac.copy(alpha = 0.40f),
+                accent = if (showOrder && showReference) Lilac.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant,
             )
         }
         Row(
@@ -1708,6 +1642,129 @@ private fun CanvasTools(
 }
 
 @Composable
+private fun StickyGradeBar(
+    item: LearnItem,
+    mode: StudyMode,
+    ink: InkState,
+    recommender: GradeRecommender,
+    recognition: RecognitionResult?,
+    targetVariants: Set<String>,
+    evidence: com.bassmd.bihua.ink.StrokeEvidence?,
+    orderCheck: com.bassmd.bihua.ink.OrderAssessment?,
+    practiceOnly: Boolean,
+    onGrade: (Grade) -> Unit,
+    onDrawAgain: () -> Unit,
+) {
+    val recognitionGrade = when {
+        recognition == null || recognition.candidates.isEmpty() -> null
+        item.character in recognition.candidates.take(3) -> Grade.GOOD
+        recognition.candidates.take(3).any { it in targetVariants } -> Grade.HARD
+        recognition.best == item.character -> Grade.GOOD
+        recognition.best in targetVariants -> Grade.HARD
+        else -> Grade.AGAIN
+    }
+    val evidenceGrade = evidence?.suggestedGrade?.let { suggested ->
+        when (suggested) {
+            com.bassmd.bihua.ink.EvidenceGrade.AGAIN -> Grade.AGAIN
+            com.bassmd.bihua.ink.EvidenceGrade.HARD -> Grade.HARD
+            com.bassmd.bihua.ink.EvidenceGrade.GOOD -> Grade.GOOD
+        }
+    }
+    val orderGrade = orderCheck?.suggestedGrade?.let { suggested ->
+        when (suggested) {
+            com.bassmd.bihua.ink.EvidenceGrade.AGAIN -> Grade.AGAIN
+            com.bassmd.bihua.ink.EvidenceGrade.HARD -> Grade.HARD
+            com.bassmd.bihua.ink.EvidenceGrade.GOOD -> Grade.GOOD
+        }
+    }
+    val suggestion = recommender.recommend(item, ink)
+        ?: recognitionGrade?.let { GradeSuggestion(it) }
+        ?: orderGrade?.let { GradeSuggestion(it) }
+        ?: evidenceGrade?.let { GradeSuggestion(it) }
+    Surface(color = PaperWarm, shadowElevation = 16.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Answer", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                    Text(
+                        item.character,
+                        fontSize = 28.sp,
+                        color = InkDark,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Text(
+                        if (practiceOnly) "Practice pass. The schedule stays the same." else "Tap a grade to continue.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                    )
+                }
+                TextButton(onClick = onDrawAgain) { Text("Draw again") }
+            }
+            Spacer(Modifier.height(4.dp))
+            GradeChoices(
+                suggestion = suggestion,
+                enabled = true,
+                onGrade = onGrade,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (suggestion != null) {
+                    "App suggests ${suggestion.grade.label}. You still choose."
+                } else {
+                    "No suggestion. Use your own judgement."
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StickyActionBar(
+    secondary: String,
+    onSecondary: () -> Unit,
+    primary: String,
+    primaryEnabled: Boolean,
+    hint: String,
+    onPrimary: () -> Unit,
+) {
+    Surface(color = PaperWarm, shadowElevation = 14.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+        ) {
+            ActionRow(
+                secondary = secondary,
+                onSecondary = onSecondary,
+                primary = primary,
+                primaryEnabled = primaryEnabled,
+                onPrimary = onPrimary,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                hint,
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+        }
+    }
+}
+
+@Composable
 private fun ActionRow(
     secondary: String,
     onSecondary: () -> Unit,
@@ -1742,10 +1799,10 @@ private val Grade.label: String
 
 private val Grade.consequence: String
     get() = when (this) {
-        Grade.AGAIN -> "soon"
-        Grade.HARD -> "short"
-        Grade.GOOD -> "normal"
-        Grade.EASY -> "long"
+        Grade.AGAIN -> "forgot"
+        Grade.HARD -> "barely"
+        Grade.GOOD -> "got it"
+        Grade.EASY -> "too easy"
     }
 
 private fun PinkFor(mode: StudyMode): Color = when (mode) {

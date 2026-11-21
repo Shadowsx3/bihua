@@ -1,0 +1,35 @@
+Bihua is a place to practise characters with your hand. Pick a script, get a cue, and write. The app reads the ink, you choose the grade, and FSRS-7 decides when the character comes back.
+
+A blank square and a cue
+A review starts without the answer. You get a reading, a meaning, or a word, and an empty canvas. The guide can be full, a light outline, or hidden. You decide when to ask for it. After the attempt, the app shows what it can see and leaves the final grade to you.
+
+The schedule follows your memory
+FSRS-7 keeps two stability values and a difficulty estimate for each card. It solves for the next date at a 90% target retention. Nothing resets because you missed a day. Vacation mode moves the schedule forward and the first week back is shorter.
+
+Ink feedback, not a guess
+ML Kit Digital Ink runs on the phone and suggests what you may have written. A separate guide comparison checks stroke count, shape, order, reversals, and missing or extra strokes. Recognition is evidence. It never presses the grade button.
+
+Four scripts, kept apart
+Simplified Chinese: 3,180 characters.
+Traditional Chinese: 3,163 characters.
+Japanese: 2,286 characters.
+Korean Hanja: 2,239 characters.
+
+Shared glyphs stay shared. Simplified-only forms stay out of the Traditional course, and traditional-only forms stay out of the Simplified course. Traditional words use CEDICT word pairs, so you see 頭髮 rather than 頭發.
+
+A dictionary you can stay in
+Open any character for its reading, meaning, level, stroke count, frequency, variants, radical, parts, story, related sound and meaning families, example words, notes, and review history. Tap a part to follow it. Compare four related characters side by side.
+
+Practice that leaves the screen
+Word practice hides a word's characters and gives you the reading and meaning. Paper check asks you to write on real paper, then reveals the character so you can compare. Both are free practice and do not touch the schedule.
+
+Light and dark
+Warm paper with forest ink, or a forest-night palette with cream ink. The writing square stays the largest thing on the screen.
+
+Your data stays with you
+No account. No ads. No developer-run analytics. Progress, notes, and history live in a local SQLite database. Export a zip backup when you want one, or sync two devices on your own Wi-Fi. Android cloud backup is off.
+
+Open code, open data
+The app code is MIT-licensed. Character and word data comes from open sources, with full credits inside Settings → About. The content database keeps its CC BY-SA, Arphic, LGPL, and Unicode terms.
+
+Bihua is a study tool, not a promise that you will never forget a character. Some rare glyphs do not have an open stroke guide, and the app will tell you when that happens.

@@ -48,6 +48,19 @@ class CurriculumTest {
     }
 
     @Test
+    fun starterCharactersLeadTheirLevelWithoutCrossingLevels() {
+        val input = listOf(
+            entry("爱", level = 1, strokes = 10),
+            entry("一", level = 1, strokes = 1),
+            entry("二", level = 2, strokes = 2),
+            entry("个", level = 1, strokes = 3),
+        )
+        val ordered = Curriculum.order(input, CharacterOrder.CURRICULUM)
+        assertEquals(listOf("一", "个", "爱", "二"), ordered.map { it.id })
+        assertTrue(Curriculum.isProgressive(ordered))
+    }
+
+    @Test
     fun japaneseSortsByGradeThenStrokeCount() {
         val input = listOf(
             entry("grade2", level = 2, mode = StudyMode.JAPANESE, strokes = 3),

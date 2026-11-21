@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.0.2 — 2026-11-21
+
+### Changed
+
+- The four grade buttons now sit in a fixed bar after every writing check, with
+  the answer, reading, and meaning beside them. Checking a drawing no longer
+  leaves the grade choices below the fold.
+- The lesson flow is named Meet, Trace, Write. The first run explains the three
+  steps and says that the learner chooses the grade.
+- A gentler start inside each HSK/Jōyō/geup level: simple shapes such as 一, 二,
+  and 三 come first, while the level order stays intact.
+- All settings sections are visible at once instead of hiding Display, Data,
+  Sync, and About in a horizontally scrolling row.
+- Home says “No reviews due” when new characters are still available.
+- Handwriting checks prefer a target character found in the top three readings,
+  so a recognisable 一 is not labelled different because of one stray guess.
+- Practice, word practice, and paper check explain that they stay outside the
+  review schedule.
+- “Leech” is now “tricky” in the interface.
+- Word rows have a visible Write action; the character detail no longer uses
+  SRS/model jargon.
+- Stylus and finger drawing controls fit above the canvas on a phone.
+
+### Fixed
+
+- The trace and write screens no longer hide the guide and ink tools behind the
+  sticky action bar.
+- “1 strokes” and similar plural forms are corrected.
+- Redrawing a card keeps the same cue instead of changing the question.
+
 ## 1.0.1 — 2026-11-21
 
 ### Added

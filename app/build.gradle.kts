@@ -20,8 +20,8 @@ android {
         applicationId = "com.bassmd.bihua"
         minSdk = 29
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.1"
+        versionCode = 4
+        versionName = "1.0.2"
         ndk {
             // The tablet and phone are arm64. Dropping emulator ABIs keeps the
             // local model runtime from doubling the APK size.
@@ -42,6 +42,11 @@ android {
 
     buildTypes {
         release {
+            // Keep native debug symbols out of the APK but available as a
+            // separate Play Console upload for crash analysis.
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
             // A personal release build is signed with the upload key when
             // keystore.properties exists, otherwise with the debug key so
             // `assembleRelease` still produces an installable APK.

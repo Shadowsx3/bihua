@@ -1,0 +1,9 @@
+Bihua 1.0.2 makes the learning loop clearer.
+
+- Choose a grade right after writing: the answer and four grades stay on screen.
+- First run explains Meet, Trace, Write.
+- Easier first characters (一, 二, 三...) without leaving HSK/Jōyō order.
+- All settings sections are visible at once.
+- Clearer word practice, labels, and tablet layouts.
+
+Try a short lesson, use Resume, and practise a word. Tell us what is still unclear.

@@ -6,7 +6,7 @@ enum class StudyStatus(val label: String) {
     LEARNING("Learning"),
     REVIEW("Review"),
     KNOWN("Known"),
-    LEECH("Leech"),
+    LEECH("Tricky"),
 }
 
 /** A word shown read-only on a character card. Never scheduled. */

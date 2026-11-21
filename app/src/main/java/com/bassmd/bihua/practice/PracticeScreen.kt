@@ -227,6 +227,7 @@ fun PracticeScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    ScreenTitle()
                     CharacterSummary(
                         entry = selected,
                         showReference = showReference,
@@ -269,6 +270,8 @@ fun PracticeScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 120.dp),
             ) {
+                ScreenTitle()
+                Spacer(Modifier.height(8.dp))
                 CharacterSummary(
                     entry = selected,
                     showReference = showReference,
@@ -382,7 +385,7 @@ private fun CharacterSummary(
                     val strokes = entry?.strokeCount ?: 0
                     if (strokes > 0) {
                         if (isNotEmpty()) append(" · ")
-                        append("$strokes strokes")
+                        append("$strokes ${if (strokes == 1) "stroke" else "strokes"}")
                     }
                 },
                 style = MaterialTheme.typography.labelSmall,
@@ -420,7 +423,7 @@ private fun PracticeTools(
         com.bassmd.bihua.ui.components.QuietAction(
             text = when {
                 player.isPlaying -> "Playing stroke ${(player.progress + 1).toInt().coerceAtMost(player.strokeCount)} of ${player.strokeCount}"
-                player.strokeCount > 0 -> "Play stroke order · ${player.strokeCount} strokes"
+                player.strokeCount > 0 -> "Play stroke order · ${player.strokeCount} ${if (player.strokeCount == 1) "stroke" else "strokes"}"
                 else -> "No stroke guide"
             },
             onClick = {

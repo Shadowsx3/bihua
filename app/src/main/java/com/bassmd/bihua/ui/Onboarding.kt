@@ -196,6 +196,36 @@ private fun WelcomePage() {
             color = InkSoft,
             textAlign = TextAlign.Center,
         )
+        Spacer(Modifier.height(28.dp))
+        listOf(
+            "1" to ("Meet the character" to "See its shape, reading, and meaning."),
+            "2" to ("Trace it once" to "Follow the green guide with your finger or pen."),
+            "3" to ("Write and grade" to "Write from memory, then choose Again, Hard, Good, or Easy."),
+        ).forEach { (number, content) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Mint.copy(alpha = 0.38f),
+                ) {
+                    Box(
+                        modifier = Modifier.size(34.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(number, style = MaterialTheme.typography.titleSmall, color = InkDark)
+                    }
+                }
+                Spacer(Modifier.size(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(content.first, style = MaterialTheme.typography.titleSmall, color = InkDark)
+                    Text(content.second, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                }
+            }
+        }
     }
 }
 
@@ -271,7 +301,7 @@ private fun ScriptPage(
                         color = InkDark,
                     )
                     Text(
-                        "Characters that exist in several scripts (人, 大, 日…) keep one writing memory. Reviews then count everywhere.",
+                        "Characters you already know stay learned in every script. Turn this on if you plan to study more than one.",
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
@@ -327,7 +357,7 @@ private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
         Text("Pick a writing feel", style = MaterialTheme.typography.headlineMedium, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
-            "The S Pen reports pressure, so the line thickens and thins as you write. Tune it later in Settings.",
+            "A finger works. With a stylus, the line also follows pressure. Tune it later in Settings.",
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,
             textAlign = TextAlign.Center,

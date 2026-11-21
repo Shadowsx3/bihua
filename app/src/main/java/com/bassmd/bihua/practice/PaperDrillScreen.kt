@@ -156,7 +156,7 @@ fun PaperDrillScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "${entry.levelLabel.ifBlank { "Character" }} · ${entry.strokeCount} strokes",
+                        "${entry.levelLabel.ifBlank { "Character" }} · ${entry.strokeCount} ${if (entry.strokeCount == 1) "stroke" else "strokes"}",
                         style = MaterialTheme.typography.labelMedium,
                         color = InkSoft,
                     )

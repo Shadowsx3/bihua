@@ -112,7 +112,11 @@ fun WordPracticeScreen(
             Column(Modifier.weight(1f)) {
                 Text("Write the word", style = MaterialTheme.typography.titleLarge, color = InkDark)
                 Text(
-                    if (finished) "Done" else "${index + 1} of ${characters.size} · ${displayReading(word.reading, mode)}",
+                    if (finished) {
+                        "Done"
+                    } else {
+                        "Character ${index + 1} of ${characters.size} · ${displayReading(word.reading, mode)} · practice only"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
@@ -197,7 +201,18 @@ fun WordPracticeScreen(
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (revealed) {
+                "Compare your writing with ${entry.character}. Tap the button below to continue."
+            } else {
+                "Write character ${index + 1} from memory. Tap Show answer if you need help."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = InkSoft,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()

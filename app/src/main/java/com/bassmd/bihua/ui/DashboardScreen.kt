@@ -126,7 +126,8 @@ fun DashboardScreen(
                     Column(Modifier.weight(1f)) {
                         Text("Progress", style = MaterialTheme.typography.headlineLarge, color = InkDark)
                         Text(
-                            "$known known · ${review + learning} in review · ${leeches.size} leeches",
+                            "$known known · ${review + learning} in review" +
+                                if (leeches.isNotEmpty()) " · ${leeches.size} tricky" else "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = InkSoft,
                         )
@@ -691,7 +692,7 @@ private fun TroubleCard(
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Needs a little care", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                    Text("Leeches and repeated misses.", style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                    Text("Characters you keep missing.", style = MaterialTheme.typography.bodySmall, color = InkSoft)
                 }
                 Pill("${leeches.size}", Rose.copy(alpha = 0.45f))
             }

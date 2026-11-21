@@ -86,7 +86,7 @@ fun RecognitionResultView(
 
         !result.modelReady -> SoftCard(modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
             Text(
-                "The handwriting model is not ready. Prepare it in Settings to get suggestions.",
+                "Handwriting check is unavailable right now. You can still choose a grade. You can download the models in Settings → Writing.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -94,14 +94,20 @@ fun RecognitionResultView(
 
         result.candidates.isEmpty() -> SoftCard(modifier.fillMaxWidth()) {
             Text(
-                "No clear reading. Keep practising; your ink is saved.",
+                "No clear reading. You can still choose a grade.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
         }
 
         else -> {
-            val read = result.candidates.first()
+            // Prefer a target reading inside the top three, otherwise a correct
+            // 山 drawn with one stray stroke can show as "different" even though
+            // the app did read 山.
+            val targetRead = target?.let { wanted ->
+                result.candidates.take(3).firstOrNull { it == wanted || it in variants }
+            }
+            val read = targetRead ?: result.candidates.first()
             val matched = target != null && read == target
             val variantMatch = !matched && target != null && read in variants
             SoftCard(
@@ -125,7 +131,7 @@ fun RecognitionResultView(
                             color = PaperWarm.copy(alpha = 0.7f),
                         ) {
                             Text(
-                                if (practiceOnly) "Practice only" else "Evidence only",
+                                if (practiceOnly) "Practice only" else "Does not grade",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = InkSoft,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -179,7 +185,7 @@ fun RecognitionResultView(
                         }
                         CompareTile(
                             glyph = read,
-                            caption = "Recognizer read",
+                            caption = "Reads as",
                             size = if (compact) 84.dp else 104.dp,
                             glyphSize = if (compact) 44.sp else 54.sp,
                             border = if (matched || variantMatch) Mint else Rose,
@@ -189,7 +195,7 @@ fun RecognitionResultView(
                     if (variantMatch) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Recogniser read the standard form ${read}, a variant of ${target}.",
+                            "The app read the standard form $read, a variant of $target.",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -197,7 +203,7 @@ fun RecognitionResultView(
                     if (result.candidates.size > 1) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Other guesses",
+                            "Other readings",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -230,7 +236,7 @@ fun RecognitionResultView(
                         if (practiceOnly) {
                             "This never changes your schedule."
                         } else {
-                            "You choose the grade. This only shows what the recognizer saw."
+                            "This is only a check. You choose the grade."
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,

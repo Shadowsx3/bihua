@@ -283,7 +283,7 @@ private fun ComparePane(
                         color = InkDark,
                     )
                     Text(
-                        "${entry.meaning} · ${entry.strokeCount} strokes",
+                        "${entry.meaning} · ${entry.strokeCount} ${if (entry.strokeCount == 1) "stroke" else "strokes"}",
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,
                         maxLines = 1,

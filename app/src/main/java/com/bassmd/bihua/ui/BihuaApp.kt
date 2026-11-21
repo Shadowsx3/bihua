@@ -57,7 +57,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bassmd.bihua.content.ContentRepository
 import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.content.SqliteContentRepository
-import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.content.LearnItem
 import com.bassmd.bihua.progress.CardSnapshot
@@ -117,7 +116,6 @@ fun BihuaApp(store: SettingsStore) {
     val activity = context as? Activity
     val repository = remember { SqliteContentRepository(context.applicationContext) }
     val scope = rememberCoroutineScope()
-    val handwriting = remember { InkRecognitionService() }
     val mode = settings.studyMode
     val speechState = remember { mutableStateOf<Speech?>(null) }
     val speak: (String) -> Unit = { text ->
@@ -216,9 +214,6 @@ fun BihuaApp(store: SettingsStore) {
     }
     val activityDays by produceState<List<DayActivity>>(emptyList(), progressVersion) {
         value = withContext(Dispatchers.IO) { progressStore.activity(35) }
-    }
-    val handwritingReady by produceState<Boolean?>(null, tab) {
-        value = if (tab == Tab.HOME) withContext(Dispatchers.IO) { handwriting.areAllModelsReady() } else null
     }
     val dueForecast by produceState<List<DueDay>>(emptyList(), progressVersion, visibleCharacters, settings) {
         value = withContext(Dispatchers.IO) {
@@ -738,7 +733,6 @@ fun BihuaApp(store: SettingsStore) {
                                 recentMistakes = recentMistakes,
                                 recentlyLearned = recentlyLearned,
                                 confusions = confusions,
-                                handwritingReady = handwritingReady,
                                 onOpenSettings = { tab = Tab.SETTINGS },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
@@ -840,7 +834,6 @@ fun BihuaApp(store: SettingsStore) {
                                 recentMistakes = recentMistakes,
                                 recentlyLearned = recentlyLearned,
                                 confusions = confusions,
-                                handwritingReady = handwritingReady,
                                 onOpenSettings = { tab = Tab.SETTINGS },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
@@ -978,7 +971,6 @@ private fun AppContent(
     recentMistakes: List<CharacterEntry> = emptyList(),
     recentlyLearned: List<CharacterEntry> = emptyList(),
     confusions: List<CharacterEntry> = emptyList(),
-    handwritingReady: Boolean? = null,
     onOpenSettings: () -> Unit = {},
     onSpeak: (String) -> Unit = {},
     onCompare: (CharacterEntry) -> Unit = {},
@@ -1040,7 +1032,6 @@ private fun AppContent(
             easeBackUntilMs = easeBackUntilMs,
             onEndVacation = onEndVacation,
             activity = activity,
-            handwritingReady = handwritingReady,
             onOpenSettings = onOpenSettings,
             onStudy = onStudy,
             onBrowse = onBrowse,

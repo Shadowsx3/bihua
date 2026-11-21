@@ -57,6 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
+import com.bassmd.bihua.content.CharacterOrder
+import com.bassmd.bihua.content.Curriculum
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.StudyStatus
@@ -112,7 +114,6 @@ fun HomeScreen(
     easeBackUntilMs: Long = 0L,
     onEndVacation: () -> Unit = {},
     activity: List<DayActivity>,
-    handwritingReady: Boolean?,
     onOpenSettings: () -> Unit,
     onStudy: () -> Unit,
     onBrowse: () -> Unit,
@@ -165,7 +166,6 @@ fun HomeScreen(
                     learning = learning,
                     vacation = vacation,
                     easeBack = easeBack,
-                    onPractice = onPractice,
                 )
             }
             if (resumeSession != null && !vacation) {
@@ -239,25 +239,6 @@ fun HomeScreen(
                 }
             }
             item {
-                if (handwritingReady == false) {
-                    SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.18f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Brush, contentDescription = null, tint = InkDark)
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Handwriting suggestions", style = MaterialTheme.typography.titleSmall, color = InkDark)
-                                Text(
-                                    "Prepare the small handwriting models in Settings to see recognizer evidence after a drawing.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkSoft,
-                                )
-                            }
-                            TextButton(onClick = onOpenSettings) { Text("Open") }
-                        }
-                    }
-                }
-            }
-            item {
                 val summary = buildList {
                     if (studyList.isNotEmpty()) add("${studyList.size} in the list")
                     if (pinnedCount > 0) add("$pinnedCount pinned")
@@ -324,7 +305,12 @@ fun HomeScreen(
             }
             item {
                 val recent = characters.filter { it.status != StudyStatus.NEW }.take(8)
-                    .ifEmpty { characters.take(8) }
+                    .ifEmpty {
+                        Curriculum.order(
+                            characters.filter { it.status == StudyStatus.NEW },
+                            CharacterOrder.CURRICULUM,
+                        ).take(8)
+                    }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(recent) { entry ->
                         CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
@@ -373,7 +359,6 @@ private fun Header(
     learning: Int,
     vacation: Boolean,
     easeBack: Boolean,
-    onPractice: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -402,19 +387,6 @@ private fun Header(
             )
         }
         ProfileAvatar(profile = profile, size = 64.dp)
-        Spacer(Modifier.width(8.dp))
-        Surface(
-            onClick = onPractice,
-            shape = CircleShape,
-            color = PaperWarm,
-        ) {
-            Icon(
-                Icons.Rounded.Brush,
-                contentDescription = "Practice",
-                modifier = Modifier.padding(12.dp),
-                tint = InkDark,
-            )
-        }
     }
 }
 
@@ -461,7 +433,7 @@ private fun StudyHero(
                 when {
                     vacation -> "Reviews are paused"
                     due + fresh == 0 -> "All done for today"
-                    due == 0 -> "Review complete"
+                    due == 0 -> "No reviews due"
                     else -> "Ready for a little writing?"
                 },
                 style = MaterialTheme.typography.headlineMedium,
@@ -474,7 +446,7 @@ private fun StudyHero(
                     due + fresh == 0 && learning > 0 ->
                         "${formatCount(learning)} cards are in learning steps. They return shortly."
                     due + fresh == 0 -> "Your next review will appear here when it is due."
-                    due == 0 -> "${formatCount(fresh)} new today"
+                    due == 0 -> "${formatCount(fresh)} new characters ready"
                     else -> "${formatCount(due)} to review · ${formatCount(fresh)} new today" +
                         if (easeBack) " · shorter sessions this week" else ""
                 },

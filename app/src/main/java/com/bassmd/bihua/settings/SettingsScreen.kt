@@ -878,17 +878,31 @@ fun SettingsScreen(
                             }) { Text("Reset to preset") }
                         }
                         Spacer(Modifier.height(8.dp))
-                        SwitchRow(
-                            title = "Draw with a finger",
-                            subtitle = if (hasStylus) {
-                                "Off means only the S Pen draws, so your palm never leaves a mark."
-                            } else {
-                                "Always on for this device because it has no stylus."
-                            },
-                            checked = if (hasStylus) settings.allowFingerDrawing else true,
-                            enabled = hasStylus,
-                            onCheckedChange = { update(settings.copy(allowFingerDrawing = it)) },
-                        )
+                        if (hasStylus) {
+                            SwitchRow(
+                                title = "Draw with a finger",
+                                subtitle = "Off means only your pen draws, so your palm does not leave marks.",
+                                checked = settings.allowFingerDrawing,
+                                onCheckedChange = { update(settings.copy(allowFingerDrawing = it)) },
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                            ) {
+                                Text(
+                                    "Draw with a finger",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = InkDark,
+                                )
+                                Text(
+                                    "Always on. This device has no stylus, so use your finger.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                        }
                         Spacer(Modifier.height(8.dp))
                         Spacer(Modifier.height(12.dp))
                         SettingTitle(
@@ -1578,12 +1592,14 @@ private fun SettingsCategories(
         "Sync" to "Sync",
         "About" to "About",
     )
-    androidx.compose.foundation.lazy.LazyRow(
+    // Keep every section visible. A single scrolling row hid Display, Data,
+    // Sync, and About with no hint that the row could scroll.
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        items(categories.size) { index ->
-            val (id, accent) = categories[index]
+        categories.forEach { (id, accent) ->
             androidx.compose.material3.FilterChip(
                 selected = selected == id,
                 onClick = { onSelect(id) },
