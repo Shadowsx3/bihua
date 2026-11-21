@@ -31,7 +31,6 @@ import kotlinx.coroutines.withContext
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -102,8 +101,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.ai.InkRecognitionService
-import com.bassmd.bihua.ai.LocalModels
-import com.bassmd.bihua.ai.ModelDownloader
 import com.bassmd.bihua.backup.BackupBundle
 import com.bassmd.bihua.backup.BackupCodec
 import com.bassmd.bihua.backup.BackupException
@@ -155,7 +152,6 @@ fun SettingsScreen(
     val inkRecognition = remember { InkRecognitionService() }
     var preparingHandwriting by remember { mutableStateOf(false) }
     var handwritingReady by remember { mutableStateOf(false) }
-    var downloadingModel by remember { mutableStateOf<String?>(null) }
     var loadEstimate by remember { mutableStateOf<ReviewLoad.Estimate?>(null) }
     var syncOpen by remember { mutableStateOf(false) }
     var hostCode by remember { mutableStateOf<String?>(null) }
@@ -191,8 +187,6 @@ fun SettingsScreen(
             }
         }
     }
-    var modelFraction by remember { mutableFloatStateOf(0f) }
-    var downloadedIds by remember { mutableStateOf(emptySet<String>()) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -1090,134 +1084,6 @@ fun SettingsScreen(
             }
 
             }
-            if (settingsSection == "Assistant") {
-            item {
-                SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.12f)) {
-                    Column {
-                        SettingTitle(
-                            icon = Icons.Rounded.AutoAwesome,
-                            title = "Assistant",
-                            subtitle = "Local AI for mnemonics, character parts, and history. It never sends anything off the device.",
-                        )
-                        SwitchRow(
-                            title = "Enable assistant",
-                            subtitle = "Off by default. The local models need several GB of RAM and a strong CPU; most phones cannot run them well.",
-                            checked = settings.assistantEnabled,
-                            onCheckedChange = { update(settings.copy(assistantEnabled = it)) },
-                        )
-                        Text(
-                            if (settings.assistantEnabled) {
-                                "On: the Assistant tab and character buttons are visible. Choose a model below."
-                            } else {
-                                "Off: the Assistant tab and its buttons are hidden. You can enable it any time."
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
-                    }
-                }
-            }
-            if (settings.assistantEnabled) {
-            item {
-                val ram = LocalModels.totalRamGb(context)
-                val recommended = LocalModels.recommended(context)
-                if (downloadedIds.isEmpty()) {
-                    LaunchedEffect(Unit) {
-                        downloadedIds = LocalModels.all.filter { it.isDownloaded(context) }.map { it.id }.toSet()
-                    }
-                }
-                SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.13f)) {
-                    Column {
-                        Text("Choose a local model", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                        Text(
-                            "This device has $ram GB RAM. ${recommended.name} is the suggested fit.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        LocalModels.all.forEach { model ->
-                            val isDownloaded = model.id in downloadedIds
-                            val isDownloading = downloadingModel == model.id
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { update(settings.copy(localModelId = model.id)) }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.Top,
-                            ) {
-                                RadioButton(
-                                    selected = settings.localModelId == model.id,
-                                    onClick = { update(settings.copy(localModelId = model.id)) },
-                                )
-                                Column(Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(model.name, style = MaterialTheme.typography.titleSmall, color = InkDark)
-                                        if (model.id == recommended.id) {
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("Recommended", style = MaterialTheme.typography.labelSmall, color = InkDark)
-                                        }
-                                        if (model.experimental) {
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("Experimental", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-                                        }
-                                    }
-                                    Text(
-                                        "${model.sizeLabel} · ${model.license}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = InkSoft,
-                                    )
-                                    Text(model.note, style = MaterialTheme.typography.bodySmall, color = InkSoft)
-                                    if (isDownloading) {
-                                        Spacer(Modifier.height(6.dp))
-                                        LinearProgressIndicator(
-                                            progress = { modelFraction },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            color = Sky,
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                when {
-                                    isDownloading -> Text(
-                                        "${(modelFraction * 100).toInt()}%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = InkSoft,
-                                    )
-                                    isDownloaded -> TextButton(onClick = {
-                                        ModelDownloader(context, model).delete()
-                                        downloadedIds = downloadedIds - model.id
-                                    }) { Text("Delete") }
-                                    else -> TextButton(onClick = {
-                                        downloadingModel = model.id
-                                        modelFraction = 0f
-                                        scope.launch {
-                                            runCatching {
-                                                ModelDownloader(context, model)
-                                                    .download()
-                                                    .collectProgress { modelFraction = it.fraction }
-                                            }.onSuccess {
-                                                downloadedIds = downloadedIds + model.id
-                                                message = "${model.name} is ready."
-                                            }.onFailure {
-                                                message = "Download failed. Check the connection."
-                                            }
-                                            downloadingModel = null
-                                        }
-                                    }) { Text("Download") }
-                                }
-                            }
-                        }
-                        Text(
-                            "Models run offline on this device. The Assistant tab uses the selected one.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
-                    }
-                }
-            }
-
-            }
-            }
             if (settingsSection == "Data") {
             item {
                 SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.38f)) {
@@ -1698,7 +1564,6 @@ private fun SettingsCategories(
         "Study" to Sky,
         "Writing" to Peach,
         "Display" to Butter,
-        "Assistant" to Mint,
         "Data" to Lilac,
         "Sync" to Sky,
         "About" to Peach,
@@ -1709,7 +1574,6 @@ private fun SettingsCategories(
         "Study" to "Study",
         "Writing" to "Writing",
         "Display" to "Display",
-        "Assistant" to "Assistant",
         "Data" to "Data",
         "Sync" to "Sync",
         "About" to "About",
@@ -1955,30 +1819,6 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
             "Google ML Kit terms",
             "Google",
             "https://developers.google.com/ml-kit/terms",
-        ),
-        LicenceEntry(
-            "LiteRT-LM runtime",
-            "Apache License 2.0",
-            "Google AI Edge",
-            "https://github.com/google-ai-edge/LiteRT-LM",
-        ),
-        LicenceEntry(
-            "Qwen3 0.6B / 1.7B, Qwen2.5 1.5B",
-            "Apache License 2.0",
-            "Alibaba Qwen",
-            "https://huggingface.co/Qwen",
-        ),
-        LicenceEntry(
-            "Gemma 4 E2B",
-            "Gemma Terms of Use",
-            "Google",
-            "https://ai.google.dev/gemma/terms",
-        ),
-        LicenceEntry(
-            "Phi-4 mini",
-            "MIT",
-            "Microsoft",
-            "https://huggingface.co/microsoft/Phi-4-mini-instruct",
         ),
     )
     androidx.compose.material3.AlertDialog(

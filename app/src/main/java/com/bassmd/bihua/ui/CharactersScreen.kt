@@ -123,8 +123,6 @@ fun CharactersScreen(
     shareIdenticalGlyphs: Boolean = true,
     sharingOverrides: Map<String, Boolean> = emptyMap(),
     onSharingOverride: (String, Boolean?) -> Unit = { _, _ -> },
-    onAskAssistant: (CharacterEntry, AssistantMode) -> Unit = { _, _ -> },
-    assistantEnabled: Boolean = false,
     speechEnabled: Boolean = true,
     onCompare: (CharacterEntry) -> Unit = {},
     onCompareFamily: (List<CharacterEntry>) -> Unit = {},
@@ -282,8 +280,6 @@ fun CharactersScreen(
                                 sharingOverride = sharingOverrides[selected.glyphGroupId],
                                 sharingEffective = sharingOverrides[selected.glyphGroupId] ?: shareIdenticalGlyphs,
                                 onSharingOverride = { value -> onSharingOverride(selected.glyphGroupId, value) },
-                                onAskAssistant = { mode -> onAskAssistant(selected, mode) },
-                                assistantEnabled = assistantEnabled,
                                 speechEnabled = speechEnabled,
                                 onCompare = { onCompare(selected) },
                                 onCompareFamily = onCompareFamily,
@@ -355,8 +351,6 @@ fun CharactersScreen(
                             sharingOverride = sharingOverrides[selected.glyphGroupId],
                             sharingEffective = sharingOverrides[selected.glyphGroupId] ?: shareIdenticalGlyphs,
                             onSharingOverride = { value -> onSharingOverride(selected.glyphGroupId, value) },
-                            onAskAssistant = { mode -> onAskAssistant(selected, mode) },
-                            assistantEnabled = assistantEnabled,
                             speechEnabled = speechEnabled,
                             onCompare = { onCompare(selected) },
                             onCompareFamily = onCompareFamily,
@@ -973,8 +967,6 @@ private fun CharacterDetail(
     sharingOverride: Boolean?,
     sharingEffective: Boolean,
     onSharingOverride: (Boolean?) -> Unit,
-    onAskAssistant: (AssistantMode) -> Unit,
-    assistantEnabled: Boolean = false,
     speechEnabled: Boolean = true,
     onCompare: () -> Unit,
     onCompareFamily: (List<CharacterEntry>) -> Unit = {},
@@ -1415,34 +1407,6 @@ private fun CharacterDetail(
                     }
                 }
             }
-        }
-
-        if (assistantEnabled) {
-        SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.14f)) {
-            Column {
-                Text("Ask about this character", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                Text(
-                    "Open the assistant with this character ready. Choose a mnemonic, parts, history, or a sound hook there. AI text can be wrong; check important details.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkSoft,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { onAskAssistant(AssistantMode.GENERAL) },
-                        shape = CircleShape,
-                    ) {
-                        Text("Ask the assistant")
-                    }
-                    OutlinedButton(
-                        onClick = onCompare,
-                        shape = CircleShape,
-                    ) {
-                        Text("Compare")
-                    }
-                }
-            }
-        }
         }
 
         SoftCard(Modifier.fillMaxWidth()) {

@@ -73,15 +73,7 @@ built from Unihan only. Korean word examples are intentionally absent.
 
 - AndroidX, Jetpack Compose, Material Components — Apache License 2.0.
 - Google ML Kit Digital Ink Recognition — Google ML Kit Terms of Service.
-- LiteRT-LM — Apache License 2.0, Google AI Edge.
 - Kotlin and kotlinx libraries — Apache License 2.0.
-- Optional local models:
-  - Qwen3 0.6B / 1.7B, Qwen2.5 1.5B — Apache License 2.0, Alibaba Qwen.
-  - Gemma 4 E2B — Gemma Terms of Use, Google.
-  - Phi-4 mini — MIT, Microsoft.
-
-The optional models are not bundled in the APK. They are downloaded only when
-the learner enables the local assistant on a supported device.
 
 ## Full licence texts
 

@@ -1,11 +1,16 @@
 package com.bassmd.bihua.learn
 
 import android.content.Context
+import com.bassmd.bihua.content.StudyMode
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-/** Small, local persistence for the one active lesson session. */
+/**
+ * One saved lesson per script. Switching scripts must not surface a queue from
+ * another course, and starting a lesson in one course must not discard another
+ * course's paused session.
+ */
 class LearnSessionStore(context: Context) {
     private val prefs = context.getSharedPreferences("bihua_session", Context.MODE_PRIVATE)
     private val json = Json {
@@ -13,26 +18,24 @@ class LearnSessionStore(context: Context) {
         encodeDefaults = true
     }
 
-    fun load(): LearnSessionState? {
-        val raw = prefs.getString(KEY, null) ?: return null
+    fun load(mode: StudyMode): LearnSessionState? {
+        val raw = prefs.getString(key(mode), null) ?: return null
         return runCatching { json.decodeFromString<LearnSessionState>(raw) }
             .getOrNull()
-            ?.takeIf { it.isValid }
+            ?.takeIf { it.mode == mode && it.isValid }
     }
 
     fun save(state: LearnSessionState) {
         if (!state.isValid) {
-            clear()
+            clear(state.mode)
             return
         }
-        prefs.edit().putString(KEY, json.encodeToString(state)).apply()
+        prefs.edit().putString(key(state.mode), json.encodeToString(state)).apply()
     }
 
-    fun clear() {
-        prefs.edit().remove(KEY).apply()
+    fun clear(mode: StudyMode) {
+        prefs.edit().remove(key(mode)).apply()
     }
 
-    private companion object {
-        const val KEY = "active"
-    }
+    private fun key(mode: StudyMode): String = "active_${mode.name}"
 }

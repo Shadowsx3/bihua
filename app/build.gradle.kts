@@ -79,11 +79,6 @@ android {
         noCompress += "db"
     }
 
-    packaging {
-        jniLibs {
-            pickFirsts.add("**/liblitertlm_jni.so")
-        }
-    }
 }
 
 dependencies {
@@ -92,7 +87,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mlkit.digital.ink)
-    implementation(libs.litertlm.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

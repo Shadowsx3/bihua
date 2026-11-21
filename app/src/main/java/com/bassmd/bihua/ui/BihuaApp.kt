@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -59,7 +58,6 @@ import com.bassmd.bihua.content.ContentRepository
 import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.content.SqliteContentRepository
 import com.bassmd.bihua.ai.InkRecognitionService
-import com.bassmd.bihua.ai.LocalModels
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.content.LearnItem
 import com.bassmd.bihua.progress.CardSnapshot
@@ -102,7 +100,6 @@ private enum class Tab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Rounded.Home),
     CHARACTERS("Characters", Icons.Rounded.GridView),
     PROGRESS("Progress", Icons.Rounded.Insights),
-    ASSISTANT("Assistant", Icons.Rounded.AutoAwesome),
     PRACTICE("Practice", Icons.Rounded.Brush),
     SETTINGS("Settings", Icons.Rounded.Settings),
 }
@@ -164,9 +161,6 @@ fun BihuaApp(store: SettingsStore) {
     val allowFinger = settings.allowFingerDrawing || !stylus
 
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
-    LaunchedEffect(settings.assistantEnabled) {
-        if (!settings.assistantEnabled && tab == Tab.ASSISTANT) tab = Tab.HOME
-    }
     val changeMode: (StudyMode) -> Unit = { next ->
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
     }
@@ -179,7 +173,9 @@ fun BihuaApp(store: SettingsStore) {
     }
     val progressStore = remember { ProgressStore(context.applicationContext) }
     val sessionStore = remember { LearnSessionStore(context.applicationContext) }
-    var resumableSession by remember { mutableStateOf(sessionStore.load()) }
+    var resumableSession by remember(mode, sessionStore) {
+        mutableStateOf(sessionStore.load(mode))
+    }
     var activeResume by remember { mutableStateOf<LearnSessionState?>(null) }
     var sessionCharacters by remember { mutableStateOf<Map<String, CharacterEntry>>(emptyMap()) }
     var progressVersion by remember { mutableIntStateOf(0) }
@@ -204,7 +200,6 @@ fun BihuaApp(store: SettingsStore) {
         }
     }
     var sessionItems by remember { mutableStateOf<List<LearnItem>>(emptyList()) }
-    var assistantRequest by remember { mutableStateOf<AssistantRequest?>(null) }
     var compareEntries by remember { mutableStateOf<List<CharacterEntry>>(emptyList()) }
     var drillOpen by remember { mutableStateOf(false) }
     var paperEntries by remember { mutableStateOf<List<CharacterEntry>>(emptyList()) }
@@ -302,7 +297,7 @@ fun BihuaApp(store: SettingsStore) {
                 sessionMode = mode
                 sessionCharacters = session.associateBy { it.id }
                 activeResume = null
-                sessionStore.clear()
+                sessionStore.clear(mode)
                 resumableSession = null
                 inSession = true
             }
@@ -319,7 +314,7 @@ fun BihuaApp(store: SettingsStore) {
                     )
                 }
                 if (items.size != saved.itemIds.size || saved.pending.any { it !in items.indices }) {
-                    sessionStore.clear()
+                    sessionStore.clear(saved.mode)
                     resumableSession = null
                     activeResume = null
                     android.widget.Toast.makeText(
@@ -341,7 +336,7 @@ fun BihuaApp(store: SettingsStore) {
         }
     }
     val discardResume: () -> Unit = {
-        sessionStore.clear()
+        sessionStore.clear(mode)
         resumableSession = null
         activeResume = null
     }
@@ -633,7 +628,7 @@ fun BihuaApp(store: SettingsStore) {
                     resume = activeResume,
                     onSessionChanged = { state ->
                         if (state.pending.isEmpty()) {
-                            sessionStore.clear()
+                            sessionStore.clear(state.mode)
                             resumableSession = null
                         } else {
                             sessionStore.save(state)
@@ -686,7 +681,6 @@ fun BihuaApp(store: SettingsStore) {
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(
                         selected = tab,
-                        showAssistant = settings.assistantEnabled,
                         onSelect = { tab = it },
                     )
                     Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -708,7 +702,7 @@ fun BihuaApp(store: SettingsStore) {
                                 characters = visibleCharacters,
                                 characterId = characterId,
                                 practiceCharacterId = practiceCharacterId,
-                                resumeSession = resumableSession,
+                                resumeSession = resumableSession?.takeIf { it.mode == mode },
                                 onResumeSession = resumeSession,
                                 onDiscardSession = discardResume,
                                 onStudy = { startSession(null) },
@@ -746,10 +740,6 @@ fun BihuaApp(store: SettingsStore) {
                                 confusions = confusions,
                                 handwritingReady = handwritingReady,
                                 onOpenSettings = { tab = Tab.SETTINGS },
-                                onAskAssistant = { entry, assistantMode ->
-                                    assistantRequest = AssistantRequest(entry.id, assistantMode)
-                                    tab = Tab.ASSISTANT
-                                },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
                                 },
@@ -775,7 +765,6 @@ fun BihuaApp(store: SettingsStore) {
                                         progressVersion++
                                     }
                                 },
-                                assistantRequest = assistantRequest,
                                 memoryBuckets = memoryBuckets,
                                 onSpeak = speak,
                                 allowFinger = allowFinger,
@@ -815,7 +804,7 @@ fun BihuaApp(store: SettingsStore) {
                                 characters = visibleCharacters,
                                 characterId = characterId,
                                 practiceCharacterId = practiceCharacterId,
-                                resumeSession = resumableSession,
+                                resumeSession = resumableSession?.takeIf { it.mode == mode },
                                 onResumeSession = resumeSession,
                                 onDiscardSession = discardResume,
                                 onStudy = { startSession(null) },
@@ -853,10 +842,6 @@ fun BihuaApp(store: SettingsStore) {
                                 confusions = confusions,
                                 handwritingReady = handwritingReady,
                                 onOpenSettings = { tab = Tab.SETTINGS },
-                                onAskAssistant = { entry, assistantMode ->
-                                    assistantRequest = AssistantRequest(entry.id, assistantMode)
-                                    tab = Tab.ASSISTANT
-                                },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
                                 },
@@ -882,7 +867,6 @@ fun BihuaApp(store: SettingsStore) {
                                         progressVersion++
                                     }
                                 },
-                                assistantRequest = assistantRequest,
                                 memoryBuckets = memoryBuckets,
                                 onSpeak = speak,
                                 allowFinger = allowFinger,
@@ -901,7 +885,6 @@ fun BihuaApp(store: SettingsStore) {
                     }
                     BihuaBottomBar(
                         selected = tab,
-                        showAssistant = settings.assistantEnabled,
                         onSelect = { tab = it },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -997,7 +980,6 @@ private fun AppContent(
     confusions: List<CharacterEntry> = emptyList(),
     handwritingReady: Boolean? = null,
     onOpenSettings: () -> Unit = {},
-    onAskAssistant: (CharacterEntry, AssistantMode) -> Unit = { _, _ -> },
     onSpeak: (String) -> Unit = {},
     onCompare: (CharacterEntry) -> Unit = {},
     onCompareFamily: (List<CharacterEntry>) -> Unit = {},
@@ -1021,7 +1003,6 @@ private fun AppContent(
     gradeMix: com.bassmd.bihua.progress.GradeMix = com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0),
     totalReviews: Int = 0,
     averageInterval: Float = 0f,
-    assistantRequest: AssistantRequest? = null,
     allowFinger: Boolean = false,
     sharingOverrides: Map<String, Boolean> = emptyMap(),
     onSharingOverride: (String, Boolean?) -> Unit = { _, _ -> },
@@ -1075,8 +1056,6 @@ private fun AppContent(
             shareIdenticalGlyphs = settings.shareIdenticalGlyphs,
             sharingOverrides = sharingOverrides,
             onSharingOverride = onSharingOverride,
-            onAskAssistant = onAskAssistant,
-            assistantEnabled = settings.assistantEnabled,
             onSpeak = onSpeak,
             speechEnabled = settings.readAloud,
             onCompare = onCompare,
@@ -1128,14 +1107,6 @@ private fun AppContent(
             pinyinNumbers = settings.pinyinNumbers,
             guideMode = settings.guideMode,
             initialCharacter = characters.firstOrNull { it.id == practiceCharacterId },
-        )
-
-        Tab.ASSISTANT -> AiAssistantScreen(
-            characters = characters,
-            model = LocalModels.byId(settings.localModelId),
-            studyMode = mode,
-            character = characters.firstOrNull { it.id == characterId },
-            request = assistantRequest,
         )
 
         Tab.SETTINGS -> SettingsScreen(
@@ -1224,7 +1195,6 @@ private fun ModeSwitch(mode: StudyMode, onModeChange: (StudyMode) -> Unit, compa
 @Composable
 private fun NavigationRail(
     selected: Tab,
-    showAssistant: Boolean,
     onSelect: (Tab) -> Unit,
 ) {
     Surface(
@@ -1241,7 +1211,7 @@ private fun NavigationRail(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         ) {
-            Tab.entries.filter { it != Tab.ASSISTANT || showAssistant }.forEach { item ->
+            Tab.entries.forEach { item ->
                 RailItem(
                     tab = item,
                     selected = selected == item,
@@ -1279,7 +1249,6 @@ private fun RailItem(tab: Tab, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun BihuaBottomBar(
     selected: Tab,
-    showAssistant: Boolean,
     onSelect: (Tab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1295,7 +1264,7 @@ private fun BihuaBottomBar(
                 .padding(horizontal = 8.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Tab.entries.filter { it != Tab.ASSISTANT || showAssistant }.forEach { item ->
+            Tab.entries.forEach { item ->
                 val active = selected == item
                 Surface(
                     onClick = { onSelect(item) },

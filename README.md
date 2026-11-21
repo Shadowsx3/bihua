@@ -57,7 +57,6 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
 | **Data** | Full zip backup/import, CSV export, optional local Wi-Fi sync, no account. |
-| **Assistant** | Optional local models on capable devices; hidden by default. |
 
 ## Requirements
 
@@ -123,7 +122,7 @@ scripts/             build, device, release, smoke helpers
 ## Privacy
 
 No account, no analytics, no advertising SDK. Progress and notes live in a local
-SQLite database. Network access is limited to optional handwriting/model
+SQLite database. Network access is limited to optional handwriting-model
 downloads and local Wi-Fi sync. See [PRIVACY.md](PRIVACY.md).
 
 ## Licensing

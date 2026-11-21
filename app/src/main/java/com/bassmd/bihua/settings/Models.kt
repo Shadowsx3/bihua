@@ -178,13 +178,11 @@ data class AppSettings(
     val uiLanguage: UiLanguage = UiLanguage.ENGLISH,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val studyMode: com.bassmd.bihua.content.StudyMode = com.bassmd.bihua.content.StudyMode.SIMPLIFIED,
-    val localModelId: String = "qwen3-0.6b",
     val reduceMotion: Boolean = false,
     val soundEffects: Boolean = true,
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = true,
     val pronunciationPractice: Boolean = false,
-    val assistantEnabled: Boolean = false,
     /** Epoch millis when vacation mode started; 0 means off. */
     val vacationStartedAtMs: Long = 0L,
     /** End of the shorter-session return window after vacation. */

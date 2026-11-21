@@ -30,7 +30,6 @@ REQUIRED_CLASSES=(
   "com.bassmd.bihua.content.SqliteContentRepository"
   "com.bassmd.bihua.content.CharacterEntry"
   "com.bassmd.bihua.ai.InkRecognitionService"
-  "com.bassmd.bihua.ai.LocalAssistant"
   "com.bassmd.bihua.backup.BackupCodec"
   "com.bassmd.bihua.ink.InkCanvasKt"
   "com.bassmd.bihua.ink.InkState"

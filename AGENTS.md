@@ -56,8 +56,6 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
    build essential behaviour on `Animatable`.
 6. **The keyboard moves the layout.** Dismiss it before tapping Check/Grade, or
    re-dump with `device.sh ui` first.
-7. Do not run assistant inference on the phone. It is opt-in and a
-   tablet-class feature.
 
 ## Transfer practice
 
@@ -93,6 +91,11 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Failed cards return later in the session. A failed stroke offers
   `Fix stroke N`, which replays and validates one isolated stroke before the
   rewrite.
+
+## Assistant
+
+- Bihua ships no generative assistant and no LiteRT-LM runtime. Do not add one
+  without a separate Play policy review, data-safety update, and privacy review.
 
 ## Publishing
 
@@ -158,11 +161,6 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Word search is on demand; do not query the word table on every keystroke.
 - Speaker buttons follow `readAloud`; hide them when it is off.
 
-## Assistant
-
-- `assistantEnabled` is false by default. When off, remove the tab, the
-  character card, and the model manager. Do not leave a dead tab.
-- Enabling is in Settings → Assistant. Models are downloaded, never bundled.
 
 ## UI copy and layout
 
@@ -191,7 +189,6 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Automated UI tests.
 - Full-backup file-picker test on a device.
 - Content spot-checks.
-- Assistant QA on a capable tablet.
 
 ## Files worth knowing
 

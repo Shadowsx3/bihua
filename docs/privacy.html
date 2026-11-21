@@ -81,7 +81,7 @@
         <li>Profile name and an optional profile photo.</li>
         <li>Study settings: script, schedule, theme, writing guide, and practice preferences.</li>
         <li>Review history, due dates, XP, known-character levels, notes, study list, and word-practice history.</li>
-        <li>Downloaded handwriting and assistant models, if you choose to download them.</li>
+        <li>Downloaded handwriting models, if you choose to download them.</li>
       </ul>
       <p>Bihua does not create an account. The developer does not receive this data. Android cloud backup is disabled in the app manifest, so the app data is not copied to Google Drive by the operating system. The app has its own backup export when you want one. Data remains on the device until you delete it from the app, remove the relevant item, or uninstall the app.</p>
 
@@ -89,15 +89,14 @@
       <p>Bihua does not run a developer-operated server. Network access is used only when you start one of these actions:</p>
       <ul>
         <li><strong>Handwriting model download.</strong> ML Kit Digital Ink downloads a recognition model through Google Play services. The model runs on the device.</li>
-        <li><strong>Local assistant model download.</strong> If you enable the optional assistant, the chosen model is downloaded from its public source. The model runs on the device.</li>
         <li><strong>Local Wi-Fi sync.</strong> Two devices on the same network can exchange a backup using a short-lived local server and a pairing code.</li>
       </ul>
-      <p>Text-to-speech uses the voice engine installed on the device. Model downloads use HTTPS and are handled by the model host; the host can see the ordinary connection metadata needed to serve the file. Local Wi-Fi sync uses a short-lived HTTP server on your local network and is not relayed through the internet. Bihua does not send study history to a third party.</p>
+      <p>Text-to-speech uses the voice engine installed on the device. Handwriting model downloads use HTTPS and are handled by Google Play services. Local Wi-Fi sync uses a short-lived HTTP server on your local network and is not relayed through the internet. Bihua does not send study history to a third party.</p>
 
       <h2 id="sdk">Third-party SDKs</h2>
-      <p>Bihua includes Google ML Kit Digital Ink for handwriting candidates and LiteRT-LM for the optional local assistant. Bihua does not attach your notes, review history, or study list to those SDK calls.</p>
+      <p>Bihua includes Google ML Kit Digital Ink for handwriting candidates. Bihua does not attach your notes, review history, or study list to those SDK calls.</p>
       <p>Google ML Kit collects limited technical data for diagnostics and usage analytics. According to Google's ML Kit disclosure, this can include device information (manufacturer, model, OS version, ML accelerators), app package name and version, per-installation identifiers, performance metrics, configured recognition languages, API configuration, feature input/output size, feature version, event type, and error codes. ML Kit encrypts this data in transit with HTTPS and does not transfer it to third parties. Google processes it as a service provider for the SDK.</p>
-      <p>Links: <a href="https://developers.google.com/ml-kit/android-data-disclosure">ML Kit data disclosure</a>, <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a>, and <a href="https://github.com/google-ai-edge/LiteRT-LM">LiteRT-LM</a>.</p>
+      <p>Links: <a href="https://developers.google.com/ml-kit/android-data-disclosure">ML Kit data disclosure</a>, <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a>,.</p>
 
       <h2 id="sharing">Sharing, sale, and retention</h2>
       <p>Bihua does not sell, rent, or trade personal data. The developer does not share notes, review history, or study data with third parties. A backup leaves the app only when you choose a destination in the Android file picker. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
@@ -112,8 +111,8 @@
       <ul>
         <li>Delete individual data from the app where available, or use Settings → Data → Start over to clear progress.</li>
         <li>Remove the profile photo and name in Settings → Profile.</li>
-        <li>Uninstall the app to remove its local database and downloaded models.</li>
-        <li>Turn off read-aloud, sound effects, and the optional assistant at any time.</li>
+        <li>Uninstall the app to remove its local database and downloaded handwriting model.</li>
+        <li>Turn off read-aloud and sound effects at any time.</li>
       </ul>
 
       <h2 id="contact">Contact</h2>

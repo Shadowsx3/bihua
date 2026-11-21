@@ -10,7 +10,6 @@ lifecycle = "2.8.7"
 serialization = "1.7.3"
 junit = "4.13.2"
 mlkitDigitalInk = "19.0.0"
-litertlm = "0.18.1"
 playServicesCoroutines = "1.10.2"
 
 [libraries]
@@ -30,7 +29,6 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mlkit-digital-ink = { group = "com.google.mlkit", name = "digital-ink-recognition", version.ref = "mlkitDigitalInk" }
-litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "playServicesCoroutines" }
 
 [plugins]

@@ -17,8 +17,7 @@ Bihua does not operate a server. Network access is used only when the learner
 explicitly starts one of these optional actions:
 
 1. Downloading an ML Kit handwriting-recognition model.
-2. Downloading a local assistant model from the selected model source.
-3. Local Wi-Fi sync between two devices on the same network.
+2. Local Wi-Fi sync between two devices on the same network.
 
 Model downloads go from the source to the device. Local sync uses a short-lived
 HTTP server on the local network and a pairing code. No analytics, advertising,
