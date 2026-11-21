@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — Bihua</title>
+<meta name="description" content="Bihua's privacy policy: local progress, no account, no analytics, and the few optional network actions.">
+<meta name="theme-color" content="#fbf9ef">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="assets/icon-256.png">
+<link rel="apple-touch-icon" href="assets/icon-256.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+  try {
+    const saved = localStorage.getItem("bihua-theme");
+    document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
+  } catch (_) {}
+</script>
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#article">Skip to policy</a>
+<div class="forest" aria-hidden="true">
+  <div class="beam"></div><div class="canopy"></div>
+  <span class="leaf l1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
+  <span class="leaf l3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
+  <span class="firefly f1"></span><span class="firefly f2"></span><span class="firefly f5"></span>
+</div>
+<header class="site">
+  <div class="wrap nav">
+    <a class="brand" href="index.html"><img src="assets/icon-256.png" alt=""><div><strong>Bihua 筆畫</strong><span>Write it. Keep it.</span></div></a>
+    <nav class="links" aria-label="Primary">
+      <a href="method.html">How it works</a>
+      <a href="index.html#download">Download</a>
+      <a href="privacy.html" aria-current="page">Privacy</a>
+      <a href="https://github.com/Shadowsx3/bihua">Source</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">☰</button>
+      <a class="icon-button" href="https://github.com/Shadowsx3/bihua" aria-label="Source on GitHub"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.59 0 8.02c0 3.55 2.29 6.56 5.47 7.62.4.08.55-.17.55-.39 0-.19-.01-.83-.01-1.5-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .22.15.47.55.39A8.02 8.02 0 0 0 16 8.02C16 3.59 12.42 0 8 0Z"/></svg></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">Light</span></button>
+      <a class="button small" href="index.html#download">Download</a>
+    </div>
+  </div>
+</header>
+<div class="mobile-menu" id="mobile-menu" data-menu hidden>
+  <div class="menu-note">Bihua 筆畫 · privacy</div>
+  <a href="method.html">How it works</a>
+  <a href="index.html#download">Download</a>
+  <a href="privacy.html">Privacy</a>
+  <a href="https://github.com/Shadowsx3/bihua">Source on GitHub</a>
+</div>
+
+<main>
+  <div class="wrap article-hero">
+    <div class="kicker">Privacy</div>
+    <h1>Your study stays on your phone.</h1>
+    <p class="lead">Bihua has no account, no analytics, and no advertising. The app writes progress to a local SQLite database. The only network actions are optional downloads and local sync.</p>
+    <div class="article-meta"><span>Last updated: 21 November 2026</span><span>Applies to Bihua 1.0.1</span></div>
+  </div>
+  <div class="wrap article-layout">
+    <aside class="toc" aria-label="On this page">
+      <strong>Contents</strong>
+      <a href="#stored">What is stored</a>
+      <a href="#network">Network access</a>
+      <a href="#sdk">Third-party SDKs</a>
+      <a href="#backups">Backups</a>
+      <a href="#children">Children</a>
+      <a href="#rights">Your choices</a>
+      <a href="#contact">Contact</a>
+    </aside>
+    <article class="article" id="article">
+      <h2 id="stored">What is stored on the device</h2>
+      <ul>
+        <li>Profile name and an optional profile photo.</li>
+        <li>Study settings: script, schedule, theme, writing guide, and practice preferences.</li>
+        <li>Review history, due dates, XP, known-character levels, notes, study list, and word-practice history.</li>
+        <li>Downloaded handwriting and assistant models, if you choose to download them.</li>
+      </ul>
+      <p>Bihua does not create an account. The developer does not receive this data. Android cloud backup is disabled in the app manifest, so the app data is not copied to Google Drive by the operating system. The app has its own backup export when you want one.</p>
+
+      <h2 id="network">Network access</h2>
+      <p>Bihua does not run a developer-operated server. Network access is used only when you start one of these actions:</p>
+      <ul>
+        <li><strong>Handwriting model download.</strong> ML Kit Digital Ink downloads a recognition model through Google Play services. The model runs on the device.</li>
+        <li><strong>Local assistant model download.</strong> If you enable the optional assistant, the chosen model is downloaded from its public source. The model runs on the device.</li>
+        <li><strong>Local Wi-Fi sync.</strong> Two devices on the same network can exchange a backup using a short-lived local server and a pairing code.</li>
+      </ul>
+      <p>Text-to-speech uses the voice engine installed on the device. Bihua does not send study history to a third party.</p>
+
+      <h2 id="sdk">Third-party SDKs</h2>
+      <p>Bihua includes Google ML Kit Digital Ink for handwriting candidates and LiteRT-LM for the optional local assistant. These SDKs may process diagnostic or usage data as described by their own terms. Bihua does not attach your notes, review history, or study list to those SDK calls.</p>
+      <p>Links: <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a> and <a href="https://github.com/google-ai-edge/LiteRT-LM">LiteRT-LM</a>.</p>
+
+      <h2 id="backups">Backups</h2>
+      <p>A full backup is created only when you choose Export. It contains the settings JSON and the local progress database. The Android file picker chooses the destination; Bihua does not upload the file. You control where it goes and who can open it.</p>
+
+      <h2 id="children">Children</h2>
+      <p>Bihua is a general-audience study tool and is not directed to children under 13. It does not create accounts, run advertising, or collect personal information from children.</p>
+
+      <h2 id="rights">Your choices</h2>
+      <ul>
+        <li>Delete individual data from the app where available, or use Settings → Data → Start over to clear progress.</li>
+        <li>Remove the profile photo and name in Settings → Profile.</li>
+        <li>Uninstall the app to remove its local database and downloaded models.</li>
+        <li>Turn off read-aloud, sound effects, and the optional assistant at any time.</li>
+      </ul>
+
+      <h2 id="contact">Contact</h2>
+      <p>For privacy questions, open an issue at <a href="https://github.com/Shadowsx3/bihua/issues">github.com/Shadowsx3/bihua/issues</a> or use the developer contact email shown on the Google Play listing.</p>
+      <p class="small">This policy describes the current app. If a future version adds a new network service or data source, this page and the Play data-safety declaration will be updated before that release.</p>
+    </article>
+  </div>
+</main>
+<footer class="site"><div class="wrap row"><div><strong>Bihua 筆畫</strong> · open-source handwriting study</div><div class="footer-links"><a href="index.html">Home</a><a href="method.html">How it works</a><a href="privacy.html">Privacy</a><a href="https://github.com/Shadowsx3/bihua">Source</a></div></div></footer>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Bihua 筆畫",
+  "short_name": "Bihua",
+  "description": "Handwriting-first character study for Chinese, Japanese, and Korean.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf9ef",
+  "theme_color": "#101712",
+  "icons": [
+    { "src": "assets/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "assets/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

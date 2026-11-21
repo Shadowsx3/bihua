@@ -141,6 +141,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
@@ -1514,7 +1515,7 @@ fun SettingsScreen(
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("Bihua ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleMedium)
-                                Text("Made by bassmd", style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                                Text("Made by Shadowsx3", style = MaterialTheme.typography.bodySmall, color = InkSoft)
                             }
                         }
                         Spacer(Modifier.height(12.dp))
@@ -1524,8 +1525,15 @@ fun SettingsScreen(
                             color = InkSoft,
                         )
                         Spacer(Modifier.height(6.dp))
-                        TextButton(onClick = { showLicences = true }) {
-                            Text("Licences and sources")
+                        Row {
+                            TextButton(onClick = { showLicences = true }) {
+                                Text("Licences and sources")
+                            }
+                            TextButton(onClick = {
+                                uriHandler.openUri("https://shadowsx3.github.io/bihua/privacy.html")
+                            }) {
+                                Text("Privacy policy")
+                            }
                         }
                     }
                 }

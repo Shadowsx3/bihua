@@ -3,59 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Bihua method — handwriting, retrieval, and spacing</title>
-<meta name="description" content="How Bihua designs character study: production before recognition, fading guides, FSRS-7 spacing, separate writing and pronunciation tasks, and local data ownership.">
+<title>How Bihua works — FSRS-7 and on-device ink</title>
+<meta name="description" content="A close look at Bihua's two engines: an FSRS-7 scheduler that chooses the next date, and on-device ink analysis that reports what the hand actually drew.">
 <meta name="theme-color" content="#fbf9ef">
-<meta property="og:title" content="The Bihua method">
-<meta property="og:description" content="Why Bihua asks you to write from memory, fades the guide, separates writing from pronunciation, and schedules with FSRS-7.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="How Bihua works">
+<meta property="og:description" content="FSRS-7 scheduling, on-device handwriting evidence, and the choices behind the loop.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="assets/practice-dark.png">
-<link rel="icon" href="assets/icon.png">
-<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="icon" href="assets/icon-256.png">
+<link rel="apple-touch-icon" href="assets/icon-256.png">
+<link rel="manifest" href="manifest.webmanifest">
 <script>
   try {
     const saved = localStorage.getItem("bihua-theme");
-    const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
   } catch (_) {}
 </script>
 <link rel="stylesheet" href="style.css">
 <script src="site.js" defer></script>
 </head>
 <body>
-<div data-reading-progress style="position:fixed;top:0;left:0;right:0;height:3px;background:var(--mint);transform:scaleX(0);transform-origin:0 50%;z-index:60"></div>
+<div class="reading-progress" data-reading-progress></div>
 <a class="skip" href="#article">Skip to article</a>
+<div class="forest" aria-hidden="true">
+  <div class="beam"></div>
+  <div class="canopy"></div>
+  <span class="leaf l1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span>
+  <span class="leaf l2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
+  <span class="leaf l3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
+  <span class="leaf l4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
+  <span class="firefly f1"></span><span class="firefly f2"></span><span class="firefly f3"></span>
+  <span class="firefly f4"></span><span class="firefly f5"></span><span class="firefly f6"></span>
+</div>
 <header class="site">
   <div class="wrap nav">
-    <a class="brand" href="index.html" aria-label="Bihua home">
-      <img src="assets/icon.png" alt="">
+    <a class="brand" href="index.html">
+      <img src="assets/icon-256.png" alt="">
       <div><strong>Bihua 筆畫</strong><span>Write it. Keep it.</span></div>
     </a>
     <nav class="links" aria-label="Primary">
-      <a href="method.html" aria-current="page">The method</a>
-      <a href="index.html#features">Features</a>
+      <a href="method.html" aria-current="page">How it works</a>
+      <a href="index.html#engines">Engines</a>
       <a href="index.html#screens">Screens</a>
       <a href="index.html#scripts">Scripts</a>
       <a href="index.html#download">Download</a>
     </nav>
     <div class="nav-actions">
+      <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">☰</button>
       <a class="icon-button" href="https://github.com/Shadowsx3/bihua" aria-label="Source on GitHub" title="Source on GitHub">
         <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.59 0 8.02c0 3.55 2.29 6.56 5.47 7.62.4.08.55-.17.55-.39 0-.19-.01-.83-.01-1.5-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .22.15.47.55.39A8.02 8.02 0 0 0 16 8.02C16 3.59 12.42 0 8 0Z"/></svg>
       </a>
-      <button class="icon-button" type="button" data-theme-toggle aria-label="Use dark theme">☾</button>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">Light</span>
+      </button>
       <a class="button small" href="index.html#download">Download</a>
     </div>
   </div>
 </header>
+<div class="mobile-menu" id="mobile-menu" data-menu hidden>
+  <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
+  <a href="method.html">How it works</a>
+  <a href="index.html#engines">Engines</a>
+  <a href="index.html#screens">Screens</a>
+  <a href="index.html#scripts">Scripts</a>
+  <a href="index.html#download">Download</a>
+  <a href="https://github.com/Shadowsx3/bihua">Source on GitHub</a>
+</div>
 
 <main>
   <div class="wrap article-hero">
-    <div class="kicker">The method</div>
-    <h1>Study the hand.<br>Trust the schedule.</h1>
-    <p class="lead">Bihua is built on a small set of claims: producing a character is different from recognising it; retrieval is more useful than re-reading; and a memory model should decide when a character returns, not a streak counter.</p>
+    <div class="kicker">Under the hood</div>
+    <h1>How Bihua reads your hand.</h1>
+    <p class="lead">And when it brings the character back. Two engines do the real work: FSRS-7 chooses the date, the ink checker reports what your hand produced. The rest of the app serves those jobs, including the places where it refuses to decide for you.</p>
     <div class="article-meta">
-      <span>17 min read</span>
-      <span>Applies to Simplified · Traditional · Japanese · Korean</span>
+      <span>14 min read</span>
+      <span>FSRS-7 · ML Kit Digital Ink · custom stroke comparison</span>
       <span>Version 1.0.1</span>
     </div>
   </div>
@@ -63,138 +86,146 @@
   <div class="wrap article-layout">
     <aside class="toc" aria-label="On this page">
       <strong>On this page</strong>
-      <a href="#unit">The unit</a>
-      <a href="#production">Production before recognition</a>
-      <a href="#loop">The lesson loop</a>
+      <a href="#loop">The loop</a>
+      <a href="#fsrs">FSRS-7</a>
+      <a href="#ink">The ink checker</a>
+      <a href="#write-first">Why write first</a>
       <a href="#guides">Fading guides</a>
-      <a href="#spacing">Spacing with FSRS-7</a>
-      <a href="#skills">Two skills, two tasks</a>
-      <a href="#errors">Errors are data</a>
-      <a href="#context">Context without clutter</a>
-      <a href="#ownership">Ownership and limits</a>
-      <a href="#use">Using Bihua well</a>
+      <a href="#tasks">Two tasks</a>
+      <a href="#content">Content choices</a>
+      <a href="#tradeoffs">Tradeoffs</a>
+      <a href="#use">Using it</a>
       <a href="#references">References</a>
     </aside>
 
     <article class="article" id="article">
-      <p class="lede">Most character apps begin with recognition: show a character, show a meaning, ask the learner to tap or swipe. Bihua begins somewhere else. It asks the hand to produce the character from a cue, then asks the learner to judge what actually appeared on the page.</p>
+      <p class="lede">I built Bihua because I could recognise characters I could not write. A word list would tell me I was right. A blank square told a different story. The app starts from that second answer.</p>
 
       <div class="callout">
-        <strong>The short version</strong>
-        <p>Write from memory → check the attempt → grade it yourself → let a memory model choose the next date. The guide fades, the answer stays hidden, and pronunciation is a separate task on a separate schedule.</p>
+        <strong>Two rules</strong>
+        <p>Do not show the character before the attempt. Do not let a recognition model choose the grade. Everything else follows from those two rules.</p>
       </div>
 
-      <h2 id="unit">1. The unit is the character</h2>
-      <p>Bihua is not a vocabulary deck with a writing exercise attached. The character is the scheduled object. Words are context; readings and meanings are cues. That choice keeps the review queue honest: the learner is always asked to produce a glyph, not merely to recognise a word in a list.</p>
-      <p>Characters are also shared across scripts. 日, 人, and 上 are the same glyph in Simplified, Traditional, and Japanese. Bihua can share one writing schedule for an identical glyph while keeping the reading and meaning for each course separate. Sharing is opt-in because some learners want each script to feel like its own project.</p>
-      <div class="callout">
-        <strong>Script purity</strong>
-        <p>Simplified and Traditional are separate courses. Simplified-only forms do not appear in Traditional, traditional-only forms do not appear in Simplified, and shared glyphs stay in both. Traditional words use CEDICT word-level pairs rather than mechanical character substitution.</p>
-      </div>
-
-      <h2 id="production">2. Production before recognition</h2>
-      <p>Recognition is not the same skill as production. Seeing 愛 and knowing it means “love” does not mean the hand can produce the strokes in the right order. Bihua therefore makes writing the default review and asks for the character before showing the answer.</p>
-      <p>This is a retrieval-first design. The learner generates a response, then receives feedback. The app does not reveal the target first and ask for a confidence rating; that would turn a production task into a recognition task with extra steps.</p>
-      <p>Handwriting also engages motor planning, spatial sequencing, and visual monitoring. Those are not decorative extras. They are part of what makes character production a distinct skill, and they are why the canvas is the largest object on the screen.</p>
-
-      <h2 id="loop">3. The lesson loop: meet, trace, recall</h2>
-      <p>A new character gets a short introduction, one guided trace, and then a recall attempt. Reviews skip the introduction and go straight to recall. The loop is deliberately short: the app is not trying to keep the learner in a lesson, it is trying to make the next review possible.</p>
+      <h2 id="loop">The loop</h2>
+      <p>A new character gets three screens. You meet it, trace it once, then write it from memory. A review skips the first two and starts at the blank square. The canvas is the work; the rest is cue and evidence.</p>
       <figure class="figure">
         <div class="frame">
           <div class="loop">
-            <div class="node"><b>Meet</b><span>shape · reading · meaning</span></div>
+            <div class="node"><b>Meet</b><span>shape, reading, meaning</span></div>
             <div class="arrow" aria-hidden="true">→</div>
-            <div class="node"><b>Trace</b><span>follow the reference once</span></div>
+            <div class="node"><b>Trace</b><span>one guided pass</span></div>
             <div class="arrow" aria-hidden="true">→</div>
-            <div class="node"><b>Recall</b><span>write from the cue</span></div>
+            <div class="node"><b>Recall</b><span>blank canvas</span></div>
           </div>
         </div>
-        <figcaption>The first encounter is a scaffold, not the assessment. The recall attempt is where the memory work happens.</figcaption>
+        <figcaption>The trace is a first pass, not the assessment. The recall attempt is the memory work.</figcaption>
       </figure>
-      <p>The trace step exists because a first attempt at an unfamiliar glyph is often a drawing exercise, not a retrieval exercise. One guided pass gives the hand a path to follow. After that, the guide fades and the learner has to generate the path.</p>
+      <p>The app does not keep you in the lesson after the recall. It records the grade you choose, schedules the next date, and moves on. Sessions stay short because short sessions are easier to repeat.</p>
 
-      <h2 id="guides">4. The guide fades</h2>
-      <p>A permanent trace is a crutch. Bihua starts with full strokes, moves to an outline, then to nothing, based on how many successful reviews the character has. The learner can always ask for the guide, but it is hidden by default during recall.</p>
+      <h2 id="fsrs">FSRS-7: the date</h2>
+      <p>Bihua runs its own FSRS-7 implementation, following the open-spaced-repetition formulas. There are no fixed intervals such as “1 day, 3 days, 7 days.”</p>
+      <p>Each card keeps three numbers:</p>
+      <ul>
+        <li><strong>Long-term stability</strong> — how long the memory is expected to survive on the long curve.</li>
+        <li><strong>Short-term stability</strong> — the same idea for same-day and next-day reviews.</li>
+        <li><strong>Difficulty</strong> — how hard this item tends to be for this learner.</li>
+      </ul>
+      <p>On every review the app estimates retrievability from those numbers and the elapsed time. It then solves for the interval at a 90% target retention, capped at 365 days. The solver is numerical because the combined forgetting curve does not have a clean inverse.</p>
+      <div class="callout">
+        <strong>The grade is the input</strong>
+        <p>Again, Hard, Good, Easy. The ink checker can suggest one, but it never submits. The scheduler only knows what you tell it. That is a feature: recognition is probabilistic, and the learner is the one who saw the attempt.</p>
+      </div>
+      <p>Same-day reviews use the short-term curve. A lapse lowers stability and raises difficulty; a success raises stability and adjusts difficulty. This is why pressing Again does not simply reset a box. It changes the model.</p>
+      <p>Vacation mode pauses reviews and new cards, then shifts due dates when it ends. The next seven days cap a session at ten cards. The pause is not free; FSRS is happiest without long gaps. The cap is there to make the return survivable.</p>
+
+      <h2 id="ink">The ink checker: what the hand did</h2>
+      <p>There are two layers, and they answer different questions.</p>
+      <div class="grid two" style="margin:22px 0">
+        <div class="card"><h3>1. What might this be?</h3><p>ML Kit Digital Ink runs on the device and returns candidate characters. The model is selected for the script and the target: zh-Hans, zh-Hant, ja, or ko. Korean Hanja routes to a Han model; Hangul routes to the Korean model.</p></div>
+        <div class="card"><h3>2. How close is it to the guide?</h3><p>Bihua compares the drawn strokes with the reference centerlines. It reports stroke count, average distance from the guide, reversed strokes, strokes out of order, missing or extra strokes, and the first correction worth trying.</p></div>
+      </div>
+      <p>The first layer is a downloaded local model. The second is deterministic code. Neither one is allowed to press the grade button.</p>
+      <figure class="figure">
+        <div class="frame">
+          <div class="split">
+            <div class="side"><b>Evidence</b><span>candidates · stroke count · shape score · order · reversals · start error</span></div>
+            <div class="side"><b>Decision</b><span>Again · Hard · Good · Easy — chosen by the learner</span></div>
+          </div>
+        </div>
+        <figcaption>Evidence is shown as a short, readable note. The grade remains a human decision.</figcaption>
+      </figure>
+      <p>When the attempt goes wrong, the correction pad can isolate one stroke and play it again. The learner can undo, clear, redraw, or reveal the guide. The point is to give the next attempt a target, not to produce a perfect score.</p>
+      <div class="callout warn">
+        <strong>What it cannot do</strong>
+        <p>Some rare glyphs have no open stroke guide. Recognition can be wrong, especially with unusual handwriting. Korean Hanja is not a separate recognition language, so it borrows a Han model. The app says when it has no evidence instead of inventing a verdict.</p>
+      </div>
+
+      <h2 id="write-first">Why write first</h2>
+      <p>Retrieval practice is the part of study that feels like work. Reading a character and nodding is recognition; producing it from a cue is retrieval. The second one leaves a different trace, especially when the response is a sequence of strokes rather than a tap.</p>
+      <p>Handwriting adds motor planning and spatial sequencing to the task. That does not make it magic, and it does not replace reading practice. It makes writing a separate skill that deserves its own evidence. Bihua keeps that evidence in front of you before it shows the answer.</p>
+      <blockquote>If the character is already on the screen, the hand is copying. Copying is useful on the first pass. It is not a review.</blockquote>
+
+      <h2 id="guides">Fading guides</h2>
+      <p>A guide that never goes away teaches tracing. Bihua starts with full strokes, moves to an outline after a few reviews, then hides the reference. The learner can always ask for it, but recall starts without it.</p>
       <figure class="figure">
         <div class="frame">
           <div class="fade-row">
             <div class="fade-step"><div class="glyph">愛</div><b>Full guide</b><span>new and early cards</span></div>
-            <div class="fade-step"><div class="glyph">愛</div><b>Outline</b><span>after a few reviews</span></div>
+            <div class="fade-step"><div class="glyph">愛</div><b>Outline</b><span>after the first passes</span></div>
             <div class="fade-step"><div class="glyph">愛</div><b>Hidden</b><span>mature cards</span></div>
           </div>
         </div>
-        <figcaption>The guide is a scaffold that is removed, not a permanent answer key.</figcaption>
+        <figcaption>The guide is a scaffold. The target is the blank square.</figcaption>
       </figure>
-      <p>Settings can force a guide mode, and the learner can reveal the guide during recall. The default is a fade because the goal is independent production, not perfect tracing.</p>
+      <p>The fade is tied to review count, not to a timer. A character you have written once does not need the same scaffold as one you have written ten times.</p>
 
-      <h2 id="spacing">5. Spacing with FSRS-7</h2>
-      <p>Each script has its own FSRS-7 schedule. FSRS is an open spaced-repetition model that estimates memory stability and difficulty and uses a target retrieval probability to choose the next interval. Bihua uses it as a practical scheduler, not as a promise about the mind.</p>
-      <p>In plain terms: a character that is easy to recall can wait longer; a character that is shaky comes back sooner. The learner’s grade is the input. The model handles the date. There is no streak to protect and no penalty for returning after a break.</p>
-      <div class="grid three" style="margin:28px 0">
-        <div class="card"><h3>Stability</h3><p>How long the memory is expected to last. Successful recall increases it; a lapse reduces it.</p></div>
-        <div class="card"><h3>Difficulty</h3><p>How hard this item tends to be for this learner. It changes the effect of a grade.</p></div>
-        <div class="card"><h3>Retrievability</h3><p>The estimated chance of recall at a given moment. The scheduler uses it to choose the next date.</p></div>
-      </div>
-      <p>Vacation mode pauses new cards and reviews, then shifts due dates by the pause when it ends. The next seven days use shorter sessions so a return does not become an overdue avalanche. This is a compromise, not a second scheduler.</p>
-
-      <h2 id="skills">6. Two skills, two tasks</h2>
-      <p>Writing and pronunciation are separate skills. Bihua keeps them separate instead of pretending one review can test both. Writing asks for the glyph. Pronunciation shows the character and asks for the reading. Either can appear in a review, depending on the learner’s settings and the card’s phase.</p>
+      <h2 id="tasks">Two tasks</h2>
+      <p>Writing and pronunciation are tested separately. A review asks for one skill, not a blended score. If you can write 愛 but cannot say it, the app should show that gap rather than average it away.</p>
       <figure class="figure">
         <div class="frame">
           <div class="split">
-            <div class="side"><b>Writing</b><span>cue → hand → glyph. The canvas and stroke feedback are the evidence.</span></div>
-            <div class="side"><b>Pronunciation</b><span>character → reading. The learner types pinyin, romaji, kana, or romanised eum/Hangul.</span></div>
+            <div class="side"><b>Writing</b><span>cue → canvas → ink evidence → grade</span></div>
+            <div class="side"><b>Pronunciation</b><span>character → typed reading → grade</span></div>
           </div>
         </div>
-        <figcaption>One review asks for one skill. The grade is still the learner’s judgement, with recognition as evidence only.</figcaption>
+        <figcaption>Pronunciation is optional. Writing is always part of a review.</figcaption>
       </figure>
-      <p>Separating the tasks avoids a common failure mode: a learner who can write 愛 but cannot say it, or can say it but cannot produce it, gets a single blended score that hides the gap. Here the gap is visible.</p>
+      <p>The pronunciation task accepts pinyin, romaji, kana, and romanised eum/Hangul. It checks the reading the learner typed and shows a suggestion. The learner still grades. Neither task schedules the other.</p>
 
-      <h2 id="errors">7. Errors are data, not failure</h2>
-      <p>After a recall attempt, Bihua compares the drawing to the stroke guide where one exists. It can surface stroke count, order, reversals, missing or extra strokes, and a focused correction loop for the stroke that went wrong. The learner can replay the reference, undo, clear, or redraw.</p>
-      <p>The app does not auto-grade the character and call it objective. Recognition is evidence; the learner still chooses Again, Hard, Good, or Easy. That choice is what enters FSRS. The point is not to punish imperfection, it is to make the next attempt more informed.</p>
-      <div class="callout warn">
-        <strong>A deliberate limit</strong>
-        <p>Handwriting recognition is probabilistic and stroke guides are not available for every glyph. Bihua shows what it can verify and leaves the final judgement with the learner. It never pretends a recognition score is a complete assessment.</p>
-      </div>
+      <h2 id="content">Content choices</h2>
+      <p>The character list is not a word list. Simplified and Traditional are separate courses, and shared glyphs stay in both. Traditional words come from CEDICT word-level pairs, because a character-by-character substitution produces forms like 頭發 instead of 頭髮.</p>
+      <p>Korean Hanja now comes from Unihan: the education list, readings, and definitions. The earlier Hanjaro source is gone because its site does not grant redistribution rights. That also means Korean word examples are absent. I kept the smaller licensed course.</p>
+      <p>Chinese stroke data comes from Make Me a Hanzi; Japanese data from KanjiVG; definitions and readings from CC-CEDICT, KANJIDIC2, and JMdict. The notices and full licences ship with the app and the repository.</p>
 
-      <h2 id="context">8. Context without clutter</h2>
-      <p>Meaning is a cue, not a paragraph. Character detail holds the reading, meaning, level, strokes, frequency, variants, radical, components, etymology, related families, words, notes, and history. The review screen keeps only what the current task needs.</p>
-      <p>Two transfer practices sit outside the schedule. Word writing asks the learner to produce a word’s characters from its reading and meaning. Paper check asks for a character on real paper, then reveals the target for comparison. Both are optional; neither creates a card or XP.</p>
-      <p>Phonetic and semantic families are a reference layer, not a second curriculum. When a family is useful, it explains why characters look or sound related. When it is noisy, it stays out of the review.</p>
+      <h2 id="tradeoffs">Tradeoffs</h2>
+      <p>There are no streaks, coins, leaderboards, or loss-framed reminders. Those mechanics can bring people back, but they also make a missed day feel like a failure. Bihua uses a due count and a calendar. If you stop, the schedule is still there when you return.</p>
+      <p>There is no server. Backups are files you choose to create. Sync is local Wi-Fi between two devices. The optional assistant downloads a model, but it is hidden by default and is not required for the study loop.</p>
+      <p>The biggest limitation is verification. The phone path is tested; a current tablet and S Pen pass is still pending. The content gate catches missing readings and dictionary artifacts, not every wrong nuance. The app is not a clinical intervention, and it does not promise literacy.</p>
 
-      <h2 id="ownership">9. Ownership, privacy, and limits</h2>
-      <p>Bihua has no account and no analytics. Progress lives in a local SQLite database. A full zip backup includes settings and progress; CSV export covers review history. Optional network access is limited to handwriting/model downloads and local Wi-Fi sync. The app does not upload study data to a server.</p>
-      <p>The method has limits. It is not a clinical intervention, a replacement for a teacher, or a guarantee of literacy. Stroke data is incomplete for some rare glyphs. The scheduler is a model, not a measurement of the mind. The app is designed to be honest about those limits instead of hiding them behind a score.</p>
-      <div class="callout">
-        <strong>What Bihua deliberately avoids</strong>
-        <p>Streaks, leaderboards, coins, loss-framed reminders, auto-revealed answers, and a single blended “mastery” score. None of them are required to learn a character, and several of them make it harder to return after a break.</p>
-      </div>
-
-      <h2 id="use">10. Using Bihua well</h2>
+      <h2 id="use">Using it</h2>
       <ul>
-        <li><strong>Write at a sustainable size.</strong> A wrist-sized canvas is usually better than a whole-arm one. Change the writing size in Settings if the square feels cramped.</li>
-        <li><strong>Grade honestly.</strong> “Good” is not a reward. If the character only came back after seeing the guide, that is useful information for the scheduler.</li>
-        <li><strong>Use the guide, then remove it.</strong> A hint is fine. Staying on the hint is not the goal.</li>
-        <li><strong>Keep sessions short.</strong> Ten focused cards are better than a long session that ends in frustration.</li>
-        <li><strong>Return after a break.</strong> Vacation mode and ease-back exist so a pause does not turn into a backlog.</li>
-        <li><strong>Use words and paper as transfer.</strong> They are not scheduled, so use them when they help, not as a second job.</li>
+        <li>Write at a size your wrist can control. Change the square in Settings if it feels cramped.</li>
+        <li>Grade the attempt you actually made. If you needed the guide, say so with the grade.</li>
+        <li>Use the guide when you need it, then put it away.</li>
+        <li>Keep sessions short enough to repeat tomorrow.</li>
+        <li>Use words and paper checks as transfer, not as a second job.</li>
+        <li>After a break, use vacation mode and the seven-day ease-back rather than fighting a backlog.</li>
       </ul>
 
-      <h2 id="references">References and further reading</h2>
+      <h2 id="references">References</h2>
       <ul class="references">
-        <li>Roediger, H. L., &amp; Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. <a href="https://doi.org/10.1111/j.1467-9280.2006.01693.x">doi:10.1111/j.1467-9280.2006.01693.x</a></li>
-        <li>Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. <a href="https://doi.org/10.1037/0033-2909.132.3.354">doi:10.1037/0033-2909.132.3.354</a></li>
+        <li>Roediger, H. L., &amp; Karpicke, J. D. (2006). Test-enhanced learning. <a href="https://doi.org/10.1111/j.1467-9280.2006.01693.x">doi:10.1111/j.1467-9280.2006.01693.x</a></li>
+        <li>Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). Distributed practice in verbal recall tasks. <a href="https://doi.org/10.1037/0033-2909.132.3.354">doi:10.1037/0033-2909.132.3.354</a></li>
         <li>Dunlosky, J., Rawson, K. A., Marsh, E. J., Nathan, M. J., &amp; Willingham, D. T. (2013). Improving students’ learning with effective learning techniques. <a href="https://doi.org/10.1177/1529100612453266">doi:10.1177/1529100612453266</a></li>
-        <li>Longcamp, M., Zerbato-Poudou, M. T., &amp; Velay, J. L. (2005). The influence of writing practice on letter recognition in preschool children. <a href="https://doi.org/10.1016/j.actpsy.2004.10.019">doi:10.1016/j.actpsy.2004.10.019</a></li>
-        <li>James, K. H., &amp; Engelhardt, L. (2012). The effects of handwriting experience on functional brain development in pre-literate children. <a href="https://doi.org/10.1016/j.tine.2012.08.001">doi:10.1016/j.tine.2012.08.001</a></li>
-        <li>Open Spaced Repetition. FSRS-7 and FSRS implementations. <a href="https://github.com/open-spaced-repetition">github.com/open-spaced-repetition</a></li>
+        <li>Longcamp, M., Zerbato-Poudou, M. T., &amp; Velay, J. L. (2005). Writing practice and letter recognition. <a href="https://doi.org/10.1016/j.actpsy.2004.10.019">doi:10.1016/j.actpsy.2004.10.019</a></li>
+        <li>James, K. H., &amp; Engelhardt, L. (2012). Handwriting experience and functional brain development. <a href="https://doi.org/10.1016/j.tine.2012.08.001">doi:10.1016/j.tine.2012.08.001</a></li>
+        <li>Open Spaced Repetition. FSRS implementations and algorithm notes. <a href="https://github.com/open-spaced-repetition">github.com/open-spaced-repetition</a></li>
       </ul>
-      <p class="small">These references inform the design; they are not claims that Bihua itself has been validated in a controlled trial.</p>
+      <p class="small">These papers and projects inform the design. They are not evidence that Bihua itself has been tested in a controlled trial.</p>
 
       <div class="article-cta">
-        <h2 style="font-size:clamp(26px,3vw,36px)">Try the method.</h2>
-        <p class="lead">Bihua 1.0.1 is available as a signed Android release. The source is MIT-licensed; the content keeps its upstream terms.</p>
+        <h2 style="font-size:clamp(26px,3vw,36px)">Try the two engines.</h2>
+        <p class="lead">Bihua 1.0.1 is a signed Android release. The code is MIT; the content keeps its upstream terms.</p>
         <div class="hero-actions">
           <a class="button" href="index.html#download">Download Bihua</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">View source</a>
@@ -210,7 +241,7 @@
     <div class="footer-links">
       <a href="index.html">Home</a>
       <a href="https://github.com/Shadowsx3/bihua">Source</a>
-      <a href="https://github.com/Shadowsx3/bihua/blob/main/PRIVACY.md">Privacy</a>
+      <a href="privacy.html">Privacy</a>
       <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Notices</a>
       <a href="https://github.com/Shadowsx3/bihua/blob/main/LICENSE">MIT licence</a>
     </div>

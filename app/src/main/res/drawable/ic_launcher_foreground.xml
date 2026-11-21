@@ -1,30 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- One confident calligraphy sweep. -->
-    <path
-        android:fillColor="#FF2B2A3A"
-        android:pathData="M24,63 C35,54 48,50 60,53 C68,55 76,58 84,54 C82,62 73,69 60,70 C47,71 34,68 24,63 Z" />
-    <path
-        android:strokeColor="#55FFFFFF"
-        android:strokeWidth="2.4"
-        android:strokeLineCap="round"
-        android:pathData="M33,60 C43,54 54,52 65,55" />
-    <!-- A mint ink drop, placed like a little companion. -->
-    <path
-        android:fillColor="#FF7FD8BE"
-        android:pathData="M73,25 C78,33 84,40 84,46 C84,51 80,55 75,55 C70,55 66,51 66,46 C66,40 69,32 73,25 Z" />
-    <path
-        android:fillColor="#66FFFFFF"
-        android:pathData="M72,35 C74,39 77,43 77,46 C77,48 76,50 74,50 C72,50 71,48 71,46 C71,43 71,39 72,35 Z" />
-    <!-- Two quiet sparkles. -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M31,33 L33,39 L39,41 L33,43 L31,49 L29,43 L23,41 L29,39 Z" />
-    <path
-        android:fillColor="#CCFFFFFF"
-        android:pathData="M88,66 L89,70 L93,71 L89,72 L88,76 L87,72 L83,71 L87,70 Z" />
+    <group
+        android:rotation="-18"
+        android:pivotX="54"
+        android:pivotY="54">
+    <group
+        android:translateX="4.8"
+        android:translateY="4.8"
+        android:scaleX="0.096"
+        android:scaleY="0.096">
+        <path android:pathData="M188,735 C286,804 428,814 568,758 C684,712 776,624 838,506 C850,482 856,458 856,438 C804,486 742,520 670,548 C542,598 402,636 292,676 C244,694 208,714 188,735 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="220"
+                    android:startY="760"
+                    android:endX="820"
+                    android:endY="300"
+                    android:startColor="#FFF0D995"
+                    android:centerColor="#FFFFF8E4"
+                    android:endColor="#FFF4C96A" />
+            </aapt:attr>
+        </path>
+        <path
+            android:fillColor="#38FFFFFF"
+            android:pathData="M242,748 C354,792 500,780 626,714 C630,724 618,746 590,760 C460,824 316,812 240,770 C234,760 236,754 242,748 Z" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M300,716 C416,706 548,662 664,592 C716,560 760,518 796,472"
+            android:strokeColor="#FF5DBB8A"
+            android:strokeWidth="17"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M506,674 C500,636 504,596 520,558"
+            android:strokeColor="#FF79D5A0"
+            android:strokeWidth="10"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M624,606 C636,572 654,542 680,516"
+            android:strokeColor="#FF79D5A0"
+            android:strokeWidth="8"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#FFF3C85A"
+            android:pathData="M272,320 C288.6,320 302,333.4 302,350 C302,366.6 288.6,380 272,380 C255.4,380 242,366.6 242,350 C242,333.4 255.4,320 272,320 Z" />
+    </group>
+    </group>
 </vector>

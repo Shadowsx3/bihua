@@ -500,9 +500,12 @@ fun BihuaApp(store: SettingsStore) {
     }
 
     androidx.activity.compose.BackHandler(
-        enabled = compareEntries.isNotEmpty() || drillOpen || inSession || tab != Tab.HOME,
+        enabled = wordPractice != null || paperEntries.isNotEmpty() ||
+            compareEntries.isNotEmpty() || drillOpen || inSession || tab != Tab.HOME,
     ) {
         when {
+            wordPractice != null -> wordPractice = null
+            paperEntries.isNotEmpty() -> paperEntries = emptyList()
             compareEntries.isNotEmpty() -> compareEntries = emptyList()
             drillOpen -> drillOpen = false
             inSession -> {
@@ -638,11 +641,12 @@ fun BihuaApp(store: SettingsStore) {
                         }
                     },
                     onClose = {
+                        // Closing leaves the saved session in place. Home offers
+                        // Resume or Discard, so a mistimed back press does not
+                        // throw away the queue.
                         inSession = false
                         activeResume = null
                         sessionCharacters = emptyMap()
-                        sessionStore.clear()
-                        resumableSession = null
                         tab = Tab.HOME
                     },
                     xpEarned = sessionXp,
