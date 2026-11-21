@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- One confident calligraphy sweep. -->
+    <path
+        android:fillColor="#FF2B2A3A"
+        android:pathData="M24,63 C35,54 48,50 60,53 C68,55 76,58 84,54 C82,62 73,69 60,70 C47,71 34,68 24,63 Z" />
+    <path
+        android:strokeColor="#55FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M33,60 C43,54 54,52 65,55" />
+    <!-- A mint ink drop, placed like a little companion. -->
+    <path
+        android:fillColor="#FF7FD8BE"
+        android:pathData="M73,25 C78,33 84,40 84,46 C84,51 80,55 75,55 C70,55 66,51 66,46 C66,40 69,32 73,25 Z" />
+    <path
+        android:fillColor="#66FFFFFF"
+        android:pathData="M72,35 C74,39 77,43 77,46 C77,48 76,50 74,50 C72,50 71,48 71,46 C71,43 71,39 72,35 Z" />
+    <!-- Two quiet sparkles. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M31,33 L33,39 L39,41 L33,43 L31,49 L29,43 L23,41 L29,39 Z" />
+    <path
+        android:fillColor="#CCFFFFFF"
+        android:pathData="M88,66 L89,70 L93,71 L89,72 L88,76 L87,72 L83,71 L87,70 Z" />
+</vector>

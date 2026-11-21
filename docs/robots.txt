@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://shadowsx3.github.io/bihua/sitemap.xml

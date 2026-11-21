@@ -1,0 +1,100 @@
+package com.bassmd.bihua.settings
+
+import android.content.Context
+import android.util.Base64
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.bassmd.bihua.backup.BackupBundle
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
+import java.io.File
+
+private val Context.preferences: DataStore<Preferences> by preferencesDataStore(name = "bihua_prefs")
+
+/**
+ * Settings and profile, stored as JSON in DataStore. The stored shape is the same
+ * shape the backup file uses, so an export is a faithful copy of what's on the device.
+ */
+class SettingsStore(private val context: Context) {
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
+    private val settingsKey = stringPreferencesKey("settings_json")
+    private val profileKey = stringPreferencesKey("profile_json")
+
+    val settings: Flow<AppSettings> = context.preferences.data.map { prefs ->
+        decodeOr(prefs[settingsKey], AppSettings())
+    }
+
+    val profile: Flow<UserProfile> = context.preferences.data.map { prefs ->
+        decodeOr(prefs[profileKey], UserProfile())
+    }
+
+    /** The settings value. The language is English until the picker exists. */
+    suspend fun currentSettings(): AppSettings = settings.first()
+
+    suspend fun currentProfile(): UserProfile = profile.first()
+
+    suspend fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        context.preferences.edit { prefs ->
+            val next = transform(decodeOr(prefs[settingsKey], AppSettings()))
+            prefs[settingsKey] = json.encodeToString(AppSettings.serializer(), next)
+        }
+    }
+
+    suspend fun updateProfile(transform: (UserProfile) -> UserProfile) {
+        context.preferences.edit { prefs ->
+            val next = transform(decodeOr(prefs[profileKey], UserProfile()))
+            prefs[profileKey] = json.encodeToString(UserProfile.serializer(), next)
+        }
+    }
+
+    /** Everything a backup needs, read in one pass. */
+    suspend fun snapshot(exportedAtEpochMs: Long): BackupBundle {
+        val profile = currentProfile()
+        val photo = profile.photoPath
+            ?.let { File(it) }
+            ?.takeIf { it.isFile }
+            ?.readBytes()
+            ?.let { Base64.encodeToString(it, Base64.NO_WRAP) }
+        return BackupBundle(
+            exportedAtEpochMs = exportedAtEpochMs,
+            profile = profile,
+            settings = currentSettings(),
+            photoBase64 = photo,
+        )
+    }
+
+    /** Replaces the profile and settings with the backup's. Values are clamped to valid ranges. */
+    suspend fun restore(bundle: BackupBundle) {
+        val restoredProfile = bundle.photoBase64?.let { encoded ->
+            runCatching {
+                val directory = File(context.filesDir, "profile").apply { mkdirs() }
+                val target = File(directory, "avatar-restored.jpg")
+                target.writeBytes(Base64.decode(encoded, Base64.NO_WRAP))
+                bundle.profile.copy(photoPath = target.absolutePath)
+            }.getOrElse { bundle.profile.copy(photoPath = null) }
+        } ?: bundle.profile.copy(photoPath = null)
+        context.preferences.edit { prefs ->
+            prefs[profileKey] = json.encodeToString(UserProfile.serializer(), restoredProfile)
+            prefs[settingsKey] = json.encodeToString(
+                AppSettings.serializer(),
+                bundle.settings.withDailyNewGoal(bundle.settings.dailyNewGoal),
+            )
+        }
+    }
+
+    private fun decodeOr(text: String?, default: AppSettings): AppSettings =
+        text?.let { runCatching { json.decodeFromString(AppSettings.serializer(), it) }.getOrNull() } ?: default
+
+    private fun decodeOr(text: String?, default: UserProfile): UserProfile =
+        text?.let { runCatching { json.decodeFromString(UserProfile.serializer(), it) }.getOrNull() } ?: default
+}

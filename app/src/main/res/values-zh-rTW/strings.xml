@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">筆畫</string>
+
+    <string name="tab_learn">學習</string>
+    <string name="tab_practice">練習</string>
+    <string name="tab_settings">設定</string>
+
+    <string name="mode_simplified">簡體</string>
+    <string name="mode_traditional">繁體</string>
+    <string name="mode_japanese">日語</string>
+    <string name="mode_korean">韓語</string>
+
+    <string name="learn_title">學習</string>
+    <string name="learn_start">開始學習</string>
+    <string name="learn_close">關閉</string>
+    <string name="learn_step_introduce">認識</string>
+    <string name="learn_step_trace">描紅</string>
+    <string name="learn_step_recall">默寫</string>
+    <string name="learn_next">下一個</string>
+    <string name="learn_show_answer">顯示答案</string>
+    <string name="learn_got_it">會了</string>
+    <string name="learn_not_yet">還不會</string>
+    <string name="learn_left">剩餘：%1$d</string>
+    <string name="learn_meaning">意思</string>
+    <string name="learn_reading">讀音</string>
+    <string name="learn_trace_no_guide">筆順提示將在匯入字庫後提供。現在請憑記憶描寫。</string>
+    <string name="learn_recall_self_check">手寫辨識準備好之前，請自己判斷。</string>
+    <string name="learn_done_title">本輪完成</string>
+    <string name="learn_done_body">你標記了 %2$d 個中的 %1$d 個為已學會。</string>
+    <string name="learn_sample_note">範例字元。完整字庫將在匯入後提供。</string>
+
+    <string name="practice_title">練習</string>
+    <string name="practice_hint">自由練習，不會影響你的複習計畫。</string>
+    <string name="undo">復原一筆</string>
+    <string name="clear">清空</string>
+
+    <string name="settings_title">設定</string>
+    <string name="section_language">語言</string>
+    <string name="section_profile">個人資料</string>
+    <string name="profile_name">暱稱</string>
+    <string name="section_study">學習</string>
+    <string name="daily_goal">每天新學字數</string>
+    <string name="daily_goal_hint">設為 0 會暫停新字，複習照常進行。</string>
+    <string name="section_writing">書寫</string>
+    <string name="ink_width">筆跡粗細</string>
+    <string name="ink_thin">細</string>
+    <string name="ink_medium">中</string>
+    <string name="ink_bold">粗</string>
+    <string name="show_grid">顯示田字格</string>
+    <string name="section_display">顯示</string>
+    <string name="reduce_motion">減少動態效果</string>
+    <string name="show_counters">學習時顯示計數</string>
+    <string name="orientation">螢幕方向</string>
+    <string name="orient_auto">跟隨裝置</string>
+    <string name="orient_landscape">橫向</string>
+    <string name="orient_portrait">直向</string>
+    <string name="section_data">我的資料</string>
+    <string name="data_hint">匯出備份檔，或從其他裝置還原。備份只保存在你的裝置上，直到你自己分享。</string>
+    <string name="export_backup">匯出備份</string>
+    <string name="import_backup">匯入備份</string>
+    <string name="import_confirm_title">取代設定？</string>
+    <string name="import_confirm_body">此備份會取代本裝置上的個人資料與設定。</string>
+    <string name="import_replace">取代</string>
+    <string name="cancel">取消</string>
+    <string name="export_done">備份已儲存。</string>
+    <string name="import_done">備份已還原。</string>
+    <string name="export_error">無法儲存備份。請釋放空間後重試。</string>
+    <string name="section_about">關於</string>
+    <string name="version">版本 %1$s</string>
+    <string name="grade_again">重來</string>
+    <string name="grade_hard">困難</string>
+    <string name="grade_good">良好</string>
+    <string name="grade_easy">簡單</string>
+    <string name="your_grade">你的評分</string>
+    <string name="recommend_pending">手寫辨識準備好後會顯示系統建議。評分由你決定。</string>
+    <string name="recommend_suggests">建議：%1$s</string>
+    <string name="draw_again">重新書寫</string>
+</resources>

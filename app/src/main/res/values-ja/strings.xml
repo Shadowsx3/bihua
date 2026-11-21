@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">筆画</string>
+
+    <string name="tab_learn">学習</string>
+    <string name="tab_practice">練習</string>
+    <string name="tab_settings">設定</string>
+
+    <string name="mode_simplified">簡体字</string>
+    <string name="mode_traditional">繁体字</string>
+    <string name="mode_japanese">日本語</string>
+    <string name="mode_korean">韓国語</string>
+
+    <string name="learn_title">学習</string>
+    <string name="learn_start">学習を始める</string>
+    <string name="learn_close">閉じる</string>
+    <string name="learn_step_introduce">紹介</string>
+    <string name="learn_step_trace">なぞり書き</string>
+    <string name="learn_step_recall">書き取り</string>
+    <string name="learn_next">次へ</string>
+    <string name="learn_show_answer">答えを見る</string>
+    <string name="learn_got_it">覚えた</string>
+    <string name="learn_not_yet">まだ</string>
+    <string name="learn_left">残り：%1$d</string>
+    <string name="learn_meaning">意味</string>
+    <string name="learn_reading">読み</string>
+    <string name="learn_trace_no_guide">筆順のガイドは内容の取り込み後に表示されます。今は記憶を頼りになぞってください。</string>
+    <string name="learn_recall_self_check">手書き認識の準備ができるまでは、自分で判定します。</string>
+    <string name="learn_done_title">このセッション完了</string>
+    <string name="learn_done_body">%2$d 個のうち %1$d 個を覚えたと記録しました。</string>
+    <string name="learn_sample_note">サンプルの文字です。全体は内容の取り込み後に表示されます。</string>
+
+    <string name="practice_title">練習</string>
+    <string name="practice_hint">自由に練習できます。復習の予定は変わりません。</string>
+    <string name="undo">一画取り消す</string>
+    <string name="clear">消去</string>
+
+    <string name="settings_title">設定</string>
+    <string name="section_language">言語</string>
+    <string name="section_profile">プロフィール</string>
+    <string name="profile_name">表示名</string>
+    <string name="section_study">学習</string>
+    <string name="daily_goal">1日の新しい文字数</string>
+    <string name="daily_goal_hint">0にすると新しい文字は止まります。復習は続きます。</string>
+    <string name="section_writing">書き方</string>
+    <string name="ink_width">線の太さ</string>
+    <string name="ink_thin">細</string>
+    <string name="ink_medium">中</string>
+    <string name="ink_bold">太</string>
+    <string name="show_grid">田字格を表示</string>
+    <string name="section_display">表示</string>
+    <string name="reduce_motion">アニメーションを減らす</string>
+    <string name="show_counters">学習中に件数を表示</string>
+    <string name="orientation">画面の向き</string>
+    <string name="orient_auto">端末に従う</string>
+    <string name="orient_landscape">横向き</string>
+    <string name="orient_portrait">縦向き</string>
+    <string name="section_data">データ</string>
+    <string name="data_hint">バックアップファイルを書き出したり、別の端末から復元したりできます。共有するまで端末内に保存されます。</string>
+    <string name="export_backup">バックアップを書き出す</string>
+    <string name="import_backup">バックアップを読み込む</string>
+    <string name="import_confirm_title">設定を置き換えますか？</string>
+    <string name="import_confirm_body">このバックアップで、この端末のプロフィールと設定を置き換えます。</string>
+    <string name="import_replace">置き換える</string>
+    <string name="cancel">キャンセル</string>
+    <string name="export_done">バックアップを保存しました。</string>
+    <string name="import_done">バックアップを復元しました。</string>
+    <string name="export_error">バックアップを保存できませんでした。空き容量を確認して、もう一度お試しください。</string>
+    <string name="section_about">このアプリについて</string>
+    <string name="version">バージョン %1$s</string>
+    <string name="grade_again">もう一度</string>
+    <string name="grade_hard">難しい</string>
+    <string name="grade_good">良い</string>
+    <string name="grade_easy">簡単</string>
+    <string name="your_grade">あなたの評価</string>
+    <string name="recommend_pending">手書き認識の準備ができると提案が表示されます。評価はあなたが決めます。</string>
+    <string name="recommend_suggests">提案：%1$s</string>
+    <string name="draw_again">書き直す</string>
+</resources>

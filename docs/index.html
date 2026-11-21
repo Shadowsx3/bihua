@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bihua 筆畫 — handwriting-first character study</title>
+<meta name="description" content="Bihua is an open-source, offline Android app for handwriting Simplified Chinese, Traditional Chinese, Japanese, and Korean Hanja. FSRS scheduling, stroke feedback, no account.">
+<meta name="theme-color" content="#fbf9ef">
+<meta property="og:title" content="Bihua 筆畫 — handwriting-first character study">
+<meta property="og:description" content="Draw every character. Schedule every review. Keep your data. Open-source Android app for Chinese, Japanese, and Korean Hanja.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/home-dark.png">
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<script>
+  try {
+    const saved = localStorage.getItem("bihua-theme");
+    const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  } catch (_) {}
+</script>
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <div class="wrap nav">
+    <a class="brand" href="index.html" aria-label="Bihua home">
+      <img src="assets/icon.png" alt="">
+      <div><strong>Bihua 筆畫</strong><span>Write it. Keep it.</span></div>
+    </a>
+    <nav class="links" aria-label="Primary">
+      <a href="method.html">The method</a>
+      <a href="#features">Features</a>
+      <a href="#screens">Screens</a>
+      <a href="#scripts">Scripts</a>
+      <a href="#download">Download</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="icon-button" href="https://github.com/Shadowsx3/bihua" aria-label="Source on GitHub" title="Source on GitHub">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.59 0 8.02c0 3.55 2.29 6.56 5.47 7.62.4.08.55-.17.55-.39 0-.19-.01-.83-.01-1.5-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .22.15.47.55.39A8.02 8.02 0 0 0 16 8.02C16 3.59 12.42 0 8 0Z"/></svg>
+      </a>
+      <button class="icon-button" type="button" data-theme-toggle aria-label="Use dark theme">☾</button>
+      <a class="button small" href="#download">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap hero">
+    <div class="reveal">
+      <div class="kicker">Open source · Android · offline-first</div>
+      <h1>Write the character.<br>Keep the <em>character</em>.</h1>
+      <p class="lead">Bihua is a handwriting-first study app for Simplified and Traditional Chinese, Japanese, and Korean Hanja. Draw every character, schedule every review with FSRS, and keep your data on your device.</p>
+      <div class="hero-actions">
+        <a class="button" href="#download">Download 1.0.1 <span aria-hidden="true">↓</span></a>
+        <a class="button secondary" href="method.html">Read the method <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-meta">
+        <span><i class="dot"></i>No account</span>
+        <span><i class="dot"></i>No analytics</span>
+        <span><i class="dot"></i>MIT-licensed code</span>
+        <span><i class="dot"></i>Android 10+ · arm64</span>
+      </div>
+    </div>
+    <div class="phone-stage reveal">
+      <div class="phone"><img src="assets/home-dark.png" alt="Bihua home screen in dark mode, showing a daily review and study calendar"></div>
+      <div class="float one"><span class="mini">◷</span><div><b>FSRS-7</b><span>memory-based scheduling</span></div></div>
+      <div class="float two"><span class="mini">筆</span><div><b>Stroke feedback</b><span>order · shape · correction</span></div></div>
+    </div>
+  </div>
+
+  <section id="features" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">The premise</div>
+      <h2>Not a flashcard app with a canvas bolted on.</h2>
+      <p class="lead">Bihua treats handwriting as the primary skill, not an optional extra. Reading is a separate, deliberate task. The app is built around what the hand can produce, not what a recognition model guesses.</p>
+    </div>
+    <div class="grid three">
+      <article class="card pillar reveal">
+        <div class="icon">✍️</div>
+        <h3>The hand is the interface</h3>
+        <p>Every review asks for production. The guide fades, the answer stays hidden, and the learner chooses the grade after checking their own attempt.</p>
+      </article>
+      <article class="card pillar reveal">
+        <div class="icon">◷</div>
+        <h3>The schedule is earned</h3>
+        <p>FSRS-7 schedules each script from memory stability and difficulty. There are no streaks, coins, or artificial pressure to return.</p>
+      </article>
+      <article class="card pillar reveal">
+        <div class="icon">⌂</div>
+        <h3>The data stays home</h3>
+        <p>Progress, notes, and history live on the device. Export a complete zip backup when you want one. No account, no cloud, no uploads.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="method-band reveal">
+      <div class="kicker">The method</div>
+      <h2 style="max-width:760px">Retrieval, spacing, and the hand.</h2>
+      <p class="lead" style="max-width:660px">The app is opinionated: write from memory, fade the guide, separate writing from pronunciation, and let memory — not a streak — decide when a character returns.</p>
+      <div class="hero-actions">
+        <a class="button" href="method.html">Read the full methodology <span aria-hidden="true">→</span></a>
+        <a class="button secondary" href="#download">Get the app</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Inside the app</div>
+      <h2>Quiet screens. Real work.</h2>
+      <p class="lead">Current phone screenshots, in both palettes. The canvas stays the largest object on the screen.</p>
+    </div>
+    <div class="screens">
+      <figure class="reveal"><img src="assets/characters-dark.png" alt="Character browser with filters"><figcaption>Browse and filter every script</figcaption></figure>
+      <figure class="reveal"><img src="assets/detail-dark.png" alt="Character detail with reading and meaning"><figcaption>One character, full context</figcaption></figure>
+      <figure class="reveal"><img src="assets/practice-dark.png" alt="Handwriting practice with stroke guide"><figcaption>Practice with the real guide</figcaption></figure>
+      <figure class="reveal"><img src="assets/word-dark.png" alt="Word practice with hidden character slots"><figcaption>Write a word from a cue</figcaption></figure>
+    </div>
+    <div class="grid two" style="margin-top:18px">
+      <figure class="reveal" style="margin:0;background:var(--night-2);border-radius:24px;padding:7px;box-shadow:var(--shadow-strong)"><img src="assets/family-dark.png" alt="Related character family" style="display:block;width:100%;border-radius:18px"><figcaption style="color:var(--night-soft);font-size:12px;padding:10px 8px 6px">Phonetic and semantic families</figcaption></figure>
+      <figure class="reveal" style="margin:0;background:var(--night-2);border-radius:24px;padding:7px;box-shadow:var(--shadow-strong)"><img src="assets/home-light.png" alt="Bihua home in light mode" style="display:block;width:100%;border-radius:18px"><figcaption style="color:var(--night-soft);font-size:12px;padding:10px 8px 6px">Warm paper by day · forest night by choice</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="scripts" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Four scripts</div>
+      <h2>Separate courses. Honest content.</h2>
+      <p class="lead">Shared glyphs stay shared; simplified-only and traditional-only forms do not leak into the wrong course. Traditional words use CEDICT word-level pairs, not mechanical substitution.</p>
+    </div>
+    <div class="scripts">
+      <div class="script reveal"><b>简</b><strong>Simplified</strong><span>3,180 characters</span></div>
+      <div class="script reveal"><b>繁</b><strong>Traditional</strong><span>3,163 characters</span></div>
+      <div class="script reveal"><b>日</b><strong>Japanese</strong><span>2,286 characters</span></div>
+      <div class="script reveal"><b>韓</b><strong>Korean Hanja</strong><span>2,239 characters</span></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Open data</div>
+      <h2>Built on sources you can inspect.</h2>
+      <p class="lead">The content database is a compilation of open datasets. The app code is MIT-licensed; the data keeps its upstream terms.</p>
+    </div>
+    <div class="license-chips reveal">
+      <span class="chip">Gushi HSK 3.0 · CC BY-SA 4.0</span>
+      <span class="chip">ivankra/hsk30 · MIT</span>
+      <span class="chip">Make Me a Hanzi · Arphic / LGPL</span>
+      <span class="chip">KanjiVG · CC BY-SA 3.0</span>
+      <span class="chip">KANJIDIC2 / JMdict · EDRDG</span>
+      <span class="chip">CC-CEDICT · CC BY-SA 4.0</span>
+      <span class="chip">Unihan · Unicode License V3</span>
+    </div>
+    <p class="small reveal" style="margin-top:16px">Hanjaro data is not included. Its site grants no redistribution rights; the Korean course uses Unihan only. Full notices are in the <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">repository notices</a> and inside the app.</p>
+  </section>
+
+  <section id="download" class="wrap">
+    <div class="download-card reveal">
+      <div>
+        <div class="kicker">Private beta · public source</div>
+        <h2>Bihua 1.0.1</h2>
+        <p>Signed release for Android 10+ on arm64. Install it, write a few characters, and keep your progress local.</p>
+        <div class="hero-actions">
+          <a class="button" href="https://github.com/Shadowsx3/bihua/releases/download/v1.0.1/bihua-1.0.1.apk" download>Download APK</a>
+          <a class="button secondary" href="https://github.com/Shadowsx3/bihua">View source</a>
+        </div>
+        <p class="small" style="margin-top:16px">APK · signed release · 64 MB · content version 19 · no account required</p>
+      </div>
+      <div class="download-side">
+        <p class="small" style="margin-top:0">SHA-256</p>
+        <code>c00e51bfad379d9611762ccfd4fa52612c03f022a563a7f085b60ece6bac75d8</code>
+        <p class="small" style="margin:14px 0 0"><a href="download/SHA256SUMS.txt">Download checksum file</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap row">
+    <div><strong>Bihua 筆畫</strong> · open-source handwriting study</div>
+    <div class="footer-links">
+      <a href="method.html">Method</a>
+      <a href="https://github.com/Shadowsx3/bihua">Source</a>
+      <a href="https://github.com/Shadowsx3/bihua/blob/main/PRIVACY.md">Privacy</a>
+      <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Notices</a>
+      <a href="https://github.com/Shadowsx3/bihua/blob/main/LICENSE">MIT licence</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

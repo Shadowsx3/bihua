@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bihua</string>
+
+    <string name="tab_learn">Learn</string>
+    <string name="tab_practice">Practice</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="mode_simplified">Simplified</string>
+    <string name="mode_traditional">Traditional</string>
+    <string name="mode_japanese">Japanese</string>
+    <string name="mode_korean">Korean</string>
+
+    <string name="learn_title">Learn</string>
+    <string name="learn_start">Start learning</string>
+    <string name="learn_close">Close</string>
+    <string name="learn_step_introduce">Introduce</string>
+    <string name="learn_step_trace">Trace</string>
+    <string name="learn_step_recall">Recall</string>
+    <string name="learn_next">Next</string>
+    <string name="learn_show_answer">Show answer</string>
+    <string name="learn_got_it">Got it</string>
+    <string name="learn_not_yet">Not yet</string>
+    <string name="learn_left">Left: %1$d</string>
+    <string name="learn_meaning">Meaning</string>
+    <string name="learn_reading">Reading</string>
+    <string name="learn_trace_no_guide">The stroke guide arrives with the content import. For now, trace from memory.</string>
+    <string name="learn_recall_self_check">Self-check until handwriting recognition is ready.</string>
+    <string name="learn_done_title">Session done</string>
+    <string name="learn_done_body">You marked %1$d of %2$d as learned.</string>
+    <string name="learn_sample_note">Sample characters. The full set arrives with the content import.</string>
+
+    <string name="practice_title">Practice</string>
+    <string name="practice_hint">Free practice. Nothing here changes your schedule.</string>
+    <string name="undo">Undo stroke</string>
+    <string name="clear">Clear</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="section_language">Language</string>
+    <string name="section_profile">Profile</string>
+    <string name="profile_name">Display name</string>
+    <string name="section_study">Study</string>
+    <string name="daily_goal">New characters per day</string>
+    <string name="daily_goal_hint">0 pauses new characters. Reviews continue.</string>
+    <string name="section_writing">Writing</string>
+    <string name="ink_width">Ink width</string>
+    <string name="ink_thin">Thin</string>
+    <string name="ink_medium">Medium</string>
+    <string name="ink_bold">Bold</string>
+    <string name="show_grid">Show writing grid</string>
+    <string name="section_display">Display</string>
+    <string name="reduce_motion">Reduce motion</string>
+    <string name="show_counters">Show counters while studying</string>
+    <string name="orientation">Orientation</string>
+    <string name="orient_auto">Follow device</string>
+    <string name="orient_landscape">Landscape</string>
+    <string name="orient_portrait">Portrait</string>
+    <string name="section_data">Your data</string>
+    <string name="data_hint">Export a backup file, or restore one from another device. Backups stay on your device until you share them.</string>
+    <string name="export_backup">Export backup</string>
+    <string name="import_backup">Import backup</string>
+    <string name="import_confirm_title">Replace your settings?</string>
+    <string name="import_confirm_body">This backup replaces your profile and settings on this device.</string>
+    <string name="import_replace">Replace</string>
+    <string name="cancel">Cancel</string>
+    <string name="export_done">Backup saved.</string>
+    <string name="import_done">Backup restored.</string>
+    <string name="export_error">Could not save the backup. Free up space and try again.</string>
+    <string name="section_about">About</string>
+    <string name="version">Version %1$s</string>
+    <string name="grade_again">Again</string>
+    <string name="grade_hard">Hard</string>
+    <string name="grade_good">Good</string>
+    <string name="grade_easy">Easy</string>
+    <string name="your_grade">Your grade</string>
+    <string name="recommend_pending">A suggestion appears once handwriting recognition is ready. You always choose the grade.</string>
+    <string name="recommend_suggests">Suggested: %1$s</string>
+    <string name="draw_again">Draw again</string>
+</resources>

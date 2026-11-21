@@ -1,0 +1,36 @@
+# Gradle and Android build output
+.gradle/
+build/
+*/build/
+.idea/
+*.iml
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing and secrets. Never commit keystores or passwords.
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Content datasets are generated locally by the import tool and checked in only as checksums
+# (see docs in the plan folder). Uncomment when the content pipeline lands.
+# app/src/main/assets/bihua_content.db
+
+# Downloaded open datasets. Recreate with tools/fetch-content.sh; the manifest is tracked.
+tools/data/raw/
+tools/data/derived/
+
+.DS_Store
+
+# Kotlin incremental build state and compiler error logs
+.kotlin/
+
+# Release artefacts for the public site are built locally and attached to the
+# public site repository, not committed to the private source repository.
+docs/download/*.apk
+
+# Local device screenshots and scratch captures
+screenshots/
