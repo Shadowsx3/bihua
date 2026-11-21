@@ -482,3 +482,7 @@ body.menu-open { overflow: hidden; }
   .theme-toggle { width: 34px; height: 34px; padding: 0; justify-content: center; }
   .theme-toggle .theme-label { display: none; }
 }
+.article table { width: 100%; border-collapse: collapse; margin: 22px 0 28px; font-size: 14px; }
+.article th, .article td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.article th { color: var(--ink-2); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.article td { color: color-mix(in srgb, var(--ink) 88%, var(--ink-2) 12%); }
