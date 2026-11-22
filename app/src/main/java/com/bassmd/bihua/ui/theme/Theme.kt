@@ -13,9 +13,9 @@ import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.settings.ThemeMode
 
 private val LightColors = lightColorScheme(
-    primary = Sky,
-    onPrimary = LightPalette.inkDark,
-    primaryContainer = Color(0xFFDCEEDF),
+    primary = SkyDeep,
+    onPrimary = LightPalette.paperWarm,
+    primaryContainer = Color(0xFFD6ECF7),
     onPrimaryContainer = LightPalette.inkDark,
     secondary = Lilac,
     onSecondary = LightPalette.inkDark,
@@ -36,19 +36,19 @@ private val LightColors = lightColorScheme(
     surfaceContainer = LightPalette.paperWarm,
     surfaceContainerHigh = Color(0xFFEDEAD6),
     surfaceContainerHighest = Color(0xFFE5E2CC),
-    outline = LightPalette.gridLine,
+    outline = OutlineWarm,
     outlineVariant = Color(0xFFDDE1C9),
-    error = Rose,
-    onError = LightPalette.inkDark,
+    error = RoseDeep,
+    onError = LightPalette.paperWarm,
     errorContainer = Color(0xFFFFE2E8),
-    onErrorContainer = LightPalette.inkDark,
+    onErrorContainer = RoseDeep,
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Sky,
+    primary = SkyLight,
     onPrimary = Color(0xFF0B1A20),
-    primaryContainer = Color(0xFF24463A),
-    onPrimaryContainer = DarkPalette.inkDark,
+    primaryContainer = Color(0xFF1E3C4C),
+    onPrimaryContainer = Color(0xFFD6ECF7),
     secondary = Lilac,
     onSecondary = Color(0xFF1A1224),
     secondaryContainer = Color(0xFF392B4A),
@@ -68,12 +68,12 @@ private val DarkColors = darkColorScheme(
     surfaceContainer = DarkPalette.paperWarm,
     surfaceContainerHigh = Color(0xFF202C23),
     surfaceContainerHighest = Color(0xFF29372D),
-    outline = DarkPalette.gridLine,
+    outline = OutlineNight,
     outlineVariant = Color(0xFF2F3D33),
-    error = Rose,
+    error = RoseLight,
     onError = Color(0xFF2A0D14),
     errorContainer = Color(0xFF4B202A),
-    onErrorContainer = DarkPalette.inkDark,
+    onErrorContainer = Color(0xFFFFD9E1),
 )
 
 private val BihuaShapes = Shapes(

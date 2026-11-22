@@ -77,6 +77,7 @@ import androidx.compose.ui.res.stringResource
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.Gem
 import com.bassmd.bihua.ui.theme.InkDark
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
@@ -85,6 +86,7 @@ import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
+import com.bassmd.bihua.ui.theme.SkyInk
 
 /**
  * The home screen answers one question: what should I do now? The Study button
@@ -444,7 +446,7 @@ private fun StudyHero(
                     vacation -> "Reviews are paused"
                     due + fresh == 0 -> "All done for today"
                     due == 0 -> "No reviews due"
-                    else -> "Ready for a little writing?"
+                    else -> "Time to write"
                 },
                 style = MaterialTheme.typography.headlineMedium,
                 color = InkDark,
@@ -511,14 +513,14 @@ private fun StatRow(known: Int, total: Int, newToday: Int, studyDays: Int) {
             icon = Icons.Rounded.AutoAwesome,
             value = "$known",
             label = "known",
-            tint = Mint,
+            tint = GuideGreen,
             modifier = Modifier.weight(1f),
         )
         MetricCard(
             icon = Icons.Rounded.School,
             value = formatCount(newToday),
             label = "new today",
-            tint = Sky,
+            tint = SkyInk,
             modifier = Modifier.weight(1f),
         )
     }

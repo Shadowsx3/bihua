@@ -3,6 +3,13 @@
 package com.bassmd.bihua.learn
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.bassmd.bihua.ui.theme.ButterDeep
 import androidx.compose.foundation.background
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -11,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -19,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -67,13 +76,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -103,19 +120,26 @@ import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
+import com.bassmd.bihua.ui.components.HighlightedText
 import com.bassmd.bihua.ui.components.InkHistoryPlaybackBar
+import com.bassmd.bihua.ui.components.InkSeal
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.RecognitionResultView
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.SoftCard
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.Gem
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
+import com.bassmd.bihua.ui.theme.AccentInk
+import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
@@ -168,6 +192,7 @@ fun LearnScreen(
     guideMode: GuideMode = GuideMode.FADE,
     guideInRecall: Boolean = false,
     recallCue: RecallCue = RecallCue.MIXED,
+    showHangulRomanization: Boolean = true,
     mnemonicMode: MnemonicMode = MnemonicMode.EARLY,
     sessionOrder: com.bassmd.bihua.settings.SessionOrder = com.bassmd.bihua.settings.SessionOrder.REVIEWS_FIRST,
     sessionProgress: com.bassmd.bihua.settings.SessionProgress = com.bassmd.bihua.settings.SessionProgress.FULL,
@@ -252,6 +277,15 @@ fun LearnScreen(
         mnemonic = currentItem?.let { item ->
             repository?.meta(item.character)?.etymology?.takeIf { it.isNotBlank() }
         }
+    }
+    var introWords by remember { mutableStateOf(emptyList<com.bassmd.bihua.content.WordContext>()) }
+    LaunchedEffect(currentItem?.id, repository) {
+        introWords = currentItem?.let { item ->
+            repository?.words(item.id).orEmpty()
+                .filter { it.word.length > 1 && it.word != item.character }
+                .distinctBy { it.word }
+                .take(6)
+        }.orEmpty()
     }
     var targetVariants by remember { mutableStateOf(emptySet<String>()) }
     val orderCheck = remember(revealed, ink.strokes.size, player.guide) {
@@ -387,15 +421,6 @@ fun LearnScreen(
         revealed = snapshot.task == ReviewTask.WRITE
         gradeUndo = null
     }
-    LaunchedEffect(revealed, recognition) {
-        if (revealed) {
-            // The result panel grows when recognition arrives. Re-run then so the
-            // answer and feedback are not left below the fold.
-            kotlinx.coroutines.delay(180)
-            pageScroll.animateScrollTo(pageScroll.maxValue)
-            sideScroll.animateScrollTo(sideScroll.maxValue)
-        }
-    }
     LaunchedEffect(index, repository, task) {
         targetVariants = if (task == ReviewTask.WRITE) {
             items.getOrNull(index)?.character
@@ -449,8 +474,20 @@ fun LearnScreen(
                 }
             }
         }
-        Column(Modifier.fillMaxSize()) {
+        val sessionAccent = PinkFor(mode)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to sessionAccent.copy(alpha = 0.12f),
+                        0.45f to Paper,
+                        1f to Paper,
+                    )
+                ),
+        ) {
             SessionTopBar(
+                mode = mode,
                 current = completed,
                 total = items.size,
                 step = step,
@@ -520,6 +557,9 @@ fun LearnScreen(
                     wordMeaning = cueWord?.meaning,
                     mode = mode,
                     pinyinNumbers = pinyinNumbers,
+                    word = cueWord?.word,
+                    target = item.character,
+                    romanizeHangul = showHangulRomanization,
                 )
             }
             if (wide) {
@@ -538,7 +578,33 @@ fun LearnScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         if (step == Step.INTRODUCE) {
-                            IntroCharacter(item, mode, onSpeak, speechEnabled)
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(380.dp)
+                                        .background(
+                                            Brush.radialGradient(
+                                                listOf(
+                                                    PinkFor(mode).copy(alpha = 0.16f),
+                                                    Color.Transparent,
+                                                )
+                                            ),
+                                            CircleShape,
+                                        )
+                                )
+                                IntroCharacter(
+                                    item = item,
+                                    mode = mode,
+                                    onSpeak = onSpeak,
+                                    speechEnabled = speechEnabled,
+                                    words = introWords,
+                                    showWords = false,
+                                    characterSize = 220.sp,
+                                )
+                            }
                         } else {
                             CanvasStage(
                                 item = item,
@@ -580,6 +646,9 @@ fun LearnScreen(
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
                         )
+                        if (step == Step.INTRODUCE && introWords.isNotEmpty()) {
+                            IntroWords(words = introWords, mode = mode)
+                        }
                         if (step != Step.INTRODUCE) {
                             CanvasTools(
                                 player = player,
@@ -609,12 +678,13 @@ fun LearnScreen(
                                     secondary = "Draw again",
                                     onSecondary = { resetDrawing() },
                                     primary = "Next: write",
+                                    accent = PinkFor(mode),
                                     primaryEnabled = ink.strokes.isNotEmpty(),
                                     onPrimary = { stepOrdinal++; resetDrawing() },
                                 )
                                 if (ink.strokes.isEmpty()) {
                                     Text(
-                                        "Trace at least one stroke to continue.",
+                                        "Trace one stroke to continue.",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = InkSoft,
                                     )
@@ -626,6 +696,7 @@ fun LearnScreen(
                                         secondary = "Draw again",
                                         onSecondary = { resetDrawing() },
                                         primary = "Check & grade",
+                                        accent = PinkFor(mode),
                                         primaryEnabled = ink.strokes.isNotEmpty(),
                                         onPrimary = {
                                             com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
@@ -634,9 +705,9 @@ fun LearnScreen(
                                     )
                                     Text(
                                         if (ink.strokes.isEmpty()) {
-                                            "Write at least one stroke first."
+                                            "Write a stroke first."
                                         } else {
-                                            "The answer appears next, then choose Again, Hard, Good, or Easy."
+                                            "Check, then choose a grade."
                                         },
                                         style = MaterialTheme.typography.labelSmall,
                                         color = InkSoft,
@@ -706,10 +777,11 @@ fun LearnScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
+                                .fillMaxWidth()
+                                .clipToBounds(),
+                            contentAlignment = Alignment.TopCenter,
                         ) {
-                            IntroCharacter(item, mode, onSpeak, speechEnabled)
+                            IntroCharacter(item, mode, onSpeak, speechEnabled, introWords)
                         }
                         Button(
                             onClick = { stepOrdinal++; resetDrawing() },
@@ -748,7 +820,7 @@ fun LearnScreen(
                         )
                     }
                     if (step == Step.INTRODUCE) {
-                        IntroCharacter(item, mode, onSpeak, speechEnabled)
+                        IntroCharacter(item, mode, onSpeak, speechEnabled, introWords)
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { stepOrdinal++; resetDrawing() },
@@ -822,12 +894,13 @@ fun LearnScreen(
                     StickyActionBar(
                         secondary = "Draw again",
                         onSecondary = { resetDrawing() },
+                        accent = PinkFor(mode),
                         primary = if (step == Step.TRACE) "Next: write" else "Check & grade",
                         primaryEnabled = ink.strokes.isNotEmpty(),
                         hint = when {
-                            step == Step.TRACE && ink.strokes.isEmpty() -> "Trace at least one stroke to continue."
-                            step == Step.TRACE -> "Trace one stroke, then write it from memory."
-                            ink.strokes.isEmpty() -> "Write at least one stroke first."
+                            step == Step.TRACE && ink.strokes.isEmpty() -> "Trace one stroke to continue."
+                            step == Step.TRACE -> "Trace one, then write from memory."
+                            ink.strokes.isEmpty() -> "Write a stroke first."
                             else -> "Then choose a grade."
                         },
                         onPrimary = {
@@ -869,6 +942,7 @@ fun LearnScreen(
 
 @Composable
 private fun SessionTopBar(
+    mode: StudyMode,
     current: Int,
     total: Int,
     step: Step,
@@ -909,8 +983,17 @@ private fun SessionTopBar(
                 )
             }
             if (showCounters && current < total) {
-                Pill("${total - current} left", Sky.copy(alpha = 0.55f))
+                Pill(
+                    "${total - current} left",
+                    PinkFor(mode).copy(alpha = 0.55f),
+                )
+                Spacer(Modifier.width(8.dp))
             }
+            InkSeal(
+                text = modeGlyph(mode),
+                size = 26.dp,
+                rotation = -4f,
+            )
         }
         Spacer(Modifier.height(8.dp))
         val targetProgress = progress.coerceIn(0f, 1f)
@@ -935,8 +1018,8 @@ private fun SessionTopBar(
                     .background(
                         Brush.horizontalGradient(
                             listOf(
-                                Sky,
-                                if (targetProgress >= 1f) Mint else Lilac,
+                                PinkFor(mode),
+                                Mint,
                             )
                         ),
                         CircleShape,
@@ -960,7 +1043,7 @@ private fun SessionTopBar(
                     Surface(
                         shape = CircleShape,
                         color = when {
-                            active -> Sky
+                            active -> PinkFor(mode)
                             done -> Mint
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         },
@@ -969,7 +1052,7 @@ private fun SessionTopBar(
                             item.label,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = InkDark,
+                            color = if (active || done) AccentInk else InkSoft,
                         )
                     }
                 }
@@ -984,20 +1067,32 @@ private fun IntroCharacter(
     mode: StudyMode,
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
+    words: List<com.bassmd.bihua.content.WordContext> = emptyList(),
+    showWords: Boolean = true,
+    characterSize: androidx.compose.ui.unit.TextUnit = 148.sp,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             item.character,
-            fontSize = 148.sp,
+            fontSize = characterSize,
             fontWeight = FontWeight.Medium,
             color = InkDark,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                com.bassmd.bihua.ui.displayReading(item.reading, mode),
-                style = MaterialTheme.typography.headlineSmall,
-                color = InkSoft,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    com.bassmd.bihua.ui.displayReading(item.reading, mode),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = InkSoft,
+                )
+                com.bassmd.bihua.ui.hangulRomanization(item.reading, mode)?.let { roman ->
+                    Text(
+                        roman,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = InkSoft,
+                    )
+                }
+            }
             if (speechEnabled) {
                 IconButton(onClick = { onSpeak(spokenText(item, mode)) }) {
                     Icon(
@@ -1022,6 +1117,183 @@ private fun IntroCharacter(
                 style = MaterialTheme.typography.labelMedium,
                 color = InkSoft,
             )
+        }
+        if (showWords) {
+            IntroWords(words = words, mode = mode)
+        }
+    }
+}
+
+@Composable
+private fun IntroWords(
+    words: List<com.bassmd.bihua.content.WordContext>,
+    mode: StudyMode,
+) {
+    if (words.isEmpty()) return
+    Spacer(Modifier.height(18.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = Peach,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Found in words",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = InkSoft,
+                    modifier = Modifier.weight(1f),
+                )
+                Pill("${words.size}", Mint.copy(alpha = 0.30f))
+            }
+            Spacer(Modifier.height(8.dp))
+            val accents = listOf(Mint, Sky, Butter, Lilac, Peach, Gem)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 236.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                IntroWordCard(
+                    word = words.first(),
+                    mode = mode,
+                    accent = Mint,
+                    featured = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (words.size > 1) {
+                    Spacer(Modifier.height(8.dp))
+                    val rows = words.drop(1).chunked(2)
+                    rows.forEachIndexed { rowIndex, pair ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            pair.forEachIndexed { column, word ->
+                                IntroWordCard(
+                                    word = word,
+                                    mode = mode,
+                                    accent = accents[
+                                        (rowIndex * 2 + column + 1) % accents.size
+                                    ],
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                        if (rowIndex != rows.lastIndex) Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+}
+
+@Composable
+private fun IntroWordCard(
+    word: com.bassmd.bihua.content.WordContext,
+    mode: StudyMode,
+    accent: androidx.compose.ui.graphics.Color,
+    featured: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(if (featured) 18.dp else 15.dp),
+        color = accent.copy(alpha = if (featured) 0.18f else 0.13f),
+        modifier = modifier
+            .border(
+                1.dp,
+                accent.copy(alpha = if (featured) 0.48f else 0.34f),
+                RoundedCornerShape(if (featured) 18.dp else 15.dp),
+            ),
+    ) {
+        if (featured) {
+            Row(
+                Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    if (mode == StudyMode.JAPANESE) {
+                        Text(
+                            com.bassmd.bihua.ui.displayReading(word.reading, mode),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = InkSoft,
+                            maxLines = 1,
+                        )
+                    }
+                    Text(
+                        word.word,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = InkDark,
+                        maxLines = 1,
+                    )
+                    if (mode != StudyMode.JAPANESE) {
+                        Text(
+                            com.bassmd.bihua.ui.displayReading(word.reading, mode),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = InkSoft,
+                            maxLines = 1,
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    word.level?.let {
+                        Pill("HSK $it", Mint.copy(alpha = 0.40f))
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    Text(
+                        word.meaning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                    )
+                }
+            }
+        } else {
+            Column(Modifier.padding(horizontal = 11.dp, vertical = 9.dp)) {
+                if (mode == StudyMode.JAPANESE) {
+                    Text(
+                        com.bassmd.bihua.ui.displayReading(word.reading, mode),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                        maxLines = 1,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        word.word,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    word.level?.let {
+                        Text(
+                            "HSK $it",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+                if (mode != StudyMode.JAPANESE) {
+                    Text(
+                        com.bassmd.bihua.ui.displayReading(word.reading, mode),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    word.meaning,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -1055,7 +1327,7 @@ private fun CanvasStage(
             if (maxHeight == androidx.compose.ui.unit.Dp.Infinity) maxWidth else maxHeight,
             writingSize.sideDp.dp,
         )
-        Box(Modifier.size(side), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
             if (showReference) {
                 if (!outlineOnly && player.strokeCount > 0) {
                     StrokeGuideLayer(
@@ -1085,6 +1357,18 @@ private fun CanvasStage(
 }
 
 @Composable
+private fun CuePromptText(prompt: RecallCuePrompt) {
+    HighlightedText(
+        text = prompt.text,
+        highlight = prompt.highlight,
+        style = MaterialTheme.typography.titleMedium,
+        color = InkDark,
+        hint = prompt.hint,
+        hintDetail = prompt.hintDetail,
+    )
+}
+
+@Composable
 private fun PromptPanel(
     item: LearnItem,
     step: Step,
@@ -1097,78 +1381,218 @@ private fun PromptPanel(
     showMnemonic: Boolean = false,
     onToggleMnemonic: () -> Unit = {},
 ) {
-    SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
-        Column {
-            Text(
-                when (step) {
-                    Step.INTRODUCE -> "Meet ${item.character}"
-                    Step.TRACE -> "Trace it slowly"
-                    Step.RECALL -> "Write it from memory"
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                color = InkDark,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                when (step) {
-                    Step.INTRODUCE -> "Look at the shape."
-                    Step.TRACE -> when (scaffold) {
-                        GuideScaffold.FULL -> "Trace the green guide."
-                        GuideScaffold.OUTLINE -> "Trace the outline."
-                        GuideScaffold.HIDDEN -> "Write once from memory."
+    val accent = PinkFor(mode)
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = PaperWarm,
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Box {
+            Canvas(Modifier.matchParentSize()) {
+                drawCircle(
+                    color = accent.copy(alpha = 0.08f),
+                    radius = size.minDimension * 0.58f,
+                    center = Offset(size.width * 0.96f, size.height * 0.04f),
+                )
+                drawArc(
+                    color = accent.copy(alpha = 0.10f),
+                    startAngle = 205f,
+                    sweepAngle = 85f,
+                    useCenter = false,
+                    style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
+                    topLeft = Offset(size.width * 0.74f, -size.height * 0.12f),
+                    size = Size(size.width * 0.34f, size.width * 0.34f),
+                )
+            }
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        when (step) {
+                            Step.INTRODUCE -> "Meet ${item.character}"
+                            Step.TRACE -> "Trace it slowly"
+                            Step.RECALL -> "Write from memory"
+                        },
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = InkDark,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Pill(
+                        modeName(mode),
+                        accent.copy(alpha = 0.26f),
+                        textColor = InkDark,
+                    )
+                }
+                if (step != Step.RECALL) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        when (step) {
+                            Step.INTRODUCE -> "Look at the shape."
+                            Step.TRACE -> when (scaffold) {
+                                GuideScaffold.FULL -> "Trace the green guide."
+                                GuideScaffold.OUTLINE -> "Trace the outline."
+                                GuideScaffold.HIDDEN -> "Write once from memory."
+                            }
+                            Step.RECALL -> ""
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+                if (step != Step.INTRODUCE) {
+                    Spacer(Modifier.height(10.dp))
+                    if (step == Step.RECALL && !revealed && cuePrompt != null) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = PaperWarm.copy(alpha = 0.82f),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                                Box(
+                                    Modifier
+                                        .width(4.dp)
+                                        .height(40.dp)
+                                        .background(accent, CircleShape),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            cuePrompt.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = InkSoft,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        if (mnemonicAllowed && mnemonic != null) {
+                                            StoryHintButton(
+                                                show = showMnemonic,
+                                                mnemonic = mnemonic,
+                                                onToggle = onToggleMnemonic,
+                                            )
+                                        }
+                                    }
+                                    cuePrompt.ruby?.let { ruby ->
+                                        Text(
+                                            ruby,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = InkSoft,
+                                        )
+                                    }
+                                    CuePromptText(cuePrompt)
+                                    cuePrompt.detail?.let { detail ->
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            detail,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = InkSoft,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            "${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
                     }
-                    Step.RECALL -> "Write your best guess, then check."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = InkSoft,
-            )
-            if (step != Step.INTRODUCE) {
-                Spacer(Modifier.height(10.dp))
-                if (step == Step.RECALL && !revealed && cuePrompt != null) {
-                    Text(
-                        cuePrompt.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkSoft,
-                    )
-                    Text(
-                        cuePrompt.text,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = InkDark,
-                    )
-                } else {
-                    Text(
-                        "${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkSoft,
-                    )
                 }
-            }
-            if (step == Step.RECALL && !revealed && mnemonicAllowed && mnemonic != null) {
-                Spacer(Modifier.height(4.dp))
-                TextButton(onClick = onToggleMnemonic) {
-                    Icon(
-                        Icons.Rounded.Lightbulb,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (showMnemonic) "Hide story hint" else "Story hint")
-                }
-                if (showMnemonic) {
+                if (step == Step.RECALL && revealed) {
+                    Spacer(Modifier.height(10.dp))
                     Text(
-                        mnemonic,
-                        style = MaterialTheme.typography.bodySmall,
+                        item.character,
+                        fontSize = 48.sp,
                         color = InkDark,
                     )
                 }
             }
-            if (step == Step.RECALL && revealed) {
-                Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+private fun StoryHintButton(
+    show: Boolean,
+    mnemonic: String,
+    onToggle: () -> Unit,
+) {
+    val density = LocalDensity.current
+    Box {
+        Surface(
+            onClick = onToggle,
+            shape = CircleShape,
+            color = Butter.copy(alpha = 0.22f),
+            border = BorderStroke(1.dp, Butter.copy(alpha = 0.40f)),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Rounded.Lightbulb,
+                    contentDescription = null,
+                    tint = ButterDeep,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(4.dp))
                 Text(
-                    item.character,
-                    fontSize = 48.sp,
+                    if (show) "Hide" else "Hint",
+                    style = MaterialTheme.typography.labelSmall,
                     color = InkDark,
                 )
+            }
+        }
+        if (show) {
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(
+                    x = 0,
+                    y = with(density) { 32.dp.roundToPx() },
+                ),
+                onDismissRequest = onToggle,
+                properties = PopupProperties(focusable = true),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = PaperWarm,
+                    border = BorderStroke(1.dp, Butter.copy(alpha = 0.45f)),
+                    shadowElevation = 10.dp,
+                    modifier = Modifier.widthIn(max = 330.dp),
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .background(Butter.copy(alpha = 0.28f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Lightbulb,
+                                contentDescription = null,
+                                tint = ButterDeep,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                "Story hint",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                            Text(
+                                mnemonic,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = InkDark,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -1186,6 +1610,7 @@ private fun WritingFeedback(
         target = target,
         recognizing = recognizing,
         compact = true,
+        summary = true,
     )
 }
 
@@ -1353,7 +1778,7 @@ private fun StrokeRepairDialog(
                         .height(240.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Box(Modifier.size(220.dp)) {
+                    Box(Modifier.size(220.dp).writingSheet()) {
                         SingleStrokeGuideLayer(
                             player = player,
                             strokeIndex = strokeNumber - 1,
@@ -1415,7 +1840,7 @@ private fun StrokeRepairDialog(
                     false -> Text(
                         "Not quite. Watch it once more, clear, and try again.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Rose,
+                        color = MaterialTheme.colorScheme.error,
                     )
                     null -> Unit
                 }
@@ -1464,6 +1889,12 @@ private fun GradeChoices(
                 animationSpec = androidx.compose.animation.core.spring(stiffness = 600f),
                 label = "grade-press",
             )
+            val gradeAccent = when (grade) {
+                Grade.AGAIN -> Rose
+                Grade.HARD -> Peach
+                Grade.GOOD -> Mint
+                Grade.EASY -> Sky
+            }
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -1472,7 +1903,11 @@ private fun GradeChoices(
                 },
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
-                color = if (suggested) Mint.copy(alpha = 0.65f) else MaterialTheme.colorScheme.surfaceVariant,
+                color = gradeAccent.copy(alpha = if (suggested) 0.55f else 0.14f),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = gradeAccent.copy(alpha = if (suggested) 0.70f else 0.26f),
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .graphicsLayer {
@@ -1672,7 +2107,7 @@ private fun PronunciationReview(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Tap a grade to continue. It sets the next review date.",
+                    "Choose a grade.",
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                     modifier = Modifier.fillMaxWidth(),
@@ -1841,7 +2276,13 @@ private fun DonePanel(
         verticalArrangement = Arrangement.Center,
     ) {
         InkMascot(size = 110.dp)
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
+        InkSeal(
+            text = "完",
+            size = 42.dp,
+            rotation = -6f,
+        )
+        Spacer(Modifier.height(12.dp))
         Text("Session complete", style = MaterialTheme.typography.headlineLarge, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
@@ -2005,12 +2446,17 @@ private fun StickyGradeBar(
                         color = InkSoft,
                     )
                     Text(
-                        if (practiceOnly) "Practice pass. The schedule stays the same." else "Tap a grade to continue.",
+                        if (practiceOnly) "Practice only. Schedule unchanged." else "Choose a grade.",
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,
                     )
                 }
-                TextButton(onClick = onDrawAgain) { Text("Draw again") }
+                TextButton(
+                    onClick = onDrawAgain,
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = PinkFor(mode),
+                    ),
+                ) { Text("Draw again") }
             }
             Spacer(Modifier.height(4.dp))
             val shownSuggestion = suggestion?.takeIf { it.grade.available(onlyAgainAndGood) }
@@ -2023,11 +2469,9 @@ private fun StickyGradeBar(
             Spacer(Modifier.height(4.dp))
             Text(
                 if (shownSuggestion != null) {
-                    "App suggests ${shownSuggestion.grade.label}. A hint only; you decide."
-                } else if (onlyAgainAndGood) {
-                    "Choose Again or Good. A hint only; you decide."
+                    "Suggested: ${shownSuggestion.grade.label}"
                 } else {
-                    "No suggestion. Use your own judgement."
+                    "Choose a grade."
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
@@ -2043,6 +2487,7 @@ private fun StickyActionBar(
     primary: String,
     primaryEnabled: Boolean,
     hint: String,
+    accent: Color = Sky,
     onPrimary: () -> Unit,
 ) {
     Surface(color = PaperWarm, shadowElevation = 14.dp) {
@@ -2056,6 +2501,7 @@ private fun StickyActionBar(
                 onSecondary = onSecondary,
                 primary = primary,
                 primaryEnabled = primaryEnabled,
+                accent = accent,
                 onPrimary = onPrimary,
             )
             Spacer(Modifier.height(4.dp))
@@ -2074,6 +2520,7 @@ private fun ActionRow(
     onSecondary: () -> Unit,
     primary: String,
     primaryEnabled: Boolean = true,
+    accent: Color = Sky,
     onPrimary: () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2081,14 +2528,14 @@ private fun ActionRow(
             text = secondary,
             onClick = onSecondary,
             modifier = Modifier.weight(1f),
-            accent = MaterialTheme.colorScheme.surfaceVariant,
+            accent = Butter.copy(alpha = 0.24f),
         )
         com.bassmd.bihua.ui.components.PrimaryAction(
             text = primary,
             onClick = onPrimary,
             modifier = Modifier.weight(1f),
             enabled = primaryEnabled,
-            accent = Sky.copy(alpha = 0.85f),
+            accent = accent,
         )
     }
 }
@@ -2108,6 +2555,20 @@ private val Grade.consequence: String
         Grade.GOOD -> "got it"
         Grade.EASY -> "too easy"
     }
+
+private fun modeName(mode: StudyMode): String = when (mode) {
+    StudyMode.SIMPLIFIED -> "Simplified"
+    StudyMode.TRADITIONAL -> "Traditional"
+    StudyMode.JAPANESE -> "Japanese"
+    StudyMode.KOREAN -> "Korean"
+}
+
+private fun modeGlyph(mode: StudyMode): String = when (mode) {
+    StudyMode.SIMPLIFIED -> "简"
+    StudyMode.TRADITIONAL -> "繁"
+    StudyMode.JAPANESE -> "日"
+    StudyMode.KOREAN -> "韓"
+}
 
 private fun PinkFor(mode: StudyMode): Color = when (mode) {
     StudyMode.SIMPLIFIED -> Sky

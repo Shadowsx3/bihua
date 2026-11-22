@@ -81,6 +81,7 @@ import com.bassmd.bihua.settings.DrawingTool
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
 import com.bassmd.bihua.ui.components.OutlineGuide
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.RecognitionResultView
 import com.bassmd.bihua.ui.components.SoftCard
@@ -535,7 +536,7 @@ private fun PracticeCanvas(
             if (maxHeight == androidx.compose.ui.unit.Dp.Infinity) maxWidth else maxHeight,
             writingSize.sideDp.dp,
         )
-        Box(Modifier.size(side), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
             if (showReference) {
                 if (!outlineOnly && player.strokeCount > 0) {
                     StrokeGuideLayer(

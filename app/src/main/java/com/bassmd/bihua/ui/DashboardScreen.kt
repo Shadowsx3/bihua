@@ -63,7 +63,9 @@ import com.bassmd.bihua.ui.components.DayDetailSheet
 import com.bassmd.bihua.ui.components.StudyCalendarCard
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.ButterInk
 import com.bassmd.bihua.ui.theme.InkDark
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
@@ -71,6 +73,7 @@ import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
+import com.bassmd.bihua.ui.theme.SkyInk
 import kotlin.math.roundToInt
 
 /**
@@ -407,7 +410,7 @@ private fun CoverageCard(characters: List<CharacterEntry>, modifier: Modifier = 
                             CoverageRing(
                                 fraction = fraction,
                                 label = formatPercent(fraction),
-                                color = if (fraction >= 0.999f) Mint else Rose,
+                                color = if (fraction >= 0.999f) GuideGreen else MaterialTheme.colorScheme.error,
                                 size = 56.dp,
                             )
                         }
@@ -575,10 +578,10 @@ internal fun CharacterStrip(
 @Composable
 private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, new: Int) {
     val colors = mapOf(
-        com.bassmd.bihua.progress.MemoryLevel.STRONG to Mint,
-        com.bassmd.bihua.progress.MemoryLevel.SOLID to Sky,
-        com.bassmd.bihua.progress.MemoryLevel.FAIR to Butter,
-        com.bassmd.bihua.progress.MemoryLevel.SHAKY to Rose,
+        com.bassmd.bihua.progress.MemoryLevel.STRONG to GuideGreen,
+        com.bassmd.bihua.progress.MemoryLevel.SOLID to SkyInk,
+        com.bassmd.bihua.progress.MemoryLevel.FAIR to ButterInk,
+        com.bassmd.bihua.progress.MemoryLevel.SHAKY to MaterialTheme.colorScheme.error,
     )
     SoftCard(Modifier.fillMaxWidth()) {
         Column {
@@ -594,7 +597,7 @@ private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, ne
                     label = bucket.level.label,
                     count = bucket.count,
                     recall = bucket.averageRecall?.let { (it * 100).roundToInt() } ?: 0,
-                    color = colors[bucket.level] ?: Rose,
+                    color = colors[bucket.level] ?: MaterialTheme.colorScheme.error,
                 )
             }
             Spacer(Modifier.height(8.dp))

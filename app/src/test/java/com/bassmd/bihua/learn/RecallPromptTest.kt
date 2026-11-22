@@ -1,6 +1,7 @@
 package com.bassmd.bihua.learn
 
 import com.bassmd.bihua.content.StudyMode
+import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.RecallCue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -19,6 +20,8 @@ class RecallPromptTest {
                 wordMeaning = "father, papa",
                 mode = StudyMode.SIMPLIFIED,
                 pinyinNumbers = true,
+                word = "爸爸",
+                target = "爸",
             )
         }
         assertEquals(3, labels.toSet().size)
@@ -36,6 +39,41 @@ class RecallPromptTest {
             pinyinNumbers = true,
         )
         assertEquals("father, papa", prompt.text)
+    }
+
+    @Test
+    fun defaultCueShowsMeaningAndReading() {
+        assertEquals(RecallCue.MEANING_READING, AppSettings().recallCue)
+    }
+
+    @Test
+    fun meaningAndReadingCueShowsBothParts() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.MEANING_READING,
+            reading = "bà",
+            meaning = "father, papa",
+            wordReading = null,
+            wordMeaning = null,
+            mode = StudyMode.SIMPLIFIED,
+            pinyinNumbers = true,
+        )
+        assertEquals("father, papa", prompt.text)
+        assertEquals("ba4", prompt.detail)
+    }
+
+    @Test
+    fun japaneseCueUsesThePrimaryReading() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.MEANING_READING,
+            reading = "ガク / まな.ぶ",
+            meaning = "study; learning; science",
+            wordReading = null,
+            wordMeaning = null,
+            mode = StudyMode.JAPANESE,
+            pinyinNumbers = false,
+        )
+        assertEquals("study; learning; science", prompt.text)
+        assertEquals("ガク", prompt.detail)
     }
 
     @Test
@@ -72,10 +110,110 @@ class RecallPromptTest {
             wordMeaning = "father, papa",
             mode = StudyMode.SIMPLIFIED,
             pinyinNumbers = true,
+            word = "爸爸",
+            target = "爸",
         )
-        assertEquals("Write the character in the word", prompt.label)
+        assertEquals("In the word", prompt.label)
         assertEquals("ba4ba · father, papa", prompt.text)
+        assertEquals("Write the highlighted part. Tap it for a hint.", prompt.detail)
         assertNotEquals("爸爸", prompt.text)
+    }
+
+    @Test
+    fun wordCueNamesThePositionOfTheTarget() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "shēng",
+            meaning = "life; birth",
+            wordReading = "xuésheng",
+            wordMeaning = "student",
+            mode = StudyMode.SIMPLIFIED,
+            pinyinNumbers = false,
+            word = "学生",
+            target = "生",
+        )
+        assertEquals("In the word", prompt.label)
+        assertEquals("xuésheng · student", prompt.text)
+        assertEquals("Write the highlighted part. Tap it for a hint.", prompt.detail)
+    }
+
+    @Test
+    fun wordCueHighlightsTheTargetReading() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "xué",
+            meaning = "to learn",
+            wordReading = "xuésheng",
+            wordMeaning = "student",
+            mode = StudyMode.SIMPLIFIED,
+            pinyinNumbers = false,
+            word = "学生",
+            target = "学",
+        )
+        assertEquals("In the word", prompt.label)
+        assertEquals("xuésheng · student", prompt.text)
+        assertEquals(0..2, prompt.highlight)
+        assertEquals("to learn", prompt.hint)
+        assertEquals("xué", prompt.hintDetail)
+    }
+
+    @Test
+    fun koreanWordCueShowsHangulAndRomanization() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "산",
+            meaning = "mountain",
+            wordReading = "화산",
+            wordMeaning = "volcano",
+            mode = StudyMode.KOREAN,
+            pinyinNumbers = false,
+            word = "화산",
+            target = "山",
+        )
+        assertEquals("In the word", prompt.label)
+        assertEquals("화산 (hwasan) · volcano", prompt.text)
+        assertEquals(1..1, prompt.highlight)
+        assertEquals("mountain", prompt.hint)
+        assertEquals("산 (san)", prompt.hintDetail)
+    }
+
+    @Test
+    fun japaneseWordCueMasksTheCharacterToWrite() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "がく",
+            meaning = "study",
+            wordReading = "がっこう",
+            wordMeaning = "school",
+            mode = StudyMode.JAPANESE,
+            pinyinNumbers = false,
+            word = "学校",
+            target = "学",
+        )
+        assertEquals("In the word", prompt.label)
+        assertEquals("▢校", prompt.text)
+        assertEquals(0..0, prompt.highlight)
+        assertEquals("school", prompt.detail)
+        assertEquals("がっこう", prompt.ruby)
+        assertEquals("study", prompt.hint)
+        assertEquals("がく", prompt.hintDetail)
+    }
+
+    @Test
+    fun singleCharacterWordFallsBackToMeaning() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "shān",
+            meaning = "mountain",
+            wordReading = "shān",
+            wordMeaning = "mountain; hill",
+            mode = StudyMode.SIMPLIFIED,
+            pinyinNumbers = false,
+            word = "山",
+            target = "山",
+        )
+        assertEquals("Meaning", prompt.label)
+        assertEquals("mountain", prompt.text)
     }
 
     @Test
@@ -89,7 +227,7 @@ class RecallPromptTest {
             mode = StudyMode.JAPANESE,
             pinyinNumbers = true,
         )
-        assertEquals("Write the character that means", prompt.label)
+        assertEquals("Meaning", prompt.label)
         assertEquals("ah", prompt.text)
     }
 }

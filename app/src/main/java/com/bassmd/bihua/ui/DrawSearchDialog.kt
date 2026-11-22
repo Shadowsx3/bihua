@@ -51,6 +51,7 @@ import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.InkCanvas
 import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.GridStyle
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.PaperWarm
@@ -97,8 +98,7 @@ fun DrawSearchDialog(
                     Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .background(PaperWarm, RoundedCornerShape(16.dp))
-                        .border(1.dp, InkSoft.copy(alpha = 0.30f), RoundedCornerShape(16.dp)),
+                        .writingSheet(RoundedCornerShape(16.dp)),
                 ) {
                     InkCanvas(
                         state = ink,
@@ -146,7 +146,7 @@ fun DrawSearchDialog(
                         Text(
                             "The handwriting model is not ready. Prepare it in Settings.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Rose,
+                            color = MaterialTheme.colorScheme.error,
                         )
                     } else if (outcome.candidates.isEmpty()) {
                         Text(

@@ -56,6 +56,7 @@ import com.bassmd.bihua.ink.InkCanvas
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
@@ -160,7 +161,7 @@ fun DrillScreen(
                 if (maxHeight == androidx.compose.ui.unit.Dp.Infinity) maxWidth else maxHeight,
                 writingSize.sideDp.dp,
             )
-            Box(Modifier.size(side), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
                 if (showReference) {
                     if (player.strokeCount > 0) {
                         StrokeGuideLayer(

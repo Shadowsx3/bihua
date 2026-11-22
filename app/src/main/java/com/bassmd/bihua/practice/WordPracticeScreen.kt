@@ -53,6 +53,7 @@ import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.OutlineGuide
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.settings.BrushConfig
@@ -224,7 +225,7 @@ fun WordPracticeScreen(
                 if (maxHeight == androidx.compose.ui.unit.Dp.Infinity) maxWidth else maxHeight,
                 writingSize.sideDp.dp,
             )
-            Box(Modifier.size(side), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
                 if (showReference || revealed) {
                     if (player.strokeCount > 0) {
                         StrokeGuideLayer(

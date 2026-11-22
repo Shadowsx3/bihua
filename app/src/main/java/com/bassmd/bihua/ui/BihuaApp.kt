@@ -33,7 +33,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -96,9 +95,11 @@ import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.OrientationLock
 import com.bassmd.bihua.settings.SettingsScreen
 import com.bassmd.bihua.settings.SettingsStore
+import com.bassmd.bihua.settings.includesInStudy
 import com.bassmd.bihua.settings.StudyTools
 import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.ui.components.BihuaBackground
+import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.StudyToolsSheet
@@ -236,7 +237,7 @@ fun BihuaApp(store: SettingsStore) {
                     }
                 }
             },
-            onFinish = { chosenMode, goal, brush, share ->
+            onFinish = { chosenMode, goal, brush, share, cue, pronunciation ->
                 scope.launch {
                     store.updateSettings { current ->
                         current.copy(
@@ -245,6 +246,8 @@ fun BihuaApp(store: SettingsStore) {
                             brush = brush,
                             drawingTool = brush.tool,
                             shareIdenticalGlyphs = share,
+                            recallCue = cue,
+                            pronunciationPractice = pronunciation,
                             onboarded = true,
                         )
                     }
@@ -269,8 +272,16 @@ fun BihuaApp(store: SettingsStore) {
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
-    val characters by produceState<List<CharacterEntry>?>(initialValue = null, mode) {
-        value = withContext(Dispatchers.IO) { repository.characters(mode) }
+    val characters by produceState<List<CharacterEntry>?>(
+        initialValue = null,
+        mode,
+        settings.includeHiragana,
+        settings.includeKatakana,
+        settings.includeHangul,
+    ) {
+        value = withContext(Dispatchers.IO) {
+            repository.characters(mode).filter { settings.includesInStudy(it.character) }
+        }
     }
     var resumableSession by remember(mode, sessionStore, progressVersion) {
         mutableStateOf(sessionStore.load(mode))
@@ -685,7 +696,7 @@ fun BihuaApp(store: SettingsStore) {
             sessionPool.firstOrNull { it.character == char.toString() }
         }
         if (chars.size == word.word.length) {
-            BihuaBackground {
+            BihuaBackground(decorated = false) {
                 com.bassmd.bihua.practice.WordPracticeScreen(
                     word = word,
                     characters = chars,
@@ -711,7 +722,7 @@ fun BihuaApp(store: SettingsStore) {
     }
 
     if (drillOpen) {
-        BihuaBackground {
+        BihuaBackground(decorated = false) {
             com.bassmd.bihua.practice.DrillScreen(
                 entries = studyEntries,
                 mode = mode,
@@ -729,7 +740,7 @@ fun BihuaApp(store: SettingsStore) {
     }
 
     if (paperEntries.isNotEmpty()) {
-        BihuaBackground {
+        BihuaBackground(decorated = false) {
             com.bassmd.bihua.practice.PaperDrillScreen(
                 entries = paperEntries,
                 mode = mode,
@@ -765,9 +776,12 @@ fun BihuaApp(store: SettingsStore) {
         return
     }
 
-    BihuaBackground {
+    BihuaBackground(decorated = !(inSession || tab == Tab.PRACTICE)) {
         CompositionLocalProvider(LocalContentRepository provides repository) {
-        CompositionLocalProvider(LocalPinyinNumbers provides settings.pinyinNumbers) {
+        CompositionLocalProvider(
+            LocalPinyinNumbers provides settings.pinyinNumbers,
+            LocalHangulRomanization provides settings.showHangulRomanization,
+        ) {
         CompositionLocalProvider(LocalProgressStore provides progressStore) {
         if (inSession) {
             androidx.compose.foundation.layout.Box(
@@ -796,6 +810,7 @@ fun BihuaApp(store: SettingsStore) {
                     guideMode = settings.guideMode,
                     guideInRecall = settings.guideInRecall,
                     recallCue = settings.recallCue,
+                    showHangulRomanization = settings.showHangulRomanization,
                     mnemonicMode = settings.mnemonicMode,
                     sessionOrder = settings.sessionOrder,
                     sessionProgress = settings.sessionProgress,
@@ -869,11 +884,11 @@ fun BihuaApp(store: SettingsStore) {
                         }
                     },
                 )
-                SnackbarHost(
+                BihuaSnackbarHost(
                     hostState = sessionSnackbar,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 8.dp),
+                        .padding(top = 72.dp, start = 20.dp, end = 20.dp),
                 )
             }
         } else {
@@ -1236,7 +1251,7 @@ private fun AppContent(
     if (characters == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = Sky)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(12.dp))
                 Text("Loading characters…", style = MaterialTheme.typography.bodyMedium, color = InkSoft)
             }

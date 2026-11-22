@@ -130,7 +130,7 @@ fun InkCanvas(
                 }
             }
     ) {
-        drawWritingGrid(gridStyle, palette.gridLine)
+        drawWritingGrid(gridStyle, palette.writingGrid)
         val cacheKey = InkCacheKey(
             width = size.width,
             height = size.height,
@@ -195,33 +195,58 @@ fun InkCanvas(
     }
 }
 
-/** The guide lines are a setting: none, 田字格, 米字格, or 九宫格. */
+/**
+ * The guide lines are a setting: none, 田字格, 米字格, or 九宫格. Widths are in
+ * dp so a 1 dp line stays visible on both a 320 dpi tablet and a 420 dpi phone.
+ * The border is inset by half its stroke so none of it is clipped by the
+ * canvas edge.
+ */
 private fun DrawScope.drawWritingGrid(style: GridStyle, gridLine: Color) {
     if (style == GridStyle.NONE) return
     val w = size.width
     val h = size.height
+    val border = 1.5.dp.toPx()
+    val thin = 1.dp.toPx()
+    val inset = border / 2f
+    val left = inset
+    val top = inset
+    val right = w - inset
+    val bottom = h - inset
+
     drawRect(
         color = gridLine,
-        topLeft = Offset.Zero,
-        size = Size(w, h),
-        style = Stroke(width = 1.5f, cap = StrokeCap.Round),
+        topLeft = Offset(left, top),
+        size = Size(right - left, bottom - top),
+        style = Stroke(width = border, cap = StrokeCap.Butt),
     )
     when (style) {
         GridStyle.NONE -> Unit
         GridStyle.TIAN_ZI -> {
-            drawLine(gridLine, Offset(w / 2, 0f), Offset(w / 2, h), strokeWidth = 1f)
-            drawLine(gridLine, Offset(0f, h / 2), Offset(w, h / 2), strokeWidth = 1f)
+            drawLine(gridLine, Offset(w / 2, top), Offset(w / 2, bottom), thin, StrokeCap.Butt)
+            drawLine(gridLine, Offset(left, h / 2), Offset(right, h / 2), thin, StrokeCap.Butt)
         }
         GridStyle.MI_ZI -> {
-            drawLine(gridLine, Offset(w / 2, 0f), Offset(w / 2, h), strokeWidth = 1f)
-            drawLine(gridLine, Offset(0f, h / 2), Offset(w, h / 2), strokeWidth = 1f)
-            drawLine(gridLine, Offset.Zero, Offset(w, h), strokeWidth = 1f)
-            drawLine(gridLine, Offset(w, 0f), Offset(0f, h), strokeWidth = 1f)
+            drawLine(gridLine, Offset(w / 2, top), Offset(w / 2, bottom), thin, StrokeCap.Butt)
+            drawLine(gridLine, Offset(left, h / 2), Offset(right, h / 2), thin, StrokeCap.Butt)
+            drawLine(gridLine, Offset(left, top), Offset(right, bottom), thin, StrokeCap.Butt)
+            drawLine(gridLine, Offset(right, top), Offset(left, bottom), thin, StrokeCap.Butt)
         }
         GridStyle.JIU_GONG -> {
             for (i in 1..2) {
-                drawLine(gridLine, Offset(w * i / 3f, 0f), Offset(w * i / 3f, h), strokeWidth = 1f)
-                drawLine(gridLine, Offset(0f, h * i / 3f), Offset(w, h * i / 3f), strokeWidth = 1f)
+                drawLine(
+                    gridLine,
+                    Offset(w * i / 3f, top),
+                    Offset(w * i / 3f, bottom),
+                    thin,
+                    StrokeCap.Butt,
+                )
+                drawLine(
+                    gridLine,
+                    Offset(left, h * i / 3f),
+                    Offset(right, h * i / 3f),
+                    thin,
+                    StrokeCap.Butt,
+                )
             }
         }
     }

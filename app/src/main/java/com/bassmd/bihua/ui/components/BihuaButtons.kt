@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.ui.theme.AccentInk
 import com.bassmd.bihua.ui.theme.InkDark
+import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.TouchTarget
 
@@ -47,7 +48,7 @@ fun PrimaryAction(
             containerColor = accent,
             contentColor = AccentInk,
             disabledContainerColor = accent.copy(alpha = 0.35f),
-            disabledContentColor = AccentInk.copy(alpha = 0.45f),
+            disabledContentColor = InkSoft,
         ),
         modifier = modifier.heightIn(min = TouchTarget),
     ) {

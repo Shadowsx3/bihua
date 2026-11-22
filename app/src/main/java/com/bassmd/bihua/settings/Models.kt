@@ -161,6 +161,10 @@ enum class OrientationLock { AUTO, LANDSCAPE, PORTRAIT }
 enum class RecallCue(val label: String, val description: String) {
     MIXED("Mix", "Vary between meaning, reading, and word cues."),
     MEANING("Meaning", "Write the character from its meaning."),
+    MEANING_READING(
+        "Meaning + reading",
+        "Write from the meaning, with the reading when definitions repeat.",
+    ),
     READING("Reading", "Write the character from its reading."),
     WORD("Word", "Write the character from a word's reading and meaning."),
 }
@@ -209,6 +213,13 @@ data class AppSettings(
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = true,
     val pronunciationPractice: Boolean = false,
+    /** Japanese kana can be excluded so the queue is kanji only. */
+    val includeHiragana: Boolean = true,
+    val includeKatakana: Boolean = true,
+    /** Korean Hangul can be excluded so the queue is Hanja only. */
+    val includeHangul: Boolean = true,
+    /** Show san next to 산 while learning Hanja. */
+    val showHangulRomanization: Boolean = true,
     /** Hide Hard and Easy if the learner prefers a two-button scale. */
     val onlyAgainAndGood: Boolean = false,
     /** Keep the ML Kit model downloads on unmetered Wi-Fi. */
@@ -219,7 +230,7 @@ data class AppSettings(
     val easeBackUntilMs: Long = 0L,
     val guideMode: GuideMode = GuideMode.FADE,
     val guideInRecall: Boolean = false,
-    val recallCue: RecallCue = RecallCue.MIXED,
+    val recallCue: RecallCue = RecallCue.MEANING_READING,
     val mnemonicMode: MnemonicMode = MnemonicMode.EARLY,
     val onboarded: Boolean = false,
     val showCounters: Boolean = true,

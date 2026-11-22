@@ -86,7 +86,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -127,11 +126,14 @@ import com.bassmd.bihua.fsrs.ReviewLoad
 import com.bassmd.bihua.sync.SyncClient
 import com.bassmd.bihua.sync.SyncPackage
 import com.bassmd.bihua.sync.SyncServer
+import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.ProfileAvatar
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.components.saveProfilePhoto
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.AccentInk
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Lilac
@@ -139,6 +141,7 @@ import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Sky
+import com.bassmd.bihua.ui.theme.SkyInk
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.collectLatest as collectProgress
 import kotlinx.coroutines.launch
@@ -616,8 +619,8 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         snackbarHost = {
-            Box(Modifier.padding(bottom = 92.dp)) {
-                SnackbarHost(snackbar)
+            Box(Modifier.padding(bottom = 92.dp, start = 16.dp, end = 16.dp)) {
+                BihuaSnackbarHost(hostState = snackbar)
             }
         },
     ) { inner ->
@@ -1395,6 +1398,58 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
+                        if (settings.studyMode == StudyMode.JAPANESE) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Text(
+                                "Japanese scripts",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Text(
+                                "Kanji stay in the queue. Turn off a kana set to focus on characters. Changes apply to new sessions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            SwitchRow(
+                                title = "Hiragana",
+                                subtitle = "ひらがな",
+                                checked = settings.includeHiragana,
+                                onCheckedChange = { update(settings.copy(includeHiragana = it)) },
+                            )
+                            SwitchRow(
+                                title = "Katakana",
+                                subtitle = "カタカナ",
+                                checked = settings.includeKatakana,
+                                onCheckedChange = { update(settings.copy(includeKatakana = it)) },
+                            )
+                        }
+                        if (settings.studyMode == StudyMode.KOREAN) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Text(
+                                "Korean scripts",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Text(
+                                "Hanja stay in the queue. Turn off Hangul to focus on characters. Changes apply to new sessions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            SwitchRow(
+                                title = "Hangul",
+                                subtitle = "한글",
+                                checked = settings.includeHangul,
+                                onCheckedChange = { update(settings.copy(includeHangul = it)) },
+                            )
+                            SwitchRow(
+                                title = "Romanize Hangul",
+                                subtitle = "Show san next to 산.",
+                                checked = settings.showHangulRomanization,
+                                onCheckedChange = {
+                                    update(settings.copy(showHangulRomanization = it))
+                                },
+                            )
+                        }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         SwitchRow(
                             title = "Show counters while studying",
@@ -2685,7 +2740,7 @@ private fun SettingsRow(
                 Icon(
                     entry.icon,
                     contentDescription = null,
-                    tint = InkDark,
+                    tint = AccentInk,
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -3004,7 +3059,7 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                         Text(
                             entry.url,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Sky,
+                            color = SkyInk,
                             modifier = Modifier.clickable { uriHandler.openUri(entry.url) },
                         )
                     }

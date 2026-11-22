@@ -52,7 +52,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,9 +83,11 @@ import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.progress.ReviewEntry
 import com.bassmd.bihua.progress.WordPracticeEntry
+import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.Dot
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.SoftCard
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.Butter
 import java.time.Instant
 import java.time.ZoneId
@@ -444,7 +445,7 @@ fun CharactersScreen(
                 }
             }
         }
-        SnackbarHost(
+        BihuaSnackbarHost(
             hostState = snackbar,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -1513,7 +1514,7 @@ private fun CharacterDetail(
         }
 
         TextButton(onClick = onReset, modifier = Modifier.align(Alignment.Start)) {
-            Text("Reset this character", color = Rose)
+            Text("Reset this character", color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -1537,7 +1538,7 @@ private fun ActionLine(
         Spacer(Modifier.width(10.dp))
         Text(label, style = MaterialTheme.typography.bodyMedium, color = InkDark, modifier = Modifier.weight(1f))
         if (active) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = Mint, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.Check, contentDescription = null, tint = GuideGreen, modifier = Modifier.size(18.dp))
         }
     }
 }

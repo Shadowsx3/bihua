@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.ai.RecognitionResult
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.InkDark
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
@@ -59,11 +60,22 @@ fun RecognitionResultView(
     modifier: Modifier = Modifier,
     practiceOnly: Boolean = false,
     compact: Boolean = false,
+    summary: Boolean = false,
 ) {
     val repository = com.bassmd.bihua.content.LocalContentRepository.current
     var variants by remember(target) { mutableStateOf(emptySet<String>()) }
     LaunchedEffect(target, repository) {
         variants = target?.let { repository?.variants(it) }.orEmpty()
+    }
+    if (summary) {
+        RecognitionSummary(
+            result = result,
+            target = target,
+            recognizing = recognizing,
+            variants = variants,
+            modifier = modifier,
+        )
+        return
     }
     when {
         recognizing -> SoftCard(modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.16f)) {
@@ -149,7 +161,7 @@ fun RecognitionResultView(
                             caption = "Target",
                             size = if (compact) 84.dp else 104.dp,
                             glyphSize = if (compact) 44.sp else 54.sp,
-                            border = Mint,
+                            border = GuideGreen,
                             emphasized = true,
                         )
                         Column(
@@ -188,7 +200,7 @@ fun RecognitionResultView(
                             caption = "Reads as",
                             size = if (compact) 84.dp else 104.dp,
                             glyphSize = if (compact) 44.sp else 54.sp,
-                            border = if (matched || variantMatch) Mint else Rose,
+                            border = if (matched || variantMatch) GuideGreen else MaterialTheme.colorScheme.error,
                             emphasized = false,
                         )
                     }
@@ -203,7 +215,7 @@ fun RecognitionResultView(
                     if (result.candidates.size > 1) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Other readings",
+                            "Also read as",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -234,9 +246,9 @@ fun RecognitionResultView(
                     Spacer(Modifier.height(10.dp))
                     Text(
                         if (practiceOnly) {
-                            "A reading can miss or misread a stroke. Practice only; your schedule stays the same."
+                            "Can misread. Practice only."
                         } else {
-                            "A reading can miss or misread a stroke. Use it as a hint; you choose the grade."
+                            "Can misread. You choose the grade."
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,
@@ -244,6 +256,136 @@ fun RecognitionResultView(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RecognitionSummary(
+    result: RecognitionResult?,
+    target: String?,
+    recognizing: Boolean,
+    variants: Set<String>,
+    modifier: Modifier = Modifier,
+) {
+    if (result == null && !recognizing) return
+    if (recognizing) {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = PaperWarm,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Sky.copy(alpha = 0.35f)),
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = InkSoft,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Reading your writing…", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+            }
+        }
+        return
+    }
+    if (result == null) return
+    if (!result.modelReady) {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = PaperWarm,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Butter.copy(alpha = 0.45f)),
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            Text(
+                "Handwriting check unavailable. You still choose the grade.",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            )
+        }
+        return
+    }
+    if (result.candidates.isEmpty()) {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = PaperWarm,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            Text(
+                "No clear reading. You still choose the grade.",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            )
+        }
+        return
+    }
+    val targetRead = target?.let { wanted ->
+        result.candidates.take(3).firstOrNull { it == wanted || it in variants }
+    }
+    val read = targetRead ?: result.candidates.first()
+    val matched = target != null && read == target
+    val variantMatch = !matched && target != null && read in variants
+    val accent = when {
+        matched -> Mint
+        variantMatch -> Mint
+        else -> Rose
+    }
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = accent.copy(alpha = 0.12f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Check", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+            Spacer(Modifier.width(8.dp))
+            MiniGlyph(target ?: "?")
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                if (matched || variantMatch) Icons.Rounded.Check else Icons.Rounded.Close,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.width(4.dp))
+            MiniGlyph(read)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                when {
+                    matched -> "same"
+                    variantMatch -> "variant"
+                    else -> "different"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+                modifier = Modifier.weight(1f),
+            )
+            Text("Hint only", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+        }
+    }
+}
+
+@Composable
+private fun MiniGlyph(glyph: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = PaperWarm,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Text(
+            glyph,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Medium,
+            color = InkDark,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 1.dp),
+        )
     }
 }
 

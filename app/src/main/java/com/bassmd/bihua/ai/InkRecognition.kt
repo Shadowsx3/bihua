@@ -1,5 +1,7 @@
 package com.bassmd.bihua.ai
 
+import android.util.Log
+import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.InkStroke
 import com.google.mlkit.common.model.DownloadConditions
@@ -91,7 +93,20 @@ class InkRecognitionService {
         }.build()
         return runCatching {
             val result = recognizer.recognize(ink).await()
-            RecognitionResult(result.candidates.map { it.text }, true)
+            if (BuildConfig.DEBUG) {
+                result.candidates.forEach {
+                    Log.d("InkRecognition", "raw='${it.text}' score=${it.score}")
+                }
+            }
+            val candidates = RecognitionSanitizer.sanitize(
+                candidates = result.candidates.map { InkCandidate(it.text, it.score) },
+                target = target,
+                mode = mode,
+            )
+            if (BuildConfig.DEBUG) {
+                Log.d("InkRecognition", "shown=$candidates")
+            }
+            RecognitionResult(candidates, true)
         }.getOrElse { RecognitionResult(emptyList(), false) }
     }
 

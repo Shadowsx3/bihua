@@ -49,14 +49,23 @@ import com.bassmd.bihua.ui.theme.Sky
 
 /** The app background: warm paper with two soft color washes. */
 @Composable
-fun BihuaBackground(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun BihuaBackground(
+    modifier: Modifier = Modifier,
+    decorated: Boolean = true,
+    content: @Composable () -> Unit,
+) {
     val palette = LocalBihuaPalette.current
+    val stops = if (decorated) {
+        palette.backgroundStops
+    } else {
+        listOf(palette.paper, palette.paperWarm)
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(palette.backgroundStops))
+            .background(Brush.verticalGradient(stops))
     ) {
-        Canvas(Modifier.fillMaxSize()) {
+        if (decorated) Canvas(Modifier.fillMaxSize()) {
             // Canopy light, sun through leaves, and undergrowth.
             drawCircle(
                 color = Gem.copy(alpha = 0.20f),

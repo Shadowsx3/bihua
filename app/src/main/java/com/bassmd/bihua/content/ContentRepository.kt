@@ -63,7 +63,7 @@ class SqliteContentRepository(
     override suspend fun words(characterId: String): List<WordContext> = withContext(Dispatchers.IO) {
         database.rawQuery(
             """
-            SELECT w.word, w.reading, w.meaning
+            SELECT w.word, w.reading, w.meaning, w.level
             FROM word_context w
             JOIN word_character wc ON wc.word_id = w.id
             WHERE wc.character_id = ?
@@ -79,6 +79,7 @@ class SqliteContentRepository(
                             word = cursor.getString(0),
                             reading = cursor.getString(1),
                             meaning = cursor.getString(2),
+                            level = if (cursor.isNull(3)) null else cursor.getInt(3),
                         )
                     )
                 }

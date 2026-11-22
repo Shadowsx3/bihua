@@ -13,15 +13,32 @@ developer-run analytics.
 
 The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
+## Product feel
+
+Keep this in mind for every screen:
+
+- Warm paper and forest ink, with vivid accents. Lively, not muted or generic.
+- Juicy but comfy: soft rounded shapes, generous breathing room, clear hierarchy,
+  gentle motion, and satisfying feedback.
+- The learner should feel ownership: their pace, their course, their finish
+  date, their words, their progress.
+- Keep the writing surface calm and paper like. No decorative color or shapes
+  under the ink. The guide lines stay clear in light and dark themes.
+- One clear next action per screen. Put explanations in dialogs, not paragraphs.
+- No AI sounding copy, no em dashes, no cringe slogans.
+
 ## Current release state
 
-- Public closed test: **1.0.2**, versionCode **12**, in review.
-- Local next release: **1.0.3**, versionCode **13**.
-- Do not upload another build with versionCode 12. The 1.0.3 code includes
-  personal FSRS weights, the day boundary, permanent suspension, and selective
-  transfer.
+- Closed test: **1.0.3**, versionCode **13**, submitted. Confirm the current
+  review state in Play Console before uploading anything else.
+- Local working tree: post-1.0.3 design and review polish. The next upload needs
+  versionCode **14** and a new review.
+- Do not upload another build with versionCode 12 or 13.
+- The 1.0.3 code includes personal FSRS weights, the day boundary, permanent
+  suspension, and selective transfer. Later local work adds the vivid palette,
+  review cue setup, script filters, review polish, and handwriting sanitisation.
 - Progress schema **9**; contentVersion **19**.
-- 155 unit tests.
+- 184 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`

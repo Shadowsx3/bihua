@@ -15,6 +15,7 @@ data class WordContext(
     val reading: String,
     val readingAlt: String = "",
     val meaning: String,
+    val level: Int? = null,
     val traditional: String = "",
     val simplified: String = "",
 )
