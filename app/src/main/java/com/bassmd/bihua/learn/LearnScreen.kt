@@ -1055,11 +1055,11 @@ private fun PromptPanel(
             Spacer(Modifier.height(4.dp))
             Text(
                 when (step) {
-                    Step.INTRODUCE -> "Look at the shape. The reading and meaning sit below it."
+                    Step.INTRODUCE -> "Look at the shape."
                     Step.TRACE -> when (scaffold) {
-                        GuideScaffold.FULL -> "Follow the green guide. Your ink stays on top."
-                        GuideScaffold.OUTLINE -> "The stroke paths are hidden. Trace the outline from memory."
-                        GuideScaffold.HIDDEN -> "No guide this time. Write it once from memory, then check."
+                        GuideScaffold.FULL -> "Trace the green guide."
+                        GuideScaffold.OUTLINE -> "Trace the outline."
+                        GuideScaffold.HIDDEN -> "Write once from memory."
                     }
                     Step.RECALL -> "Write your best guess, then check."
                 },

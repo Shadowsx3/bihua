@@ -39,7 +39,10 @@ private const val ERASER_RADIUS = 0.04f
 
 /** Ink comes only from the S Pen tip or its eraser end. Finger and palm input is ignored. */
 private fun PointerInputChange.isPen(allowFinger: Boolean): Boolean =
-    type == PointerType.Stylus || type == PointerType.Eraser || (allowFinger && type == PointerType.Touch)
+    type == PointerType.Stylus ||
+        type == PointerType.Eraser ||
+        type == PointerType.Mouse ||
+        (allowFinger && type == PointerType.Touch)
 
 private fun PointerInputChange.isEraser(): Boolean = type == PointerType.Eraser
 

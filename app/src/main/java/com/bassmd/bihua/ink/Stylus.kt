@@ -2,6 +2,7 @@ package com.bassmd.bihua.ink
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.hardware.input.InputManager
 import android.view.InputDevice
 
@@ -11,6 +12,18 @@ import android.view.InputDevice
  * the input devices themselves.
  */
 fun hasStylus(context: Context): Boolean {
+    // Emulators and desktop images often expose a virtual stylus source. Treat
+    // them as touch devices so testers and Chromebook users can draw.
+    if (
+        Build.FINGERPRINT.startsWith("generic") ||
+        Build.FINGERPRINT.contains("emulator") ||
+        Build.MODEL.contains("Emulator") ||
+        Build.MODEL.contains("Android SDK built for") ||
+        Build.HARDWARE.contains("goldfish") ||
+        Build.HARDWARE.contains("ranchu")
+    ) {
+        return false
+    }
     val pm = context.packageManager
     if (pm.hasSystemFeature("android.hardware.stylus")) return true
     if (pm.hasSystemFeature("com.sec.feature.spen_usp")) return true

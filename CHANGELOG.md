@@ -70,6 +70,11 @@
   answer, the accepted reading, retry, hear-it, and a small confetti burst.
 - Settings is now a searchable home list of grouped rows with focused
   subpages, instead of category chips or a dropdown.
+- Long helper copy on Home, Meet, Trace, Write, word practice, paper check, and
+  settings was shortened so the canvas and actions keep the space.
+- Home shows the course under the greeting; the hero card carries the counts.
+- Emulator and mouse input now work, and emulators are no longer treated as
+  stylus-only devices.
 
 ### Fixed
 
