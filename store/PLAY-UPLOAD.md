@@ -43,7 +43,7 @@ Foldable, desktop, and Android XR can stay empty for this submission.
 ## Full description
 
 The current Play Console copy is the old 2,735-character version. Replace it with
-`store/full-description.txt` (2,801 characters), or add this sentence to the
+`store/full-description.txt` (2,955 characters), or add this sentence to the
 existing copy:
 
 > Recognition is evidence, not a verdict: messy or partial strokes can be
