@@ -2,6 +2,7 @@ package com.bassmd.bihua.settings
 
 import kotlinx.serialization.Serializable
 import com.bassmd.bihua.content.CharacterOrder
+import com.bassmd.bihua.fsrs.FsrsWeights
 
 /**
  * Languages the app's own interface can be shown in.
@@ -189,6 +190,16 @@ enum class SessionProgress(val label: String, val description: String) {
 }
 
 @Serializable
+data class FsrsProfile(
+    val weights: List<Float> = emptyList(),
+    val source: String = "",
+    val updatedAtMs: Long = 0L,
+) {
+    fun parameters(): FloatArray? =
+        weights.takeIf { it.size == FsrsWeights.SIZE }?.toFloatArray()
+}
+
+@Serializable
 data class AppSettings(
     val uiLanguage: UiLanguage = UiLanguage.ENGLISH,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -198,6 +209,8 @@ data class AppSettings(
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = true,
     val pronunciationPractice: Boolean = false,
+    /** Hide Hard and Easy if the learner prefers a two-button scale. */
+    val onlyAgainAndGood: Boolean = false,
     /** Epoch millis when vacation mode started; 0 means off. */
     val vacationStartedAtMs: Long = 0L,
     /** End of the shorter-session return window after vacation. */
@@ -217,6 +230,8 @@ data class AppSettings(
     val allowFingerDrawing: Boolean = false,
     val orientation: OrientationLock = OrientationLock.AUTO,
     val dailyNewGoal: Int = 5,
+    /** Hour when the study day ends. 0 is midnight, 4 is the default. */
+    val dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
     val characterOrder: CharacterOrder = CharacterOrder.CURRICULUM,
     val reviewOrder: ReviewOrder = ReviewOrder.RANDOM,
     val sessionOrder: SessionOrder = SessionOrder.REVIEWS_FIRST,
@@ -239,24 +254,64 @@ data class AppSettings(
     val priorityIds: Set<String> = emptySet(),
     /** Character id to ISO date (yyyy-MM-dd) until which it is skipped. */
     val skippedUntil: Map<String, String> = emptyMap(),
+    /** Characters the learner never wants to see until they resume them. */
+    val suspendedIds: Set<String> = emptySet(),
     /** A manual study list, in the order the learner added characters. */
     val studyList: List<String> = emptyList(),
+    /** Empty means the published FSRS-7 defaults. Exactly 34 floats means custom. */
+    val fsrsWeights: List<Float> = emptyList(),
+    val fsrsWeightsSource: String = "",
+    val fsrsWeightsUpdatedAtMs: Long = 0L,
+    /** Per-script overrides. The shared profile is the fallback. */
+    val fsrsProfiles: Map<String, FsrsProfile> = emptyMap(),
 ) {
+    fun fsrsParameters(): FloatArray? =
+        fsrsWeights.takeIf { it.size == FsrsWeights.SIZE }?.toFloatArray()
+
+    fun hasCustomWeights(): Boolean = fsrsParameters() != null
+
+    fun fsrsProfile(profile: String): FsrsProfile? = fsrsProfiles[profile]
+
+    fun fsrsParameters(profile: String): FloatArray? =
+        if (profile == SHARED_WEIGHTS) fsrsParameters() else fsrsProfiles[profile]?.parameters()
+
+    fun hasCustomWeights(profile: String): Boolean = fsrsParameters(profile) != null
+
+    /**
+     * A shared glyph uses the shared profile, because its memory card is shared.
+     * A separate glyph uses the script's override, falling back to the shared
+     * profile and then the published defaults.
+     */
+    fun parametersFor(mode: com.bassmd.bihua.content.StudyMode, glyphGroupId: String): FloatArray? =
+        if (effectiveSharing(glyphGroupId)) {
+            fsrsParameters()
+        } else {
+            fsrsProfiles[mode.name]?.parameters() ?: fsrsParameters()
+        }
+
     fun effectiveSharing(glyphGroupId: String): Boolean =
         sharingOverrides[glyphGroupId] ?: shareIdenticalGlyphs
 
-    fun isSkipped(characterId: String, today: java.time.LocalDate = java.time.LocalDate.now()): Boolean {
+    fun today(nowMs: Long = System.currentTimeMillis()): java.time.LocalDate =
+        DayBoundary.date(nowMs, dayStartHour)
+
+    fun isSkipped(characterId: String, today: java.time.LocalDate = today()): Boolean {
+        if (characterId in suspendedIds) return true
         val until = skippedUntil[characterId] ?: return false
         val date = runCatching { java.time.LocalDate.parse(until) }.getOrNull() ?: return false
         return !today.isAfter(date)
     }
 
-    /** Only the IDs skipped on [today]; stale entries are ignored. */
-    fun skippedIdsToday(today: java.time.LocalDate = java.time.LocalDate.now()): Set<String> =
-        skippedUntil.keys.filter { isSkipped(it, today) }.toSet()
+    /** Only the IDs skipped on [today] or suspended permanently. */
+    fun skippedIdsToday(today: java.time.LocalDate = today()): Set<String> =
+        suspendedIds + skippedUntil.keys.filter { isSkipped(it, today) }
+
+    fun withSuspended(characterId: String, suspended: Boolean): AppSettings = copy(
+        suspendedIds = if (suspended) suspendedIds + characterId else suspendedIds - characterId,
+    )
 
     /** Drops skip entries that no longer hide anything. */
-    fun prunedSkips(today: java.time.LocalDate = java.time.LocalDate.now()): AppSettings {
+    fun prunedSkips(today: java.time.LocalDate = today()): AppSettings {
         val pruned = StudyTools.pruneExpired(skippedUntil, today)
         return if (pruned == skippedUntil) this else copy(skippedUntil = pruned)
     }
@@ -264,7 +319,33 @@ data class AppSettings(
     /** Keeps the goal inside the range the study scheduler supports (0 pauses new items). */
     fun withDailyNewGoal(goal: Int) = copy(dailyNewGoal = goal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL))
 
+    fun withDayStartHour(hour: Int) =
+        copy(dayStartHour = hour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR))
+
+    /** Keeps a restored or hand-edited settings blob inside the ranges the UI can render. */
+    fun sanitized(): AppSettings {
+        val shared = fsrsWeights
+            .takeIf { it.size == FsrsWeights.SIZE }
+            ?.let { FsrsWeights.clip(it.toFloatArray()).toList() }
+            .orEmpty()
+        val profiles = fsrsProfiles.mapNotNull { (key, profile) ->
+            val weights = profile.weights.takeIf { it.size == FsrsWeights.SIZE }
+                ?: return@mapNotNull null
+            key to profile.copy(weights = FsrsWeights.clip(weights.toFloatArray()).toList())
+        }.toMap()
+        val hasShared = shared.isNotEmpty()
+        return copy(
+            dailyNewGoal = dailyNewGoal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL),
+            dayStartHour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR),
+            fsrsWeights = shared,
+            fsrsWeightsSource = if (hasShared) fsrsWeightsSource else "",
+            fsrsWeightsUpdatedAtMs = if (hasShared) fsrsWeightsUpdatedAtMs else 0L,
+            fsrsProfiles = profiles,
+        )
+    }
+
     companion object {
+        const val SHARED_WEIGHTS = "SHARED"
         const val MIN_DAILY_GOAL = 0
         const val MAX_DAILY_GOAL = 30
     }

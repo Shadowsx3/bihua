@@ -21,6 +21,10 @@ enum class Grade(@StringRes val labelRes: Int, val countsAsLearned: Boolean) {
     }
 }
 
+/** Whether this grade is offered by the current button scale. */
+fun Grade.available(onlyAgainAndGood: Boolean): Boolean =
+    !onlyAgainAndGood || this == Grade.AGAIN || this == Grade.GOOD
+
 /** A suggestion from the detection engine. Never applied without the learner's say-so. */
 data class GradeSuggestion(val grade: Grade)
 

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -93,7 +92,6 @@ import com.bassmd.bihua.ink.SingleStrokeGuideLayer
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.centerlines
 import com.bassmd.bihua.ink.StrokeOrderPlayer
-import com.bassmd.bihua.ink.StrokePlaybackControls
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ink.rememberStrokePlayback
 import com.bassmd.bihua.settings.DrawingTool
@@ -103,6 +101,9 @@ import com.bassmd.bihua.settings.allowsHint
 import com.bassmd.bihua.settings.RecallCue
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
+import com.bassmd.bihua.ui.appNavigationBarsPadding
+import com.bassmd.bihua.ui.appStatusBarsPadding
+import com.bassmd.bihua.ui.components.InkHistoryPlaybackBar
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.RecognitionResultView
@@ -149,6 +150,7 @@ fun LearnScreen(
     showCounters: Boolean,
     reduceMotion: Boolean = false,
     pronunciationPractice: Boolean = false,
+    onlyAgainAndGood: Boolean = false,
     pinyinNumbers: Boolean = true,
     guideMode: GuideMode = GuideMode.FADE,
     guideInRecall: Boolean = false,
@@ -445,6 +447,7 @@ fun LearnScreen(
                         speechEnabled = speechEnabled,
                         onGrade = { grade -> advance(item, index, grade) },
                         reduceMotion = reduceMotion,
+                        onlyAgainAndGood = onlyAgainAndGood,
                     )
                     Spacer(Modifier.height(20.dp))
                 }
@@ -509,6 +512,7 @@ fun LearnScreen(
                                 showOrder = showOrder,
                                 revealProgress = reveal,
                                 onStrokeStart = { trimReplay() },
+                                enabled = !revealed,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
@@ -542,6 +546,7 @@ fun LearnScreen(
                                 showOrder = showOrder,
                                 onToggleOrder = { showOrder = it },
                                 orderAvailable = player.strokeCount > 0,
+                                editable = !revealed,
                             )
                             WritingFeedback(
                                 result = recognition,
@@ -629,6 +634,7 @@ fun LearnScreen(
                             drawingRound++
                             revealed = false
                         },
+                        onlyAgainAndGood = onlyAgainAndGood,
                     )
                 }
             } else {
@@ -638,7 +644,7 @@ fun LearnScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .navigationBarsPadding()
+                            .appNavigationBarsPadding()
                             .padding(horizontal = 20.dp, vertical = 10.dp),
                     ) {
                         PromptPanel(
@@ -717,6 +723,7 @@ fun LearnScreen(
                             showOrder = showOrder,
                             onToggleOrder = { showOrder = it },
                             orderAvailable = player.strokeCount > 0,
+                            editable = !revealed,
                         )
                         Spacer(Modifier.height(8.dp))
                         CanvasStage(
@@ -737,6 +744,7 @@ fun LearnScreen(
                             showOrder = showOrder,
                             revealProgress = reveal,
                             onStrokeStart = { trimReplay() },
+                            enabled = !revealed,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Spacer(Modifier.height(10.dp))
@@ -804,6 +812,7 @@ fun LearnScreen(
                             drawingRound++
                             revealed = false
                         },
+                        onlyAgainAndGood = onlyAgainAndGood,
                     )
                 }
                 }
@@ -989,6 +998,7 @@ private fun CanvasStage(
     showOrder: Boolean,
     revealProgress: Float?,
     onStrokeStart: (() -> Unit)? = null,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(
@@ -1023,6 +1033,7 @@ private fun CanvasStage(
                 revealProgress = revealProgress,
                 contentDescription = "Handwriting canvas. Write the character here.",
                 onStrokeStart = onStrokeStart,
+                enabled = enabled,
             )
         }
     }
@@ -1395,10 +1406,11 @@ private fun GradeChoices(
     suggestion: GradeSuggestion?,
     enabled: Boolean,
     onGrade: (Grade) -> Unit,
+    onlyAgainAndGood: Boolean = false,
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Grade.entries.forEach { grade ->
+        Grade.entries.filter { it.available(onlyAgainAndGood) }.forEach { grade ->
             val suggested = suggestion?.grade == grade
             val interaction = remember { MutableInteractionSource() }
             val pressed by interaction.collectIsPressedAsState()
@@ -1450,6 +1462,7 @@ private fun PronunciationReview(
     speechEnabled: Boolean = true,
     onGrade: (Grade) -> Unit,
     reduceMotion: Boolean = false,
+    onlyAgainAndGood: Boolean = false,
 ) {
     var input by remember(item.id, round) { mutableStateOf("") }
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
@@ -1620,14 +1633,20 @@ private fun PronunciationReview(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
+                val shownSuggestion = suggestion?.takeIf { it.grade.available(onlyAgainAndGood) }
                 GradeChoices(
-                    suggestion = suggestion,
+                    suggestion = shownSuggestion,
                     enabled = true,
                     onGrade = onGrade,
+                    onlyAgainAndGood = onlyAgainAndGood,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Suggested: ${suggestion?.grade?.label ?: "—"}. You still choose.",
+                    if (shownSuggestion != null) {
+                        "Suggested: ${shownSuggestion.grade.label}. You still choose."
+                    } else {
+                        "Choose Again or Good. You still choose."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                     modifier = Modifier.fillMaxWidth(),
@@ -1824,6 +1843,7 @@ private fun CanvasTools(
     showOrder: Boolean,
     onToggleOrder: (Boolean) -> Unit,
     orderAvailable: Boolean,
+    editable: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (!orderAvailable) {
@@ -1866,51 +1886,12 @@ private fun CanvasTools(
                 accent = if (showOrder && showReference) Lilac.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant,
             )
         }
-        Row(
+        InkHistoryPlaybackBar(
+            ink = ink,
+            playback = playback,
+            editable = editable,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-        ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = { ink.undo() }, enabled = ink.canUndo, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        Icons.Rounded.Undo,
-                        contentDescription = "Undo",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (ink.canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
-                }
-                IconButton(onClick = { ink.redo() }, enabled = ink.canRedo, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.Redo,
-                        contentDescription = "Redo",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (ink.canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
-                }
-                IconButton(
-                    onClick = { ink.clear() },
-                    enabled = ink.canUndo,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics { contentDescription = "Clear canvas" },
-                ) {
-                    com.bassmd.bihua.ui.components.EraserIcon(
-                        size = 20.dp,
-                        tint = if (ink.canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
-                }
-            }
-        }
-            StrokePlaybackControls(playback, Modifier.fillMaxWidth())
-        }
+        )
     }
 }
 
@@ -1927,6 +1908,7 @@ private fun StickyGradeBar(
     practiceOnly: Boolean,
     onGrade: (Grade) -> Unit,
     onDrawAgain: () -> Unit,
+    onlyAgainAndGood: Boolean = false,
 ) {
     val recognitionGrade = when {
         recognition == null || recognition.candidates.isEmpty() -> null
@@ -1958,7 +1940,7 @@ private fun StickyGradeBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
+                .appNavigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1986,15 +1968,19 @@ private fun StickyGradeBar(
                 TextButton(onClick = onDrawAgain) { Text("Draw again") }
             }
             Spacer(Modifier.height(4.dp))
+            val shownSuggestion = suggestion?.takeIf { it.grade.available(onlyAgainAndGood) }
             GradeChoices(
-                suggestion = suggestion,
+                suggestion = shownSuggestion,
                 enabled = true,
                 onGrade = onGrade,
+                onlyAgainAndGood = onlyAgainAndGood,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                if (suggestion != null) {
-                    "App suggests ${suggestion.grade.label}. A hint only; you decide."
+                if (shownSuggestion != null) {
+                    "App suggests ${shownSuggestion.grade.label}. A hint only; you decide."
+                } else if (onlyAgainAndGood) {
+                    "Choose Again or Good. A hint only; you decide."
                 } else {
                     "No suggestion. Use your own judgement."
                 },

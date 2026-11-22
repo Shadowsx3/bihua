@@ -15,9 +15,13 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
 ## Current release state
 
-- Version **1.0.2**, versionCode **12**.
+- Public closed test: **1.0.2**, versionCode **12**, in review.
+- Local next release: **1.0.3**, versionCode **13**.
+- Do not upload another build with versionCode 12. The 1.0.3 code includes
+  personal FSRS weights, the day boundary, permanent suspension, and selective
+  transfer.
 - Progress schema **9**; contentVersion **19**.
-- 132 unit tests.
+- 155 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`
@@ -37,7 +41,7 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 132 tests, content audit, debug APK, verify
+make check                     # compile, 155 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
@@ -172,7 +176,8 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 ## Settings
 
 - Settings opens on a searchable home list of grouped rows:
-  YOU / LEARNING / WRITING / YOUR DATA / ABOUT.
+  YOU / LEARNING / WRITING / YOUR DATA / ABOUT. On a phone, Data and Sync are
+  below the first screen; scroll or use search.
 - Rows open focused subpages with a back arrow. Android Back returns to the
   settings home while a subpage is open.
 - All sections are reachable: Profile, Practice, Study, Writing, Display, Data,
@@ -183,6 +188,14 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   all four.
 - About is transparent about Google ML Kit diagnostics and has Send feedback and
   Source code actions.
+- Schedule is intentionally compact: profile dropdown, status, Fit, Import,
+  Export, and a More menu. Long explanations belong in the info dialog, not on
+  the page. Do not bring back the chip wall and paragraph stack.
+- Data and Sync use `TransferScope`: Everything, Settings, or Progress. Import
+  and sync confirm dialogs use checkboxes for the parts present in the file.
+- Slow actions must show feedback: `BusyDialog` for blocking work, inline
+  progress for the weight fit, and a snackbar after completion. A tap should
+  never look ignored.
 - The TTS engine is warmed at start/onboarding/script switch; a missing voice
   shows a Toast instead of silently doing nothing.
 - Rotation/theme/font-scale must be tested. The app supports 1.3×+ text.
@@ -196,8 +209,40 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   traditional-only forms in Simplified; shared glyphs stay in both.
 - Traditional words come from CEDICT word pairs, not character substitution.
 - Korean uses Unihan/Hangul; Hanjaro is intentionally absent.
-- Backups include progress. Zip format is `backup.json` + `progress.db`; import
-  accepts the zip and legacy settings-only JSON.
+- Backups include settings and progress. Zip format is `backup.json` +
+  `progress.db`; import accepts the zip, a settings-only zip, a progress-only
+  zip, and legacy settings-only JSON. `TransferScope` decides what is written.
+- Settings and profile are part of every sync package. The receiver chooses
+  whether to apply settings, progress, or both.
+- Do not call `enableEdgeToEdge()` and do not set status-bar or navigation-bar
+  colors directly. The 1.0.2 build was flagged for
+  `Window.setStatusBarColor`, `Window.setNavigationBarColor`, and
+  `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`. `LocalEdgeToEdge` in
+  `ui/EdgeToEdge.kt` applies system-bar padding only on Android 15+, where the
+  platform draws edge-to-edge by default. Keep the `MainActivity`
+  inset-controller icon colors on API 35+; older versions use the theme's inset
+  bars. After a release build, check the DEX strings for those three APIs.
+- After a review is submitted, the canvas is locked (`InkCanvas(enabled=false)`).
+  Do not place a Draw again button over the drawing; the grade bar action is the
+  only restart. Playback stays available and editor tools are disabled.
+- Practice and review use `InkHistoryPlaybackBar` so history and playback are
+  aligned. Practice must keep play, reverse, previous, count, and next.
+- `AppSettings.onlyAgainAndGood` hides Hard and Easy in the grade bar and
+  pronunciation check. Scheduling still accepts all four grades.
+- FSRS weights live in `AppSettings`. `fsrsWeights` is the shared profile;
+  `fsrsProfiles` overrides it per script. `parametersFor(mode, glyphGroupId)`
+  uses the shared profile whenever the glyph is shared, so a shared card never
+  changes models between scripts.
+- The local fit (`FsrsOptimizer`) needs 400 reviews. It uses the recent 2,000
+  by default or all reviews when chosen, checks a time-based holdout, and keeps
+  the current weights if the holdout does not improve. It is not the official
+  Rust optimizer; do not claim parity.
+- `DayBoundary` is the single source for the study date. `dayStartHour` defaults
+  to 4 AM and ranges 0–6. New counts, activity, forecasts, study days, XP days,
+  skips, and the calendar all use it. `clockTick` and lifecycle resume refresh
+  the day when the app stays open.
+- `suspendedIds` is permanent. `skippedUntil` is one day. Both are excluded from
+  sessions; Study tools shows them separately.
 - Reset all learning deletes cards, reviews, XP, and confusions; it keeps notes,
   study list, and settings.
 - Vacation mode: due count 0 and sessions refuse to start. Ending shifts
@@ -272,6 +317,9 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - `make check` must be green before commit. The pre-commit hook runs compile.
 - Verify UI changes with `device.sh shot`; use seeded reviews/learning cards when
   a flow needs progress.
+- `tools/seed_fsrs_fit.py <progress.db> [cards-per-mode] [reviews-per-card]`
+  writes a large per-script and shared-glyph history. Pull the debug DB, run the
+  script, push it back, then fit a profile from Settings → Schedule.
 - Test phone and tablet, light and dark, 1.3× text, emulator/mouse, and a real
   stylus device when available.
 - Check the pre-launch report and no-crash behavior on the exact Play build.
@@ -284,11 +332,11 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 | Home / Characters / Progress | `ui/HomeScreen.kt`, `ui/CharactersScreen.kt`, `ui/DashboardScreen.kt` |
 | Lesson, tasks, cues, grading | `learn/LearnScreen.kt`, `learn/SessionProgression.kt`, `learn/ReviewTask.kt`, `learn/ReadingCheck.kt`, `learn/Grading.kt` |
 | Ink, guides, grading | `ink/InkCanvas.kt`, `ink/InkModel.kt`, `ink/StrokeGuide.kt`, `ink/StrokePlayback.kt`, `ink/StrokeOrderGrader.kt`, `ink/Stylus.kt` |
-| Scheduling and progress | `fsrs/Fsrs7.kt`, `fsrs/ReviewLoad.kt`, `progress/ProgressStore.kt`, `progress/ReviewQueue.kt` |
+| Scheduling and progress | `fsrs/Fsrs7.kt`, `fsrs/FsrsWeights.kt`, `fsrs/FsrsOptimizer.kt`, `fsrs/ReviewLoad.kt`, `progress/ProgressStore.kt`, `progress/ReviewQueue.kt`, `settings/DayBoundary.kt` |
 | Content and search | `content/ContentRepository.kt`, `content/CharacterSearch.kt`, `content/Romanization.kt`, `content/Pinyin.kt` |
-| Backup and sync | `backup/BackupArchive.kt`, `sync/Sync.kt` |
-| Settings | `settings/SettingsScreen.kt`, `settings/Models.kt` |
-| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `Makefile` |
+| Backup and sync | `backup/BackupArchive.kt`, `backup/TransferScope.kt`, `sync/Sync.kt` |
+| Settings | `settings/SettingsScreen.kt`, `settings/Models.kt`, `settings/DayBoundary.kt` |
+| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
 | Store | `store/PLAY-UPLOAD.md`, `store/README.md`, `store/listing.md` |
 
 ## Known gaps

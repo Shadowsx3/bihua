@@ -18,10 +18,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +57,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bassmd.bihua.content.ContentRepository
 import com.bassmd.bihua.content.LocalContentRepository
@@ -90,6 +91,7 @@ import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.StudyTools
 import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.ui.components.BihuaBackground
+import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.StudyToolsSheet
 import com.bassmd.bihua.ui.components.modeColor
@@ -98,6 +100,7 @@ import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Sky
 import kotlinx.coroutines.Dispatchers
+import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -191,6 +194,7 @@ fun BihuaApp(store: SettingsStore) {
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
     }
     var inSession by remember { mutableStateOf(false) }
+    var startingSession by remember { mutableStateOf(false) }
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -212,10 +216,19 @@ fun BihuaApp(store: SettingsStore) {
             clockTick++
         }
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) clockTick++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val cards by produceState<Map<String, CardSnapshot>>(emptyMap(), progressVersion) {
         value = withContext(Dispatchers.IO) { progressStore.allCards() }
     }
     val now = remember(progressVersion, clockTick) { System.currentTimeMillis() }
+    val today = remember(now, settings.dayStartHour) { settings.today(now) }
     val visibleCharacters = remember(characters, cards, settings, now) {
         characters?.map { entry ->
             val card = ProgressStore.cardFor(entry, settings, cards)
@@ -234,22 +247,38 @@ fun BihuaApp(store: SettingsStore) {
     val playerStats by produceState(PlayerStats.forXp(0), progressVersion) {
         value = withContext(Dispatchers.IO) { progressStore.playerStats() }
     }
-    val studyDays by produceState(0, progressVersion) {
-        value = withContext(Dispatchers.IO) { progressStore.studyDays() }
+    val studyDays by produceState(0, progressVersion, today, settings.dayStartHour) {
+        value = withContext(Dispatchers.IO) { progressStore.studyDays(settings.dayStartHour) }
     }
-    val newLearnedToday by produceState(0, progressVersion, mode) {
-        value = withContext(Dispatchers.IO) { progressStore.newLearnedToday(mode = mode) }
-    }
-    val activityDays by produceState<List<DayActivity>>(emptyList(), progressVersion) {
-        value = withContext(Dispatchers.IO) { progressStore.activity(35) }
-    }
-    val dueForecast by produceState<List<DueDay>>(emptyList(), progressVersion, visibleCharacters, settings) {
+    val newLearnedToday by produceState(0, progressVersion, mode, today, settings.dayStartHour) {
         value = withContext(Dispatchers.IO) {
-            progressStore.dueForecast(visibleCharacters.orEmpty(), settings, 14)
+            progressStore.newLearnedToday(mode = mode, dayStartHour = settings.dayStartHour)
         }
     }
-    val learnedHistory by produceState<List<DayActivity>>(emptyList(), progressVersion) {
-        value = withContext(Dispatchers.IO) { progressStore.learnedHistory(120) }
+    val activityDays by produceState<List<DayActivity>>(emptyList(), progressVersion, today, settings.dayStartHour) {
+        value = withContext(Dispatchers.IO) { progressStore.activity(35, settings.dayStartHour) }
+    }
+    val dueForecast by produceState<List<DueDay>>(
+        emptyList(),
+        progressVersion,
+        visibleCharacters,
+        settings,
+        today,
+    ) {
+        value = withContext(Dispatchers.IO) {
+            progressStore.dueForecast(
+                visibleCharacters.orEmpty(),
+                settings,
+                14,
+                today = today,
+                dayStartHour = settings.dayStartHour,
+            )
+        }
+    }
+    val learnedHistory by produceState<List<DayActivity>>(emptyList(), progressVersion, today, settings.dayStartHour) {
+        value = withContext(Dispatchers.IO) {
+            progressStore.learnedHistory(120, settings.dayStartHour)
+        }
     }
     val recentMistakes by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters) {
         value = withContext(Dispatchers.IO) {
@@ -270,7 +299,9 @@ fun BihuaApp(store: SettingsStore) {
     // SRS, study list, priority, and skip are per script. Only characters from
     // the active mode are resolved here.
     val sessionPool = visibleCharacters.orEmpty()
-    val skippedToday = remember(settings) { settings.skippedIdsToday() }
+    val suspendedToday = remember(settings) { settings.suspendedIds }
+    val skippedToday = remember(settings, today) { settings.skippedIdsToday(today) - suspendedToday }
+    val hiddenToday = remember(settings, today) { settings.skippedIdsToday(today) }
     val sessionIndex = remember(sessionPool) { sessionPool.associateBy { it.id } }
     val studyEntries = remember(settings.studyList, sessionIndex) {
         settings.studyList.mapNotNull { sessionIndex[it] }
@@ -281,8 +312,11 @@ fun BihuaApp(store: SettingsStore) {
     val skippedEntries = remember(sessionPool, skippedToday) {
         sessionPool.filter { it.id in skippedToday }
     }
-    val remainingNew = remember(sessionPool, skippedToday) {
-        sessionPool.count { it.status == StudyStatus.NEW && it.id !in skippedToday }
+    val suspendedEntries = remember(sessionPool, suspendedToday) {
+        sessionPool.filter { it.id in suspendedToday }
+    }
+    val remainingNew = remember(sessionPool, hiddenToday) {
+        sessionPool.count { it.status == StudyStatus.NEW && it.id !in hiddenToday }
     }
     val newTodayCount = remember(settings.dailyNewGoal, newLearnedToday, remainingNew) {
         (settings.dailyNewGoal - newLearnedToday)
@@ -290,70 +324,101 @@ fun BihuaApp(store: SettingsStore) {
             .coerceAtMost(remainingNew)
     }
     val startSession: (Set<String>?) -> Unit = { onlyIds ->
-        if (com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)) {
+        if (startingSession) {
+            // A second tap while the queue is being built should do nothing.
+        } else if (com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)) {
             android.widget.Toast.makeText(
                 context,
                 "Vacation mode is on. Reviews are paused.",
                 android.widget.Toast.LENGTH_SHORT,
             ).show()
-        } else scope.launch {
-            val session = progressStore.session(
-                sessionPool,
-                settings,
-                20,
-                onlyIds = onlyIds,
-            )
-            if (session.isEmpty()) {
-                android.widget.Toast.makeText(
-                    context,
-                    "Nothing is due right now. Learning steps return shortly.",
-                    android.widget.Toast.LENGTH_SHORT,
-                ).show()
-            } else {
-                sessionItems = session.map { entry ->
-                    entry.toLearnItem(
-                        reps = ProgressStore.cardFor(entry, settings, cards)?.reps ?: 0,
+        } else {
+            startingSession = true
+            scope.launch {
+                try {
+                    val session = progressStore.session(
+                        sessionPool,
+                        settings,
+                        20,
+                        onlyIds = onlyIds,
                     )
+                    if (session.isEmpty()) {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Nothing is due right now. Learning steps return shortly.",
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                    } else {
+                        sessionItems = session.map { entry ->
+                            entry.toLearnItem(
+                                reps = ProgressStore.cardFor(entry, settings, cards)?.reps ?: 0,
+                            )
+                        }
+                        sessionXp = 0
+                        sessionLevelUp = false
+                        sessionMode = mode
+                        sessionCharacters = session.associateBy { it.id }
+                        activeResume = null
+                        sessionStore.clear(mode)
+                        resumableSession = null
+                        inSession = true
+                    }
+                } catch (error: kotlinx.coroutines.CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Could not prepare the session. Try again.",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                } finally {
+                    startingSession = false
                 }
-                sessionXp = 0
-                sessionLevelUp = false
-                sessionMode = mode
-                sessionCharacters = session.associateBy { it.id }
-                activeResume = null
-                sessionStore.clear(mode)
-                resumableSession = null
-                inSession = true
             }
         }
     }
-    val resumeSession: () -> Unit = {
+    val resumeSession: () -> Unit = resume@{
+        if (startingSession) return@resume
         resumableSession?.let { saved ->
+            startingSession = true
             scope.launch {
-                val entries = withContext(Dispatchers.IO) { repository.characters(saved.mode) }
-                val byId = entries.associateBy { it.id }
-                val items = saved.itemIds.mapNotNull { id ->
-                    byId[id]?.toLearnItem(
-                        reps = ProgressStore.cardFor(byId[id]!!, settings, cards)?.reps ?: 0,
-                    )
-                }
-                if (items.size != saved.itemIds.size || saved.pending.any { it !in items.indices }) {
-                    sessionStore.clear(saved.mode)
-                    resumableSession = null
-                    activeResume = null
+                try {
+                    val entries = withContext(Dispatchers.IO) { repository.characters(saved.mode) }
+                    val byId = entries.associateBy { it.id }
+                    val items = saved.itemIds.mapNotNull { id ->
+                        byId[id]?.toLearnItem(
+                            reps = ProgressStore.cardFor(byId[id]!!, settings, cards)?.reps ?: 0,
+                        )
+                    }
+                    if (items.size != saved.itemIds.size || saved.pending.any { it !in items.indices }) {
+                        sessionStore.clear(saved.mode)
+                        resumableSession = null
+                        activeResume = null
+                        android.widget.Toast.makeText(
+                            context,
+                            "That saved lesson is no longer available.",
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                    } else {
+                        sessionItems = items
+                        sessionCharacters = byId
+                        sessionMode = saved.mode
+                        sessionXp = saved.xpEarned
+                        sessionLevelUp = saved.leveledUp
+                        activeResume = saved
+                        resumableSession = null
+                        inSession = true
+                    }
+                } catch (error: kotlinx.coroutines.CancellationException) {
+                    throw error
+                } catch (error: Exception) {
                     android.widget.Toast.makeText(
                         context,
-                        "That saved lesson is no longer available.",
+                        "Could not resume the saved lesson. Try again.",
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
-                } else {
-                    sessionItems = items
-                    sessionCharacters = byId
-                    sessionMode = saved.mode
-                    sessionXp = saved.xpEarned
-                    sessionLevelUp = saved.leveledUp
-                    activeResume = saved
-                    resumableSession = null
-                    inSession = true
+                } finally {
+                    startingSession = false
                 }
             }
         }
@@ -374,11 +439,24 @@ fun BihuaApp(store: SettingsStore) {
         scope.launch {
             store.updateSettings { current ->
                 val next = if (skipped) {
-                    StudyTools.skipToday(current.skippedUntil, entry.id)
+                    StudyTools.skipToday(current.skippedUntil, entry.id, current.today())
                 } else {
                     StudyTools.resume(current.skippedUntil, entry.id)
                 }
-                current.copy(skippedUntil = next)
+                current.copy(
+                    skippedUntil = next,
+                    suspendedIds = if (skipped) current.suspendedIds - entry.id else current.suspendedIds,
+                )
+            }
+        }
+    }
+    val suspendCharacter: (CharacterEntry, Boolean) -> Unit = { entry, suspended ->
+        scope.launch {
+            store.updateSettings { current ->
+                current.copy(
+                    suspendedIds = if (suspended) current.suspendedIds + entry.id else current.suspendedIds - entry.id,
+                    skippedUntil = if (suspended) current.skippedUntil - entry.id else current.skippedUntil,
+                )
             }
         }
     }
@@ -436,12 +514,12 @@ fun BihuaApp(store: SettingsStore) {
         }
     }
     val vacation = com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)
-    val dueNow by produceState(0, progressVersion, clockTick, visibleCharacters, settings) {
+    val dueNow by produceState(0, progressVersion, clockTick, visibleCharacters, settings, today) {
         value = if (com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)) {
             0
         } else {
             withContext(Dispatchers.IO) {
-                val skipped = settings.skippedIdsToday()
+                val skipped = settings.skippedIdsToday(today)
                 progressStore.dueCount(
                     visibleCharacters.orEmpty().filterNot { it.id in skipped },
                     settings,
@@ -469,7 +547,7 @@ fun BihuaApp(store: SettingsStore) {
             ProgressStore.levelFor(card) == level
         }
         val recalls = entries.mapNotNull { entry ->
-            ProgressStore.cardFor(entry, settings, cards)?.recall(now)
+            ProgressStore.cardFor(entry, settings, cards)?.recall(now, settings.parametersFor(entry.mode, entry.glyphGroupId) ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W)
         }
         com.bassmd.bihua.progress.MemoryBucket(
             level = level,
@@ -496,10 +574,10 @@ fun BihuaApp(store: SettingsStore) {
 
     // A skip is a one-day tool. Remove entries that no longer hide anything so
     // the stored settings stay honest after the date passes.
-    LaunchedEffect(Unit) {
+    LaunchedEffect(today) {
         val current = store.currentSettings()
-        if (current.prunedSkips() != current) {
-            store.updateSettings { it.prunedSkips() }
+        if (current.prunedSkips(today) != current) {
+            store.updateSettings { it.prunedSkips(today) }
         }
     }
 
@@ -626,8 +704,8 @@ fun BihuaApp(store: SettingsStore) {
             androidx.compose.foundation.layout.Box(
                 Modifier
                     .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
+                    .appStatusBarsPadding()
+                    .appNavigationBarsPadding()
             ) {
                 LearnScreen(
                     items = sessionItems,
@@ -643,6 +721,7 @@ fun BihuaApp(store: SettingsStore) {
                     showCounters = settings.showCounters,
                     reduceMotion = settings.reduceMotion,
                     pronunciationPractice = settings.pronunciationPractice,
+                    onlyAgainAndGood = settings.onlyAgainAndGood,
                     pinyinNumbers = settings.pinyinNumbers,
                     guideMode = settings.guideMode,
                     guideInRecall = settings.guideInRecall,
@@ -699,7 +778,7 @@ fun BihuaApp(store: SettingsStore) {
         BoxWithConstraints(
             Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
+                .appStatusBarsPadding()
         ) {
             val wide = maxWidth >= 840.dp
             if (wide) {
@@ -717,7 +796,7 @@ fun BihuaApp(store: SettingsStore) {
                         Box(
                             Modifier
                                 .weight(1f)
-                                .navigationBarsPadding()
+                                .appNavigationBarsPadding()
                         ) {
                             AppContent(
                                 tab = tab,
@@ -742,6 +821,7 @@ fun BihuaApp(store: SettingsStore) {
                                 },
                                 onStore = store,
                                 progressStore = progressStore,
+                                today = today,
                                 onProgressChanged = { progressVersion++ },
                                 playerStats = playerStats,
                                 studyDays = studyDays,
@@ -772,15 +852,18 @@ fun BihuaApp(store: SettingsStore) {
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
                                 skippedIds = skippedToday,
+                                suspendedIds = suspendedToday,
                                 studyList = settings.studyList,
                                 studyEntries = studyEntries,
                                 pinnedCount = pinnedEntries.size,
                                 skippedCount = skippedEntries.size,
+                                suspendedCount = suspendedEntries.size,
                                 onOpenStudyTools = { showStudyTools = true },
                                 onPaper = { paperEntries = studyEntries },
                                 onStudyList = { startSession(studyEntries.map { it.id }.toSet()) },
                                 onPrioritize = prioritizeCharacter,
                                 onSkip = skipCharacter,
+                                onSuspend = suspendCharacter,
                                 onToggleStudyList = toggleStudyList,
                                 memoryLevels = memoryLevels,
                                 onSetMemoryLevel = { entry, level ->
@@ -817,7 +900,7 @@ fun BihuaApp(store: SettingsStore) {
                         Box(
                             Modifier
                                 .weight(1f)
-                                .navigationBarsPadding()
+                                .appNavigationBarsPadding()
                                 .padding(bottom = 96.dp),
                         ) {
                             AppContent(
@@ -843,6 +926,7 @@ fun BihuaApp(store: SettingsStore) {
                                 },
                                 onStore = store,
                                 progressStore = progressStore,
+                                today = today,
                                 onProgressChanged = { progressVersion++ },
                                 playerStats = playerStats,
                                 studyDays = studyDays,
@@ -873,15 +957,18 @@ fun BihuaApp(store: SettingsStore) {
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
                                 skippedIds = skippedToday,
+                                suspendedIds = suspendedToday,
                                 studyList = settings.studyList,
                                 studyEntries = studyEntries,
                                 pinnedCount = pinnedEntries.size,
                                 skippedCount = skippedEntries.size,
+                                suspendedCount = suspendedEntries.size,
                                 onOpenStudyTools = { showStudyTools = true },
                                 onPaper = { paperEntries = studyEntries },
                                 onStudyList = { startSession(studyEntries.map { it.id }.toSet()) },
                                 onPrioritize = prioritizeCharacter,
                                 onSkip = skipCharacter,
+                                onSuspend = suspendCharacter,
                                 onToggleStudyList = toggleStudyList,
                                 memoryLevels = memoryLevels,
                                 onSetMemoryLevel = { entry, level ->
@@ -911,7 +998,7 @@ fun BihuaApp(store: SettingsStore) {
                         onSelect = { tab = it },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .navigationBarsPadding()
+                            .appNavigationBarsPadding()
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                     )
                     if (showStudyTools) {
@@ -920,6 +1007,7 @@ fun BihuaApp(store: SettingsStore) {
                             studyList = studyEntries,
                             pinned = pinnedEntries,
                             skipped = skippedEntries,
+                            suspended = suspendedEntries,
                             onStudyList = {
                                 showStudyTools = false
                                 startSession(studyEntries.map { it.id }.toSet())
@@ -947,6 +1035,15 @@ fun BihuaApp(store: SettingsStore) {
                                     }
                                 }
                             },
+                            onResumeSuspended = { entry -> suspendCharacter(entry, false) },
+                            onResumeAllSuspended = {
+                                val ids = suspendedEntries.map { it.id }.toSet()
+                                scope.launch {
+                                    store.updateSettings { current ->
+                                        current.copy(suspendedIds = current.suspendedIds - ids)
+                                    }
+                                }
+                            },
                             onOpenCharacter = { entry ->
                                 showStudyTools = false
                                 characterId = entry.id
@@ -963,6 +1060,7 @@ fun BihuaApp(store: SettingsStore) {
         }
         }
     }
+    if (startingSession) BusyDialog("Preparing your session…")
 }
 
 @Composable
@@ -992,6 +1090,7 @@ private fun AppContent(
     easeBackUntilMs: Long = 0L,
     onEndVacation: () -> Unit = {},
     activity: List<DayActivity> = emptyList(),
+    today: LocalDate = LocalDate.now(),
     dueForecast: List<DueDay> = emptyList(),
     learnedHistory: List<DayActivity> = emptyList(),
     practiceTimeMs: Long = 0,
@@ -1009,15 +1108,18 @@ private fun AppContent(
     onPaperCharacter: (CharacterEntry) -> Unit = {},
     priorityIds: Set<String> = emptySet(),
     skippedIds: Set<String> = emptySet(),
+    suspendedIds: Set<String> = emptySet(),
     studyList: List<String> = emptyList(),
     studyEntries: List<CharacterEntry> = emptyList(),
     pinnedCount: Int = 0,
     skippedCount: Int = 0,
+    suspendedCount: Int = 0,
     onOpenStudyTools: () -> Unit = {},
     onPaper: () -> Unit = {},
     onStudyList: () -> Unit = {},
     onPrioritize: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
     onSkip: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
+    onSuspend: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
     onToggleStudyList: (CharacterEntry) -> Unit = {},
     memoryLevels: Map<String, MemoryLevel> = emptyMap(),
     onSetMemoryLevel: (CharacterEntry, MemoryLevel?) -> Unit = { _, _ -> },
@@ -1051,6 +1153,7 @@ private fun AppContent(
             onStudyList = onStudyList,
             pinnedCount = pinnedCount,
             skippedCount = skippedCount,
+            suspendedCount = suspendedCount,
             skippedIds = skippedIds,
             onOpenStudyTools = onOpenStudyTools,
             onPaper = onPaper,
@@ -1062,6 +1165,7 @@ private fun AppContent(
             easeBackUntilMs = easeBackUntilMs,
             onEndVacation = onEndVacation,
             activity = activity,
+            today = today,
             onOpenSettings = onOpenSettings,
             onStudy = onStudy,
             onBrowse = onBrowse,
@@ -1086,9 +1190,11 @@ private fun AppContent(
             brush = settings.brush,
             priorityIds = priorityIds,
             skippedIds = skippedIds,
+            suspendedIds = suspendedIds,
             studyList = studyList,
             onPrioritize = onPrioritize,
             onSkip = onSkip,
+            onSuspend = onSuspend,
             onToggleStudyList = onToggleStudyList,
             memoryLevels = memoryLevels,
             onSetMemoryLevel = onSetMemoryLevel,
@@ -1098,6 +1204,7 @@ private fun AppContent(
             mode = mode,
             characters = characters,
             activity = activity,
+            today = today,
             forecast = dueForecast,
             history = learnedHistory,
             mistakes = recentMistakes,
@@ -1237,7 +1344,7 @@ private fun NavigationRail(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .navigationBarsPadding()
+                .appNavigationBarsPadding()
                 .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),

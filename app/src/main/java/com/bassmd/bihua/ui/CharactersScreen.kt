@@ -32,6 +32,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
@@ -130,9 +131,11 @@ fun CharactersScreen(
     onPaperCharacter: (CharacterEntry) -> Unit = {},
     priorityIds: Set<String> = emptySet(),
     skippedIds: Set<String> = emptySet(),
+    suspendedIds: Set<String> = emptySet(),
     studyList: List<String> = emptyList(),
     onPrioritize: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
     onSkip: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
+    onSuspend: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
     onToggleStudyList: (CharacterEntry) -> Unit = {},
     brush: com.bassmd.bihua.settings.BrushConfig = com.bassmd.bihua.settings.BrushConfig(),
     memoryLevels: Map<String, com.bassmd.bihua.progress.MemoryLevel> = emptyMap(),
@@ -286,6 +289,7 @@ fun CharactersScreen(
                                 onPracticeWord = onPracticeWord,
                                 onPaper = { onPaperCharacter(selected) },
                                 onPractice = { onPractice(selected) },
+                                onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
                                 onPrioritize = {
                                     val next = selected.id !in priorityIds
                                     onPrioritize(selected, next)
@@ -295,12 +299,22 @@ fun CharactersScreen(
                                         )
                                     }
                                 },
+                                suspended = selected.id in suspendedIds,
+                                onSuspend = {
+                                    val next = selected.id !in suspendedIds
+                                    onSuspend(selected, next)
+                                    scope.launch {
+                                        snackbar.showSnackbar(
+                                            if (next) "Suspended until you resume it. Memory is untouched." else "Back in the queue."
+                                        )
+                                    }
+                                },
                                 onSkip = {
                                     val next = selected.id !in skippedIds
                                     onSkip(selected, next)
                                     scope.launch {
                                         snackbar.showSnackbar(
-                                            if (next) "Skipped until tomorrow. Memory is untouched." else "Back in today's queue."
+                                            if (next) "Skipped until the next day. Memory is untouched." else "Back in today's queue."
                                         )
                                     }
                                 },
@@ -357,6 +371,7 @@ fun CharactersScreen(
                             onPracticeWord = onPracticeWord,
                             onPaper = { onPaperCharacter(selected) },
                             onPractice = { onPractice(selected) },
+                            onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
                             onPrioritize = {
                                 val next = selected.id !in priorityIds
                                 onPrioritize(selected, next)
@@ -366,12 +381,22 @@ fun CharactersScreen(
                                     )
                                 }
                             },
+                            suspended = selected.id in suspendedIds,
+                            onSuspend = {
+                                val next = selected.id !in suspendedIds
+                                onSuspend(selected, next)
+                                scope.launch {
+                                    snackbar.showSnackbar(
+                                        if (next) "Suspended until you resume it. Memory is untouched." else "Back in the queue."
+                                    )
+                                }
+                            },
                             onSkip = {
                                 val next = selected.id !in skippedIds
                                 onSkip(selected, next)
                                 scope.launch {
                                     snackbar.showSnackbar(
-                                        if (next) "Skipped until tomorrow. Memory is untouched." else "Back in today's queue."
+                                        if (next) "Skipped until the next day. Memory is untouched." else "Back in today's queue."
                                     )
                                 }
                             },
@@ -956,6 +981,7 @@ private fun CharacterDetail(
     entry: CharacterEntry,
     pinned: Boolean,
     skipped: Boolean,
+    suspended: Boolean = false,
     inStudyList: Boolean = false,
     memoryLevel: com.bassmd.bihua.progress.MemoryLevel? = null,
     onSetMemoryLevel: (com.bassmd.bihua.progress.MemoryLevel?) -> Unit = {},
@@ -973,8 +999,10 @@ private fun CharacterDetail(
     onPracticeWord: (WordContext) -> Unit = {},
     onPaper: () -> Unit = {},
     onPractice: () -> Unit,
+    onNoteSaved: () -> Unit = {},
     onPrioritize: () -> Unit,
     onSkip: () -> Unit,
+    onSuspend: () -> Unit,
     onAddToList: () -> Unit,
     onReset: () -> Unit,
 ) {
@@ -1344,9 +1372,15 @@ private fun CharacterDetail(
                 )
                 ActionLine(
                     icon = Icons.Rounded.SkipNext,
-                    label = if (skipped) "Skipped until tomorrow" else "Skip until tomorrow",
+                    label = if (skipped) "Skipped until the next day" else "Skip until the next day",
                     active = skipped,
                     onClick = onSkip,
+                )
+                ActionLine(
+                    icon = Icons.Rounded.Block,
+                    label = if (suspended) "Suspended until you resume it" else "Skip always",
+                    active = suspended,
+                    onClick = onSuspend,
                 )
                 ActionLine(
                     icon = Icons.Rounded.Brush,
@@ -1462,6 +1496,7 @@ private fun CharacterDetail(
                                     progress?.saveNote(entry.id, noteDraft.trim())
                                     note = noteDraft.trim()
                                     editingNote = false
+                                    onNoteSaved()
                                 }
                             },
                             shape = CircleShape,

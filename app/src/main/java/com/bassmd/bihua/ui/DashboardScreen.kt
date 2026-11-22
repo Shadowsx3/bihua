@@ -82,6 +82,7 @@ fun DashboardScreen(
     mode: StudyMode,
     characters: List<CharacterEntry>,
     activity: List<DayActivity>,
+    today: java.time.LocalDate = java.time.LocalDate.now(),
     forecast: List<DueDay>,
     history: List<DayActivity> = emptyList(),
     mistakes: List<CharacterEntry> = emptyList(),
@@ -136,7 +137,7 @@ fun DashboardScreen(
                 }
             }
             item {
-                StudyCalendarCard(days = activity, onDayClick = { selectedDay = it })
+                StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
             }
             if (history.any { it.reviewed > 0 }) {
                 item {

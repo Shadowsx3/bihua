@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -50,6 +51,8 @@ import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Person
@@ -62,6 +65,7 @@ import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Straighten
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -71,6 +75,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -85,7 +90,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -113,11 +117,15 @@ import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.backup.BackupBundle
 import com.bassmd.bihua.backup.BackupCodec
 import com.bassmd.bihua.backup.BackupException
+import com.bassmd.bihua.backup.TransferScope
 import com.bassmd.bihua.content.CharacterOrder
+import com.bassmd.bihua.fsrs.FsrsOptimizer
+import com.bassmd.bihua.fsrs.FsrsWeights
 import com.bassmd.bihua.fsrs.ReviewLoad
 import com.bassmd.bihua.sync.SyncClient
 import com.bassmd.bihua.sync.SyncPackage
 import com.bassmd.bihua.sync.SyncServer
+import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.ProfileAvatar
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.components.saveProfilePhoto
@@ -156,6 +164,9 @@ fun SettingsScreen(
     var nameDraft by remember { mutableStateOf("") }
     var pendingImport by remember { mutableStateOf<BackupBundle?>(null) }
     var pendingProgress by remember { mutableStateOf<ByteArray?>(null) }
+    var exportScope by remember { mutableStateOf(TransferScope()) }
+    var importApplySettings by remember { mutableStateOf(true) }
+    var importApplyProgress by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
     val hasStylus = remember { com.bassmd.bihua.ink.hasStylus(context) }
     val inkRecognition = remember { InkRecognitionService() }
@@ -170,12 +181,49 @@ fun SettingsScreen(
     var syncMessage by remember { mutableStateOf<String?>(null) }
     var pendingSync by remember { mutableStateOf<SyncPackage?>(null) }
     var syncServer by remember { mutableStateOf<SyncServer?>(null) }
+    var syncSendScope by remember { mutableStateOf(TransferScope()) }
+    var syncApplySettings by remember { mutableStateOf(true) }
+    var syncApplyProgress by remember { mutableStateOf(true) }
     var settingsSection by rememberSaveable { mutableStateOf<String?>(null) }
     var settingsQuery by rememberSaveable { mutableStateOf("") }
     val settingsListState = rememberLazyListState()
     var showLicences by remember { mutableStateOf(false) }
     var showStrokeRules by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
+    var busyMessage by remember { mutableStateOf<String?>(null) }
+    var showWeightsImport by remember { mutableStateOf(false) }
+    var weightDraft by remember { mutableStateOf("") }
+    var optimizingWeights by remember { mutableStateOf(false) }
+    var weightReviewCount by remember { mutableStateOf(0) }
+    var weightProfile by rememberSaveable { mutableStateOf(AppSettings.SHARED_WEIGHTS) }
+    var weightProfileMenu by remember { mutableStateOf(false) }
+    var weightMoreMenu by remember { mutableStateOf(false) }
+    var showFitScope by remember { mutableStateOf(false) }
+    var showWeightsHelp by remember { mutableStateOf(false) }
+    val weightProfileLabel = when (weightProfile) {
+        AppSettings.SHARED_WEIGHTS -> "Shared"
+        "SIMPLIFIED" -> "Simplified"
+        "TRADITIONAL" -> "Traditional"
+        "JAPANESE" -> "Japanese"
+        "KOREAN" -> "Korean"
+        else -> weightProfile
+    }
+    val selectedProfile = if (weightProfile == AppSettings.SHARED_WEIGHTS) {
+        null
+    } else {
+        settings.fsrsProfiles[weightProfile]
+    }
+    val selectedWeights = settings.fsrsParameters(weightProfile)
+    val selectedSource = if (weightProfile == AppSettings.SHARED_WEIGHTS) {
+        settings.fsrsWeightsSource
+    } else {
+        selectedProfile?.source.orEmpty()
+    }
+    val selectedUpdatedAt = if (weightProfile == AppSettings.SHARED_WEIGHTS) {
+        settings.fsrsWeightsUpdatedAtMs
+    } else {
+        selectedProfile?.updatedAtMs ?: 0L
+    }
     val repository = com.bassmd.bihua.content.LocalContentRepository.current
     val knownListLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -215,12 +263,30 @@ fun SettingsScreen(
             nameDraft = it.displayName
         }
     }
-    LaunchedEffect(settings.dailyNewGoal, settings.studyMode) {
+    LaunchedEffect(settings.dailyNewGoal, settings.studyMode, settings.fsrsWeights, settings.fsrsProfiles) {
         val goal = settings.dailyNewGoal
         val total = repository?.characters(settings.studyMode)?.size ?: 3180
         kotlinx.coroutines.delay(250)
         loadEstimate = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            ReviewLoad.estimate(goal, maxCharacters = total)
+            ReviewLoad.estimate(
+                goal,
+                maxCharacters = total,
+                weights = settings.parametersFor(settings.studyMode, "")
+                    ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W,
+            )
+        }
+    }
+    LaunchedEffect(settings.shareIdenticalGlyphs) {
+        if (settings.shareIdenticalGlyphs) weightProfile = AppSettings.SHARED_WEIGHTS
+    }
+    LaunchedEffect(settingsSection, progress, settings.fsrsProfiles, settings.fsrsWeights, weightProfile, settings.shareIdenticalGlyphs) {
+        if (settingsSection == "Schedule") {
+            weightReviewCount = if (progress == null) {
+                0
+            } else {
+                progress.trainingRows(settings.shareIdenticalGlyphs)
+                    .count { it.profile == weightProfile }
+            }
         }
     }
     LaunchedEffect(message) {
@@ -242,7 +308,12 @@ fun SettingsScreen(
                     sharingOverrides = current.sharingOverrides,
                     priorityIds = current.priorityIds,
                     skippedUntil = current.skippedUntil,
+                    suspendedIds = current.suspendedIds,
                     studyList = current.studyList,
+                    fsrsWeights = current.fsrsWeights,
+                    fsrsWeightsSource = current.fsrsWeightsSource,
+                    fsrsWeightsUpdatedAtMs = current.fsrsWeightsUpdatedAtMs,
+                    fsrsProfiles = current.fsrsProfiles,
                 )
             }
         }
@@ -259,6 +330,119 @@ fun SettingsScreen(
             }
             message = "Profile saved."
         }
+    }
+
+    fun saveWeights(
+        weights: FloatArray,
+        source: String,
+        profile: String = weightProfile,
+        note: String = "Custom FSRS-7 weights saved. New reviews use them.",
+    ) {
+        val now = System.currentTimeMillis()
+        scope.launch {
+            store.updateSettings { current ->
+                if (profile == AppSettings.SHARED_WEIGHTS) {
+                    current.copy(
+                        fsrsWeights = weights.toList(),
+                        fsrsWeightsSource = source,
+                        fsrsWeightsUpdatedAtMs = now,
+                    )
+                } else {
+                    current.copy(
+                        fsrsProfiles = current.fsrsProfiles + (
+                            profile to FsrsProfile(
+                                weights = weights.toList(),
+                                source = source,
+                                updatedAtMs = now,
+                            )
+                            ),
+                    )
+                }
+            }
+            message = note
+        }
+    }
+
+    fun applyWeightText(text: String, source: String) {
+        val profile = weightProfile
+        runCatching { FsrsWeights.parse(text) }
+            .onSuccess { weights ->
+                saveWeights(weights, source, profile)
+                showWeightsImport = false
+                weightDraft = ""
+            }
+            .onFailure { message = it.message ?: "That does not look like 34 FSRS-7 weights." }
+    }
+
+    fun fitWeightsLocally(allReviews: Boolean) {
+        val storeRef = progress ?: return
+        if (optimizingWeights) return
+        val profile = weightProfile
+        optimizingWeights = true
+        scope.launch {
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    val current = store.currentSettings()
+                    val rows = storeRef.trainingRows(current.shareIdenticalGlyphs)
+                        .filter { it.profile == profile }
+                    val cards = FsrsOptimizer.buildCards(rows)
+                    FsrsOptimizer.optimize(
+                        cards,
+                        start = current.fsrsParameters(profile) ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W,
+                        maxReviews = if (allReviews) null else FsrsOptimizer.MAX_REVIEWS,
+                    )
+                }
+                if (result == null) {
+                    message = "A local fit needs at least 400 reviews and 30 recent reviews to check."
+                    return@launch
+                }
+                if (result.accepted) {
+                    saveWeights(
+                        result.weights,
+                        "Local fit, ${result.reviews} reviews",
+                        profile,
+                        note = "Personal weights saved. Held-out log loss " +
+                            "${"%.3f".format(result.baselineValidationLoss)} to " +
+                            "${"%.3f".format(result.fittedValidationLoss)}.",
+                    )
+                } else {
+                    message = result.reason
+                }
+            } catch (error: Exception) {
+                message = "The fit failed. The current weights are unchanged."
+            } finally {
+                optimizingWeights = false
+            }
+        }
+    }
+
+    val weightsFileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val text = runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            }.getOrNull().orEmpty()
+            applyWeightText(text, "Imported from ${uri.lastPathSegment ?: "file"}")
+        }
+    }
+
+    val weightsExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val weights = selectedWeights ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W
+        val text = FsrsWeights.format(
+            weights,
+            source = selectedSource.ifBlank {
+                if (selectedWeights != null) "Custom" else "Bihua defaults"
+            },
+            reviews = weightReviewCount,
+        )
+        runCatching { writeText(context, uri, text) }
+            .onSuccess { message = "FSRS weights saved." }
+            .onFailure { message = "Could not save the weights." }
     }
 
     val photoLauncher = rememberLauncherForActivityResult(
@@ -281,19 +465,32 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
+        busyMessage = "Preparing backup…"
         scope.launch {
-            runCatching {
-                val text = BackupCodec.encode(store.snapshot(System.currentTimeMillis()))
-                val progressBytes = progress?.let { storeRef ->
-                    val temp = java.io.File(context.cacheDir, "export-progress.db")
-                    storeRef.exportTo(temp)
-                    temp.readBytes().also { temp.delete() }
+            try {
+                runCatching {
+                    val text = if (exportScope.settings) {
+                    BackupCodec.encode(store.snapshot(System.currentTimeMillis()))
+                } else {
+                    null
                 }
-                writeBytes(context, uri, com.bassmd.bihua.backup.BackupArchive.encode(text, progressBytes))
-            }.onSuccess {
-                message = "Backup saved, including progress."
-            }.onFailure {
-                message = "Could not save the backup. Free up space and try again."
+                val progressBytes = if (exportScope.progress) {
+                    progress?.let { storeRef ->
+                        val temp = java.io.File(context.cacheDir, "export-progress.db")
+                        storeRef.exportTo(temp)
+                        temp.readBytes().also { temp.delete() }
+                    }
+                } else {
+                    null
+                }
+                    writeBytes(context, uri, com.bassmd.bihua.backup.BackupArchive.encode(text, progressBytes))
+                }.onSuccess {
+                    message = "${exportScope.label} saved."
+                }.onFailure {
+                    message = "Could not save the backup. Free up space and try again."
+                }
+            } finally {
+                busyMessage = null
             }
         }
     }
@@ -302,18 +499,23 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("text/csv")
     ) { uri: Uri? ->
         if (uri == null || progress == null) return@rememberLauncherForActivityResult
+        busyMessage = "Exporting review history…"
         scope.launch {
-            runCatching {
-                val names = runCatching {
+            try {
+                runCatching {
+                    val names = runCatching {
                     com.bassmd.bihua.content.StudyMode.entries
                         .flatMap { mode -> repository?.characters(mode).orEmpty() }
                         .associate { it.id to it.character }
                 }.getOrDefault(emptyMap())
-                writeText(context, uri, progress.reviewCsv(names))
-            }.onSuccess {
-                message = "Review history saved."
-            }.onFailure {
-                message = "Could not save the review history."
+                    writeText(context, uri, progress.reviewCsv(names))
+                }.onSuccess {
+                    message = "Review history saved."
+                }.onFailure {
+                    message = "Could not save the review history."
+                }
+            } finally {
+                busyMessage = null
             }
         }
     }
@@ -322,21 +524,29 @@ fun SettingsScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
+        busyMessage = "Reading backup…"
+        pendingImport = null
+        pendingProgress = null
         scope.launch {
-            runCatching {
-                val bytes = readBytes(context, uri)
+            try {
+                runCatching {
+                    val bytes = readBytes(context, uri)
                 if (com.bassmd.bihua.backup.BackupArchive.isZip(bytes)) {
                     val archive = com.bassmd.bihua.backup.BackupArchive.decode(bytes)
                     pendingProgress = archive.progressDb
-                    BackupCodec.decode(archive.backupJson.orEmpty())
+                    pendingImport = archive.backupJson?.let { BackupCodec.decode(it) }
                 } else {
                     pendingProgress = null
-                    BackupCodec.decode(bytes.decodeToString())
+                    pendingImport = BackupCodec.decode(bytes.decodeToString())
                 }
-            }.onSuccess {
-                pendingImport = it
-            }.onFailure {
-                message = (it as? BackupException)?.message ?: "This file is not a Bihua backup."
+                }.onSuccess {
+                    importApplySettings = pendingImport != null
+                    importApplyProgress = pendingProgress != null
+                }.onFailure {
+                    message = (it as? BackupException)?.message ?: "This file is not a Bihua backup."
+                }
+            } finally {
+                busyMessage = null
             }
         }
     }
@@ -347,6 +557,46 @@ fun SettingsScreen(
     }
     LaunchedEffect(settingsSection) {
         settingsListState.scrollToItem(0)
+    }
+
+    if (showWeightsImport) {
+        AlertDialog(
+            onDismissRequest = { showWeightsImport = false },
+            title = { Text("Import $weightProfileLabel weights") },
+            text = {
+                Column {
+                    Text(
+                        "Paste the 34 numbers from the official optimizer. A JSON array, a JSON weights object, or a comma-separated list all work.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = weightDraft,
+                        onValueChange = { weightDraft = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 5,
+                        maxLines = 8,
+                        placeholder = { Text("[0.1104, 2.2395, ...]") },
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    TextButton(
+                        onClick = {
+                            weightsFileLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                        },
+                    ) { Text("Choose a file instead") }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { applyWeightText(weightDraft, "Pasted weights") },
+                    enabled = weightDraft.isNotBlank(),
+                ) { Text("Use weights") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWeightsImport = false }) { Text("Cancel") }
+            },
+        )
     }
 
     Scaffold(
@@ -596,7 +846,227 @@ fun SettingsScreen(
             }
 
             }
+            if (settingsSection == "Schedule") {
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SettingTitle(
+                                icon = Icons.Rounded.Tune,
+                                title = "FSRS-7 weights",
+                                subtitle = "Defaults work well. A personal fit can improve the dates.",
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { showWeightsHelp = true }) {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    contentDescription = "How FSRS weights work",
+                                    tint = InkSoft,
+                                )
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = if (selectedWeights != null) Mint.copy(alpha = 0.4f) else PaperWarm,
+                            ) {
+                                Text(
+                                    if (selectedWeights != null) "Custom" else "Defaults",
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = InkDark,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "$weightReviewCount reviews",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            if (selectedWeights != null && selectedUpdatedAt > 0L) {
+                                Text(
+                                    " · ${formatDate(selectedUpdatedAt)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Profile", style = MaterialTheme.typography.labelMedium, color = InkSoft)
+                            Spacer(Modifier.width(8.dp))
+                            Box {
+                                OutlinedButton(
+                                    onClick = { weightProfileMenu = true },
+                                    enabled = !optimizingWeights,
+                                    shape = CircleShape,
+                                ) {
+                                    Text(weightProfileLabel)
+                                    Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+                                }
+                                DropdownMenu(
+                                    expanded = weightProfileMenu,
+                                    onDismissRequest = { weightProfileMenu = false },
+                                ) {
+                                    listOf(
+                                        AppSettings.SHARED_WEIGHTS to "Shared",
+                                        "SIMPLIFIED" to "Simplified",
+                                        "TRADITIONAL" to "Traditional",
+                                        "JAPANESE" to "Japanese",
+                                        "KOREAN" to "Korean",
+                                    ).forEach { (key, label) ->
+                                        DropdownMenuItem(
+                                            text = { Text(label) },
+                                            onClick = {
+                                                weightProfile = key
+                                                weightProfileMenu = false
+                                            },
+                                            enabled = key == AppSettings.SHARED_WEIGHTS ||
+                                                !settings.shareIdenticalGlyphs,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (settings.shareIdenticalGlyphs) {
+                            Text(
+                                "Sharing is on, so all scripts use the shared profile.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { showFitScope = true },
+                                enabled = !optimizingWeights &&
+                                    weightReviewCount >= FsrsOptimizer.MIN_REVIEWS,
+                                shape = CircleShape,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                if (optimizingWeights) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                Text(
+                                    when {
+                                        optimizingWeights -> "Fitting…"
+                                        weightReviewCount < FsrsOptimizer.MIN_REVIEWS -> "Need 400 reviews"
+                                        else -> "Fit weights"
+                                    }
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { showWeightsImport = true },
+                                shape = CircleShape,
+                                enabled = !optimizingWeights,
+                            ) { Text("Import") }
+                        }
+                        if (optimizingWeights) {
+                            Spacer(Modifier.height(8.dp))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(
+                                "Fitting $weightReviewCount reviews. Keep the app open.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = {
+                                    weightsExportLauncher.launch(
+                                        "bihua-fsrs-${weightProfile.lowercase()}.json"
+                                    )
+                                },
+                                enabled = !optimizingWeights,
+                            ) { Text("Export") }
+                            Box {
+                                TextButton(
+                                    onClick = { weightMoreMenu = true },
+                                    enabled = !optimizingWeights,
+                                ) { Text("More") }
+                                DropdownMenu(
+                                    expanded = weightMoreMenu,
+                                    onDismissRequest = { weightMoreMenu = false },
+                                ) {
+                                    if (selectedWeights != null) {
+                                        DropdownMenuItem(
+                                            text = { Text("Use defaults") },
+                                            onClick = {
+                                                weightMoreMenu = false
+                                                scope.launch {
+                                                    store.updateSettings {
+                                                        if (weightProfile == AppSettings.SHARED_WEIGHTS) {
+                                                            it.copy(
+                                                                fsrsWeights = emptyList(),
+                                                                fsrsWeightsSource = "",
+                                                                fsrsWeightsUpdatedAtMs = 0L,
+                                                            )
+                                                        } else {
+                                                            it.copy(
+                                                                fsrsProfiles = it.fsrsProfiles - weightProfile
+                                                            )
+                                                        }
+                                                    }
+                                                    message = "Back to the published weights for $weightProfileLabel."
+                                                }
+                                            },
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("Official optimizer") },
+                                        onClick = {
+                                            weightMoreMenu = false
+                                            showWeightsHelp = true
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            }
+
             if (settingsSection == "Study") {
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.Schedule,
+                            title = "Day starts at",
+                            subtitle = "The daily goal, calendar, and skipped characters use this boundary.",
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Slider(
+                                value = settings.dayStartHour.toFloat(),
+                                onValueChange = { update(settings.withDayStartHour(it.toInt())) },
+                                valueRange = DayBoundary.MIN_HOUR.toFloat()..DayBoundary.MAX_HOUR.toFloat(),
+                                steps = DayBoundary.MAX_HOUR - DayBoundary.MIN_HOUR - 1,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Surface(shape = RoundedCornerShape(12.dp), color = Sky.copy(alpha = 0.4f)) {
+                                Text(
+                                    dayStartLabel(settings.dayStartHour),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = InkDark,
+                                )
+                            }
+                        }
+                        Text(
+                            "A 4 AM boundary keeps a late-night review in the day you started. If the app stays open, the new day switches on its own.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
             item {
                 SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.10f)) {
                     Column {
@@ -689,6 +1159,25 @@ fun SettingsScreen(
                             settings.mnemonicMode.description,
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth()) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.Tune,
+                            title = "Grade buttons",
+                            subtitle = "Use the full four-button scale or a simpler two-button scale.",
+                        )
+                        SwitchRow(
+                            title = "Only Again and Good",
+                            subtitle = "Hide Hard and Easy. Again and Good still schedule normally.",
+                            checked = settings.onlyAgainAndGood,
+                            onCheckedChange = {
+                                update(settings.copy(onlyAgainAndGood = it))
+                            },
                         )
                     }
                 }
@@ -1143,13 +1632,16 @@ fun SettingsScreen(
                             onClick = {
                                 preparingHandwriting = true
                                 scope.launch {
-                                    val result = inkRecognition.prepareAll()
-                                    handwritingReady = result.values.all { it }
-                                    preparingHandwriting = false
-                                    message = if (handwritingReady) {
-                                        "Handwriting models are ready."
-                                    } else {
-                                        "Some handwriting models could not download."
+                                    try {
+                                        val result = inkRecognition.prepareAll()
+                                        handwritingReady = result.values.all { it }
+                                        message = if (handwritingReady) {
+                                            "Handwriting models are ready."
+                                        } else {
+                                            "Some handwriting models could not download."
+                                        }
+                                    } finally {
+                                        preparingHandwriting = false
                                     }
                                 }
                             },
@@ -1162,6 +1654,15 @@ fun SettingsScreen(
                                     handwritingReady -> "Models ready"
                                     else -> "Prepare models"
                                 }
+                            )
+                        }
+                        if (preparingHandwriting) {
+                            Spacer(Modifier.height(8.dp))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(
+                                "Downloading handwriting models…",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
                             )
                         }
                     }
@@ -1243,16 +1744,40 @@ fun SettingsScreen(
                         Text("Backups stay with you", style = MaterialTheme.typography.titleMedium, color = InkDark)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Export or restore a complete backup. Nothing is uploaded.",
+                            "Choose what to export. When you import, you choose what to apply. Nothing is uploaded.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("What to export", style = MaterialTheme.typography.labelMedium, color = InkSoft)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(
+                                selected = exportScope.settings && exportScope.progress,
+                                onClick = { exportScope = TransferScope() },
+                                label = { Text("Everything") },
+                            )
+                            FilterChip(
+                                selected = exportScope.settings && !exportScope.progress,
+                                onClick = { exportScope = TransferScope(settings = true, progress = false) },
+                                label = { Text("Settings") },
+                            )
+                            FilterChip(
+                                selected = !exportScope.settings && exportScope.progress,
+                                onClick = { exportScope = TransferScope(settings = false, progress = true) },
+                                enabled = progress != null,
+                                label = { Text("Progress") },
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Button(
                                 onClick = {
                                     exportLauncher.launch(
-                                        "bihua-backup-${LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)}.zip"
+                                        "bihua-${when {
+                                            exportScope.settings && exportScope.progress -> "backup"
+                                            exportScope.settings -> "settings"
+                                            else -> "progress"
+                                        }}-${LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)}.zip"
                                     )
                                 },
                                 shape = RoundedCornerShape(50),
@@ -1367,7 +1892,33 @@ fun SettingsScreen(
                             Spacer(Modifier.height(10.dp))
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "This device has the progress",
+                                "What to send",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FilterChip(
+                                    selected = syncSendScope.settings && syncSendScope.progress,
+                                    onClick = { syncSendScope = TransferScope() },
+                                    enabled = hostCode == null,
+                                    label = { Text("Everything") },
+                                )
+                                FilterChip(
+                                    selected = syncSendScope.settings && !syncSendScope.progress,
+                                    onClick = { syncSendScope = TransferScope(settings = true, progress = false) },
+                                    enabled = hostCode == null,
+                                    label = { Text("Settings") },
+                                )
+                                FilterChip(
+                                    selected = !syncSendScope.settings && syncSendScope.progress,
+                                    onClick = { syncSendScope = TransferScope(settings = false, progress = true) },
+                                    enabled = hostCode == null && progress != null,
+                                    label = { Text("Progress") },
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "This device is the source",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = InkDark,
                             )
@@ -1389,6 +1940,7 @@ fun SettingsScreen(
                                         syncServer = server
                                         server.start(
                                             scope = scope,
+                                            transfer = syncSendScope,
                                             onReady = { session -> hostCode = session.code },
                                             onError = { message -> hostError = message },
                                         )
@@ -1424,12 +1976,12 @@ fun SettingsScreen(
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                "Copy progress from another device",
+                                "Copy from another device",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = InkDark,
                             )
                             Text(
-                                "Open Sync on the other device, start sharing, and type its six-digit code here. This device will be replaced after you confirm.",
+                                "Open Sync on the other device, start sharing, and type its six-digit code here. You choose what to apply after the transfer.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
                             )
@@ -1475,6 +2027,8 @@ fun SettingsScreen(
                                                     ?: "No device answered. Check that both devices are on the same Wi-Fi and the code is still showing."
                                             } else {
                                                 pendingSync = packageToApply
+                                                syncApplySettings = packageToApply.backup != null
+                                                syncApplyProgress = packageToApply.progressDb != null
                                             }
                                         }
                                     },
@@ -1505,7 +2059,7 @@ fun SettingsScreen(
                             Column(Modifier.weight(1f)) {
                                 Text("Sync with another device", style = MaterialTheme.typography.titleMedium, color = InkDark)
                                 Text(
-                                    "Move progress between your tablet and phone over the same Wi-Fi, with a six-digit code.",
+                                    "Move settings and progress between your tablet and phone over the same Wi-Fi.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = InkSoft,
                                 )
@@ -1602,11 +2156,16 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         confirmReset = false
+                        busyMessage = "Resetting progress…"
                         scope.launch {
-                            progress?.resetAllLearning()
-                            com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
-                            onProgressChanged()
-                            message = "All progress reset."
+                            try {
+                                progress?.resetAllLearning()
+                                com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
+                                onProgressChanged()
+                                message = "All progress reset."
+                            } finally {
+                                busyMessage = null
+                            }
                         }
                     }
                 ) {
@@ -1620,43 +2179,111 @@ fun SettingsScreen(
     }
 
     pendingSync?.let { packageToApply ->
+        val hasSettings = packageToApply.backup != null
+        val hasProgress = packageToApply.progressDb != null
         AlertDialog(
             onDismissRequest = { pendingSync = null },
-            title = { Text("Replace this device's progress?") },
+            title = { Text("Apply this sync?") },
             text = {
-                Text(
-                    "This copies the other device's profile, settings, notes and review history. " +
-                        "Your current progress is exported to a fallback file first. The app restarts when it finishes.",
-                )
+                Column {
+                    Text(
+                        "The other device is sending ${if (hasSettings && hasProgress) "settings, profile, notes and progress" else if (hasSettings) "settings and profile" else "progress and review history"}. Choose what this device should replace.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = syncApplySettings && hasSettings,
+                                enabled = hasSettings,
+                                role = Role.Checkbox,
+                                onValueChange = { syncApplySettings = it },
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked = syncApplySettings && hasSettings,
+                            onCheckedChange = null,
+                            enabled = hasSettings,
+                        )
+                        Text("Profile and settings", color = if (hasSettings) InkDark else InkSoft)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = syncApplyProgress && hasProgress,
+                                enabled = hasProgress,
+                                role = Role.Checkbox,
+                                onValueChange = { syncApplyProgress = it },
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked = syncApplyProgress && hasProgress,
+                            onCheckedChange = null,
+                            enabled = hasProgress,
+                        )
+                        Text("Progress, notes and review history", color = if (hasProgress) InkDark else InkSoft)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Your current data is exported to a fallback file first. The app restarts when it finishes.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                    )
+                }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val storeRef = progress ?: return@TextButton
-                    val incoming = packageToApply
-                    pendingSync = null
-                    scope.launch {
-                        val result = runCatching {
-                            val fallback = java.io.File(
-                                context.cacheDir,
-                                "pre-sync-${System.currentTimeMillis()}.db",
-                            )
-                            storeRef.exportTo(fallback)
-                            val dbFile = java.io.File(context.cacheDir, "incoming-progress.db")
-                            dbFile.writeBytes(incoming.progressDb)
-                            storeRef.importFrom(dbFile)
-                            dbFile.delete()
-                            store.restore(incoming.backup)
+                TextButton(
+                    onClick = {
+                        val storeRef = progress ?: return@TextButton
+                        val incoming = packageToApply
+                        val applySettings = syncApplySettings && incoming.backup != null
+                        val applyProgress = syncApplyProgress && incoming.progressDb != null
+                        if (!applySettings && !applyProgress) return@TextButton
+                        pendingSync = null
+                        busyMessage = "Applying sync…"
+                        scope.launch {
+                            var fallback: java.io.File? = null
+                            val result = runCatching {
+                                val file = java.io.File(
+                                    context.cacheDir,
+                                    "pre-sync-${System.currentTimeMillis()}.db",
+                                )
+                                fallback = file
+                                storeRef.exportTo(file)
+                                if (applyProgress) {
+                                    val dbFile = java.io.File(context.cacheDir, "incoming-progress.db")
+                                    dbFile.writeBytes(incoming.progressDb!!)
+                                    storeRef.importFrom(dbFile)
+                                    dbFile.delete()
+                                }
+                                if (applySettings) {
+                                    store.restore(incoming.backup!!)
+                                }
+                            }
+                            if (result.isSuccess) {
+                                com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
+                                onProgressChanged()
+                                message = "Sync complete."
+                                context.findActivity()?.recreate()
+                            } else {
+                                if (applyProgress) {
+                                    fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
+                                        runCatching { storeRef.importFrom(it) }
+                                    }
+                                    onProgressChanged()
+                                }
+                                message = "Sync failed. Your previous progress is still on this device."
+                            }
+                            busyMessage = null
                         }
-                        if (result.isSuccess) {
-                            com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
-                            onProgressChanged()
-                            message = "Sync complete."
-                            context.findActivity()?.recreate()
-                        } else {
-                            message = "Sync failed. Your previous progress is still on this device."
-                        }
-                    }
-                }) { Text("Replace") }
+                    },
+                    enabled = (syncApplySettings && hasSettings) || (syncApplyProgress && hasProgress),
+                ) { Text("Replace") }
             },
             dismissButton = {
                 TextButton(onClick = { pendingSync = null }) { Text("Cancel") }
@@ -1664,40 +2291,152 @@ fun SettingsScreen(
         )
     }
 
-    pendingImport?.let { bundle ->
+    if (pendingImport != null || pendingProgress != null) {
         ImportConfirm(
-            bundle = bundle,
-            includesProgress = pendingProgress != null,
+            bundle = pendingImport,
+            hasProgress = pendingProgress != null,
+            applySettings = importApplySettings,
+            applyProgress = importApplyProgress,
+            onApplySettings = { importApplySettings = it },
+            onApplyProgress = { importApplyProgress = it },
             onDismiss = {
                 pendingImport = null
                 pendingProgress = null
             },
             onReplace = {
+                val settingsBundle = pendingImport
                 val progressBytes = pendingProgress
+                val applySettings = importApplySettings && settingsBundle != null
+                val applyProgress = importApplyProgress && progressBytes != null
+                if (!applySettings && !applyProgress) return@ImportConfirm
                 pendingImport = null
                 pendingProgress = null
+                busyMessage = "Restoring backup…"
                 scope.launch {
+                    var fallback: java.io.File? = null
+                    val progressStoreRef = progress
                     val restored = runCatching {
-                        if (progressBytes != null && progress != null) {
+                        if (applyProgress) {
+                            val storeRef = progressStoreRef
+                                ?: error("The progress store is not available.")
+                            val backup = java.io.File(
+                                context.cacheDir,
+                                "pre-import-${System.currentTimeMillis()}.db",
+                            )
+                            fallback = backup
+                            storeRef.exportTo(backup)
                             val file = java.io.File(context.cacheDir, "import-progress.db")
-                            file.writeBytes(progressBytes)
-                            progress.importFrom(file)
+                            file.writeBytes(progressBytes!!)
+                            storeRef.importFrom(file)
                             file.delete()
                         }
-                        store.restore(bundle)
+                        if (applySettings) {
+                            store.restore(settingsBundle!!)
+                        }
                     }
                     if (restored.isSuccess) {
                         com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
                         onProgressChanged()
-                        message = "Backup restored."
-                        if (progressBytes != null) context.findActivity()?.recreate()
+                        message = when {
+                            applySettings && applyProgress -> "Backup restored."
+                            applySettings -> "Settings and profile restored."
+                            else -> "Progress and review history restored."
+                        }
+                        if (applySettings || applyProgress) context.findActivity()?.recreate()
                     } else {
+                        if (applyProgress) {
+                            fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
+                                progressStoreRef?.let { storeRef ->
+                                    runCatching { storeRef.importFrom(it) }
+                                }
+                            }
+                            onProgressChanged()
+                        }
                         message = "Could not restore this backup."
                     }
+                    busyMessage = null
                 }
             },
         )
     }
+    if (showFitScope) {
+        AlertDialog(
+            onDismissRequest = { showFitScope = false },
+            title = { Text("Fit $weightProfileLabel weights?") },
+            text = {
+                Text(
+                    "Use the most recent ${FsrsOptimizer.MAX_REVIEWS} reviews for a faster fit, or all $weightReviewCount reviews. Complete card histories are kept either way.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            },
+            confirmButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            showFitScope = false
+                            fitWeightsLocally(false)
+                        },
+                    ) { Text("Recent ${FsrsOptimizer.MAX_REVIEWS}") }
+                    TextButton(
+                        onClick = {
+                            showFitScope = false
+                            fitWeightsLocally(true)
+                        },
+                    ) { Text("All $weightReviewCount") }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFitScope = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showWeightsHelp) {
+        AlertDialog(
+            onDismissRequest = { showWeightsHelp = false },
+            title = { Text("How FSRS-7 weights work") },
+            text = {
+                Column {
+                    Text(
+                        "The published defaults are trained on a large review set. A personal fit replays your own reviews and keeps the defaults if the held-out reviews get worse.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Each script can have its own profile. Glyphs you share use the shared profile. A fit needs at least ${FsrsOptimizer.MIN_REVIEWS} reviews.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "For the official optimizer, export the review CSV, run the optimizer, then import the 34 numbers.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(
+                        onClick = {
+                            showWeightsHelp = false
+                            csvLauncher.launch(
+                                "bihua-reviews-${LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)}.csv"
+                            )
+                        },
+                        enabled = progress != null,
+                    ) { Text("Export review CSV") }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWeightsHelp = false
+                        uriHandler.openUri("https://open-spaced-repetition.github.io/ts-fsrs/guide/optimizer/")
+                    },
+                ) { Text("Open optimizer guide") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWeightsHelp = false }) { Text("Close") }
+            },
+        )
+    }
+
+    busyMessage?.let { BusyDialog(it) }
 }
 
 private fun android.content.Context.findActivity(): android.app.Activity? =
@@ -1755,6 +2494,11 @@ private val SETTINGS_ENTRIES = listOf(
         "Study", "Study", "Pace, order, cues, vacation",
         Icons.Rounded.School, Sky, "LEARNING",
         "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar",
+    ),
+    SettingsEntry(
+        "Schedule", "Schedule", "FSRS-7 weights and personal fit",
+        Icons.Rounded.Tune, Mint, "LEARNING",
+        "fsrs weights optimize fit tune schedule retention personal",
     ),
     SettingsEntry(
         "Writing", "Writing", "Brush, size, guides, handwriting models",
@@ -1901,8 +2645,9 @@ private fun SettingTitle(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
+    modifier: Modifier = Modifier,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = InkDark, modifier = Modifier.padding(end = 10.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = InkDark)
@@ -1946,33 +2691,82 @@ private fun SwitchRow(
 
 @Composable
 private fun ImportConfirm(
-    bundle: BackupBundle,
-    includesProgress: Boolean,
+    bundle: BackupBundle?,
+    hasProgress: Boolean,
+    applySettings: Boolean,
+    applyProgress: Boolean,
+    onApplySettings: (Boolean) -> Unit,
+    onApplyProgress: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onReplace: () -> Unit,
 ) {
+    val hasSettings = bundle != null
+    val title = when {
+        hasSettings && hasProgress -> "What should this backup replace?"
+        hasSettings -> "Replace settings and profile?"
+        else -> "Replace progress and history?"
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                if (includesProgress) {
-                    "Replace settings and progress?"
-                } else {
-                    "Replace this device's settings?"
-                }
-            )
-        },
+        title = { Text(title) },
         text = {
             Column {
-                Text("This backup was exported on ${formatDate(bundle.exportedAtEpochMs)}.")
+                bundle?.let {
+                    Text("This backup was exported on ${formatDate(it.exportedAtEpochMs)}.")
+                    Spacer(Modifier.height(6.dp))
+                }
+                Text(
+                    "Choose what to apply. Anything you leave unchecked stays on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = applySettings && hasSettings,
+                            enabled = hasSettings,
+                            role = Role.Checkbox,
+                            onValueChange = onApplySettings,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = applySettings && hasSettings,
+                        onCheckedChange = null,
+                        enabled = hasSettings,
+                    )
+                    Text(
+                        "Profile and settings",
+                        color = if (hasSettings) InkDark else InkSoft,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = applyProgress && hasProgress,
+                            enabled = hasProgress,
+                            role = Role.Checkbox,
+                            onValueChange = onApplyProgress,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = applyProgress && hasProgress,
+                        onCheckedChange = null,
+                        enabled = hasProgress,
+                    )
+                    Text(
+                        "Progress, notes and review history",
+                        color = if (hasProgress) InkDark else InkSoft,
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    if (includesProgress) {
-                        "This replaces your profile, settings, notes, review history, and the schedule on this device. The app restarts when it finishes."
-                    } else {
-                        "This replaces your profile and settings. Character progress stays on this device."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
+                    "Progress files replace the schedule on this device. The app restarts when it finishes.",
+                    style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )
             }
@@ -1980,11 +2774,12 @@ private fun ImportConfirm(
         confirmButton = {
             Button(
                 onClick = onReplace,
+                enabled = (applySettings && hasSettings) || (applyProgress && hasProgress),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
                 ),
-            ) { Text("Replace") }
+            ) { Text("Restore selected") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -2005,6 +2800,9 @@ private fun writeBytes(context: Context, uri: Uri, bytes: ByteArray) {
     context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
         ?: error("Could not open the selected file for writing.")
 }
+
+private fun dayStartLabel(hour: Int): String =
+    if (hour <= 0) "Midnight" else "$hour:00 AM"
 
 private fun formatDate(epochMs: Long): String =
     java.time.Instant.ofEpochMilli(epochMs)

@@ -64,6 +64,8 @@ fun InkCanvas(
     contentDescription: String? = null,
     /** Runs just before a new pen stroke starts, so callers can trim a replay. */
     onStrokeStart: (() -> Unit)? = null,
+    /** When false the drawing stays visible but input is locked. */
+    enabled: Boolean = true,
 ) {
     val palette = LocalBihuaPalette.current
     var live by remember { mutableStateOf<InkStroke?>(null) }
@@ -76,12 +78,16 @@ fun InkCanvas(
     Canvas(
         modifier = modifier
             .semantics {
-                if (contentDescription != null) this.contentDescription = contentDescription
+                if (contentDescription != null) {
+                    this.contentDescription = contentDescription +
+                        if (enabled) "" else ". Submitted. Use Draw again to practice."
+                }
             }
-            .pointerInput(state, allowFinger) {
+            .pointerInput(state, allowFinger, enabled) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Main)
+                        if (!enabled) continue
                         val change = event.changes.firstOrNull() ?: continue
                         if (!change.isPen(allowFinger)) continue
 

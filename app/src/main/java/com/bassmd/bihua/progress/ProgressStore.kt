@@ -11,15 +11,16 @@ import com.bassmd.bihua.content.Curriculum
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.fsrs.Fsrs7
+import com.bassmd.bihua.fsrs.FsrsTrainingRow
 import com.bassmd.bihua.fsrs.FsrsGrade
 import com.bassmd.bihua.fsrs.FsrsMemory
 import com.bassmd.bihua.settings.AppSettings
+import com.bassmd.bihua.settings.DayBoundary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 /** Manual memory levels a learner can assign without a review. */
 enum class MemoryLevel(val label: String, val stabilityDays: Float, val knownDots: Int) {
@@ -73,9 +74,9 @@ data class CardSnapshot(
         else -> StudyStatus.LEARNING
     }
 
-    fun recall(nowMs: Long): Float {
+    fun recall(nowMs: Long, w: FloatArray = Fsrs7.DEFAULT_W): Float {
         val elapsed = (nowMs - lastReviewAtMs).coerceAtLeast(0L) / 86_400_000f
-        return Fsrs7.retrievability(memory, elapsed)
+        return Fsrs7.retrievability(memory, elapsed, w)
     }
 }
 
@@ -297,6 +298,41 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         db.execSQL("INSERT OR IGNORE INTO player(id, xp) VALUES(1, 0)")
     }
 
+    /** Review rows for a local FSRS fit. Reverted reviews are excluded. */
+    suspend fun trainingRows(shareAll: Boolean = false): List<FsrsTrainingRow> = withContext(Dispatchers.IO) {
+        readableDatabase.rawQuery(
+            "SELECT card_id, character_id, reviewed_at, grade FROM review_log WHERE reverted=0 " +
+                "ORDER BY card_id, reviewed_at",
+            null,
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    val cardId = cursor.getString(0)
+                    val characterId = cursor.getString(1)
+                    val profile = if (shareAll || cardId.startsWith("glyph:")) {
+                        com.bassmd.bihua.settings.AppSettings.SHARED_WEIGHTS
+                    } else {
+                        characterId.substringBefore(':')
+                    }
+                    add(
+                        FsrsTrainingRow(
+                            cardId = cardId,
+                            atMs = cursor.getLong(2),
+                            grade = cursor.getInt(3),
+                            profile = profile,
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun reviewCount(): Int = withContext(Dispatchers.IO) {
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM review_log WHERE reverted=0", null).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+    }
+
     /** Every card in the database, keyed by its storage id. */
     suspend fun allCards(): Map<String, CardSnapshot> = withContext(Dispatchers.IO) {
         readableDatabase.rawQuery("SELECT * FROM card", null).use { cursor ->
@@ -323,14 +359,15 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         strokes: Int = 0,
     ): ReviewOutcome = withContext(Dispatchers.IO) {
         val key = cardKey(character, settings)
+        val weights = settings.parametersFor(character.mode, character.glyphGroupId) ?: Fsrs7.DEFAULT_W
         // Seed a shared card from the character's own card when sharing was
         // switched on after the character had already been studied.
         val existing = readCard(key) ?: readCard("char:${character.id}")
         val result = if (existing == null) {
-            Fsrs7.firstReview(grade, nowMs)
+            Fsrs7.firstReview(grade, nowMs, w = weights)
         } else {
             val elapsed = (nowMs - existing.lastReviewAtMs).coerceAtLeast(0L) / 86_400_000f
-            Fsrs7.review(existing.memory, grade, elapsed, nowMs)
+            Fsrs7.review(existing.memory, grade, elapsed, nowMs, w = weights)
         }
         val reps = (existing?.reps ?: 0) + 1
         val lapses = (existing?.lapses ?: 0) + if (grade == FsrsGrade.AGAIN) 1 else 0
@@ -362,10 +399,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
             (if (existing == null) 4 else 0) +
             (if (!knownBefore && snapshot.known) 20 else 0)
         val xpBefore = readXp()
-        val day = Instant.ofEpochMilli(nowMs)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
-            .toString()
+        val day = settings.today(nowMs).toString()
         var awarded = 0
         writableDatabase.inTransaction {
             insertWithOnConflict("card", null, snapshot.toValues(), SQLiteDatabase.CONFLICT_REPLACE)
@@ -457,8 +491,9 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
     suspend fun newLearnedToday(
         nowMs: Long = System.currentTimeMillis(),
         mode: com.bassmd.bihua.content.StudyMode? = null,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
     ): Int = withContext(Dispatchers.IO) {
-        val start = dayStart(nowMs)
+        val start = DayBoundary.startMs(DayBoundary.date(nowMs, dayStartHour), dayStartHour)
         val query = if (mode == null) {
             "SELECT COUNT(*) FROM card WHERE introduced_at>=?"
         } else {
@@ -505,7 +540,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         }
         val allowedNew = (
             settings.dailyNewGoal -
-                newLearnedToday(nowMs, eligible.firstOrNull()?.mode)
+                newLearnedToday(nowMs, eligible.firstOrNull()?.mode, settings.dayStartHour)
             ).coerceAtLeast(0)
         val fresh = eligible
             .filter { character -> cardFor(character, settings, cards) == null }
@@ -869,28 +904,30 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         )
     }
 
-    /** The last [days] local dates, with review and first-learned counts. */
-    suspend fun activity(days: Int = 35): List<DayActivity> = withContext(Dispatchers.IO) {
+    /** The last [days] study dates, with review and first-learned counts. */
+    suspend fun activity(days: Int = 35, dayStartHour: Int = DayBoundary.DEFAULT_HOUR): List<DayActivity> =
+        withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
+        val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
         val first = today.minusDays((days - 1).toLong())
+        val startMs = DayBoundary.startMs(first, dayStartHour, zone)
         val reviews = HashMap<LocalDate, Int>()
         val learned = HashMap<LocalDate, Int>()
         readableDatabase.rawQuery(
             "SELECT reviewed_at FROM review_log WHERE reviewed_at>=?",
-            arrayOf(first.atStartOfDay(zone).toInstant().toEpochMilli().toString()),
+            arrayOf(startMs.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
-                val date = Instant.ofEpochMilli(cursor.getLong(0)).atZone(zone).toLocalDate()
+                val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)
                 reviews[date] = (reviews[date] ?: 0) + 1
             }
         }
         readableDatabase.rawQuery(
             "SELECT introduced_at FROM card WHERE introduced_at>=?",
-            arrayOf(first.atStartOfDay(zone).toInstant().toEpochMilli().toString()),
+            arrayOf(startMs.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
-                val date = Instant.ofEpochMilli(cursor.getLong(0)).atZone(zone).toLocalDate()
+                val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)
                 learned[date] = (learned[date] ?: 0) + 1
             }
         }
@@ -904,22 +941,24 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         }
     }
 
-    /** Cumulative characters learned per day, for the growth chart. */
-    suspend fun learnedHistory(days: Int = 120): List<DayActivity> = withContext(Dispatchers.IO) {
+    /** Cumulative characters learned per study day, for the growth chart. */
+    suspend fun learnedHistory(days: Int = 120, dayStartHour: Int = DayBoundary.DEFAULT_HOUR): List<DayActivity> =
+        withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
+        val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
         val first = today.minusDays((days - 1).toLong())
+        val startMs = DayBoundary.startMs(first, dayStartHour, zone)
         val perDay = HashMap<LocalDate, Int>()
         val totalBefore = readableDatabase.rawQuery(
             "SELECT COUNT(*) FROM card WHERE introduced_at<?",
-            arrayOf(first.atStartOfDay(zone).toInstant().toEpochMilli().toString()),
+            arrayOf(startMs.toString()),
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
         readableDatabase.rawQuery(
             "SELECT introduced_at FROM card WHERE introduced_at>=?",
-            arrayOf(first.atStartOfDay(zone).toInstant().toEpochMilli().toString()),
+            arrayOf(startMs.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
-                val date = Instant.ofEpochMilli(cursor.getLong(0)).atZone(zone).toLocalDate()
+                val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)
                 perDay[date] = (perDay[date] ?: 0) + 1
             }
         }
@@ -968,13 +1007,14 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         settings: AppSettings,
         days: Int = 14,
         today: LocalDate = LocalDate.now(),
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
     ): List<DueDay> = withContext(Dispatchers.IO) {
         val cardsById = allCards()
         val zone = ZoneId.systemDefault()
         val counts = HashMap<LocalDate, Int>()
         characters.forEach { character ->
             val due = cardFor(character, settings, cardsById)?.dueAtMs ?: return@forEach
-            val date = Instant.ofEpochMilli(due).atZone(zone).toLocalDate()
+            val date = DayBoundary.date(due, dayStartHour, zone)
             if (!date.isBefore(today) && date < today.plusDays(days.toLong())) {
                 counts[date] = (counts[date] ?: 0) + 1
             }
@@ -985,13 +1025,13 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         }
     }
 
-    /** Distinct local dates with at least one review. No streak, no breakage. */
-    suspend fun studyDays(): Int = withContext(Dispatchers.IO) {
+    /** Distinct study dates with at least one review. No streak, no breakage. */
+    suspend fun studyDays(dayStartHour: Int = DayBoundary.DEFAULT_HOUR): Int = withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
         readableDatabase.rawQuery("SELECT reviewed_at FROM review_log", null).use { cursor ->
             val days = HashSet<LocalDate>()
             while (cursor.moveToNext()) {
-                days.add(Instant.ofEpochMilli(cursor.getLong(0)).atZone(zone).toLocalDate())
+                days.add(DayBoundary.date(cursor.getLong(0), dayStartHour, zone))
             }
             days.size
         }
@@ -1043,13 +1083,6 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
             ids.mapNotNull { byId[it] }.distinctBy { it.id }
         }
 
-    private fun dayStart(nowMs: Long): Long {
-        val zone = ZoneId.systemDefault()
-        var day = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-        val four = day.atTime(4, 0).atZone(zone).toInstant().toEpochMilli()
-        if (nowMs < four) day = day.minus(1, ChronoUnit.DAYS)
-        return day.atTime(4, 0).atZone(zone).toInstant().toEpochMilli()
-    }
 }
 
 private fun Cursor.toSnapshot(): CardSnapshot = CardSnapshot(

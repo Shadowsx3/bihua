@@ -104,6 +104,7 @@ fun HomeScreen(
     onPaper: () -> Unit = {},
     pinnedCount: Int = 0,
     skippedCount: Int = 0,
+    suspendedCount: Int = 0,
     skippedIds: Set<String> = emptySet(),
     onOpenStudyTools: () -> Unit = {},
     playerStats: com.bassmd.bihua.progress.PlayerStats,
@@ -114,6 +115,7 @@ fun HomeScreen(
     easeBackUntilMs: Long = 0L,
     onEndVacation: () -> Unit = {},
     activity: List<DayActivity>,
+    today: java.time.LocalDate = java.time.LocalDate.now(),
     onOpenSettings: () -> Unit,
     onStudy: () -> Unit,
     onBrowse: () -> Unit,
@@ -213,7 +215,7 @@ fun HomeScreen(
                             LevelCard(playerStats)
                         }
                         Column(Modifier.weight(1f)) {
-                            StudyCalendarCard(days = activity, onDayClick = { selectedDay = it })
+                            StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
                         }
                     }
                 } else if (resumeSession == null) {
@@ -230,7 +232,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                     StatRow(known = known, total = characters.size, newToday = newToday, studyDays = studyDays)
                     Spacer(Modifier.height(12.dp))
-                    StudyCalendarCard(days = activity, onDayClick = { selectedDay = it })
+                    StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
                     Spacer(Modifier.height(12.dp))
                     LevelCard(playerStats)
                 }
@@ -240,6 +242,7 @@ fun HomeScreen(
                     if (studyList.isNotEmpty()) add("${studyList.size} in the list")
                     if (pinnedCount > 0) add("$pinnedCount pinned")
                     if (skippedCount > 0) add("$skippedCount skipped")
+                    if (suspendedCount > 0) add("$suspendedCount suspended")
                 }
                 SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
                     Column {

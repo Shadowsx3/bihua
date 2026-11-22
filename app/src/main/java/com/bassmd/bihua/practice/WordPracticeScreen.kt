@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
@@ -52,6 +50,8 @@ import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.ink.InkCanvas
 import com.bassmd.bihua.ink.InkState
+import com.bassmd.bihua.ui.appNavigationBarsPadding
+import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
@@ -101,8 +101,8 @@ fun WordPracticeScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
+            .appStatusBarsPadding()
+            .appNavigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

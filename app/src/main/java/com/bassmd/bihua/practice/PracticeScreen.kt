@@ -73,7 +73,8 @@ import com.bassmd.bihua.ink.InkStroke
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.StrokeOrderPlayer
-import com.bassmd.bihua.ink.StrokePlaybackControls
+import com.bassmd.bihua.ink.StrokePlayback
+import com.bassmd.bihua.ui.components.InkHistoryPlaybackBar
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ink.rememberStrokePlayback
 import com.bassmd.bihua.settings.DrawingTool
@@ -251,16 +252,12 @@ fun PracticeScreen(
                         player = player,
                         showReference = showReference,
                         onToggleReference = { showReference = it },
-                        onUndo = { ink.undo() },
-                        onClear = { ink.clear() },
-                        canUndo = ink.canUndo,
-                        canRedo = ink.canRedo,
-                        onRedo = { ink.redo() },
+                        ink = ink,
+                        playback = playback,
                         showOrder = showOrder,
                         onToggleOrder = { showOrder = it },
                         orderAvailable = player.strokeCount > 0,
                         checking = recognizing,
-                        hasInk = ink.strokes.isNotEmpty(),
                         onCheck = {
                             com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                             checkWriting(selected, visibleInk())
@@ -310,16 +307,12 @@ fun PracticeScreen(
                     player = player,
                     showReference = showReference,
                     onToggleReference = { showReference = it },
-                    onUndo = { ink.undo() },
-                    onClear = { ink.clear() },
-                    canUndo = ink.canUndo,
-                    canRedo = ink.canRedo,
-                    onRedo = { ink.redo() },
+                    ink = ink,
+                    playback = playback,
                     showOrder = showOrder,
                     onToggleOrder = { showOrder = it },
                     orderAvailable = player.strokeCount > 0,
                     checking = recognizing,
-                    hasInk = ink.strokes.isNotEmpty(),
                     onCheck = {
                         com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                         checkWriting(selected, visibleInk())
@@ -439,18 +432,15 @@ private fun PracticeTools(
     player: StrokeOrderPlayer,
     showReference: Boolean,
     onToggleReference: (Boolean) -> Unit,
-    onUndo: () -> Unit,
-    onClear: () -> Unit,
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onRedo: () -> Unit,
+    ink: com.bassmd.bihua.ink.InkState,
+    playback: StrokePlayback,
     showOrder: Boolean,
     onToggleOrder: (Boolean) -> Unit,
     orderAvailable: Boolean,
     checking: Boolean,
-    hasInk: Boolean,
     onCheck: () -> Unit,
 ) {
+    val hasInk = ink.strokes.isNotEmpty()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (!orderAvailable) {
             Text(
@@ -492,62 +482,24 @@ private fun PracticeTools(
                 accent = if (showOrder && showReference) Lilac.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant,
             )
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(0.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onUndo, enabled = canUndo, modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            Icons.Rounded.Undo,
-                            contentDescription = "Undo",
-                            modifier = Modifier.size(20.dp),
-                            tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                        )
-                    }
-                    IconButton(onClick = onRedo, enabled = canRedo, modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.Redo,
-                            contentDescription = "Redo",
-                            modifier = Modifier.size(20.dp),
-                            tint = if (canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
-                        )
-                    }
-                    IconButton(
-                        onClick = onClear,
-                        enabled = canUndo,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .semantics { contentDescription = "Clear canvas" },
-                    ) {
-                        com.bassmd.bihua.ui.components.EraserIcon(
-                            size = 20.dp,
-                            tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                        )
-                    }
-                }
-            }
-            com.bassmd.bihua.ui.components.PrimaryAction(
-                text = when {
-                    checking -> "Reading…"
-                    !hasInk -> "Draw first"
-                    else -> "Check"
-                },
-                onClick = onCheck,
-                enabled = hasInk && !checking,
-                icon = Icons.Rounded.CheckCircle,
-                accent = Sky.copy(alpha = 0.85f),
-                modifier = Modifier.weight(1f),
-            )
-        }
+        InkHistoryPlaybackBar(
+            ink = ink,
+            playback = playback,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(2.dp))
+        com.bassmd.bihua.ui.components.PrimaryAction(
+            text = when {
+                checking -> "Reading…"
+                !hasInk -> "Draw first"
+                else -> "Check"
+            },
+            onClick = onCheck,
+            enabled = hasInk && !checking,
+            icon = Icons.Rounded.CheckCircle,
+            accent = Sky.copy(alpha = 0.85f),
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

@@ -27,6 +27,24 @@ class BackupArchiveTest {
     }
 
     @Test
+    fun progressOnlyArchiveIsValid() {
+        val db = byteArrayOf(9, 8, 7)
+        val bytes = BackupArchive.encode(null, db)
+        val decoded = BackupArchive.decode(bytes)
+        assertEquals(null, decoded.backupJson)
+        assertTrue(db.contentEquals(decoded.progressDb))
+    }
+
+    @Test
+    fun rejectsAnEmptyProgressDatabase() {
+        val bytes = BackupArchive.encode("{}", ByteArray(0))
+        val e = org.junit.Assert.assertThrows(BackupException::class.java) {
+            BackupArchive.decode(bytes)
+        }
+        assertTrue(e.message.orEmpty().contains("empty"))
+    }
+
+    @Test
     fun plainJsonIsNotDetectedAsZip() {
         assertFalse(BackupArchive.isZip("""{"format":"bihua-backup"}""".toByteArray()))
     }

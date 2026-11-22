@@ -44,6 +44,7 @@ private val rainbow = listOf(Rose, Peach, Butter, Mint, Sky, Lilac, Gem)
 @Composable
 fun StudyCalendarCard(
     days: List<DayActivity>,
+    today: LocalDate = LocalDate.now(),
     onDayClick: (DayActivity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -81,7 +82,7 @@ fun StudyCalendarCard(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            CalendarGrid(days = days, onDayClick = onDayClick)
+            CalendarGrid(days = days, today = today, onDayClick = onDayClick)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Tap any day to see what you wrote.",
@@ -93,14 +94,17 @@ fun StudyCalendarCard(
 }
 
 @Composable
-private fun CalendarGrid(days: List<DayActivity>, onDayClick: (DayActivity) -> Unit) {
+private fun CalendarGrid(
+    days: List<DayActivity>,
+    today: LocalDate,
+    onDayClick: (DayActivity) -> Unit,
+) {
     if (days.isEmpty()) return
     val first = days.first().date
     val leading = first.dayOfWeek.value % 7
     val cells: List<DayActivity?> = List(leading) { null } + days
     val padded = cells + List((7 - cells.size % 7) % 7) { null }
     val rows = padded.chunked(7)
-    val today = LocalDate.now()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         rows.forEach { week ->
             Row(

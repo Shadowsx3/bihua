@@ -4,7 +4,9 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import com.bassmd.bihua.backup.BackupBundle
+import com.bassmd.bihua.backup.BackupArchive
 import com.bassmd.bihua.backup.BackupCodec
+import com.bassmd.bihua.backup.TransferScope
 import com.bassmd.bihua.progress.ProgressStore
 import com.bassmd.bihua.settings.SettingsStore
 import kotlinx.coroutines.CompletableDeferred
@@ -13,21 +15,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.ServerSocket
 import java.net.URL
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 import kotlin.random.Random
 
 data class SyncHost(val host: String, val port: Int)
 
 data class SyncSession(val code: String, val port: Int)
 
-data class SyncPackage(val backup: BackupBundle, val progressDb: ByteArray)
+data class SyncPackage(val backup: BackupBundle?, val progressDb: ByteArray?)
 
 /** Local HTTP sync with a six-digit pairing code. No cloud service is involved. */
 class SyncServer(
@@ -39,16 +37,34 @@ class SyncServer(
     private var nsd: NsdManager? = null
     private var registration: NsdManager.RegistrationListener? = null
     @Volatile private var running = false
+    private var transfer = TransferScope()
 
-    fun start(scope: CoroutineScope, onReady: (SyncSession) -> Unit, onError: (String) -> Unit) {
+    fun start(
+        scope: CoroutineScope,
+        transfer: TransferScope = TransferScope(),
+        onReady: (SyncSession) -> Unit,
+        onError: (String) -> Unit,
+    ) {
         stop()
-        val server = ServerSocket(0)
+        this.transfer = transfer
+        val server = runCatching { ServerSocket(0) }.getOrElse {
+            onError("Could not open a sync port. Check Wi-Fi and try again.")
+            return
+        }
         socket = server
         running = true
         val code = "%06d".format(Random.nextInt(0, 1_000_000))
         val session = SyncSession(code, server.localPort)
 
-        val manager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        val manager = runCatching {
+            context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        }.getOrElse {
+            server.close()
+            socket = null
+            running = false
+            onError("The local network service is not available.")
+            return
+        }
         nsd = manager
         val info = NsdServiceInfo().apply {
             serviceName = "Bihua-${code.takeLast(3)}"
@@ -68,7 +84,17 @@ class SyncServer(
             override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) = Unit
         }
         registration = listener
-        manager.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener)
+        runCatching {
+            manager.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener)
+        }.onFailure {
+            server.close()
+            socket = null
+            running = false
+            registration = null
+            nsd = null
+            onError("Could not advertise the sync service. Check Wi-Fi.")
+            return
+        }
 
         scope.launch(Dispatchers.IO) {
             while (running) {
@@ -98,20 +124,20 @@ class SyncServer(
     }
 
     private suspend fun buildPackage(): ByteArray {
-        val temp = File(context.cacheDir, "sync-progress.db")
-        progress.exportTo(temp)
-        val backup = store.snapshot(System.currentTimeMillis())
-        val out = ByteArrayOutputStream()
-        ZipOutputStream(out).use { zip ->
-            zip.putNextEntry(ZipEntry("backup.json"))
-            zip.write(BackupCodec.encode(backup).toByteArray())
-            zip.closeEntry()
-            zip.putNextEntry(ZipEntry("progress.db"))
-            zip.write(temp.readBytes())
-            zip.closeEntry()
+        if (transfer.isEmpty) error("Choose settings, progress, or both.")
+        val backup = if (transfer.settings) {
+            BackupCodec.encode(store.snapshot(System.currentTimeMillis()))
+        } else {
+            null
         }
-        temp.delete()
-        return out.toByteArray()
+        val progressBytes = if (transfer.progress) {
+            val temp = File(context.cacheDir, "sync-progress.db")
+            progress.exportTo(temp)
+            temp.readBytes().also { temp.delete() }
+        } else {
+            null
+        }
+        return BackupArchive.encode(backup, progressBytes)
     }
 
     fun stop() {
@@ -131,8 +157,10 @@ class SyncServer(
 class SyncClient(private val context: Context) {
 
     suspend fun discover(timeoutMs: Long = 6_000): List<SyncHost> = withContext(Dispatchers.IO) {
-        val manager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-        val found = mutableListOf<SyncHost>()
+        val manager = runCatching {
+            context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        }.getOrNull() ?: return@withContext emptyList()
+        val found = java.util.concurrent.CopyOnWriteArrayList<SyncHost>()
         val done = CompletableDeferred<Unit>()
         val discovery = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) = Unit
@@ -182,20 +210,10 @@ class SyncClient(private val context: Context) {
     }
 
     private fun readPackage(bytes: ByteArray): SyncPackage {
-        var backupText: String? = null
-        var progress: ByteArray? = null
-        ZipInputStream(bytes.inputStream()).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                when (entry.name) {
-                    "backup.json" -> backupText = zip.readBytes().decodeToString()
-                    "progress.db" -> progress = zip.readBytes()
-                }
-                zip.closeEntry()
-                entry = zip.nextEntry
-            }
-        }
-        val backup = BackupCodec.decode(backupText ?: error("The package has no backup."))
-        return SyncPackage(backup, progress ?: error("The package has no progress database."))
+        val archive = BackupArchive.decode(bytes)
+        val backup = archive.backupJson?.let { BackupCodec.decode(it) }
+        val progress = archive.progressDb
+        if (backup == null && progress == null) error("The package has no settings or progress.")
+        return SyncPackage(backup, progress)
     }
 }

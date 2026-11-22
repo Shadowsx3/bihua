@@ -36,9 +36,10 @@ import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
 
 /**
- * One place to see and undo the three study tools. They are written from a
- * character's detail pane, which makes them easy to forget: the sheet is the
- * only surface that shows the whole set, and the only way to clear it.
+ * One place to see and undo the study tools: study list, pins, one-day skips,
+ * and permanent suspensions. They are written from a character's detail pane,
+ * which makes them easy to forget: the sheet is the only surface that shows the
+ * whole set, and the only way to clear it.
  */
 @Composable
 fun StudyToolsSheet(
@@ -46,12 +47,15 @@ fun StudyToolsSheet(
     studyList: List<CharacterEntry>,
     pinned: List<CharacterEntry>,
     skipped: List<CharacterEntry>,
+    suspended: List<CharacterEntry>,
     onStudyList: () -> Unit,
     onRemoveFromStudyList: (CharacterEntry) -> Unit,
     onClearStudyList: () -> Unit,
     onUnpin: (CharacterEntry) -> Unit,
     onResume: (CharacterEntry) -> Unit,
     onResumeAll: () -> Unit,
+    onResumeSuspended: (CharacterEntry) -> Unit,
+    onResumeAllSuspended: () -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -114,7 +118,7 @@ fun StudyToolsSheet(
             StudyToolSection(
                 title = "Skipped today",
                 count = skipped.size,
-                empty = "Nothing skipped today. Skip a character to leave it out until tomorrow.",
+                empty = "Nothing skipped today. Skip a character to leave it out until the next day.",
                 actions = {
                     if (skipped.isNotEmpty()) {
                         TextButton(onClick = onResumeAll) { Text("Resume all") }
@@ -131,9 +135,29 @@ fun StudyToolsSheet(
                 }
             }
 
+            StudyToolSection(
+                title = "Suspended",
+                count = suspended.size,
+                empty = "Nothing suspended. Use Skip always when a character should stay out until you bring it back.",
+                actions = {
+                    if (suspended.isNotEmpty()) {
+                        TextButton(onClick = onResumeAllSuspended) { Text("Resume all") }
+                    }
+                },
+            ) {
+                suspended.forEach { entry ->
+                    StudyToolRow(
+                        entry = entry,
+                        action = "Resume",
+                        onAction = { onResumeSuspended(entry) },
+                        onOpen = { onOpenCharacter(entry) },
+                    )
+                }
+            }
+
             Spacer(Modifier.height(8.dp))
             Text(
-                "A skip ends at midnight. Memory and XP are not changed by pinning, skipping, or the list.",
+                "A one-day skip ends at your day boundary. A suspended character stays out until you resume it. Memory and XP are not changed by pinning, skipping, or the list.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )

@@ -50,13 +50,13 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | Area | What it does |
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
-| **Scheduling** | FSRS-7 per script, optional sharing for identical glyphs, vacation mode, seven-day ease-back. |
+| **Scheduling** | FSRS-7 per script, shared profile for shared glyphs, local weight fitting or import, 4 AM default day boundary, vacation mode, seven-day ease-back. |
 | **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
 | **Pronunciation** | Separate review task; type pinyin, romaji, kana, or romanised eum/Hangul. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
-| **Data** | Full zip backup/import, CSV export, optional local Wi-Fi sync, no account. |
+| **Data** | Selective zip backup/import and local Wi-Fi sync (settings and/or progress), CSV export, no account. |
 
 ## Requirements
 
@@ -73,7 +73,7 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 132 unit tests, content audit, debug APK, verification
+make check      # compile, 155 unit tests, content audit, debug APK, verification
 make lint       # Android lint
 make run        # check, install, and launch on a connected device
 make smoke      # launch/navigation smoke test on a connected device
@@ -155,6 +155,11 @@ not a public issue.
 
 ## Status
 
-Bihua is a private beta with a public codebase. The phone path is verified; a
-current tablet/S Pen pass and a TalkBack/large-text audit remain on the roadmap.
-The app is not a clinical intervention or a guarantee of literacy.
+Bihua 1.0.2 is in closed testing. The main branch also contains 1.0.3 work:
+personal FSRS weights, a selectable day boundary, permanent suspension, selective
+transfer, edge-to-edge cleanup, and a two-button grade scale. The public APK
+stays at 1.0.2 until 1.0.3 is released.
+
+The phone and tablet paths are verified; a TalkBack/large-text audit and a
+current physical S Pen pass remain on the roadmap. The app is not a clinical
+intervention or a guarantee of literacy.

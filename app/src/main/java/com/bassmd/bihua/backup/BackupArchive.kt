@@ -27,12 +27,15 @@ object BackupArchive {
             bytes[2] == 3.toByte() &&
             bytes[3] == 4.toByte()
 
-    fun encode(backupJson: String, progressDb: ByteArray?): ByteArray {
+    fun encode(backupJson: String?, progressDb: ByteArray?): ByteArray {
+        require(backupJson != null || progressDb != null) { "A backup needs settings or progress." }
         val out = ByteArrayOutputStream()
         ZipOutputStream(out).use { zip ->
-            zip.putNextEntry(ZipEntry(BACKUP_ENTRY))
-            zip.write(backupJson.toByteArray())
-            zip.closeEntry()
+            if (backupJson != null) {
+                zip.putNextEntry(ZipEntry(BACKUP_ENTRY))
+                zip.write(backupJson.toByteArray())
+                zip.closeEntry()
+            }
             if (progressDb != null) {
                 zip.putNextEntry(ZipEntry(PROGRESS_ENTRY))
                 zip.write(progressDb)
@@ -61,7 +64,10 @@ object BackupArchive {
         } catch (error: Exception) {
             throw BackupException("This backup file is damaged.")
         }
-        if (backup == null) throw BackupException(BackupCodec.NOT_A_BACKUP)
+        if (backup == null && progress == null) throw BackupException(BackupCodec.NOT_A_BACKUP)
+        if (progress != null && progress.isEmpty()) {
+            throw BackupException("This backup has an empty progress database.")
+        }
         return BackupArchiveContents(backupJson = backup, progressDb = progress)
     }
 }

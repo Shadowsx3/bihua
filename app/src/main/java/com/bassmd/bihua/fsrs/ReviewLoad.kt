@@ -39,6 +39,7 @@ object ReviewLoad {
         newPerDay: Int,
         maxCharacters: Int = 3180,
         desiredRetention: Float = 0.90f,
+        weights: FloatArray = Fsrs7.DEFAULT_W,
     ): Estimate {
         if (newPerDay <= 0 || maxCharacters <= 0) {
             return Estimate(newPerDay.coerceAtLeast(0), 0, 0, 0, 0)
@@ -54,7 +55,7 @@ object ReviewLoad {
             val now = day * dayMs
             repeat(newPerDay) {
                 if (cards.size < maxCharacters) {
-                    val first = Fsrs7.firstReview(FsrsGrade.GOOD, now, desiredRetention)
+                    val first = Fsrs7.firstReview(FsrsGrade.GOOD, now, desiredRetention, w = weights)
                     cards += SimCard(first.memory, first.dueAtMs, now)
                     if (cards.size == maxCharacters && finishDay < 0) finishDay = day
                 }
@@ -65,7 +66,7 @@ object ReviewLoad {
                 if (card.dueMs <= now) {
                     val elapsed = (now - card.lastMs).coerceAtLeast(0L) / dayMs.toFloat()
                     val grade = GRADE_MIX[gradeIndex++ % GRADE_MIX.size]
-                    val next = Fsrs7.review(card.memory, grade, elapsed, now, desiredRetention)
+                    val next = Fsrs7.review(card.memory, grade, elapsed, now, desiredRetention, w = weights)
                     card.memory = next.memory
                     card.dueMs = next.dueAtMs
                     card.lastMs = now

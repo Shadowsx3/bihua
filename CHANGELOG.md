@@ -1,6 +1,49 @@
 # Changelog
 
+## 1.0.3 (2026-11-22)
+
+### Added
+
+- FSRS-7 weights can be imported, exported, or fitted locally from the
+  learner's own reviews. Each script can keep its own profile; shared glyphs
+  use the shared profile. A fit needs 400 reviews, uses the recent 2,000 by
+  default or all reviews if chosen, and keeps the defaults when a time-based
+  holdout gets worse.
+- The study day can start at midnight or up to 6 AM. The daily goal, calendar,
+  review counts, skipped characters, and XP follow that boundary. The app
+  refreshes the boundary after being open overnight or resumed days later.
+- "Skip always" suspends a character until it is resumed. The one-day skip and
+  the permanent suspension are separate lists in Study tools.
+- Backups, imports, and local sync can move settings and progress together or
+  separately. The receiving device chooses what to apply.
+- Slow actions show a blocking progress dialog or an inline progress bar:
+  session start, backup restore, sync apply, model download, reset, weight fit,
+  backup export, and review CSV export.
+- `tools/seed_fsrs_fit.py` creates a large, realistic review history for
+  testing the fit across per-script and shared profiles.
+
+### Changed
+
+- Version 1.0.3, versionCode 13.
+- The Schedule settings page is now compact: profile menu, status, fit, import,
+  export, and a More menu. The long explanation moved to an info dialog.
+- Practice and review share one aligned ink toolbar. Undo, redo, and clear sit
+  on the left; play, reverse, previous stroke, stroke count, and next stroke sit
+  on the right. Practice now has the same stroke playback controls as review.
+- After a review is submitted, the canvas is locked. The drawing stays visible
+  for inspection, the editor tools are disabled, playback still works, and the
+  grade bar's Draw again is the only way to start another attempt. No button is
+  placed over the drawing.
+- Settings → Study can show only Again and Good. Hard and Easy are hidden from
+  the grade bar and pronunciation check; scheduling is unchanged.
+- Removed `enableEdgeToEdge()` and the deprecated status-bar, navigation-bar,
+  and cutout-mode calls it pulls into the app. Android 15+ still uses the
+  platform's edge-to-edge default, and system-bar padding is applied only when
+  the window draws behind the bars. Android 10–14 keep their normal inset
+  window, and bar icon colors are only overridden on Android 15+.
+
 ## 1.0.2 — 2026-11-21
+ — 2026-11-21
 
 ### Changed
 

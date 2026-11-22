@@ -87,11 +87,7 @@ object Fsrs7 {
     ): FsrsReview {
         val elapsed = elapsedDays.coerceAtLeast(0f)
         val r = retrievability(current, elapsed, w)
-        val rShort = shortTermRetrievability(current, elapsed, w)
-        val next = when (grade) {
-            FsrsGrade.AGAIN -> lapse(current, r, rShort, w)
-            else -> success(current, r, rShort, grade, w)
-        }
+        val next = nextMemory(current, grade, elapsed, w)
         val interval = intervalFor(next, desiredRetention, maxIntervalDays, w)
         return FsrsReview(
             memory = next,
@@ -99,6 +95,25 @@ object Fsrs7 {
             intervalDays = interval,
             dueAtMs = nowMs + (interval * 86_400_000f).toLong(),
         )
+    }
+
+    /**
+     * The memory transition for one review, without solving for the next
+     * interval. Used by the local weight fitter and by [review].
+     */
+    fun nextMemory(
+        current: FsrsMemory,
+        grade: FsrsGrade,
+        elapsedDays: Float,
+        w: FloatArray = DEFAULT_W,
+    ): FsrsMemory {
+        val elapsed = elapsedDays.coerceAtLeast(0f)
+        val r = retrievability(current, elapsed, w)
+        val rShort = shortTermRetrievability(current, elapsed, w)
+        return when (grade) {
+            FsrsGrade.AGAIN -> lapse(current, r, rShort, w)
+            else -> success(current, r, rShort, grade, w)
+        }
     }
 
     fun retrievability(memory: FsrsMemory, elapsedDays: Float, w: FloatArray = DEFAULT_W): Float {

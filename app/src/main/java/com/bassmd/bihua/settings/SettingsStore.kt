@@ -45,7 +45,7 @@ class SettingsStore(private val context: Context) {
 
     suspend fun updateSettings(transform: (AppSettings) -> AppSettings) {
         context.preferences.edit { prefs ->
-            val next = transform(decodeOr(prefs[settingsKey], AppSettings()))
+            val next = transform(decodeOr(prefs[settingsKey], AppSettings())).sanitized()
             prefs[settingsKey] = json.encodeToString(AppSettings.serializer(), next)
         }
     }
@@ -87,13 +87,15 @@ class SettingsStore(private val context: Context) {
             prefs[profileKey] = json.encodeToString(UserProfile.serializer(), restoredProfile)
             prefs[settingsKey] = json.encodeToString(
                 AppSettings.serializer(),
-                bundle.settings.withDailyNewGoal(bundle.settings.dailyNewGoal),
+                bundle.settings.sanitized(),
             )
         }
     }
 
     private fun decodeOr(text: String?, default: AppSettings): AppSettings =
-        text?.let { runCatching { json.decodeFromString(AppSettings.serializer(), it) }.getOrNull() } ?: default
+        text?.let {
+            runCatching { json.decodeFromString(AppSettings.serializer(), it).sanitized() }.getOrNull()
+        } ?: default
 
     private fun decodeOr(text: String?, default: UserProfile): UserProfile =
         text?.let { runCatching { json.decodeFromString(UserProfile.serializer(), it) }.getOrNull() } ?: default
