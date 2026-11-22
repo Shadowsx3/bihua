@@ -34,6 +34,16 @@
   device and explains ML Kit model updates and metrics.
 - Handwriting results now say plainly that a reading can miss or misread a
   stroke. It is a hint; the learner still chooses the grade.
+- The active handwriting model and the device voice engine are prepared in the
+  background during onboarding, on Home, and after a script switch.
+- Practice now defaults to the first curriculum character and its picker has
+  search by character, meaning, or reading.
+- Discarding a paused lesson asks for confirmation.
+- Reset, backup import, and local sync clear paused lessons so a stale session
+  cannot reappear.
+- Character detail puts Practice and word/paper actions before the sharing
+  controls.
+- Onboarding input copy matches whether the device has a stylus.
 
 ### Fixed
 
