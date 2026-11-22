@@ -220,6 +220,8 @@ data class AppSettings(
     val includeHangul: Boolean = true,
     /** Show san next to 산 while learning Hanja. */
     val showHangulRomanization: Boolean = true,
+    /** Include explicit dictionary examples. Off by default. */
+    val includeMatureContent: Boolean = false,
     /** Hide Hard and Easy if the learner prefers a two-button scale. */
     val onlyAgainAndGood: Boolean = false,
     /** Keep the ML Kit model downloads on unmetered Wi-Fi. */

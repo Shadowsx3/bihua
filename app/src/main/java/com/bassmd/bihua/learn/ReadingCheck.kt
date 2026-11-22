@@ -4,6 +4,7 @@ import com.bassmd.bihua.content.Hangul
 import com.bassmd.bihua.content.Pinyin
 import com.bassmd.bihua.content.Romaji
 import com.bassmd.bihua.content.StudyMode
+import java.text.Normalizer
 
 data class ReadingCheckResult(
     val correct: Boolean,
@@ -32,7 +33,8 @@ object ReadingCheck {
         }
     }
 
-    private fun checkChinese(answers: List<String>, typed: String): ReadingCheckResult {
+    private fun checkChinese(rawAnswers: List<String>, typed: String): ReadingCheckResult {
+        val answers = rawAnswers.map { Pinyin.numberedToMarked(it) }
         val marked = Pinyin.numberedToMarked(typed)
         val typedPlain = Pinyin.plain(marked)
         val exact = answers.any { answer ->
@@ -61,12 +63,29 @@ object ReadingCheck {
     }
 
     private fun checkKorean(answers: List<String>, typed: String): ReadingCheckResult {
-        val normalisedTyped = typed.lowercase().replace(" ", "").replace("-", "")
-        val correct = answers.any { answer ->
-            val hangulRoman = Hangul.romanise(answer).lowercase().replace(" ", "")
-            val answerLower = answer.lowercase()
-            normalisedTyped == hangulRoman || normalisedTyped == answerLower
+        val input = Normalizer.normalize(typed, Normalizer.Form.NFC)
+            .lowercase()
+            .replace(" ", "")
+            .replace("-", "")
+            .replace("'", "")
+            .replace("’", "")
+        val correct = answers.any { raw ->
+            val answer = Normalizer.normalize(raw, Normalizer.Form.NFC)
+                .lowercase()
+                .replace(" ", "")
+            input == answer || romanKey(input) == romanKey(Hangul.romanise(answer))
         }
         return ReadingCheckResult(correct, false, answers.first())
     }
+
+    /**
+     * Korean romanisation has harmless spelling variants (김 is gim or kim).
+     * Folding the voiced and unvoiced pairs makes a Latin keyboard forgiving
+     * without changing the Hangul answer.
+     */
+    private fun romanKey(text: String): String = text
+        .replace("ch", "j")
+        .replace("k", "g")
+        .replace("t", "d")
+        .replace("p", "b")
 }

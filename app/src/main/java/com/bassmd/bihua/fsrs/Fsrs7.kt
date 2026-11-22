@@ -119,6 +119,11 @@ object Fsrs7 {
     fun retrievability(memory: FsrsMemory, elapsedDays: Float, w: FloatArray = DEFAULT_W): Float {
         val t = elapsedDays.coerceAtLeast(0f)
         if (t <= 0f) return 1f
+        if (!memory.sLong.isFinite() || !memory.sShort.isFinite() ||
+            memory.sLong <= 0f || memory.sShort <= 0f
+        ) {
+            return 0f
+        }
         val dShort = w[23] * memory.sShort.pow(w[33] - 0.3f)
         val fShort = w[25].pow(-1f / dShort) - 1f
         val rShort = (1f + fShort * t / memory.sShort).pow(-dShort)
@@ -135,6 +140,7 @@ object Fsrs7 {
     fun shortTermRetrievability(memory: FsrsMemory, elapsedDays: Float, w: FloatArray = DEFAULT_W): Float {
         val t = elapsedDays.coerceAtLeast(0f)
         if (t <= 0f) return 1f
+        if (!memory.sShort.isFinite() || memory.sShort <= 0f) return 0f
         val dShort = w[23] * memory.sShort.pow(w[33] - 0.3f)
         val fShort = w[25].pow(-1f / dShort) - 1f
         return (1f + fShort * t / memory.sShort).pow(-dShort).coerceIn(0f, 1f)
@@ -147,6 +153,12 @@ object Fsrs7 {
         maxIntervalDays: Int,
         w: FloatArray = DEFAULT_W,
     ): Float {
+        if (!memory.sLong.isFinite() || !memory.sShort.isFinite() ||
+            memory.sLong <= 0f || memory.sShort <= 0f ||
+            maxIntervalDays <= 0
+        ) {
+            return 0f
+        }
         val target = desiredRetention.coerceIn(0.5f, 0.99f)
         var low = 0f
         var high = 1f

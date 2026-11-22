@@ -70,14 +70,14 @@ object RecallPrompt {
             }
             if (mode == StudyMode.JAPANESE &&
                 !word.isNullOrEmpty() &&
-                word.length > 1 &&
+                word.codePointCount(0, word.length) > 1 &&
                 !target.isNullOrEmpty() &&
                 word.contains(target)
             ) {
                 val index = word.indexOf(target)
                 RecallCuePrompt(
                     label = "In the word",
-                    text = word.replaceRange(index, index + 1, "\u25A2"),
+                    text = word.replace(target, "\u25A2"),
                     detail = wordMeaning,
                     ruby = displayWithRomanization(
                         displayedWord,
@@ -95,17 +95,30 @@ object RecallPrompt {
                     ),
                 )
             } else if (!wordReading.isNullOrBlank() && !wordMeaning.isNullOrBlank() &&
-                word != null && word.length > 1 && (position >= 0 || highlight != null)
+                word != null && word.codePointCount(0, word.length) > 1 &&
+                (position >= 0 || highlight != null)
             ) {
+                // Korean word readings are Hangul syllables in the same order
+                // as the Hanja word. Use that direct alignment so a hun reading
+                // such as 말 for 馬 still highlights the right syllable.
+                val shownHighlight = if (
+                    mode == StudyMode.KOREAN &&
+                    position >= 0 &&
+                    displayedWord.length == word.length
+                ) {
+                    position..position
+                } else {
+                    highlight
+                }
                 RecallCuePrompt(
                     label = "In the word",
                     text = "${displayWithRomanization(displayedWord, mode, pinyinNumbers, romanizeHangul)} · $wordMeaning",
-                    detail = if (highlight != null) {
+                    detail = if (shownHighlight != null) {
                         "Write the highlighted part. Tap it for a hint."
                     } else {
                         "${positionLabel(position, word.length)} · $meaning"
                     },
-                    highlight = highlight,
+                    highlight = shownHighlight,
                     hint = meaning,
                     hintDetail = displayWithRomanization(
                         primaryReading(reading, mode),

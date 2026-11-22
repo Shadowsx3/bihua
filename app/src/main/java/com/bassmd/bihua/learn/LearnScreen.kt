@@ -104,8 +104,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.ai.RecognitionResult
+import com.bassmd.bihua.content.Hangul
 import com.bassmd.bihua.content.LearnItem
+import com.bassmd.bihua.content.Romaji
 import com.bassmd.bihua.content.StudyMode
+import com.bassmd.bihua.content.visible
 import com.bassmd.bihua.ink.InkCanvas
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.SingleStrokeGuideLayer
@@ -137,6 +140,7 @@ import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.Gem
+import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Lilac
@@ -196,6 +200,7 @@ fun LearnScreen(
     guideInRecall: Boolean = false,
     recallCue: RecallCue = RecallCue.MIXED,
     showHangulRomanization: Boolean = true,
+    includeMatureContent: Boolean = false,
     mnemonicMode: MnemonicMode = MnemonicMode.EARLY,
     sessionOrder: com.bassmd.bihua.settings.SessionOrder = com.bassmd.bihua.settings.SessionOrder.REVIEWS_FIRST,
     sessionProgress: com.bassmd.bihua.settings.SessionProgress = com.bassmd.bihua.settings.SessionProgress.FULL,
@@ -282,9 +287,10 @@ fun LearnScreen(
         }
     }
     var introWords by remember { mutableStateOf(emptyList<com.bassmd.bihua.content.WordContext>()) }
-    LaunchedEffect(currentItem?.id, repository) {
+    LaunchedEffect(currentItem?.id, repository, includeMatureContent) {
         introWords = currentItem?.let { item ->
-            repository?.words(item.id).orEmpty()
+            repository?.words(item.id, includeMatureContent).orEmpty()
+                .visible(includeMatureContent)
                 .filter { it.word.length > 1 && it.word != item.character }
                 .distinctBy { it.word }
                 .take(10)
@@ -547,9 +553,11 @@ fun LearnScreen(
             var cueWord by remember(item.id) {
                 mutableStateOf<com.bassmd.bihua.content.WordContext?>(null)
             }
-            LaunchedEffect(item.id, repository, cue) {
+            LaunchedEffect(item.id, repository, cue, includeMatureContent) {
                 if (cue == RecallCue.WORD) {
-                    cueWord = repository?.words(item.id)?.firstOrNull()
+                    cueWord = repository?.words(item.id, includeMatureContent).orEmpty()
+                        .visible(includeMatureContent)
+                        .firstOrNull { it.word.length > 1 && it.word != item.character }
                 }
             }
             val cuePrompt = remember(cue, item, cueWord, pinyinNumbers, mode) {
@@ -1988,6 +1996,27 @@ private fun PronunciationReview(
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
     var revealed by remember(item.id, round) { mutableStateOf(false) }
     val expected = com.bassmd.bihua.content.Pinyin.display(item.reading, mode, pinyinNumbers)
+    val hangulPreview = if (
+        mode == StudyMode.KOREAN &&
+        input.isNotBlank() &&
+        input.none { it in '\uAC00'..'\uD7A3' }
+    ) {
+        // A completed romaja answer uses the real reading, so variant spellings
+        // such as kim for 김 preview the right Hangul. Partial input gets the
+        // generic composition.
+        if (ReadingCheck.check(mode, item.reading, input).correct) {
+            com.bassmd.bihua.content.Pinyin.display(item.reading, mode, pinyinNumbers)
+        } else {
+            Hangul.fromRevisedRomanization(input)
+        }
+    } else {
+        null
+    }
+    val kanaPreview = if (mode == StudyMode.JAPANESE && input.isNotBlank()) {
+        Romaji.toHiragana(input).takeIf { it != input }
+    } else {
+        null
+    }
     val suggestion = when {
         result == null -> null
         result?.correct == true -> GradeSuggestion(Grade.GOOD)
@@ -2081,8 +2110,8 @@ private fun PronunciationReview(
                         placeholder = {
                             Text(
                                 when (mode) {
-                                    StudyMode.JAPANESE -> "romaji"
-                                    StudyMode.KOREAN -> "romanisation"
+                                    StudyMode.JAPANESE -> "kana or romaji"
+                                    StudyMode.KOREAN -> "Hangul or romaja"
                                     else -> "pinyin, e.g. ni3"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -2102,6 +2131,29 @@ private fun PronunciationReview(
                             vertical = 12.dp,
                         ),
                     ) { Text(if (result == null) "Check" else "Checked") }
+                }
+                Text(
+                    when (mode) {
+                        StudyMode.JAPANESE -> "Type kana, or romaji such as san."
+                        StudyMode.KOREAN -> "Type Hangul, or romaja such as san."
+                        else -> "Type pinyin, with or without tone numbers."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                val preview = when {
+                    hangulPreview != null && hangulPreview != input -> "Hangul: $hangulPreview"
+                    kanaPreview != null -> "Kana: $kanaPreview"
+                    else -> null
+                }
+                preview?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = GuideGreen,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 if (result == null) {
                     TextButton(onClick = { showAnswer() }) { Text("Show answer") }

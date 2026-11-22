@@ -51,6 +51,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
@@ -123,14 +125,16 @@ fun OnboardingScreen(
     ) { uri ->
         if (uri != null) onRestoreBackup(uri)
     }
-    var step by remember { mutableIntStateOf(0) }
-    var mode by remember { mutableStateOf(StudyMode.SIMPLIFIED) }
-    var goal by remember { mutableIntStateOf(10) }
-    var tool by remember { mutableStateOf(DrawingTool.INK) }
-    var shareProgress by remember { mutableStateOf(false) }
-    var cue by remember { mutableStateOf(RecallCue.MEANING_READING) }
-    var pronunciation by remember { mutableStateOf(true) }
+    var step by rememberSaveable { mutableIntStateOf(0) }
+    var mode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
+    var goal by rememberSaveable { mutableIntStateOf(10) }
+    var tool by rememberSaveable { mutableStateOf(DrawingTool.INK) }
+    var shareProgress by rememberSaveable { mutableStateOf(false) }
+    var cue by rememberSaveable { mutableStateOf(RecallCue.MEANING_READING) }
+    var pronunciation by rememberSaveable { mutableStateOf(true) }
     val brush = BrushConfig.preset(tool)
+
+    BackHandler(enabled = step > 0) { step-- }
 
     Box(
         Modifier

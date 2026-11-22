@@ -50,6 +50,14 @@ class Fsrs7Test {
     }
 
     @Test
+    fun aCorruptZeroStabilityDoesNotProduceNaNAllIntervals() {
+        val broken = FsrsMemory(0f, 0f, 5f)
+        assertEquals(0f, Fsrs7.retrievability(broken, 10f), 0.0001f)
+        assertEquals(0f, Fsrs7.intervalFor(broken, 0.9f, 365), 0.0001f)
+        assertEquals(0f, Fsrs7.intervalFor(Fsrs7.initial(FsrsGrade.GOOD), 0.9f, 0), 0.0001f)
+    }
+
+    @Test
     fun aSameDayReviewStillProducesAValidCard() {
         val memory = Fsrs7.initial(FsrsGrade.GOOD)
         val result = Fsrs7.review(memory, FsrsGrade.GOOD, elapsedDays = 0.2f, nowMs = 5_000L)

@@ -200,6 +200,42 @@ class RecallPromptTest {
     }
 
     @Test
+    fun koreanWordCueAlignsAWordSyllableWithItsSoundChange() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "육",
+            meaning = "six",
+            wordReading = "유월",
+            wordMeaning = "June",
+            mode = StudyMode.KOREAN,
+            pinyinNumbers = false,
+            word = "六月",
+            target = "六",
+        )
+        // 六 is 육 on its own, but 六月 is read 유월. The highlight should sit
+        // on the first word syllable, not fail to find the dictionary reading.
+        assertEquals("In the word", prompt.label)
+        assertEquals("유월 (yuwol) · June", prompt.text)
+        assertEquals(0..0, prompt.highlight)
+    }
+
+    @Test
+    fun japaneseWordCueMasksEveryOccurrence() {
+        val prompt = RecallPrompt.build(
+            cue = RecallCue.WORD,
+            reading = "にち",
+            meaning = "day",
+            wordReading = "ひにち",
+            wordMeaning = "days; time",
+            mode = StudyMode.JAPANESE,
+            pinyinNumbers = false,
+            word = "日日",
+            target = "日",
+        )
+        assertEquals("▢▢", prompt.text)
+    }
+
+    @Test
     fun singleCharacterWordFallsBackToMeaning() {
         val prompt = RecallPrompt.build(
             cue = RecallCue.WORD,

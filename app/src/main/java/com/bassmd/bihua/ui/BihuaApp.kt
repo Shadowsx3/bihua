@@ -137,6 +137,7 @@ fun BihuaApp(store: SettingsStore) {
     val scope = rememberCoroutineScope()
     val mode = settings.studyMode
     var showOnboarding by remember { mutableStateOf(false) }
+    var bootChecked by remember { mutableStateOf(false) }
     var onboardingRestoring by remember { mutableStateOf(false) }
     var onboardingRestoreMessage by remember { mutableStateOf<String?>(null) }
     var previewMode by remember { mutableStateOf<StudyMode?>(null) }
@@ -175,9 +176,25 @@ fun BihuaApp(store: SettingsStore) {
     val sessionStore = remember { LearnSessionStore(context.applicationContext) }
     var progressVersion by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(250)
         val current = store.settings.first()
-        if (!current.onboarded) showOnboarding = true
+        showOnboarding = !current.onboarded
+        bootChecked = true
+    }
+    if (!bootChecked) {
+        BihuaBackground(decorated = true) {
+            Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Preparing your course…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkSoft,
+                    )
+                }
+            }
+        }
+        return
     }
     if (showOnboarding) {
         OnboardingScreen(
@@ -229,9 +246,12 @@ fun BihuaApp(store: SettingsStore) {
                             fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
                                 runCatching { progressStore.importFrom(it) }
                             }
-                            onboardingRestoreMessage =
-                                (restored.exceptionOrNull() as? BackupException)?.message
-                                    ?: "Could not restore that backup."
+                            val error = restored.exceptionOrNull()
+                            onboardingRestoreMessage = when (error) {
+                                is BackupException -> error.message
+                                is IllegalArgumentException -> error.message
+                                else -> "Could not restore that backup."
+                            }
                         }
                         onboardingRestoring = false
                     }
@@ -272,15 +292,24 @@ fun BihuaApp(store: SettingsStore) {
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
+    var contentRetry by remember { mutableIntStateOf(0) }
+    var contentError by remember { mutableStateOf<String?>(null) }
     val characters by produceState<List<CharacterEntry>?>(
         initialValue = null,
         mode,
         settings.includeHiragana,
         settings.includeKatakana,
         settings.includeHangul,
+        contentRetry,
     ) {
-        value = withContext(Dispatchers.IO) {
-            repository.characters(mode).filter { settings.includesInStudy(it.character) }
+        contentError = null
+        value = try {
+            withContext(Dispatchers.IO) {
+                repository.characters(mode).filter { settings.includesInStudy(it.character) }
+            }
+        } catch (error: Exception) {
+            contentError = error.message
+            null
         }
     }
     var resumableSession by remember(mode, sessionStore, progressVersion) {
@@ -424,7 +453,11 @@ fun BihuaApp(store: SettingsStore) {
                     if (session.isEmpty()) {
                         android.widget.Toast.makeText(
                             context,
-                            "Nothing is due right now. Learning steps return shortly.",
+                            if (onlyIds != null) {
+                                "That list has nothing available right now. Check skipped characters."
+                            } else {
+                                "Nothing is due right now. Learning steps return shortly."
+                            },
                             android.widget.Toast.LENGTH_SHORT,
                         ).show()
                     } else {
@@ -811,6 +844,7 @@ fun BihuaApp(store: SettingsStore) {
                     guideInRecall = settings.guideInRecall,
                     recallCue = settings.recallCue,
                     showHangulRomanization = settings.showHangulRomanization,
+                    includeMatureContent = settings.includeMatureContent,
                     mnemonicMode = settings.mnemonicMode,
                     sessionOrder = settings.sessionOrder,
                     sessionProgress = settings.sessionProgress,
@@ -1002,6 +1036,8 @@ fun BihuaApp(store: SettingsStore) {
                                         }
                                     }
                                 },
+                                contentError = contentError,
+                                onRetryContent = { contentRetry++ },
                             )
                         }
                     }
@@ -1107,6 +1143,8 @@ fun BihuaApp(store: SettingsStore) {
                                         }
                                     }
                                 },
+                                contentError = contentError,
+                                onRetryContent = { contentRetry++ },
                             )
                         }
                     }
@@ -1247,13 +1285,39 @@ private fun AppContent(
     allowFinger: Boolean = false,
     sharingOverrides: Map<String, Boolean> = emptyMap(),
     onSharingOverride: (String, Boolean?) -> Unit = { _, _ -> },
+    contentError: String? = null,
+    onRetryContent: () -> Unit = {},
 ) {
     if (characters == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.height(12.dp))
-                Text("Loading characters…", style = MaterialTheme.typography.bodyMedium, color = InkSoft)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 28.dp),
+            ) {
+                if (contentError == null) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Loading characters…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkSoft,
+                    )
+                } else {
+                    Text(
+                        "Content could not be loaded.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        contentError.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    TextButton(onClick = onRetryContent) { Text("Try again") }
+                }
             }
         }
         return
@@ -1304,6 +1368,7 @@ private fun AppContent(
             onCompareFamily = onCompareFamily,
             onPracticeWord = onPracticeWord,
             onPaperCharacter = onPaperCharacter,
+            includeMatureContent = settings.includeMatureContent,
             brush = settings.brush,
             priorityIds = priorityIds,
             skippedIds = skippedIds,

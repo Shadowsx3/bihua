@@ -474,6 +474,7 @@ private fun ForecastCard(days: List<DueDay>, onDayClick: (DueDay) -> Unit) {
                     )
                 }
             }
+            if (total == 0) return@Column
             Spacer(Modifier.height(12.dp))
             days.forEachIndexed { index, day ->
                 val name = if (index == 0) "Today" else day.date.dayOfWeek.name.lowercase()

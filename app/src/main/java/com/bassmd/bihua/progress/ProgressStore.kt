@@ -91,6 +91,7 @@ data class WordPracticeEntry(
     val meaning: String,
     val practicedAtMs: Long,
     val completions: Int,
+    val mature: Boolean = false,
 )
 
 /** One past review, for the per-character timeline. */
@@ -171,7 +172,8 @@ data class ReviewUndo(
  * character when the learner keeps a glyph separate. This database is separate
  * from read-only content, so content updates never touch progress.
  */
-class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "bihua_progress.db", null, 9) {
+class ProgressStore(private val context: Context) :
+    SQLiteOpenHelper(context, "bihua_progress.db", null, SCHEMA_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -232,6 +234,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
 
     /** Replaces the local database with a verified sync package. */
     suspend fun importFrom(source: java.io.File) = withContext(Dispatchers.IO) {
+        validateProgressDatabase(source)
         close()
         val target = context.getDatabasePath("bihua_progress.db")
         target.parentFile?.mkdirs()
@@ -258,7 +261,13 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         if (oldVersion < 8) {
             db.execSQL("ALTER TABLE review_log ADD COLUMN strokes INTEGER NOT NULL DEFAULT 0")
         }
-        if (oldVersion < 9) createWordPracticeTable(db)
+        if (oldVersion < 9) {
+            createWordPracticeTable(db)
+        } else if (oldVersion < 10) {
+            db.execSQL(
+                "ALTER TABLE word_practice ADD COLUMN mature INTEGER NOT NULL DEFAULT 0"
+            )
+        }
     }
 
     private fun createWordPracticeTable(db: SQLiteDatabase) {
@@ -271,6 +280,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
               meaning TEXT NOT NULL,
               practiced_at INTEGER NOT NULL,
               completions INTEGER NOT NULL,
+              mature INTEGER NOT NULL DEFAULT 0,
               PRIMARY KEY(mode, word)
             )
             """.trimIndent()
@@ -530,6 +540,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
             delete("review_log", null, null)
             delete("xp_log", null, null)
             delete("confusion", null, null)
+            delete("word_practice", null, null)
             delete("player", null, null)
             execSQL("INSERT OR IGNORE INTO player(id, xp) VALUES(1, 0)")
         }
@@ -683,7 +694,65 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         )
     }
 
+    /**
+     * Reject a foreign, truncated, or newer progress file before it replaces
+     * the learner's real database. The caller keeps a fallback copy either way.
+     */
+    private fun validateProgressDatabase(source: java.io.File) {
+        require(source.isFile && source.length() > 0L) {
+            "This progress file is empty."
+        }
+        val db = try {
+            SQLiteDatabase.openDatabase(source.path, null, SQLiteDatabase.OPEN_READONLY)
+        } catch (error: Exception) {
+            throw IllegalArgumentException("This progress file is damaged.", error)
+        }
+        try {
+            require(db.version <= SCHEMA_VERSION) {
+                "This progress file is from a newer version of Bihua."
+            }
+            val tables = db.rawQuery(
+                "SELECT name FROM sqlite_master WHERE type='table'",
+                null,
+            ).use { cursor ->
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(0)) }
+            }
+            require("card" in tables && "review_log" in tables) {
+                "This file is not a Bihua progress database."
+            }
+            val cardColumns = db.rawQuery("PRAGMA table_info(card)", null).use { cursor ->
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(1)) }
+            }
+            require(
+                "id" in cardColumns && "s_long" in cardColumns &&
+                    "due_at" in cardColumns && "known_dots" in cardColumns,
+            ) {
+                "This progress file is missing card data."
+            }
+            if (db.version >= 9) {
+                require("word_practice" in tables) {
+                    "This progress file is missing word practice data."
+                }
+            }
+            if (db.version >= 10) {
+                val wordColumns = db.rawQuery(
+                    "PRAGMA table_info(word_practice)",
+                    null,
+                ).use { cursor ->
+                    buildSet { while (cursor.moveToNext()) add(cursor.getString(1)) }
+                }
+                require("mature" in wordColumns) {
+                    "This progress file is from an incomplete newer version."
+                }
+            }
+        } finally {
+            db.close()
+        }
+    }
+
     companion object {
+        const val SCHEMA_VERSION = 10
+
         fun cardKey(character: CharacterEntry, settings: AppSettings): String =
             if (settings.effectiveSharing(character.glyphGroupId)) {
                 "glyph:${character.glyphGroupId}"
@@ -844,6 +913,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
                 put("meaning", word.meaning)
                 put("practiced_at", nowMs)
                 put("completions", existing + 1)
+                put("mature", if (word.mature) 1 else 0)
             },
             SQLiteDatabase.CONFLICT_REPLACE,
         )
@@ -853,11 +923,13 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
     suspend fun recentWordPractice(
         mode: com.bassmd.bihua.content.StudyMode,
         limit: Int = 6,
+        includeMature: Boolean = false,
     ): List<WordPracticeEntry> = withContext(Dispatchers.IO) {
         readableDatabase.rawQuery(
-            "SELECT word, reading, meaning, practiced_at, completions FROM word_practice " +
-                "WHERE mode=? ORDER BY practiced_at DESC LIMIT ?",
-            arrayOf(mode.name, limit.toString()),
+            "SELECT word, reading, meaning, practiced_at, completions, mature FROM word_practice " +
+                "WHERE mode=? AND (mature=0 OR mature=?) " +
+                "ORDER BY practiced_at DESC LIMIT ?",
+            arrayOf(mode.name, if (includeMature) "1" else "0", limit.toString()),
         ).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -868,6 +940,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
                             meaning = cursor.getString(2),
                             practicedAtMs = cursor.getLong(3),
                             completions = cursor.getInt(4),
+                            mature = cursor.getInt(5) != 0,
                         )
                     )
                 }

@@ -29,6 +29,8 @@ manifest deliberately, then rebuild the content database.
 | `cedict_1_0_ts_utf-8_mdbg.txt.gz` | CC-CEDICT | CC BY-SA 4.0 | 125,446 entries |
 | `JMdict_e.gz` | EDRDG JMdict | CC BY-SA 4.0 | Japanese word examples |
 | `Unihan.zip` | Unicode Unihan | Unicode License V3 | variants, radicals, Korean Hanja, stroke counts |
+| `kaikki-korean.jsonl.gz` | kaikki.org Korean Wiktionary extract | CC BY-SA 3.0 / GFDL | 64,457 entries; 18,773 with Hanja forms |
+| `ko_50k.txt` | FrequencyWords Korean | CC BY-SA 4.0 | 50,000 ranked words |
 
 ## Rules
 
@@ -36,6 +38,10 @@ manifest deliberately, then rebuild the content database.
   CC-CEDICT are read-only context on a character card.
 - JMdict supplies Japanese word examples. Never show Chinese words on a
   Japanese card.
+- Korean word examples come from the Korean Wiktionary extract. Keep only nouns
+  whose Hanja spelling is fully inside the 1,800-character education list, so
+  word practice can resolve every character. Explicit-only examples are tagged
+  `mature` and hidden by default.
 - The Jōyō set is KANJIDIC2 grade 1–6 plus grade 8. That is exactly 2,136.
 - The writing set is `WritingLevel` non-empty in `ivankra-hsk30-chars.csv`.
   That is exactly 1,200.
@@ -53,6 +59,11 @@ Keep these credits in the About screen and in any exported content manifest:
 - CC-CEDICT, CC BY-SA 4.0.
 - `ivankra/hsk30`, MIT.
 - Unihan, Unicode License V3.
-- Hanjaro is not used: its site grants no redistribution rights. The Korean
-  course comes from Unihan's `kKoreanEducationHanja`, `kHangul`, and
-  `kDefinition` fields; Korean word examples are intentionally absent.
+- Korean Wiktionary extract by kaikki.org / Wiktionary contributors, CC BY-SA
+  3.0 and GFDL. Used for Korean word examples and Hanja spellings.
+- FrequencyWords by Hermit Dave, content CC BY-SA 4.0. Used only to rank common
+  Korean word examples.
+
+The Korean course comes from Unihan's `kKoreanEducationHanja`, `kHangul`, and
+`kDefinition` fields, plus Korean Wiktionary word examples. Words with only
+explicit senses are tagged `mature` and hidden until the learner opts in.

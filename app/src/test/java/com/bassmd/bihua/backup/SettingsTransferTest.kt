@@ -15,6 +15,7 @@ class SettingsTransferTest {
         val settings = AppSettings(
             onboarded = true,
             dayStartHour = 3,
+            includeMatureContent = true,
             suspendedIds = setOf("SIMPLIFIED:U+7231"),
             fsrsWeights = Fsrs7.DEFAULT_W.toList(),
             fsrsWeightsSource = "test",
@@ -34,6 +35,7 @@ class SettingsTransferTest {
         )
         val decoded = BackupCodec.decode(BackupCodec.encode(bundle))
         assertEquals(3, decoded.settings.dayStartHour)
+        assertTrue(decoded.settings.includeMatureContent)
         assertEquals(setOf("SIMPLIFIED:U+7231"), decoded.settings.suspendedIds)
         assertEquals(Fsrs7.DEFAULT_W.toList(), decoded.settings.fsrsWeights)
         assertEquals("test profile", decoded.settings.fsrsProfiles["SIMPLIFIED"]?.source)

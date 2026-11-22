@@ -52,7 +52,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
 | **Scheduling** | FSRS-7 per script, shared profile for shared glyphs, local weight fitting or import, 4 AM default day boundary, vacation mode, seven-day ease-back. |
 | **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
-| **Pronunciation** | Separate review task; type pinyin, romaji, kana, or romanised eum/Hangul. |
+| **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
@@ -73,7 +73,7 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 186 unit tests, content audit, debug APK, verification
+make check      # compile, 207 unit tests, content audit, debug APK, verification
 make lint       # Android lint
 make run        # check, install, and launch on a connected device
 make smoke      # launch/navigation smoke test on a connected device
@@ -93,9 +93,9 @@ or upload an APK.
 - Traditional: **3,163**
 - Japanese: **2,286** (2,136 Jōyō + 150 kana)
 - Korean: **2,239** (1,800 Hanja + 40 jamo + 399 syllables)
-- **23,124** word examples
+- **34,362** word examples
 - **4,875** unique structure records
-- Content version **22**
+- Content version **28**
 
 The content database is generated, not hand-edited:
 
@@ -105,10 +105,12 @@ python3 tools/import/build_content_db.py
 make audit
 ```
 
+The screen and user-journey risk list is
+[`docs/user-journey-risk-audit.md`](docs/user-journey-risk-audit.md).
+
 `tools/data/manifest.json` records the URL, checksum, licence, and count for each
-source. Raw datasets are not committed. Korean Hanja comes from Unihan; Hanjaro
-data is not included because its site grants no redistribution rights. Korean
-word examples are intentionally absent.
+source. Raw datasets are not committed. Korean Hanja comes from Unihan. Korean
+word examples come from the Korean Wiktionary extract, ranked by FrequencyWords.
 
 ## Repository map
 
@@ -156,9 +158,11 @@ not a public issue.
 ## Status
 
 Bihua 1.0.3 is the current closed test. 1.0.4 is ready for the next closed test:
-a clearer review flow, common words on new characters, script filters, Japanese
-ruby, Korean romanization, cleaner readings, and better Japanese word ordering.
-The public APK stays at 1.0.3 until 1.0.4 is promoted.
+a clearer review flow, common words on new characters, Korean word examples,
+script filters, Japanese ruby, Korean romanization, cleaner readings, and better
+Japanese word ordering. Explicit dictionary examples are tagged and hidden until
+the learner turns on Mature words. The public APK stays at 1.0.3 until 1.0.4 is
+promoted.
 
 The phone and tablet paths are verified; a TalkBack/large-text audit and a
 current physical S Pen pass remain on the roadmap. The app is not a clinical

@@ -2,6 +2,7 @@
 """Read-only content audit. Fails on critical data problems, warns on content quality."""
 from __future__ import annotations
 
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -9,6 +10,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "app/src/main/assets/bihua_content.db"
 CRITICAL = 0
+MATURE_GLOSS = re.compile(
+    r"\b(?:sexual(?:ly)?|sex organs?|genital(?:ia|s)?|penile|vaginal|semen|sperm|"
+    r"penis|vagina|testicles?|intercourse|fornicat\w*|prostitut\w*|whore\w*|"
+    r"slut\w*|brothel|rape|molest\w*|masturbat\w*|orgasm\w*|pornograph\w*|"
+    r"erotic\w*|pussy\w*|fuck\w*|shit\w*|cunt\w*|dick\w*|bitch\w*|"
+    r"lewd\w*|obscene\w*|lust|lustful|adulter\w*|debauch\w*|naked\w*|nude|"
+    r"coition|carnal)\b",
+    re.IGNORECASE,
+)
+EXPLICIT_GLOSS = re.compile(
+    r"\b(?:sexual(?:ly)?|sex organs?|genital(?:ia|s)?|penile|vaginal|semen|sperm|"
+    r"penis|vagina|testicles?|intercourse|fornicat\w*|prostitut\w*|whore\w*|"
+    r"slut\w*|brothel|rape|molest\w*|masturbat\w*|orgasm\w*|pornograph\w*|"
+    r"erotic\w*|pussy\w*|fuck\w*|shit\w*|cunt\w*|dick\w*|bitch\w*)\b",
+    re.IGNORECASE,
+)
 
 
 def fail(message: str) -> None:
@@ -97,6 +114,47 @@ def main() -> int:
     if wrong_script:
         fail(f"{wrong_script} words link characters outside their mode")
 
+    unsafe_defaults = [
+        (mode, word, meaning)
+        for mode, word, meaning in db.execute(
+            "SELECT mode, word, meaning FROM word_context WHERE mature=0"
+        )
+        if MATURE_GLOSS.search(meaning)
+    ]
+    if unsafe_defaults:
+        fail(f"{len(unsafe_defaults)} default word glosses contain explicit vocabulary")
+        for mode, word, _ in unsafe_defaults[:5]:
+            warn(f"  {mode} {word}")
+    unsafe_characters = [
+        (mode, character, meaning)
+        for mode, character, meaning in db.execute(
+            "SELECT mode, character, meaning FROM character"
+        )
+        if EXPLICIT_GLOSS.search(meaning)
+    ]
+    if unsafe_characters:
+        fail(f"{len(unsafe_characters)} character meanings contain explicit vocabulary")
+        for mode, character, _ in unsafe_characters[:5]:
+            warn(f"  {mode} {character}")
+
+    if count(db, "SELECT COUNT(*) FROM word_context WHERE mature NOT IN (0,1)"):
+        fail("word_context.mature has values other than 0 or 1")
+    if count(db, "SELECT COUNT(*) FROM word_context WHERE mature=1") == 0:
+        warn("no mature words are tagged; explicit examples may have been dropped instead")
+
+    korean_words = count(db, "SELECT COUNT(*) FROM word_context WHERE mode='KOREAN'")
+    if korean_words < 8_000:
+        fail(f"only {korean_words} Korean word examples")
+    korean_coverage = count(
+        db,
+        "SELECT COUNT(DISTINCT wc.character_id) FROM word_context w "
+        "JOIN word_character wc ON wc.word_id=w.id "
+        "WHERE w.mode='KOREAN' AND wc.character_id IN "
+        "(SELECT id FROM character WHERE mode='KOREAN' AND character >= '\u4e00')",
+    )
+    if korean_coverage < 1_650:
+        fail(f"Korean word examples cover only {korean_coverage} Hanja")
+
     artifacts = count(
         db,
         "SELECT COUNT(*) FROM word_context WHERE meaning LIKE 'variant of%' "
@@ -104,6 +162,30 @@ def main() -> int:
     )
     if artifacts:
         warn(f"{artifacts} word glosses still look like dictionary artifacts")
+
+    gloss_artifact = re.compile(r"[\[\]{}|]|\([^)]*$")
+    bad_glosses = [
+        (mode, word, meaning)
+        for mode, word, meaning in db.execute(
+            "SELECT mode, word, meaning FROM word_context"
+        )
+        if gloss_artifact.search(meaning)
+    ]
+    if bad_glosses:
+        fail(f"{len(bad_glosses)} word glosses contain dictionary notation")
+        for mode, word, _ in bad_glosses[:5]:
+            warn(f"  {mode} {word}")
+    bad_character_glosses = [
+        (mode, character, meaning)
+        for mode, character, meaning in db.execute(
+            "SELECT mode, character, meaning FROM character"
+        )
+        if gloss_artifact.search(meaning)
+    ]
+    if bad_character_glosses:
+        fail(f"{len(bad_character_glosses)} character glosses contain dictionary notation")
+        for mode, character, _ in bad_character_glosses[:5]:
+            warn(f"  {mode} {character}")
     long_meanings = count(db, "SELECT COUNT(*) FROM character WHERE length(meaning)>180")
     if long_meanings:
         warn(f"{long_meanings} character meanings exceed 180 characters")
@@ -199,10 +281,11 @@ def main() -> int:
     print(f"  info         {empty_etymology} structure rows have no story")
     print(f"  info         {empty_structure} structure rows have no decomposition")
     print(f"  info         {japanese_markers} Japanese readings use dictionary markers; display cleans them")
-    for mode, common in db.execute(
-        "SELECT mode, SUM(common) FROM word_context GROUP BY mode ORDER BY mode"
+    for mode, common, mature in db.execute(
+        "SELECT mode, SUM(common), SUM(mature) FROM word_context GROUP BY mode ORDER BY mode"
     ):
-        print(f"  info         {mode} common words: {common or 0}")
+        print(f"  info         {mode} common words: {common or 0}, mature words: {mature or 0}")
+    print(f"  info         Korean word coverage: {korean_coverage} Hanja")
 
     if CRITICAL:
         print(f"audit failed: {CRITICAL} critical problem(s)")

@@ -40,6 +40,8 @@ fetch "https://www.edrdg.org/kanjidic/kanjidic2.xml.gz" "kanjidic2.xml.gz"
 fetch "https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip" "Unihan.zip"
 fetch "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz" "cedict_1_0_ts_utf-8_mdbg.txt.gz"
 fetch "https://www.edrdg.org/pub/Nihongo/JMdict_e.gz" "JMdict_e.gz"
+fetch "https://kaikki.org/dictionary/Korean/kaikki.org-dictionary-Korean.jsonl.gz" "kaikki-korean.jsonl.gz"
+fetch "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ko/ko_50k.txt" "ko_50k.txt"
 
 # Extract the archives the importer reads directly.
 if [[ ! -d "$RAW/kanjivg/kanji" || "$FORCE" == "--force" ]]; then

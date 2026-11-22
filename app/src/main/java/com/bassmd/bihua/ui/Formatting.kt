@@ -2,18 +2,18 @@ package com.bassmd.bihua.ui
 
 /** Compact, honest duration: 0s, 42s, 2m 10s, 1h 4m. */
 fun formatDuration(ms: Long): String {
-    val seconds = (ms.coerceAtLeast(0L) / 1000L).toInt()
+    val seconds = ms.coerceAtLeast(0L) / 1000L
     return when {
-        seconds < 60 -> "${seconds}s"
-        seconds < 3600 -> {
+        seconds < 60L -> "${seconds}s"
+        seconds < 3600L -> {
             val minutes = seconds / 60
             val rest = seconds % 60
-            if (rest == 0) "${minutes}m" else "${minutes}m ${rest}s"
+            if (rest == 0L) "${minutes}m" else "${minutes}m ${rest}s"
         }
         else -> {
             val hours = seconds / 3600
             val minutes = (seconds % 3600) / 60
-            if (minutes == 0) "${hours}h" else "${hours}h ${minutes}m"
+            if (minutes == 0L) "${hours}h" else "${hours}h ${minutes}m"
         }
     }
 }

@@ -77,6 +77,7 @@ import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
+import com.bassmd.bihua.content.visible
 import com.bassmd.bihua.content.WordResult
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.content.LocalContentRepository
@@ -142,6 +143,7 @@ fun CharactersScreen(
     memoryLevels: Map<String, com.bassmd.bihua.progress.MemoryLevel> = emptyMap(),
     onSetMemoryLevel: (CharacterEntry, com.bassmd.bihua.progress.MemoryLevel?) -> Unit = { _, _ -> },
     onSpeak: (String) -> Unit = {},
+    includeMatureContent: Boolean = false,
 ) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -183,9 +185,9 @@ fun CharactersScreen(
     val repository = LocalContentRepository.current
     val progressStore = LocalProgressStore.current
     var recentWords by remember { mutableStateOf<List<WordPracticeEntry>>(emptyList()) }
-    LaunchedEffect(showWords, mode, progressStore) {
+    LaunchedEffect(showWords, mode, progressStore, includeMatureContent) {
         recentWords = if (showWords) {
-            progressStore?.recentWordPractice(mode, 5).orEmpty()
+            progressStore?.recentWordPractice(mode, 5, includeMatureContent).orEmpty()
         } else {
             emptyList()
         }
@@ -197,7 +199,7 @@ fun CharactersScreen(
     val searchWords: () -> Unit = {
         scope.launch {
             wordsLoading = true
-            wordResults = repository?.searchWords(mode, query).orEmpty()
+            wordResults = repository?.searchWords(mode, query, includeMature = includeMatureContent).orEmpty()
             wordsLoading = false
             showWords = true
         }
@@ -288,6 +290,7 @@ fun CharactersScreen(
                                 onCompare = { onCompare(selected) },
                                 onCompareFamily = onCompareFamily,
                                 onPracticeWord = onPracticeWord,
+                                includeMatureContent = includeMatureContent,
                                 onPaper = { onPaperCharacter(selected) },
                                 onPractice = { onPractice(selected) },
                                 onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
@@ -370,6 +373,7 @@ fun CharactersScreen(
                             onCompare = { onCompare(selected) },
                             onCompareFamily = onCompareFamily,
                             onPracticeWord = onPracticeWord,
+                            includeMatureContent = includeMatureContent,
                             onPaper = { onPaperCharacter(selected) },
                             onPractice = { onPractice(selected) },
                             onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
@@ -667,6 +671,7 @@ private fun WordSearchDialog(
                                                 word = entry.word,
                                                 reading = entry.reading,
                                                 meaning = entry.meaning,
+                                                mature = entry.mature,
                                             )
                                         )
                                     }
@@ -740,6 +745,7 @@ private fun WordSearchDialog(
                                                 word = result.word,
                                                 reading = result.reading,
                                                 meaning = result.meaning,
+                                                mature = result.mature,
                                             )
                                         )
                                     },
@@ -998,6 +1004,7 @@ private fun CharacterDetail(
     onCompare: () -> Unit,
     onCompareFamily: (List<CharacterEntry>) -> Unit = {},
     onPracticeWord: (WordContext) -> Unit = {},
+    includeMatureContent: Boolean = false,
     onPaper: () -> Unit = {},
     onPractice: () -> Unit,
     onNoteSaved: () -> Unit = {},
@@ -1010,7 +1017,9 @@ private fun CharacterDetail(
     val repository = LocalContentRepository.current
     val progress = LocalProgressStore.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var words by remember(entry.id) { mutableStateOf(entry.words) }
+    var words by remember(entry.id, includeMatureContent) {
+        mutableStateOf(entry.words.visible(includeMatureContent))
+    }
     var note by remember(entry.id) { mutableStateOf("") }
     var noteDraft by remember(entry.id) { mutableStateOf("") }
     var editingNote by remember(entry.id) { mutableStateOf(false) }
@@ -1024,8 +1033,9 @@ private fun CharacterDetail(
         meta = repository?.meta(entry.character)
         family = repository?.family(entry.character, entry.mode)
     }
-    LaunchedEffect(entry.id, repository) {
-        words = repository?.words(entry.id).orEmpty()
+    LaunchedEffect(entry.id, repository, includeMatureContent) {
+        words = repository?.words(entry.id, includeMatureContent).orEmpty()
+            .visible(includeMatureContent)
     }
     LaunchedEffect(entry.id, progress) {
         note = progress?.note(entry.id).orEmpty()

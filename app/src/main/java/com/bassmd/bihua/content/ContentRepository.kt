@@ -19,12 +19,17 @@ interface ContentRepository {
     suspend fun find(id: String): CharacterEntry?
     suspend fun variants(character: String): Set<String>
 
-    suspend fun words(characterId: String): List<WordContext>
+    suspend fun words(characterId: String, includeMature: Boolean = false): List<WordContext>
     suspend fun guide(characterId: String): CharacterGuide?
     suspend fun sharedModes(characterId: String): List<StudyMode>
     suspend fun meta(character: String): CharacterMeta?
     suspend fun family(character: String, mode: StudyMode, limit: Int = 24): CharacterFamily?
-    suspend fun searchWords(mode: StudyMode, query: String, limit: Int = 20): List<WordResult>
+    suspend fun searchWords(
+        mode: StudyMode,
+        query: String,
+        limit: Int = 20,
+        includeMature: Boolean = false,
+    ): List<WordResult>
     suspend fun session(mode: StudyMode, size: Int): List<CharacterEntry>
 }
 
@@ -60,19 +65,22 @@ class SqliteContentRepository(
         found
     }
 
-    override suspend fun words(characterId: String): List<WordContext> = withContext(Dispatchers.IO) {
+    override suspend fun words(
+        characterId: String,
+        includeMature: Boolean,
+    ): List<WordContext> = withContext(Dispatchers.IO) {
         database.rawQuery(
             """
-            SELECT w.word, w.reading, w.meaning, w.level, w.common
+            SELECT w.word, w.reading, w.meaning, w.level, w.common, w.mature
             FROM word_context w
             JOIN word_character wc ON wc.word_id = w.id
-            WHERE wc.character_id = ?
+            WHERE wc.character_id = ? AND (w.mature=0 OR w.mature=?)
             ORDER BY w.common DESC,
                      CASE WHEN w.level IS NULL THEN 1 ELSE 0 END,
                      w.level, length(w.word), w.id
             LIMIT 10
             """.trimIndent(),
-            arrayOf(characterId),
+            arrayOf(characterId, if (includeMature) "1" else "0"),
         ).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -83,6 +91,7 @@ class SqliteContentRepository(
                             meaning = cursor.getString(2),
                             level = if (cursor.isNull(3)) null else cursor.getInt(3),
                             common = !cursor.isNull(4) && cursor.getInt(4) != 0,
+                            mature = !cursor.isNull(5) && cursor.getInt(5) != 0,
                         )
                     )
                 }
@@ -175,6 +184,7 @@ class SqliteContentRepository(
         mode: StudyMode,
         query: String,
         limit: Int,
+        includeMature: Boolean,
     ): List<WordResult> = withContext(Dispatchers.IO) {
         val needle = query.trim()
         if (needle.isEmpty()) return@withContext emptyList()
@@ -186,15 +196,21 @@ class SqliteContentRepository(
         database.rawQuery(
             """
             SELECT w.word, w.reading, w.meaning,
-              (SELECT wc.character_id FROM word_character wc WHERE wc.word_id=w.id LIMIT 1) AS character_id
+              (SELECT wc.character_id FROM word_character wc WHERE wc.word_id=w.id LIMIT 1) AS character_id,
+              w.mature
             FROM word_context w
-            WHERE w.mode=? AND (
+            WHERE w.mode=? AND (w.mature=0 OR w.mature=?) AND (
                 w.word LIKE ? OR w.meaning LIKE ? OR w.reading LIKE ? OR w.reading LIKE ? OR w.reading LIKE ?
             )
             ORDER BY length(w.word), w.id
             LIMIT ?
             """.trimIndent(),
-            arrayOf(mode.name, like, like, like, likeMarked, likeKana, limit.toString()),
+            arrayOf(
+                mode.name,
+                if (includeMature) "1" else "0",
+                like, like, like, likeMarked, likeKana,
+                limit.toString(),
+            ),
         ).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -204,6 +220,7 @@ class SqliteContentRepository(
                             reading = cursor.getString(1),
                             meaning = cursor.getString(2),
                             characterId = cursor.getStringOrNull(3),
+                            mature = cursor.getInt(4) != 0,
                         )
                     )
                 }
@@ -260,7 +277,7 @@ class SqliteContentRepository(
      * Content version. Bump this whenever the shipped database changes, so
      * existing installs replace their copy even if the byte length matches.
      */
-    private val contentVersion = 22
+    private val contentVersion = 28
 
     private fun copyIfNeeded(target: File) {
         val assetLength = context.assets.openFd("bihua_content.db").use { it.length }

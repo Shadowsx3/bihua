@@ -207,6 +207,7 @@ fun SettingsScreen(
     var weightMoreMenu by remember { mutableStateOf(false) }
     var showFitScope by remember { mutableStateOf(false) }
     var showWeightsHelp by remember { mutableStateOf(false) }
+    var confirmMature by remember { mutableStateOf(false) }
     val weightProfileLabel = when (weightProfile) {
         AppSettings.SHARED_WEIGHTS -> "Shared"
         "SIMPLIFIED" -> "Simplified"
@@ -239,7 +240,11 @@ fun SettingsScreen(
         scope.launch {
             val text = runCatching {
                 context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-            }.getOrNull().orEmpty()
+            }.getOrNull()
+            if (text == null) {
+                message = "Could not read that file."
+                return@launch
+            }
             val chars = com.bassmd.bihua.content.KnownList.parse(text)
             val entries = repository?.characters(settings.studyMode).orEmpty()
             val byChar = entries.associateBy { it.character }
@@ -633,8 +638,8 @@ fun SettingsScreen(
         LazyColumn(
             state = settingsListState,
             modifier = Modifier
-                .fillMaxSize()
-                .widthIn(max = 900.dp),
+                .widthIn(max = 760.dp)
+                .fillMaxWidth(),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -1469,6 +1474,18 @@ fun SettingsScreen(
                             checked = settings.shareIdenticalGlyphs,
                             onCheckedChange = { update(settings.copy(shareIdenticalGlyphs = it)) },
                         )
+                        SwitchRow(
+                            title = "Mature words",
+                            subtitle = "Explicit dictionary examples. Off by default.",
+                            checked = settings.includeMatureContent,
+                            onCheckedChange = { enabled ->
+                                if (enabled && !settings.includeMatureContent) {
+                                    confirmMature = true
+                                } else {
+                                    update(settings.copy(includeMatureContent = enabled))
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -2271,13 +2288,36 @@ fun SettingsScreen(
         StrokeRulesDialog(onDismiss = { showStrokeRules = false })
     }
 
+    if (confirmMature) {
+        AlertDialog(
+            onDismissRequest = { confirmMature = false },
+            title = { Text("Show mature words?") },
+            text = {
+                Text(
+                    "Mature words are dictionary examples with explicit sexual or crude meanings. They stay out of review cues, character cards, and word practice until you turn this on. You can hide them again at any time."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmMature = false
+                        update(settings.copy(includeMatureContent = true))
+                    },
+                ) { Text("Show them") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmMature = false }) { Text("Keep hidden") }
+            },
+        )
+    }
+
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset all progress?") },
             text = {
                 Text(
-                    "Every card, review, XP level and confusion record is deleted for all four scripts. Notes, your study list and settings are kept. This cannot be undone."
+                    "Every card, review, XP level, word practice entry and confusion record is deleted for all four scripts. Notes, your study list and settings are kept. This cannot be undone."
                 )
             },
             confirmButton = {
@@ -2405,7 +2445,12 @@ fun SettingsScreen(
                                     }
                                     onProgressChanged()
                                 }
-                                message = "Sync failed. Your previous progress is still on this device."
+                                val error = result.exceptionOrNull()
+                                message = when (error) {
+                                    is BackupException -> "Sync failed: ${error.message}"
+                                    is IllegalArgumentException -> "Sync failed: ${error.message}"
+                                    else -> "Sync failed. Your previous progress is still on this device."
+                                }
                             }
                             busyMessage = null
                         }
@@ -2480,7 +2525,12 @@ fun SettingsScreen(
                             }
                             onProgressChanged()
                         }
-                        message = "Could not restore this backup."
+                        val error = restored.exceptionOrNull()
+                        message = when (error) {
+                            is BackupException -> error.message
+                            is IllegalArgumentException -> error.message
+                            else -> "Could not restore this backup."
+                        }
                     }
                     busyMessage = null
                 }
@@ -2619,9 +2669,9 @@ private val SETTINGS_ENTRIES = listOf(
         "writing pronunciation reading practice modes",
     ),
     SettingsEntry(
-        "Study", "Study", "Pace, order, cues, vacation",
+        "Study", "Study", "Pace, order, cues, words, vacation",
         Icons.Rounded.School, Sky, "LEARNING",
-        "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar",
+        "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar mature explicit words dictionary content",
     ),
     SettingsEntry(
         "Schedule", "Schedule", "FSRS-7 weights and personal fit",
@@ -3022,6 +3072,18 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
             "CC BY-SA 4.0",
             "MDBG and CC-CEDICT contributors",
             "https://www.mdbg.net/chinese/dictionary?page=cedict",
+        ),
+        LicenceEntry(
+            "Korean Wiktionary extract",
+            "CC BY-SA 3.0 / GFDL",
+            "Wiktionary contributors; extraction by kaikki.org",
+            "https://kaikki.org/dictionary/Korean/",
+        ),
+        LicenceEntry(
+            "FrequencyWords Korean",
+            "CC BY-SA 4.0",
+            "Hermit Dave and contributors",
+            "https://github.com/hermitdave/FrequencyWords",
         ),
         LicenceEntry(
             "Unihan",

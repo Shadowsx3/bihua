@@ -5,9 +5,9 @@ is correct, in the right script, and free of pipeline artifacts.
 
 ## Character data
 
-- [ ] Audit every row in `character`: script, character, level, reading,
+- [x] Audit every row in `character`: script, character, level, reading,
       meaning, stroke count, and writing flag.
-- [ ] Confirm kana, Hangul, Hanja, Simplified, and Traditional rows are in the
+- [x] Confirm kana, Hangul, Hanja, Simplified, and Traditional rows are in the
       right script and cannot leak into the wrong course.
 - [ ] Check stroke-guide coverage and confirm every missing guide has a clear
       in-app message.
@@ -26,14 +26,18 @@ is correct, in the right script, and free of pipeline artifacts.
 
 ## Words and common-word cards
 
-- [ ] Confirm every `word_character` link points to the right character.
-- [ ] Check word readings and meanings for truncation and wrong-script text.
+- [x] Confirm every `word_character` link points to the right character.
+- [x] Check word readings and meanings for truncation and wrong-script text.
+- [x] Add Korean word examples from the Korean Wiktionary extract, with Hanja
+      spellings, Hangul readings, and full character coverage for 1,684 of
+      1,799 Hanja. The remaining 115 rare characters have no safe compound.
+- [x] Add a commonness signal and rank Korean examples with FrequencyWords.
+      Japanese still needs a real corpus frequency list beyond JMdict priority.
 - [ ] Review the words chosen for the Meet "Found in words" cards. Remove
-      obscure compounds, proper nouns, and misleading examples.
-- [ ] Add a frequency or commonness signal for Japanese and Korean words. The
-      current Chinese ordering uses HSK level and word length, which is a good
-      proxy. Japanese has no level data and can surface rare compounds.
-- [ ] Decide whether Korean should get a Hangul word list at all.
+      obscure compounds, proper nouns, and misleading homographs.
+- [x] Keep explicit words out of the default experience. Word glosses are
+      scrubbed sense by sense; words with only explicit senses are tagged
+      `mature` and hidden until the learner turns on Mature words.
 
 ## Stories and etymology
 
@@ -45,8 +49,11 @@ is correct, in the right script, and free of pipeline artifacts.
 
 ## Pipeline and tests
 
-- [ ] Extend `tools/audit_content.py` with checks for empty fields, wrong
-      scripts, duplicate rows, broken links, and missing readings.
+- [x] Extend `tools/audit_content.py` with checks for empty fields, wrong
+      scripts, duplicate rows, broken links, missing readings, Korean coverage,
+      and explicit default glosses.
+- [x] Add `ContentDatabaseTest` so the shipped database is checked in the unit
+      suite, not only by the Python audit.
 - [ ] Add a coverage report by script and level.
 - [ ] Add a sample review sheet for the top 500 characters and words in each
       course.

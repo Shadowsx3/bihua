@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.0.4 (2026-11-22)
+
+### Added
+
+- Korean word examples from the Korean Wiktionary extract, with Hanja
+  spellings, Hangul readings, and safer English glosses. 11,266 examples cover
+  1,684 of the 1,799 Hanja in the course.
+- Korean pronunciation accepts Hangul or romaja and previews the composed Hangul
+  while the learner types.
+- A Mature words setting, off by default, for explicit dictionary examples. It
+  is confirmed once and filters review cues, character cards, word search, and
+  recent practice.
+- Common-word flags for Japanese and Korean examples.
+- A shipped-content test, import validation, and a user-journey risk audit.
+
+### Changed
+
+- Version 1.0.4, versionCode 14.
+- The review cue defaults to meaning + reading, with a compact Hint popup.
+- Japanese word cues show ruby and mask the character to write.
+- The writing grid gets more room on small phones; the tablet Home and Meet
+  layouts are balanced for their screens.
+- Settings content is capped to a readable width on tablets.
+- Word glosses are tidied: no `X|Y` pairs, bracketed notes, braces, dangling
+  parentheses, or truncated dictionary apparatus.
+
+### Fixed
+
+- Korean word cues align the highlighted syllable when the word uses a sound
+  change.
+- Japanese word cues mask every occurrence of the target character.
+- Known list import reads supplementary Han characters and reports unreadable
+  files.
+- Empty review forecasts no longer list fourteen zero rows.
+- A corrupt content database shows a retry screen instead of an endless loader.
+- Importing a newer or foreign progress database is rejected before it replaces
+  local progress.
+- Reset all progress clears word practice history as well.
+- FSRS handles a corrupt zero-stability card without NaN intervals.
+- Onboarding back navigation and rotation no longer lose the current page.
+
 ## 1.0.3 (2026-11-22)
 
 ### Added
@@ -164,9 +205,9 @@
 
 - The optional local AI assistant and LiteRT-LM runtime were removed. The APK is now 38 MB instead of 61 MB; the AAB is 20 MB.
 - The app code is now MIT-licensed; content keeps its upstream terms.
-- Korean Hanja now comes from Unihan. Hanjaro data was removed because its site
-  grants no redistribution rights.
-- Korean word examples were removed rather than shipping unlicensed content.
+- Korean Hanja now comes from Unihan.
+- Korean word examples come from the Korean Wiktionary extract, ranked by
+  FrequencyWords. Explicit examples are tagged and hidden by default.
 - The public repository and site are now the primary distribution point.
 
 ### Fixed

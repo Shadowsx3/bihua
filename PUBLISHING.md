@@ -82,8 +82,9 @@ make check
 - The same notices are bundled in the APK under Settings → About → Licences
   and sources → Full texts.
 
-Hanjaro is intentionally absent. Its site grants no redistribution rights, so
-the Korean course uses Unihan only. Korean word examples are not bundled.
+The Korean course uses Unihan for Hanja readings and definitions. Korean word
+examples come from the Korean Wiktionary extract and are ranked with
+FrequencyWords. Both are redistributable and are credited in the notices.
 
 ## Pages limitation
 

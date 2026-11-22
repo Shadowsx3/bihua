@@ -133,6 +133,32 @@
       "attribution": "JMdict, EDRDG",
       "count": null,
       "note": "Japanese word examples. Used in v1."
+    },
+    {
+      "id": "kaikki-korean",
+      "title": "Korean Wiktionary extract",
+      "source": "kaikki.org / English Wiktionary, 2026-10-30 extract",
+      "url": "https://kaikki.org/dictionary/Korean/kaikki.org-dictionary-Korean.jsonl.gz",
+      "file": "kaikki-korean.jsonl.gz",
+      "bytes": 21576381,
+      "sha256": "2bf0aeac466458f2621e0ecfdd72b7b5b00a90c0e775443d55d369d6dab5ea83",
+      "license": "CC BY-SA 3.0 / GFDL",
+      "attribution": "Korean Wiktionary extract by kaikki.org; Wiktionary contributors",
+      "count": 64457,
+      "note": "Korean headwords, Hanja spellings, and English glosses. Nouns with Hanja forms become word examples."
+    },
+    {
+      "id": "frequencywords-korean",
+      "title": "FrequencyWords Korean list",
+      "source": "hermitdave/FrequencyWords, 2018 Korean list",
+      "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ko/ko_50k.txt",
+      "file": "ko_50k.txt",
+      "bytes": 695053,
+      "sha256": "8d00401b6728c8d6feeaa5455583c1a33408dd020aae4aa55609b25004d1d99d",
+      "license": "CC BY-SA 4.0",
+      "attribution": "FrequencyWords by Hermit Dave and contributors",
+      "count": 50000,
+      "note": "Ranking only. Common Korean word examples lead a character card."
     }
   ],
   "derived": {
@@ -143,6 +169,8 @@
     "kanjivgSvgs": 11662,
     "cedictEntries": 125446,
     "koreanHanja": 1800,
-    "unihanFiles": 8
+    "unihanFiles": 8,
+    "koreanWords": 11157,
+    "koreanCoverage": 1680
   }
 }

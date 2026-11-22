@@ -35,6 +35,8 @@ class ScriptFilterTest {
         assertFalse(hangulOff.includesInStudy("한"))
         assertTrue(hangulOff.includesInStudy("山"))
         assertTrue(hangulOff.includesInStudy("學"))
+        assertFalse(hangulOff.includesInStudy("\uA960"))
+        assertFalse(hangulOff.includesInStudy("\uD7B0"))
     }
 
     @Test

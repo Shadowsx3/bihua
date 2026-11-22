@@ -21,7 +21,7 @@ object StudyTools {
 
     /**
      * Skip hides a character for the rest of the day. The stored date is the
-     * day it becomes available again, so the next day it no longer matches.
+     * last hidden day; the next day it no longer matches.
      */
     fun skipToday(
         current: Map<String, String>,

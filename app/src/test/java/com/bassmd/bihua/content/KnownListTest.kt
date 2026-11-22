@@ -28,6 +28,12 @@ class KnownListTest {
     }
 
     @Test
+    fun readsSupplementaryHanCharacters() {
+        val rare = "\uD840\uDC00"
+        assertEquals(setOf(rare), KnownList.parse("person $rare"))
+    }
+
+    @Test
     fun ignoresLatinPunctuationAndSpaces() {
         assertEquals(setOf("人"), KnownList.parse("person: 人, 2\n!"))
         assertFalse(KnownList.parse("abc 123").isNotEmpty())

@@ -37,8 +37,8 @@ Keep this in mind for every screen:
   suspension, and selective transfer. 1.0.4 adds the vivid palette, review cue
   setup, script filters, review polish, handwriting sanitisation, cleaner
   readings, and better Japanese word ordering.
-- Progress schema **9**; contentVersion **22**.
-- 186 unit tests.
+- Progress schema **10**; contentVersion **28**.
+- 207 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`
@@ -60,15 +60,17 @@ Keep this in mind for every screen:
 
 Every character, word, reading, meaning, and story users see must be checked
 before the next content release. The working checklist is
-`docs/content-qa-backlog.md`. Known gaps: Japanese word frequency ordering,
-Korean word coverage, and some etymology quality.
+`docs/content-qa-backlog.md`. The screen and journey risk list is
+`docs/user-journey-risk-audit.md`. Known gaps: Japanese word frequency ordering,
+Korean coverage for 115 rare Hanja, a full TalkBack/large-text pass, and some
+etymology quality.
 - GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
 
 ## Build, test, install
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 186 tests, content audit, debug APK, verify
+make check                     # compile, 207 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
@@ -231,11 +233,12 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 - Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
 - Bump the schema and add an upgrade path when tables change.
-- Content DB contentVersion 22. Bump it whenever the asset changes.
+- Content DB contentVersion 28. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
   traditional-only forms in Simplified; shared glyphs stay in both.
 - Traditional words come from CEDICT word pairs, not character substitution.
-- Korean uses Unihan/Hangul; Hanjaro is intentionally absent.
+- Korean uses Unihan/Hangul. Word examples come from the Korean Wiktionary
+  extract, ranked by FrequencyWords, with explicit examples tagged mature.
 - Backups include settings and progress. Zip format is `backup.json` +
   `progress.db`; import accepts the zip, a settings-only zip, a progress-only
   zip, and legacy settings-only JSON. `TransferScope` decides what is written.

@@ -58,16 +58,24 @@ The bundled content database is a compilation of the open datasets below; it is
   Korean readings, Korean definitions, and stroke counts.
 
 The generated `bihua_content.db` is distributed as a compilation under
-CC BY-SA 4.0 for the portions derived from CC BY-SA sources. The Make Me a Hanzi
+CC BY-SA 4.0 for the portions derived from CC BY-SA sources, with the Korean
+Wiktionary portions also under CC BY-SA 3.0 and GFDL. The Make Me a Hanzi
 graphics remain under the Arphic Public License, and the Make Me a Hanzi
 dictionary remains under LGPL-3.0-or-later. Full licence texts are in the
 `licenses/` directory and are bundled in the app under Settings → About.
 
-### Hanjaro removed
-Earlier development builds used Hanjaro data for the Korean course. The Hanjaro
-site is all-rights-reserved and grants no redistribution rights, so it is **not**
-included in this repository or in published builds. The Korean course is now
-built from Unihan only. Korean word examples are intentionally absent.
+### Korean Wiktionary extract
+- Source: <https://kaikki.org/dictionary/Korean/> from English Wiktionary.
+- Licence: Creative Commons Attribution-ShareAlike 3.0 Unported and GFDL.
+- Copyright: Wiktionary contributors; extraction by Tatu Ylönen / kaikki.org.
+- Used for: Korean word examples, Hanja spellings, and English glosses.
+
+### FrequencyWords Korean
+- Source: <https://github.com/hermitdave/FrequencyWords>
+- Licence: Creative Commons Attribution-ShareAlike 4.0 International for the
+  word lists (MIT for the generator code).
+- Copyright: Hermit Dave and contributors.
+- Used for: ranking common Korean word examples.
 
 ## Runtime and libraries
 

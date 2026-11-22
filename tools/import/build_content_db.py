@@ -11,14 +11,16 @@ Sources:
   - Make Me a Hanzi medians (Arphic PL / LGPL)
   - KanjiVG paths (CC BY-SA 3.0)
   - KANJIDIC2 (CC BY-SA 4.0), Jōyō grades and Japanese readings
-  - Hanjaro 1,800 Hanja list (free download; verify terms before distribution)
   - Unihan (Unicode license), Korean readings and variant links
   - CC-CEDICT (CC BY-SA 4.0), Traditional readings and word meanings
+  - Korean Wiktionary extract (CC BY-SA 3.0 / GFDL), Korean words and Hanja forms
+  - FrequencyWords Korean list (CC BY-SA 4.0), word frequency for examples
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
 import json
 import os
@@ -297,22 +299,89 @@ def load_all_variants() -> dict[str, set[str]]:
     return result
 
 
-def clean_word_meaning(text: str, limit: int = 90) -> str:
-    """Learner-facing word gloss: plain senses first, no regional/classifier noise."""
+# Explicit sexual or crude vocabulary. Word examples keep a safe sense by
+# default; a word whose every sense is explicit is tagged mature and hidden
+# until the learner turns on mature words.
+EXPLICIT_GLOSS = re.compile(
+    r"\b(?:sexual(?:ly)?|sex organs?|genital(?:ia|s)?|penile|vaginal|semen|sperm|"
+    r"penis|vagina|testicles?|intercourse|fornicat\w*|prostitut\w*|whore\w*|"
+    r"slut\w*|brothel|rape|molest\w*|masturbat\w*|orgasm\w*|pornograph\w*|"
+    r"erotic\w*|pussy\w*|fuck\w*|shit\w*|cunt\w*|dick\w*|bitch\w*)\b",
+    re.IGNORECASE,
+)
+
+
+# Word examples also mark milder adult vocabulary as mature. Character
+# meanings keep the narrower explicit list so ordinary senses stay readable.
+MATURE_GLOSS = re.compile(
+    r"\b(?:sexual(?:ly)?|sex organs?|genital(?:ia|s)?|penile|vaginal|semen|sperm|"
+    r"penis|vagina|testicles?|intercourse|fornicat\w*|prostitut\w*|whore\w*|"
+    r"slut\w*|brothel|rape|molest\w*|masturbat\w*|orgasm\w*|pornograph\w*|"
+    r"erotic\w*|pussy\w*|fuck\w*|shit\w*|cunt\w*|dick\w*|bitch\w*|"
+    r"lewd\w*|obscene\w*|lust|lustful|adulter\w*|debauch\w*|naked\w*|nude|"
+    r"coition|carnal)\b",
+    re.IGNORECASE,
+)
+
+
+def tidy_gloss(text: str, limit: int) -> str:
+    """Remove remaining dictionary notation and never leave a half sentence."""
+    text = re.sub(r"([\u3400-\u9fff]+)\|[\u3400-\u9fff]+", r"\1", text)
+    text = re.sub(r"\s*\[[^\]]*\]", "", text)
+    text = re.sub(r"\s*\{[^}]*\}", "", text)
+    text = text.replace("\u201c", "").replace("\u201d", "").replace('"', "")
+    text = re.sub(r"\s+\+\s+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > limit:
+        cut = text[:limit]
+        for separator in ("; ", ", ", " "):
+            index = cut.rfind(separator)
+            if index > limit * 0.6:
+                cut = cut[:index]
+                break
+        text = cut
+    kept: list[str] = []
+    opens: list[int] = []
+    for char in text:
+        if char == "(":
+            opens.append(len(kept))
+            kept.append(char)
+        elif char == ")":
+            if opens:
+                opens.pop()
+                kept.append(char)
+            # An unmatched close would leave a half parenthetical.
+        else:
+            kept.append(char)
+    if opens:
+        kept = kept[:opens[0]]
+    text = "".join(kept)
+    return text.strip(" ;,|\"'")
+
+
+def sanitize_word_meaning(text: str, limit: int = 90) -> tuple[str, bool]:
+    """Learner-facing word gloss plus a mature flag.
+
+    Regional and classifier noise is removed. Explicit senses are dropped when
+    a safe sense remains. A word whose every sense is explicit keeps its gloss
+    but is marked mature, so the app can hide it by default.
+    """
     text = re.sub(r"\[[^\]]*\]", "", text)
     parts = [part.strip() for part in text.split(";") if part.strip()]
     if not parts:
-        return ""
+        return "", False
     plain: list[str] = []
+    explicit: list[str] = []
     for part in parts:
+        if MATURE_GLOSS.search(part):
+            explicit.append(part)
+            continue
         if part.lower().startswith("fig.") or part.lower().startswith("lit."):
             break
         if (
             part.startswith("CL:")
             or "variant of" in part
             or "vulgar" in part.lower()
-            or "fuck" in part.lower()
-            or "pissed" in part.lower()
         ):
             continue
         cleaned = re.sub(r"\s*\([^)]*\)", "", part).strip()
@@ -321,8 +390,12 @@ def clean_word_meaning(text: str, limit: int = 90) -> str:
             plain.append(cleaned)
         if len(plain) == 2:
             break
-    chosen = plain or [re.sub(r"\s*\([^)]*\)", "", parts[0]).strip()]
-    return "; ".join(chosen)[:limit]
+    if plain:
+        return tidy_gloss("; ".join(plain), limit), False
+    if explicit:
+        cleaned = re.sub(r"\s*\([^)]*\)", "", explicit[0]).strip()
+        return tidy_gloss(cleaned or explicit[0], limit), True
+    return "", False
 
 
 def clean_meaning(text: str, limit: int = 140) -> str:
@@ -331,7 +404,7 @@ def clean_meaning(text: str, limit: int = 140) -> str:
     Character meanings are reference text, so several senses are welcome. The
     raw sources mix in classifier lists, pinyin brackets, variant notes, and long
     Taiwan/etymology asides; those are not learner-facing glosses. Word glosses
-    use clean_word_meaning and stay shorter.
+    use sanitize_word_meaning and stay shorter.
     """
     text = text.strip()
     # Pinyin references such as 魚[yu2] and classifier lists such as
@@ -358,9 +431,10 @@ def clean_meaning(text: str, limit: int = 140) -> str:
             or "radical in chinese characters" in low
             or low.startswith(("taiwan pr.", "taiwanese pr."))
             or "vulgar" in low
-            or "fuck" in low
-            or "pissed" in low
+            or EXPLICIT_GLOSS.search(part)
         ):
+            if EXPLICIT_GLOSS.search(part):
+                continue
             fallback.append(part)
         else:
             kept.append(part)
@@ -368,30 +442,26 @@ def clean_meaning(text: str, limit: int = 140) -> str:
     joined = "; ".join(chosen)
     if not joined:
         joined = re.sub(r"\s*\([^)]*\)", "", text).strip()
-    if len(joined) > limit:
-        cut = joined[:limit]
-        for separator in ("; ", ", ", " "):
-            index = cut.rfind(separator)
-            if index > limit * 0.6:
-                cut = cut[:index]
-                break
-        joined = cut.rstrip(" ;,")
-    return joined
+    return tidy_gloss(joined, limit)
 
 
-def clean_japanese_meaning(text: str, limit: int = 180) -> str:
-    """KANJIDIC appends radical-number notes; they are not learner meanings."""
+def sanitize_japanese_meaning(text: str, limit: int = 180) -> tuple[str, bool]:
+    """KANJIDIC meanings without radical notes; explicit senses become mature."""
     parts = [part.strip() for part in text.split(";") if part.strip()]
-    kept = [part for part in parts if "radical (no." not in part.lower()]
-    joined = "; ".join(kept) if kept else (parts[0] if parts else "")
-    return joined[:limit]
+    safe = [
+        part for part in parts
+        if "radical (no." not in part.lower() and not MATURE_GLOSS.search(part)
+    ]
+    if safe:
+        return tidy_gloss("; ".join(safe), limit), False
+    if parts:
+        return tidy_gloss(parts[0], limit), True
+    return "", False
 
 
-def clean_korean_meaning(text: str, limit: int = 180) -> str:
-    """Hanjaro is English, but occasionally carries a Unicode hexagram or note."""
-    text = re.sub(r",?\s*hexagram\s+\S+", "", text)
-    text = re.sub(r"\s+", " ", text).strip(" ,;")
-    return text[:limit]
+def clean_korean_gloss(text: str, limit: int = 80) -> str:
+    """Trim a Korean-English gloss to the short, learner-facing form."""
+    return tidy_gloss(text, limit)
 
 
 # Rare entries where the source gloss is empty. Keep these explicit and short;
@@ -532,6 +602,139 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
                 break
     return chosen
 
+def is_han(char: str) -> bool:
+    code = ord(char)
+    return (
+        0x4E00 <= code <= 0x9FFF
+        or 0x3400 <= code <= 0x4DBF
+        or 0xF900 <= code <= 0xFAFF
+        or 0x20000 <= code <= 0x2FA1F
+    )
+
+
+def load_korean_frequency() -> dict[str, int]:
+    """Word frequency rank from FrequencyWords, if the list is present."""
+    path = RAW / "ko_50k.txt"
+    if not path.exists():
+        return {}
+    ranks: dict[str, int] = {}
+    with path.open(encoding="utf-8") as handle:
+        for index, line in enumerate(handle):
+            parts = line.split()
+            if len(parts) == 2 and parts[0] not in ranks:
+                ranks[parts[0]] = index
+    return ranks
+
+
+KOREAN_SKIP_TAGS = {
+    "archaic",
+    "dated",
+    "derogatory",
+    "historical",
+    "misspelling",
+    "nonstandard",
+    "obsolete",
+    "offensive",
+    "rare",
+    "slang",
+    "vulgar",
+}
+KOREAN_BAD_GLOSS = re.compile(
+    r"\b(?:abbreviation|alternative form|clipping|form of|misspelling|"
+    r"nonstandard|romanization|short for|synonym of|used in)\b",
+    re.IGNORECASE,
+)
+KOREAN_BINOMIAL = re.compile(r"\([A-Z][a-z]+ [a-z]+")
+KOREAN_COMMON_RANK = 10_000
+
+
+def load_korean_words(hanja: set[str]) -> list[tuple[str, str, str, bool, bool]]:
+    """Korean word examples: (hanja, hangul, gloss, common, mature).
+
+    The Korean Wiktionary extract gives real Korean headwords with their Hanja
+    spellings. Only nouns whose Hanja spelling is fully covered by the Korean
+    education list are kept, so every example can be opened on the writing
+    canvas. The frequency list decides which examples are common enough to lead
+    a character card.
+    """
+    path = RAW / "kaikki-korean.jsonl.gz"
+    if not path.exists():
+        return []
+    frequency = load_korean_frequency()
+    best: dict[str, tuple[int, str, str, str, bool]] = {}
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        for line in handle:
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("pos") != "noun":
+                continue
+            word = entry.get("word", "")
+            if not 2 <= len(word) <= 4:
+                continue
+            if any(not 0xAC00 <= ord(char) <= 0xD7A3 for char in word):
+                continue
+            forms = [
+                form.get("form", "")
+                for form in entry.get("forms", [])
+                if "hanja" in (form.get("tags") or [])
+            ]
+            forms = [
+                form
+                for form in forms
+                if form
+                and len(form) == len(word)
+                and all(is_han(char) for char in form)
+                and all(char in hanja for char in form)
+            ]
+            if not forms:
+                continue
+            safe = None
+            explicit = None
+            for sense in entry.get("senses") or []:
+                if set(sense.get("tags") or []) & KOREAN_SKIP_TAGS:
+                    continue
+                for raw in sense.get("glosses") or []:
+                    if KOREAN_BAD_GLOSS.search(raw) or KOREAN_BINOMIAL.search(raw):
+                        continue
+                    candidate = clean_korean_gloss(re.sub(r"\s*\([^)]*\)", "", raw))
+                    if not candidate or len(candidate) > 80:
+                        continue
+                    if MATURE_GLOSS.search(candidate):
+                        if explicit is None:
+                            explicit = candidate
+                    else:
+                        safe = candidate
+                        break
+                if safe:
+                    break
+            gloss = safe or explicit
+            if not gloss:
+                continue
+            rank = frequency.get(word, 10**9)
+            mature = safe is None
+            for form in forms:
+                previous = best.get(form)
+                if previous is None or (rank, mature) < (previous[0], previous[4]):
+                    best[form] = (rank, word, form, gloss, mature)
+
+    ordered = sorted(
+        best.values(),
+        key=lambda item: (
+            item[0] > KOREAN_COMMON_RANK,
+            len(item[2]),
+            item[0],
+            item[1],
+            item[2],
+        ),
+    )
+    return [
+        (form, word, gloss, rank <= KOREAN_COMMON_RANK, mature)
+        for rank, word, form, gloss, mature in ordered
+    ]
+
+
 def load_total_strokes() -> dict[str, int]:
     """kTotalStrokes: the official stroke count, used when no guide exists."""
     result: dict[str, int] = {}
@@ -645,9 +848,9 @@ def load_kanjidic() -> list[tuple[str, int, int, str, str, int | None]]:
 def load_unihan_korean() -> tuple[set[str], dict[str, str], dict[str, str]]:
     """Korean Hanja education list, readings, and English definitions from Unihan.
 
-    Hanjaro was used during development, but its site is all-rights-reserved and
-    does not grant redistribution. Unihan is the publishable source: the 1,800
-    character education list, kHangul readings, and kDefinition glosses.
+    Unihan supplies the 1,800 character education list, kHangul readings, and
+    kDefinition glosses. Every value in the Korean course comes from a dataset
+    that can be redistributed with the app.
     """
     education: set[str] = set()
     hangul: dict[str, str] = {}
@@ -977,7 +1180,7 @@ def build(out_path: Path) -> None:
                 list_index=index,
                 reading=readings,
                 reading_alt="",
-                meaning=clean_japanese_meaning(meaning),
+                meaning=sanitize_japanese_meaning(meaning)[0],
                 traditional="",
                 simplified="",
                 is_writing=False,
@@ -1072,9 +1275,8 @@ def build(out_path: Path) -> None:
             syllables += 1
     print(f"Korean Hangul syllables: {syllables}")
 
-    # Korean Hanja from Unihan. Hanjaro was removed because its site grants no
-    # redistribution rights. The education list, readings, and definitions all
-    # come from Unihan under the Unicode License.
+    # Korean Hanja from Unihan. The education list, readings, and definitions
+    # all come from Unihan under the Unicode License.
     korean_hanja = sorted(
         unihan_education,
         key=lambda char: (unihan_hangul.get(char, ""), ord(char)),
@@ -1166,7 +1368,7 @@ def build(out_path: Path) -> None:
     ids_by_mode_char: dict[tuple[str, str], str] = {
         (row.mode, row.char): row.id for row in characters
     }
-    words: list[tuple[str, str, str, str, int | None, int]] = []
+    words: list[tuple[str, str, str, str, int | None, int, int]] = []
     links: list[tuple[int, str]] = []
     word_slots: dict[tuple[str, str], int] = {}
     word_id = 0
@@ -1179,6 +1381,7 @@ def build(out_path: Path) -> None:
         level: int | None,
         present: list[str],
         common: int = 0,
+        mature: int = 0,
     ) -> None:
         nonlocal word_id
         if not word or not present or not meaning.strip():
@@ -1195,12 +1398,12 @@ def build(out_path: Path) -> None:
         if existing is None:
             word_id += 1
             word_slots[key] = word_id
-            words.append((mode, word, reading[:120], meaning[:180], level, common))
+            words.append((mode, word, reading[:120], meaning[:180], level, common, mature))
             target_id = word_id
         else:
             target_id = existing
             position = target_id - 1
-            old_mode, old_word, old_reading, old_meaning, old_level, old_common = words[position]
+            old_mode, old_word, old_reading, old_meaning, old_level, old_common, old_mature = words[position]
             readings = [part for part in old_reading.split(" / ") if part]
             if reading and reading not in readings:
                 readings.append(reading)
@@ -1217,6 +1420,7 @@ def build(out_path: Path) -> None:
                 "; ".join(meanings)[:180],
                 merged_level,
                 max(old_common, common),
+                max(old_mature, mature),
             )
         for character_id in present:
             links.append((target_id, character_id))
@@ -1229,13 +1433,14 @@ def build(out_path: Path) -> None:
         level: int | None,
         link_chars: set[str],
         common: int = 0,
+        mature: int = 0,
     ) -> None:
         present = [
             ids_by_mode_char[(mode, char)]
             for char in dict.fromkeys(link_chars)
             if (mode, char) in ids_by_mode_char
         ]
-        register_word(mode, word, reading, meaning, level, present, common)
+        register_word(mode, word, reading, meaning, level, present, common, mature)
 
     def add_word(
         mode: str,
@@ -1244,6 +1449,7 @@ def build(out_path: Path) -> None:
         meaning: str,
         level: int | None,
         common: int = 0,
+        mature: int = 0,
     ) -> None:
         if not word or any((mode, char) not in ids_by_mode_char for char in word):
             return
@@ -1255,18 +1461,21 @@ def build(out_path: Path) -> None:
             level,
             [ids_by_mode_char[(mode, char)] for char in dict.fromkeys(word)],
             common,
+            mature,
         )
 
     for row in hsk_words:
         word = row.get("hanzi", "")
         level = row.get("level")
+        meaning, mature = sanitize_word_meaning(row.get("meaning", ""))
         add_word(
             "SIMPLIFIED",
             word,
             row.get("pinyin", ""),
-            clean_word_meaning(row.get("meaning", "")),
+            meaning,
             level,
             1 if level is not None else 0,
+            1 if mature else 0,
         )
         # Use CEDICT's word-level simplified→traditional mapping. Mechanical
         # character substitution produces wrong forms such as 頭發 for 頭髮.
@@ -1275,19 +1484,22 @@ def build(out_path: Path) -> None:
             reading, meaning = cedict_words.get(
                 trad_word, (row.get("pinyin", ""), row.get("meaning", ""))
             )
+            meaning, mature = sanitize_word_meaning(meaning)
             add_word(
                 "TRADITIONAL",
                 trad_word,
                 reading,
-                clean_word_meaning(meaning),
+                meaning,
                 level,
                 1 if level is not None else 0,
+                1 if mature else 0,
             )
 
     # Japanese word examples from JMdict.
     joyo_chars = {row.char for row in characters if row.mode == "JAPANESE" and row.level > 0}
     japanese_words = load_jmdict_words(joyo_chars)
     for word, (reading, meaning, _, common) in japanese_words.items():
+        meaning, mature = sanitize_japanese_meaning(meaning)
         add_word_partial(
             "JAPANESE",
             word,
@@ -1296,11 +1508,26 @@ def build(out_path: Path) -> None:
             None,
             {char for char in word if char in joyo_chars},
             1 if common else 0,
+            1 if mature else 0,
         )
     print(f"Japanese word examples: {len(japanese_words)}")
 
-    # Korean word examples are not bundled: Hanjaro granted no redistribution
-    # rights, and no permissive Korean word dataset is part of this build.
+    # Korean word examples from the Korean Wiktionary extract. The word field
+    # is the Hanja spelling, so word practice writes Hanja; the reading is the
+    # Hangul pronunciation shown on the card.
+    korean_words = load_korean_words(unihan_education)
+    for hanja_word, hangul, meaning, common, mature in korean_words:
+        add_word_partial(
+            "KOREAN",
+            hanja_word,
+            hangul,
+            meaning,
+            None,
+            {char for char in hanja_word if char in unihan_education},
+            1 if common else 0,
+            1 if mature else 0,
+        )
+    print(f"Korean word examples: {len(korean_words)}")
 
     # Validation gate: a shipped character must have a reading and a meaning.
     # This is what would have caught the empty Jōyō readings before release.
@@ -1383,7 +1610,8 @@ def build(out_path: Path) -> None:
           reading TEXT NOT NULL,
           meaning TEXT NOT NULL,
           level INTEGER,
-          common INTEGER NOT NULL DEFAULT 0
+          common INTEGER NOT NULL DEFAULT 0,
+          mature INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE word_character(
           word_id INTEGER NOT NULL,
@@ -1415,7 +1643,7 @@ def build(out_path: Path) -> None:
         "format": "bihua-content",
         "version": "2",
         "builtAt": "2026-11-21",
-        "sources": "Gushi HSK 3.0, ivankra/hsk30, Make Me a Hanzi, KanjiVG, KANJIDIC2, Unihan, CC-CEDICT",
+        "sources": "Gushi HSK 3.0, ivankra/hsk30, Make Me a Hanzi, KanjiVG, KANJIDIC2, Unihan, CC-CEDICT, Korean Wiktionary, FrequencyWords",
         "hskCharacters": sum(1 for row in characters if row.mode == "SIMPLIFIED" and row.level != 10),
         "nonHskCharacters": sum(1 for row in characters if row.mode == "SIMPLIFIED" and row.level == 10),
         "simplifiedCharacters": sum(1 for row in characters if row.mode == "SIMPLIFIED"),
@@ -1504,10 +1732,10 @@ def build(out_path: Path) -> None:
     )
 
     connection.executemany(
-        "INSERT INTO word_context VALUES(?,?,?,?,?,?,?)",
+        "INSERT INTO word_context VALUES(?,?,?,?,?,?,?,?)",
         [
-            (index + 1, mode, word, reading, meaning, level, common)
-            for index, (mode, word, reading, meaning, level, common) in enumerate(words)
+            (index + 1, mode, word, reading, meaning, level, common, mature)
+            for index, (mode, word, reading, meaning, level, common, mature) in enumerate(words)
         ],
     )
     connection.executemany(

@@ -63,7 +63,15 @@ object Romaji {
                 index++
                 continue
             }
-            // Small tsu from a doubled consonant, except "n".
+            // Small tsu from a doubled consonant. "tch" is the one spelling
+            // that does not double the consonant the learner hears.
+            if (char == 't' && index + 2 < text.length &&
+                text[index + 1] == 'c' && text[index + 2] == 'h'
+            ) {
+                out.append('っ')
+                index++
+                continue
+            }
             if (char in "kgsztdhbpmr" && index + 1 < text.length && text[index + 1] == char &&
                 !(char == 'n')
             ) {
@@ -118,5 +126,74 @@ object Hangul {
                 append(char)
             }
         }
+    }
+
+    private val initialMatches: List<Pair<String, Int>> =
+        (initials.withIndex()
+            .filter { it.value.isNotEmpty() }
+            .map { it.value to it.index } + ("l" to 5))
+            .sortedByDescending { it.first.length }
+
+    private val vowelMatches: List<Pair<String, Int>> =
+        vowels.withIndex()
+            .map { it.value to it.index }
+            .sortedByDescending { it.first.length }
+
+    // A learner types the canonical Revised Romanisation forms. The rarer
+    // double finals are folded to their simplest letter so a preview still
+    // appears for words such as 한국 and 학생.
+    private val finalMatches: List<Pair<String, Int>> = listOf(
+        "ng" to 21,
+        "k" to 1,
+        "n" to 4,
+        "t" to 7,
+        "l" to 8,
+        "m" to 10,
+        "p" to 17,
+    ).sortedByDescending { it.first.length }
+
+    /**
+     * Composes Hangul from Revised Romanisation typed on a Latin keyboard.
+     * This is deliberately a preview, not a strict input method: ambiguous
+     * final consonants use their simplest jamo. Returns null for text that is
+     * not plain Latin letters or cannot be parsed.
+     */
+    fun fromRevisedRomanization(text: String): String? {
+        val input = text.trim().lowercase()
+            .replace("'", "")
+            .replace("’", "")
+            .replace("-", "")
+            .replace(" ", "")
+        if (input.isEmpty() || input.any { it !in 'a'..'z' }) return null
+        val out = StringBuilder()
+        var index = 0
+        while (index < input.length) {
+            val initial = initialMatches.firstOrNull { input.startsWith(it.first, index) }
+            var initialIndex = 11
+            var next = index
+            if (initial != null) {
+                initialIndex = initial.second
+                next = index + initial.first.length
+            }
+            val vowel = vowelMatches.firstOrNull { input.startsWith(it.first, next) } ?: return null
+            var cursor = next + vowel.first.length
+            var finalIndex = 0
+            if (cursor < input.length) {
+                val final = finalMatches.firstOrNull { candidate ->
+                    input.startsWith(candidate.first, cursor) &&
+                        (cursor + candidate.first.length == input.length ||
+                            vowelMatches.none {
+                                input.startsWith(it.first, cursor + candidate.first.length)
+                            })
+                }
+                if (final != null) {
+                    finalIndex = final.second
+                    cursor += final.first.length
+                }
+            }
+            out.append((0xAC00 + initialIndex * 588 + vowel.second * 28 + finalIndex).toChar())
+            index = cursor
+        }
+        return out.toString()
     }
 }

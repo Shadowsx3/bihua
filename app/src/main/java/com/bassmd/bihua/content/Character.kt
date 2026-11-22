@@ -10,6 +10,10 @@ enum class StudyStatus(val label: String) {
 }
 
 /** A word shown read-only on a character card. Never scheduled. */
+/** Dictionary examples the current content setting allows. */
+fun List<WordContext>.visible(includeMature: Boolean): List<WordContext> =
+    if (includeMature) this else filterNot { it.mature }
+
 data class WordContext(
     val word: String,
     val reading: String,
@@ -18,6 +22,8 @@ data class WordContext(
     val level: Int? = null,
     /** JMdict priority word, used to put common examples first. */
     val common: Boolean = false,
+    /** Explicit dictionary example. Hidden until the learner opts in. */
+    val mature: Boolean = false,
     val traditional: String = "",
     val simplified: String = "",
 )
@@ -32,6 +38,7 @@ data class WordResult(
     val reading: String,
     val meaning: String,
     val characterId: String?,
+    val mature: Boolean = false,
 )
 
 /** Structure data from Make Me a Hanzi, loaded only for the detail pane. */
