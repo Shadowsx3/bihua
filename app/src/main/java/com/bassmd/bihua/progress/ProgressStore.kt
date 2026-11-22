@@ -519,7 +519,32 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         } else {
             size
         }
-        (due + fresh).take(sessionLimit)
+        val ordered = when (settings.sessionOrder) {
+            com.bassmd.bihua.settings.SessionOrder.REVIEWS_FIRST -> due + fresh
+            com.bassmd.bihua.settings.SessionOrder.LESSONS_FIRST -> fresh + due
+            com.bassmd.bihua.settings.SessionOrder.MIXED -> mix(
+                reviews = due,
+                lessons = fresh,
+                every = settings.mixInterval,
+            )
+        }
+        ordered.take(sessionLimit)
+    }
+
+    private fun <T> mix(reviews: List<T>, lessons: List<T>, every: Int): List<T> {
+        if (reviews.isEmpty()) return lessons
+        if (lessons.isEmpty()) return reviews
+        val block = every.coerceIn(1, 20)
+        val out = ArrayList<T>(reviews.size + lessons.size)
+        var reviewIndex = 0
+        var lessonIndex = 0
+        while (reviewIndex < reviews.size || lessonIndex < lessons.size) {
+            repeat(block) {
+                if (reviewIndex < reviews.size) out += reviews[reviewIndex++]
+            }
+            if (lessonIndex < lessons.size) out += lessons[lessonIndex++]
+        }
+        return out
     }
 
     suspend fun dueCount(

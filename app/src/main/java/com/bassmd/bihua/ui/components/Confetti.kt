@@ -41,12 +41,13 @@ private data class ConfettiParticle(
 fun ConfettiBurst(
     token: Int,
     modifier: Modifier = Modifier,
+    count: Int = 46,
 ) {
     if (token == 0) return
     val particles = remember(token) {
         val colors = listOf(Mint, Peach, Sky, Lilac, Butter, Rose)
         val random = Random(token)
-        List(46) {
+        List(count.coerceIn(4, 80)) {
             ConfettiParticle(
                 angle = random.nextFloat() * 6.2832f,
                 speed = 0.35f + random.nextFloat() * 0.65f,

@@ -57,6 +57,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -519,7 +521,13 @@ private fun PracticeTools(
                             tint = if (canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
                         )
                     }
-                    IconButton(onClick = onClear, enabled = canUndo, modifier = Modifier.size(40.dp)) {
+                    IconButton(
+                        onClick = onClear,
+                        enabled = canUndo,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .semantics { contentDescription = "Clear canvas" },
+                    ) {
                         com.bassmd.bihua.ui.components.EraserIcon(
                             size = 20.dp,
                             tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),

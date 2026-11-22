@@ -173,6 +173,21 @@ enum class ReviewOrder(val label: String, val description: String) {
     NEWEST_FIRST("Newest first", "Most recently reviewed first."),
 }
 
+/** How due reviews and new lessons share one session. */
+@Serializable
+enum class SessionOrder(val label: String, val description: String) {
+    REVIEWS_FIRST("Reviews first", "Clear the due reviews, then meet new characters."),
+    MIXED("Mixed", "Work through review blocks, with a new lesson at a steady interval."),
+    LESSONS_FIRST("Lessons first", "Meet new characters first, then clear the reviews."),
+}
+
+/** What the top bar measures during a mixed session. */
+@Serializable
+enum class SessionProgress(val label: String, val description: String) {
+    FULL("Full session", "One bar for the whole queue."),
+    NEXT_LESSON("Next lesson", "The bar fills the current block, then resets at the next lesson."),
+}
+
 @Serializable
 data class AppSettings(
     val uiLanguage: UiLanguage = UiLanguage.ENGLISH,
@@ -204,6 +219,10 @@ data class AppSettings(
     val dailyNewGoal: Int = 5,
     val characterOrder: CharacterOrder = CharacterOrder.CURRICULUM,
     val reviewOrder: ReviewOrder = ReviewOrder.RANDOM,
+    val sessionOrder: SessionOrder = SessionOrder.REVIEWS_FIRST,
+    /** In a mixed session, reviews before one new lesson. */
+    val mixInterval: Int = 5,
+    val sessionProgress: SessionProgress = SessionProgress.FULL,
     /**
      * When true, the same glyph and stroke order share one memory across
      * Simplified, Traditional, and Japanese. Readings and meanings stay per

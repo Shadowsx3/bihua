@@ -205,8 +205,8 @@ fun WordPracticeScreen(
         Text(
             when {
                 revealed -> "Compare your writing with ${entry.character}. Tap the button below to continue."
-                characters.size == 1 -> "Write the character from memory. Tap Show answer if you need help."
-                else -> "Write character ${index + 1} from memory. Tap Show answer if you need help."
+                characters.size == 1 -> "Write from memory. Use Show answer if stuck."
+                else -> "Write character ${index + 1} from memory. Use Show answer if stuck."
             },
             style = MaterialTheme.typography.bodySmall,
             color = InkSoft,

@@ -13,19 +13,23 @@ a server.
 
 ## Network access
 
-Bihua does not operate a server. Network access is used only when the learner
-explicitly starts one of these optional actions:
+Bihua does not operate a server. Network access is used for:
 
-1. Downloading an ML Kit handwriting-recognition model.
+1. Downloading the ML Kit handwriting-recognition model for the active script.
+   This may happen automatically at start-up, after a script switch, or on the
+   first handwriting check. Models can also be prepared from Settings.
 2. Local Wi-Fi sync between two devices on the same network.
 
-Model downloads go from the source to the device. Local sync uses a short-lived
-HTTP server on the local network and a pairing code. No analytics, advertising,
-or crash-reporting SDK is included.
+Model downloads go from Google Play services to the device. Local sync uses a
+short-lived HTTP server on the local network and a pairing code.
+
+Bihua includes no developer-run analytics, advertising, or crash-reporting SDK.
+Google ML Kit sends limited diagnostics and usage metrics to Google as described
+in the app's privacy policy and Google's ML Kit data disclosure.
 
 ## Permissions
 
-- Internet and network state: optional model downloads and local sync.
+- Internet and network state: handwriting-model downloads and local sync.
 - No storage or camera permission is requested. The system photo picker returns
   only the image the learner chooses for their profile.
 

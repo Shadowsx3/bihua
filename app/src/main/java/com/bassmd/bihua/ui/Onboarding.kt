@@ -361,13 +361,21 @@ private fun PacePage(goal: Int, onPick: (Int) -> Unit) {
         Spacer(Modifier.height(16.dp))
         Text(
             when (goal) {
-                5 -> "About 15 reviews a day once it settles."
-                10 -> "About 30 reviews a day once it settles."
-                15 -> "About 45 reviews a day once it settles."
-                else -> "About 60 reviews a day once it settles."
+                5 -> "About 65 reviews a day once the course is in full swing; busy days near 80."
+                10 -> "About 85 reviews a day once the course is in full swing; busy days near 110."
+                15 -> "About 100 reviews a day once the course is in full swing; busy days near 130."
+                else -> "About 110 reviews a day once the course is in full swing; busy days near 150."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "The load grows over the first year. The first weeks are much lighter.",
+            style = MaterialTheme.typography.bodySmall,
+            color = InkSoft,
+            textAlign = TextAlign.Center,
         )
     }
 }

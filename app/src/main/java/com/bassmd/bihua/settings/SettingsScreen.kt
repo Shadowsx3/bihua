@@ -3,6 +3,7 @@
 package com.bassmd.bihua.settings
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,10 +21,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.produceState
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +34,7 @@ import kotlinx.coroutines.withContext
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -41,6 +45,7 @@ import androidx.compose.material.icons.rounded.FlightTakeoff
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsNone
@@ -52,17 +57,21 @@ import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PlaylistAddCheck
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Straighten
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -161,7 +170,9 @@ fun SettingsScreen(
     var syncMessage by remember { mutableStateOf<String?>(null) }
     var pendingSync by remember { mutableStateOf<SyncPackage?>(null) }
     var syncServer by remember { mutableStateOf<SyncServer?>(null) }
-    var settingsSection by rememberSaveable { mutableStateOf("Practice") }
+    var settingsSection by rememberSaveable { mutableStateOf<String?>(null) }
+    var settingsQuery by rememberSaveable { mutableStateOf("") }
+    val settingsListState = rememberLazyListState()
     var showLicences by remember { mutableStateOf(false) }
     var showStrokeRules by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
@@ -204,11 +215,12 @@ fun SettingsScreen(
             nameDraft = it.displayName
         }
     }
-    LaunchedEffect(settings.dailyNewGoal) {
+    LaunchedEffect(settings.dailyNewGoal, settings.studyMode) {
         val goal = settings.dailyNewGoal
+        val total = repository?.characters(settings.studyMode)?.size ?: 3180
         kotlinx.coroutines.delay(250)
         loadEstimate = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            ReviewLoad.estimate(goal)
+            ReviewLoad.estimate(goal, maxCharacters = total)
         }
     }
     LaunchedEffect(message) {
@@ -329,6 +341,14 @@ fun SettingsScreen(
         }
     }
 
+    androidx.activity.compose.BackHandler(enabled = settingsSection != null) {
+        settingsSection = null
+        settingsQuery = ""
+    }
+    LaunchedEffect(settingsSection) {
+        settingsListState.scrollToItem(0)
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -345,6 +365,7 @@ fun SettingsScreen(
             contentAlignment = Alignment.TopCenter,
         ) {
         LazyColumn(
+            state = settingsListState,
             modifier = Modifier
                 .fillMaxSize()
                 .widthIn(max = 900.dp),
@@ -352,21 +373,50 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Column {
-                    Text("Settings", style = MaterialTheme.typography.headlineLarge, color = InkDark)
-                    Text(
-                        "Make Bihua yours. Changes save on this device.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = InkSoft,
-                    )
+                if (settingsSection == null) {
+                    Column {
+                        Text("Settings", style = MaterialTheme.typography.headlineLarge, color = InkDark)
+                        Text(
+                            "Make Bihua yours. Changes save on this device.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = InkSoft,
+                        )
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            settingsSection = null
+                            settingsQuery = ""
+                        }) {
+                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to settings")
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                settingsLabel(settingsSection),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = InkDark,
+                            )
+                            Text(
+                                "Settings",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                    }
                 }
             }
 
-            item {
-                SettingsCategories(
-                    selected = settingsSection,
-                    onSelect = { settingsSection = it },
-                )
+            if (settingsSection == null) {
+                item {
+                    SettingsHome(
+                        query = settingsQuery,
+                        onQueryChange = { settingsQuery = it },
+                        onOpen = {
+                            settingsSection = it
+                            settingsQuery = ""
+                        },
+                    )
+                }
             }
             if (settingsSection == "Profile") {
             item {
@@ -553,7 +603,7 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.FlightTakeoff,
                             title = "Vacation mode",
-                            subtitle = "Pause the schedule while you are away instead of building an overdue backlog.",
+                            subtitle = "Pause new cards and reviews while you are away.",
                         )
                         SwitchRow(
                             title = "Pause reviews and new cards",
@@ -621,7 +671,7 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.Lightbulb,
                             title = "Story hints",
-                            subtitle = "Etymology stories can help while a shape is new. They fade as the character becomes familiar.",
+                            subtitle = "Etymology hints fade as a character becomes familiar.",
                         )
                         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                             MnemonicMode.entries.forEachIndexed { index, mode ->
@@ -649,7 +699,7 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.School,
                             title = "New characters per day",
-                            subtitle = "Pick a pace you can keep. 0 pauses new characters; reviews continue.",
+                            subtitle = "0 pauses new characters; reviews continue.",
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Slider(
@@ -677,9 +727,14 @@ fun SettingsScreen(
                                 if (estimate.newPerDay == 0) {
                                     "New characters are paused. Scheduled reviews keep coming."
                                 } else {
-                                    "At this pace the queue settles near ${estimate.reviewsPerDay} reviews a day, " +
-                                        "on top of ${estimate.newPerDay} new characters. After five months that is about " +
-                                        "${estimate.charactersInPlay} characters in rotation."
+                                    val finish = estimate.daysToFinish
+                                    val finishText = when {
+                                        finish <= 0 -> ""
+                                        finish < 45 -> " The course finishes in about $finish days."
+                                        else -> " The course finishes in about ${(finish + 15) / 30} months."
+                                    }
+                                    "About ${estimate.reviewsPerDay} reviews a day in full swing, plus ${estimate.newPerDay} new. " +
+                                        "Busy days reach about ${estimate.busiestDay}; the first weeks are lighter.$finishText"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
@@ -731,12 +786,95 @@ fun SettingsScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
+                            "Session order",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                        )
+                        Text(
+                            "Choose how due reviews and new lessons share one session.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            SessionOrder.entries.forEach { order ->
+                                FilterChip(
+                                    selected = settings.sessionOrder == order,
+                                    onClick = { update(settings.copy(sessionOrder = order)) },
+                                    label = { Text(order.label) },
+                                    shape = CircleShape,
+                                )
+                            }
+                        }
+                        Text(
+                            settings.sessionOrder.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        if (settings.sessionOrder == SessionOrder.MIXED) {
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Reviews before a lesson",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Slider(
+                                    value = settings.mixInterval.toFloat(),
+                                    onValueChange = {
+                                        update(settings.copy(mixInterval = it.toInt().coerceIn(1, 10)))
+                                    },
+                                    valueRange = 1f..10f,
+                                    steps = 8,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Mint.copy(alpha = 0.4f),
+                                ) {
+                                    Text(
+                                        "${settings.mixInterval}",
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = InkDark,
+                                    )
+                                }
+                            }
+                            Text(
+                                "After ${settings.mixInterval} reviews, one new character appears.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Progress bar",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                SessionProgress.entries.forEach { progress ->
+                                    FilterChip(
+                                        selected = settings.sessionProgress == progress,
+                                        onClick = { update(settings.copy(sessionProgress = progress)) },
+                                        label = { Text(progress.label) },
+                                        shape = CircleShape,
+                                    )
+                                }
+                            }
+                            Text(
+                                settings.sessionProgress.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
                             "Recall cue",
                             style = MaterialTheme.typography.titleSmall,
                             color = InkDark,
                         )
                         Text(
-                            "What you see before writing from memory. The character is never shown.",
+                            "What you see before writing; the character is hidden.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -770,7 +908,7 @@ fun SettingsScreen(
                         )
                         SwitchRow(
                             title = "Share progress for identical characters",
-                            subtitle = "Off keeps scheduling per script. On shares one writing memory across scripts, so a review counts everywhere.",
+                            subtitle = "Share one writing memory across scripts.",
                             checked = settings.shareIdenticalGlyphs,
                             onCheckedChange = { update(settings.copy(shareIdenticalGlyphs = it)) },
                         )
@@ -786,7 +924,7 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.Brush,
                             title = "Brush",
-                            subtitle = "Four presets that behave like a real pen, pencil, brush, or marker. Tune them below.",
+                            subtitle = "Pen, pencil, brush, and marker presets.",
                         )
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             DrawingTool.entries.forEach { tool ->
@@ -926,7 +1064,7 @@ fun SettingsScreen(
                             color = InkDark,
                         )
                         Text(
-                            "How much of the reference appears while you trace. Fade removes support as a card matures; the other choices keep one level for every script.",
+                            "How much of the guide appears while tracing.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -952,7 +1090,7 @@ fun SettingsScreen(
                         )
                         SwitchRow(
                             title = "Guide during recall",
-                            subtitle = "Keep the reference visible when you draw from memory. Off is harder and better for memory.",
+                            subtitle = "Keep the guide visible when writing from memory.",
                             checked = settings.guideInRecall,
                             onCheckedChange = { update(settings.copy(guideInRecall = it)) },
                         )
@@ -996,7 +1134,7 @@ fun SettingsScreen(
                         Spacer(Modifier.height(10.dp))
                         Text("Handwriting models", style = MaterialTheme.typography.titleSmall, color = InkDark)
                         Text(
-                            "The active script downloads in the background. Use this to prepare all four. A reading can miss or misread a stroke, so treat it as a hint; you always choose the grade.",
+                            "The active script downloads in the background. A reading can miss; you choose the grade.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -1058,7 +1196,7 @@ fun SettingsScreen(
                             color = InkDark,
                         )
                         Text(
-                            "System follows the device. Light keeps the warm paper look; dark uses a forest-night palette.",
+                            "System follows the device; Light or Dark override it.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                             modifier = Modifier.padding(bottom = 8.dp),
@@ -1105,7 +1243,7 @@ fun SettingsScreen(
                         Text("Backups stay with you", style = MaterialTheme.typography.titleMedium, color = InkDark)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Export a complete backup with your profile, settings, notes, and review history. Restore it on another device. Nothing is uploaded.",
+                            "Export or restore a complete backup. Nothing is uploaded.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -1145,7 +1283,7 @@ fun SettingsScreen(
                             Text("Import a known-character list (.txt)")
                         }
                         Text(
-                            "One character per line, or a block of text. Characters that exist in the current script are marked Solid; nothing else changes.",
+                            "One character per line. Matching characters become Solid.",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -1400,12 +1538,12 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "No account, no analytics, no uploads. Model downloads go from the source you choose to this device.",
+                            "No account and no ads. Handwriting runs on-device with Google ML Kit, which may send limited diagnostics and usage analytics. Model downloads and privacy details are in the policy.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
                         Spacer(Modifier.height(6.dp))
-                        Row {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             TextButton(onClick = { showLicences = true }) {
                                 Text("Licences and sources")
                             }
@@ -1413,6 +1551,26 @@ fun SettingsScreen(
                                 uriHandler.openUri("https://shadowsx3.github.io/bihua/privacy.html")
                             }) {
                                 Text("Privacy policy")
+                            }
+                            TextButton(onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:manuelbuslon22@gmail.com")
+                                    putExtra(Intent.EXTRA_SUBJECT, "Bihua feedback")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "Bihua ${BuildConfig.VERSION_NAME}\n\nWhat happened:\n\nWhat I expected:\n\nDevice and Android version:\n",
+                                    )
+                                }
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    uriHandler.openUri("https://github.com/Shadowsx3/bihua/issues")
+                                }
+                            }) {
+                                Text("Send feedback")
+                            }
+                            TextButton(onClick = {
+                                uriHandler.openUri("https://github.com/Shadowsx3/bihua")
+                            }) {
+                                Text("Source code")
                             }
                         }
                     }
@@ -1572,50 +1730,159 @@ private fun BrushSlider(
     }
 }
 
+private data class SettingsEntry(
+    val id: String,
+    val label: String,
+    val subtitle: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accent: Color,
+    val group: String,
+    val keywords: String,
+)
+
+private val SETTINGS_ENTRIES = listOf(
+    SettingsEntry(
+        "Profile", "Profile", "Name, photo, greeting",
+        Icons.Rounded.Person, Lilac, "YOU",
+        "name photo avatar greeting profile",
+    ),
+    SettingsEntry(
+        "Practice", "Practice", "Writing and pronunciation",
+        Icons.Rounded.RecordVoiceOver, Mint, "LEARNING",
+        "writing pronunciation reading practice modes",
+    ),
+    SettingsEntry(
+        "Study", "Study", "Pace, order, cues, vacation",
+        Icons.Rounded.School, Sky, "LEARNING",
+        "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar",
+    ),
+    SettingsEntry(
+        "Writing", "Writing", "Brush, size, guides, handwriting models",
+        Icons.Rounded.Brush, Peach, "WRITING",
+        "brush ink pen pencil marker width size guide grid stroke numbers finger stylus models handwriting",
+    ),
+    SettingsEntry(
+        "Display", "Display", "Theme, orientation, readings, voice, sound",
+        Icons.Rounded.Palette, Butter, "WRITING",
+        "theme light dark orientation pinyin tone numbers read aloud voice sound effects display",
+    ),
+    SettingsEntry(
+        "Data", "Data", "Backup, import, review history, reset",
+        Icons.Rounded.CloudUpload, Lilac, "YOUR DATA",
+        "backup export import zip csv known list reset start over data",
+    ),
+    SettingsEntry(
+        "Sync", "Sync", "Move progress over your own Wi-Fi",
+        Icons.Rounded.Devices, Sky, "YOUR DATA",
+        "sync wifi device code transfer copy progress",
+    ),
+    SettingsEntry(
+        "About", "About", "Version, licences, privacy, feedback",
+        Icons.Rounded.Info, Peach, "ABOUT",
+        "version licence license privacy feedback source about",
+    ),
+)
+
+private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "ABOUT")
+
+private fun settingsLabel(id: String?): String =
+    SETTINGS_ENTRIES.firstOrNull { it.id == id }?.label ?: "Settings"
+
 @Composable
-private fun SettingsCategories(
-    selected: String,
-    onSelect: (String) -> Unit,
+private fun SettingsHome(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onOpen: (String) -> Unit,
 ) {
-    val categories = listOf(
-        "Profile" to Lilac,
-        "Practice" to Mint,
-        "Study" to Sky,
-        "Writing" to Peach,
-        "Display" to Butter,
-        "Data" to Lilac,
-        "Sync" to Sky,
-        "About" to Peach,
-    )
-    val labels = mapOf(
-        "Profile" to "Profile",
-        "Practice" to "Practice",
-        "Study" to "Study",
-        "Writing" to "Writing",
-        "Display" to "Display",
-        "Data" to "Data",
-        "Sync" to "Sync",
-        "About" to "About",
-    )
-    // Keep every section visible. A single scrolling row hid Display, Data,
-    // Sync, and About with no hint that the row could scroll.
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        categories.forEach { (id, accent) ->
-            androidx.compose.material3.FilterChip(
-                selected = selected == id,
-                onClick = { onSelect(id) },
-                label = { Text(labels[id] ?: id) },
-                shape = CircleShape,
-                colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = accent.copy(alpha = 0.55f),
-                    selectedLabelColor = InkDark,
-                ),
+    val needle = query.trim()
+    val matches = SETTINGS_ENTRIES.filter { entry ->
+        needle.isEmpty() ||
+            entry.label.contains(needle, ignoreCase = true) ||
+            entry.subtitle.contains(needle, ignoreCase = true) ||
+            entry.keywords.contains(needle, ignoreCase = true)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { onQueryChange(it.take(50)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            placeholder = { Text("Search settings") },
+            leadingIcon = {
+                Icon(Icons.Rounded.Search, contentDescription = null, tint = InkSoft)
+            },
+            shape = RoundedCornerShape(18.dp),
+        )
+        if (matches.isEmpty()) {
+            Text(
+                "No settings match.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = InkSoft,
+                modifier = Modifier.padding(vertical = 12.dp),
             )
         }
+        SETTINGS_GROUPS.forEach { group ->
+            val rows = matches.filter { it.group == group }
+            if (rows.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SectionLabel(group)
+                    SoftCard(Modifier.fillMaxWidth()) {
+                        Column {
+                            rows.forEachIndexed { index, entry ->
+                                if (index > 0) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 60.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                    )
+                                }
+                                SettingsRow(entry = entry, onClick = { onOpen(entry.id) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsRow(
+    entry: SettingsEntry,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = entry.accent.copy(alpha = 0.9f),
+        ) {
+            Box(
+                modifier = Modifier.size(40.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    entry.icon,
+                    contentDescription = null,
+                    tint = InkDark,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(entry.label, style = MaterialTheme.typography.titleSmall, color = InkDark)
+            Text(entry.subtitle, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+        }
+        Icon(
+            Icons.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = InkSoft,
+        )
     }
 }
 

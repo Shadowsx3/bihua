@@ -4,6 +4,7 @@
 package com.bassmd.bihua.ui
 
 import android.app.Activity
+import android.widget.Toast
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.view.WindowManager
@@ -52,6 +53,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bassmd.bihua.content.ContentRepository
@@ -129,7 +135,13 @@ fun BihuaApp(store: SettingsStore) {
     val handwriting = remember { InkRecognitionService() }
     val speak: (String) -> Unit = { text ->
         if (settings.readAloud && text.isNotBlank()) {
-            speech.speak(text, mode)
+            if (!speech.speak(text, mode)) {
+                Toast.makeText(
+                    context,
+                    "No voice is installed for this script. Add one in Android Settings.",
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
         }
     }
     LaunchedEffect(preloadMode, settings.readAloud) {
@@ -636,6 +648,8 @@ fun BihuaApp(store: SettingsStore) {
                     guideInRecall = settings.guideInRecall,
                     recallCue = settings.recallCue,
                     mnemonicMode = settings.mnemonicMode,
+                    sessionOrder = settings.sessionOrder,
+                    sessionProgress = settings.sessionProgress,
                     resume = activeResume,
                     onSessionChanged = { state ->
                         if (state.pending.isEmpty()) {
@@ -1162,6 +1176,16 @@ private fun ModeSwitch(mode: StudyMode, onModeChange: (StudyMode) -> Unit, compa
                 onClick = { onModeChange(item) },
                 shape = CircleShape,
                 color = if (active) modeColor(item.ordinal).copy(alpha = 0.95f) else PaperWarm,
+                modifier = Modifier.semantics {
+                    contentDescription = when (item) {
+                        StudyMode.SIMPLIFIED -> "Simplified"
+                        StudyMode.TRADITIONAL -> "Traditional"
+                        StudyMode.JAPANESE -> "Japanese"
+                        StudyMode.KOREAN -> "Korean"
+                    }
+                    role = Role.Button
+                    selected = active
+                },
             ) {
                 Row(
                     modifier = Modifier.padding(

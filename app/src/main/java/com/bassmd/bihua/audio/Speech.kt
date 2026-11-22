@@ -15,12 +15,14 @@ class Speech(private val context: Context) : AutoCloseable {
 
     private var engine: TextToSpeech? = null
     private var ready = false
+    private var failed = false
     private var rate = 0.92f
     private var pendingMode: StudyMode? = null
 
     init {
         engine = TextToSpeech(context.applicationContext) { status ->
             ready = status == TextToSpeech.SUCCESS
+            failed = !ready
             engine?.setSpeechRate(rate)
             pendingMode?.let { applyLanguage(it) }
             engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
@@ -43,11 +45,14 @@ class Speech(private val context: Context) : AutoCloseable {
         if (ready) applyLanguage(mode)
     }
 
-    fun speak(text: String, mode: StudyMode) {
-        val tts = engine ?: return
-        if (!ready || text.isBlank()) return
-        if (!applyLanguage(mode)) return
+    /** Returns false when the device has no usable voice for this script. */
+    fun speak(text: String, mode: StudyMode): Boolean {
+        if (text.isBlank() || failed) return false
+        val tts = engine ?: return false
+        if (!ready) return true
+        if (!applyLanguage(mode)) return false
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "bihua-${text.hashCode()}")
+        return true
     }
 
     fun stop() {
@@ -59,6 +64,7 @@ class Speech(private val context: Context) : AutoCloseable {
         engine?.shutdown()
         engine = null
         ready = false
+        failed = false
         pendingMode = null
     }
 

@@ -44,6 +44,32 @@
 - Character detail puts Practice and word/paper actions before the sharing
   controls.
 - Onboarding input copy matches whether the device has a stylus.
+- Settings now opens on a searchable home list with grouped rows, then a
+  focused subpage with a back arrow.
+- The new-lesson pace estimate uses a realistic grade mix, a complete-course
+  horizon, and reports average and busy-day review load. At 10 new a day it
+  now shows roughly 88 average and 113 busy-day reviews, not 30.
+- Pronunciation review has a large result card, your-answer/accepted-answer
+  comparison, retry and hear-it actions, and hides the grade until the reading
+  is checked.
+- A small confetti burst marks a correct reading; session completion keeps its
+  burst. Both respect reduce motion.
+- The session progress bar is taller, animated, and fills through lesson steps
+  and graded reviews.
+- Settings About discloses Google ML Kit diagnostics and usage analytics and
+  offers Send feedback and Source code actions.
+- Study now offers reviews first, mixed review/lesson blocks, or lessons first.
+  Mixed sessions can use a configurable interval and a top bar that fills to
+  the next lesson instead of the whole session.
+- The session progress bar is taller and animated through both lesson steps and
+  graded reviews.
+- The lesson pace estimate now simulates a realistic Good/Hard/Again mix and a
+  completed course. At 10 new a day it reports about 88 average and 113 busy
+  reviews, and about 11 months to finish.
+- Pronunciation review puts the result in a large feedback card with your
+  answer, the accepted reading, retry, hear-it, and a small confetti burst.
+- Settings is now a searchable home list of grouped rows with focused
+  subpages, instead of category chips or a dropdown.
 
 ### Fixed
 

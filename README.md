@@ -10,8 +10,8 @@ Simplified Chinese, Traditional Chinese, Japanese, and Korean Hanja.**
 
 The hand is the interface. Bihua asks the learner to produce a character from a
 cue, fades the reference guide over time, and schedules the next review with
-FSRS-7. Writing and pronunciation are separate tasks. There is no account, no
-analytics, and no cloud dependency.
+FSRS-7. Writing and pronunciation are separate tasks. There is no account, no ads, and
+no developer-run analytics.
 
 <p align="center">
   <img src="docs/assets/home-dark.png" width="220" alt="Bihua home screen in dark mode">
@@ -121,9 +121,10 @@ scripts/             build, device, release, smoke helpers
 
 ## Privacy
 
-No account, no analytics, no advertising SDK. Progress and notes live in a local
-SQLite database. Network access is limited to optional handwriting-model
-downloads and local Wi-Fi sync. See [PRIVACY.md](PRIVACY.md).
+No account, no developer-run analytics, no advertising SDK. Progress and notes
+live in a local SQLite database. Network access is used for handwriting-model
+downloads, Google ML Kit diagnostics, and optional local Wi-Fi sync. See
+[PRIVACY.md](PRIVACY.md) and the [public policy](https://shadowsx3.github.io/bihua/privacy.html).
 
 ## Licensing
 

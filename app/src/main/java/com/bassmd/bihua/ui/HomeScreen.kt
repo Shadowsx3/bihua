@@ -163,11 +163,6 @@ fun HomeScreen(
                     greeting = greeting,
                     mode = mode,
                     profile = profile,
-                    due = due,
-                    fresh = fresh,
-                    learning = learning,
-                    vacation = vacation,
-                    easeBack = easeBack,
                 )
             }
             if (resumeSession != null && !vacation) {
@@ -379,11 +374,6 @@ private fun Header(
     greeting: String,
     mode: StudyMode,
     profile: UserProfile,
-    due: Int,
-    fresh: Int,
-    learning: Int,
-    vacation: Boolean,
-    easeBack: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -397,16 +387,7 @@ private fun Header(
             )
             val course = stringResource(mode.labelRes)
             Text(
-                when {
-                    vacation -> "$course · vacation mode, reviews are paused."
-                    due > 0 && fresh > 0 -> "$course · $due to review, $fresh new to learn" +
-                        if (easeBack) " · ease back in" else ""
-                    due > 0 -> "$course · $due characters to review" +
-                        if (easeBack) " · ease back in" else ""
-                    fresh > 0 -> "$course · $fresh new characters ready"
-                    learning > 0 -> "$course · $learning cards are in learning steps. They return shortly."
-                    else -> "$course · nothing is waiting. Practice whatever you like."
-                },
+                course,
                 style = MaterialTheme.typography.bodyMedium,
                 color = InkSoft,
                 modifier = Modifier.padding(top = 2.dp),

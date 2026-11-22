@@ -121,7 +121,7 @@ fun PaperDrillScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Write the character on paper. Then reveal and compare.",
+                    "Write on paper, then reveal and compare.",
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
