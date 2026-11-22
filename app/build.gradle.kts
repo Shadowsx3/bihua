@@ -84,6 +84,10 @@ android {
         noCompress += "db"
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
 }
 
 dependencies {
@@ -104,4 +108,6 @@ dependencies {
     implementation(libs.androidx.material3)
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

@@ -130,6 +130,18 @@ private enum class Step(val label: String) {
 
 private val steps = Step.entries
 
+private data class GradeUndoSnapshot(
+    val session: SessionProgression,
+    val attempts: Map<Int, Int>,
+    val stepOrdinal: Int,
+    val learned: Int,
+    val revealed: Boolean,
+    val ink: InkState,
+    val round: Int,
+    val task: ReviewTask,
+    val showReference: Boolean,
+)
+
 /**
  * A lesson session. The learner always chooses the grade; the recommender only
  * highlights one. The layout keeps the canvas square and fully visible on both
@@ -151,6 +163,7 @@ fun LearnScreen(
     reduceMotion: Boolean = false,
     pronunciationPractice: Boolean = false,
     onlyAgainAndGood: Boolean = false,
+    wifiOnlyModels: Boolean = true,
     pinyinNumbers: Boolean = true,
     guideMode: GuideMode = GuideMode.FADE,
     guideInRecall: Boolean = false,
@@ -163,6 +176,7 @@ fun LearnScreen(
     xpEarned: Int = 0,
     leveledUp: Boolean = false,
     onClose: () -> Unit,
+    undoSignal: Int = 0,
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
     onGrade: (LearnItem, Grade, Long, ReviewTask, Int) -> Unit = { _, _, _, _, _ -> },
@@ -203,7 +217,12 @@ fun LearnScreen(
             )
         } ?: ReviewTask.WRITE
     }
-    val ink = remember(index, stepOrdinal, drawingRound) { InkState() }
+    var ink by remember { mutableStateOf(InkState()) }
+    var gradeUndo by remember { mutableStateOf<GradeUndoSnapshot?>(null) }
+    fun resetDrawing() {
+        ink = InkState()
+        drawingRound++
+    }
     // A reading review never needs the stroke guide, so skip loading it.
     val player = rememberStrokeOrderPlayer(
         if (task == ReviewTask.WRITE) currentItem?.id else null
@@ -281,6 +300,7 @@ fun LearnScreen(
                 visible,
                 mode,
                 items.getOrNull(index)?.character,
+                wifiOnly = wifiOnlyModels,
             )
             recognizing = false
         }
@@ -294,12 +314,23 @@ fun LearnScreen(
         }
         val attempt = (attempts[itemIndex] ?: 0) + 1
         if (attempt == 1) {
+            gradeUndo = GradeUndoSnapshot(
+                session = session,
+                attempts = attempts,
+                stepOrdinal = stepOrdinal,
+                learned = learned,
+                revealed = revealed,
+                ink = ink,
+                round = drawingRound,
+                task = task,
+                showReference = showReference,
+            )
             onGrade(item, effectiveGrade, elapsedMs, task, ink.strokes.size)
             if (effectiveGrade.countsAsLearned) learned++
         }
         attempts = attempts + (itemIndex to attempt)
         revealed = false
-        drawingRound++
+        resetDrawing()
         session = session.grade(itemIndex, passed = effectiveGrade != Grade.AGAIN)
         val nextItem = session.current?.let { items.getOrNull(it) }
         if (effectiveGrade == Grade.AGAIN) {
@@ -342,6 +373,19 @@ fun LearnScreen(
     LaunchedEffect(index, stepOrdinal, drawingRound) {
         recognition = null
         if (step == Step.RECALL) recallStartedAt = System.currentTimeMillis()
+    }
+    LaunchedEffect(undoSignal) {
+        if (undoSignal == 0) return@LaunchedEffect
+        val snapshot = gradeUndo ?: return@LaunchedEffect
+        session = snapshot.session
+        attempts = snapshot.attempts
+        stepOrdinal = snapshot.stepOrdinal
+        learned = snapshot.learned
+        ink = snapshot.ink
+        drawingRound = snapshot.round
+        showReference = snapshot.showReference
+        revealed = snapshot.task == ReviewTask.WRITE
+        gradeUndo = null
     }
     LaunchedEffect(revealed, recognition) {
         if (revealed) {
@@ -556,17 +600,17 @@ fun LearnScreen(
                         }
                         when (step) {
                             Step.INTRODUCE -> Button(
-                                onClick = { stepOrdinal++ },
+                                onClick = { stepOrdinal++; resetDrawing() },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = CircleShape,
                             ) { Text("Next: trace") }
                             Step.TRACE -> {
                                 ActionRow(
                                     secondary = "Draw again",
-                                    onSecondary = { drawingRound++ },
+                                    onSecondary = { resetDrawing() },
                                     primary = "Next: write",
                                     primaryEnabled = ink.strokes.isNotEmpty(),
-                                    onPrimary = { stepOrdinal++ },
+                                    onPrimary = { stepOrdinal++; resetDrawing() },
                                 )
                                 if (ink.strokes.isEmpty()) {
                                     Text(
@@ -580,7 +624,7 @@ fun LearnScreen(
                                 if (!revealed) {
                                     ActionRow(
                                         secondary = "Draw again",
-                                        onSecondary = { drawingRound++ },
+                                        onSecondary = { resetDrawing() },
                                         primary = "Check & grade",
                                         primaryEnabled = ink.strokes.isNotEmpty(),
                                         onPrimary = {
@@ -600,7 +644,7 @@ fun LearnScreen(
                                 } else {
                                     RevealAnswer(
                                         onDrawAgain = {
-                                            drawingRound++
+                                            resetDrawing()
                                             revealed = false
                                         },
                                         evidence = evidence,
@@ -631,7 +675,7 @@ fun LearnScreen(
                         practiceOnly = (attempts[index] ?: 0) > 1,
                         onGrade = { grade -> advance(item, index, grade) },
                         onDrawAgain = {
-                            drawingRound++
+                            resetDrawing()
                             revealed = false
                         },
                         onlyAgainAndGood = onlyAgainAndGood,
@@ -668,7 +712,7 @@ fun LearnScreen(
                             IntroCharacter(item, mode, onSpeak, speechEnabled)
                         }
                         Button(
-                            onClick = { stepOrdinal++ },
+                            onClick = { stepOrdinal++; resetDrawing() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
                         ) { Text("Next: trace") }
@@ -707,7 +751,7 @@ fun LearnScreen(
                         IntroCharacter(item, mode, onSpeak, speechEnabled)
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { stepOrdinal++ },
+                            onClick = { stepOrdinal++; resetDrawing() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
                         ) { Text("Next: trace") }
@@ -758,7 +802,7 @@ fun LearnScreen(
                         if (revealed) {
                             RevealAnswer(
                                 onDrawAgain = {
-                                    drawingRound++
+                                    resetDrawing()
                                     revealed = false
                                 },
                                 evidence = evidence,
@@ -777,7 +821,7 @@ fun LearnScreen(
                 if (step == Step.TRACE || (step == Step.RECALL && !revealed)) {
                     StickyActionBar(
                         secondary = "Draw again",
-                        onSecondary = { drawingRound++ },
+                        onSecondary = { resetDrawing() },
                         primary = if (step == Step.TRACE) "Next: write" else "Check & grade",
                         primaryEnabled = ink.strokes.isNotEmpty(),
                         hint = when {
@@ -789,6 +833,7 @@ fun LearnScreen(
                         onPrimary = {
                             if (step == Step.TRACE) {
                                 stepOrdinal++
+                                resetDrawing()
                             } else {
                                 com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                                 revealed = true
@@ -809,7 +854,7 @@ fun LearnScreen(
                         practiceOnly = (attempts[index] ?: 0) > 1,
                         onGrade = { grade -> advance(item, index, grade) },
                         onDrawAgain = {
-                            drawingRound++
+                            resetDrawing()
                             revealed = false
                         },
                         onlyAgainAndGood = onlyAgainAndGood,

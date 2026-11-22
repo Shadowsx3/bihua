@@ -98,6 +98,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,6 +120,7 @@ import com.bassmd.bihua.backup.BackupCodec
 import com.bassmd.bihua.backup.BackupException
 import com.bassmd.bihua.backup.TransferScope
 import com.bassmd.bihua.content.CharacterOrder
+import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.fsrs.FsrsOptimizer
 import com.bassmd.bihua.fsrs.FsrsWeights
 import com.bassmd.bihua.fsrs.ReviewLoad
@@ -172,6 +174,8 @@ fun SettingsScreen(
     val inkRecognition = remember { InkRecognitionService() }
     var preparingHandwriting by remember { mutableStateOf(false) }
     var handwritingReady by remember { mutableStateOf(false) }
+    val modelStates = remember { mutableStateMapOf<StudyMode, Boolean>() }
+    var preparingMode by remember { mutableStateOf<StudyMode?>(null) }
     var loadEstimate by remember { mutableStateOf<ReviewLoad.Estimate?>(null) }
     var syncOpen by remember { mutableStateOf(false) }
     var hostCode by remember { mutableStateOf<String?>(null) }
@@ -278,6 +282,15 @@ fun SettingsScreen(
     }
     LaunchedEffect(settings.shareIdenticalGlyphs) {
         if (settings.shareIdenticalGlyphs) weightProfile = AppSettings.SHARED_WEIGHTS
+    }
+    LaunchedEffect(settingsSection, preparingHandwriting) {
+        if (settingsSection == "Writing") {
+            withContext(Dispatchers.IO) {
+                StudyMode.entries.forEach { mode ->
+                    modelStates[mode] = inkRecognition.isModelReady(mode)
+                }
+            }
+        }
     }
     LaunchedEffect(settingsSection, progress, settings.fsrsProfiles, settings.fsrsWeights, weightProfile, settings.shareIdenticalGlyphs) {
         if (settingsSection == "Schedule") {
@@ -1627,13 +1640,73 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
-                        Spacer(Modifier.height(8.dp))
+                        SwitchRow(
+                            title = "Wi-Fi only",
+                            subtitle = "Wait for unmetered Wi-Fi before downloading models.",
+                            checked = settings.wifiOnlyModels,
+                            onCheckedChange = {
+                                update(settings.copy(wifiOnlyModels = it))
+                            },
+                        )
+                        StudyMode.entries.forEach { mode ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    mode.modelLabel(),
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkDark,
+                                )
+                                Text(
+                                    when {
+                                        preparingMode == mode -> "Downloading…"
+                                        modelStates[mode] == true -> "Ready"
+                                        modelStates[mode] == false -> "Not downloaded"
+                                        else -> "Checking…"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                )
+                                if (modelStates[mode] != true) {
+                                    TextButton(
+                                        onClick = {
+                                            preparingMode = mode
+                                            scope.launch {
+                                                try {
+                                                    val ready = inkRecognition.prepare(
+                                                        mode,
+                                                        settings.wifiOnlyModels,
+                                                    )
+                                                    modelStates[mode] = ready
+                                                    handwritingReady = StudyMode.entries.all {
+                                                        modelStates[it] == true
+                                                    }
+                                                    message = if (ready) {
+                                                        "${mode.modelLabel()} model ready."
+                                                    } else {
+                                                        "Could not download the ${mode.modelLabel()} model."
+                                                    }
+                                                } finally {
+                                                    preparingMode = null
+                                                }
+                                            }
+                                        },
+                                        enabled = preparingMode == null && !preparingHandwriting,
+                                    ) { Text("Download") }
+                                }
+                            }
+                        }
                         OutlinedButton(
                             onClick = {
                                 preparingHandwriting = true
                                 scope.launch {
                                     try {
-                                        val result = inkRecognition.prepareAll()
+                                        val result = inkRecognition.prepareAll(settings.wifiOnlyModels)
+                                        result.forEach { (mode, ready) ->
+                                            modelStates[mode] = ready
+                                        }
                                         handwritingReady = result.values.all { it }
                                         message = if (handwritingReady) {
                                             "Handwriting models are ready."
@@ -1645,14 +1718,14 @@ fun SettingsScreen(
                                     }
                                 }
                             },
-                            enabled = !preparingHandwriting,
+                            enabled = !preparingHandwriting && preparingMode == null,
                             shape = RoundedCornerShape(50),
                         ) {
                             Text(
                                 when {
                                     preparingHandwriting -> "Preparing…"
-                                    handwritingReady -> "Models ready"
-                                    else -> "Prepare models"
+                                    handwritingReady -> "Download again"
+                                    else -> "Download all"
                                 }
                             )
                         }
@@ -2799,6 +2872,13 @@ private fun readBytes(context: Context, uri: Uri): ByteArray =
 private fun writeBytes(context: Context, uri: Uri, bytes: ByteArray) {
     context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
         ?: error("Could not open the selected file for writing.")
+}
+
+private fun StudyMode.modelLabel(): String = when (this) {
+    StudyMode.SIMPLIFIED -> "Simplified"
+    StudyMode.TRADITIONAL -> "Traditional"
+    StudyMode.JAPANESE -> "Japanese"
+    StudyMode.KOREAN -> "Korean"
 }
 
 private fun dayStartLabel(hour: Int): String =

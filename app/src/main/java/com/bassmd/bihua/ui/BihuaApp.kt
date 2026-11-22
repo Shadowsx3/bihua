@@ -32,6 +32,10 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -72,8 +76,12 @@ import com.bassmd.bihua.progress.MemoryLevel
 import com.bassmd.bihua.progress.PlayerStats
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.progress.ProgressStore
+import com.bassmd.bihua.progress.ReviewUndo
 import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.audio.Speech
+import com.bassmd.bihua.backup.BackupArchive
+import com.bassmd.bihua.backup.BackupCodec
+import com.bassmd.bihua.backup.BackupException
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.hasStylus
@@ -128,6 +136,8 @@ fun BihuaApp(store: SettingsStore) {
     val scope = rememberCoroutineScope()
     val mode = settings.studyMode
     var showOnboarding by remember { mutableStateOf(false) }
+    var onboardingRestoring by remember { mutableStateOf(false) }
+    var onboardingRestoreMessage by remember { mutableStateOf<String?>(null) }
     var previewMode by remember { mutableStateOf<StudyMode?>(null) }
     val preloadMode: StudyMode? = when {
         showOnboarding -> previewMode
@@ -151,7 +161,7 @@ fun BihuaApp(store: SettingsStore) {
         val target = preloadMode ?: return@LaunchedEffect
         // Give a quick script change time to settle before starting a download.
         kotlinx.coroutines.delay(350)
-        withContext(Dispatchers.IO) { handwriting.prepare(target) }
+        withContext(Dispatchers.IO) { handwriting.prepare(target, settings.wifiOnlyModels) }
         if (settings.readAloud) speech.prepare(target)
     }
     androidx.compose.runtime.DisposableEffect(Unit) {
@@ -160,6 +170,9 @@ fun BihuaApp(store: SettingsStore) {
             handwriting.close()
         }
     }
+    val progressStore = remember { ProgressStore(context.applicationContext) }
+    val sessionStore = remember { LearnSessionStore(context.applicationContext) }
+    var progressVersion by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(250)
         val current = store.settings.first()
@@ -168,6 +181,61 @@ fun BihuaApp(store: SettingsStore) {
     if (showOnboarding) {
         OnboardingScreen(
             onModePreview = { previewMode = it },
+            restoring = onboardingRestoring,
+            restoreMessage = onboardingRestoreMessage,
+            onRestoreBackup = { uri ->
+                if (!onboardingRestoring) {
+                    onboardingRestoring = true
+                    onboardingRestoreMessage = null
+                    scope.launch {
+                        var fallback: java.io.File? = null
+                        val restored = runCatching {
+                            val bytes = context.contentResolver.openInputStream(uri)
+                                ?.use { it.readBytes() }
+                                ?: error("Could not read that file.")
+                            val archive = if (BackupArchive.isZip(bytes)) {
+                                BackupArchive.decode(bytes)
+                            } else {
+                                null
+                            }
+                            val bundle = if (archive != null) {
+                                archive.backupJson?.let { BackupCodec.decode(it) }
+                            } else {
+                                BackupCodec.decode(bytes.decodeToString())
+                            }
+                            val progressBytes = archive?.progressDb
+                            if (progressBytes != null) {
+                                val backup = java.io.File(
+                                    context.cacheDir,
+                                    "pre-onboarding-import-${System.currentTimeMillis()}.db",
+                                )
+                                fallback = backup
+                                progressStore.exportTo(backup)
+                                val incoming = java.io.File(context.cacheDir, "onboarding-progress.db")
+                                incoming.writeBytes(progressBytes)
+                                progressStore.importFrom(incoming)
+                                incoming.delete()
+                            }
+                            if (bundle != null) store.restore(bundle)
+                            store.updateSettings { it.copy(onboarded = true) }
+                            LearnSessionStore(context).clearAll()
+                            progressVersion++
+                        }
+                        if (restored.isSuccess) {
+                            showOnboarding = false
+                            onboardingRestoreMessage = null
+                        } else {
+                            fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
+                                runCatching { progressStore.importFrom(it) }
+                            }
+                            onboardingRestoreMessage =
+                                (restored.exceptionOrNull() as? BackupException)?.message
+                                    ?: "Could not restore that backup."
+                        }
+                        onboardingRestoring = false
+                    }
+                }
+            },
             onFinish = { chosenMode, goal, brush, share ->
                 scope.launch {
                     store.updateSettings { current ->
@@ -195,15 +263,15 @@ fun BihuaApp(store: SettingsStore) {
     }
     var inSession by remember { mutableStateOf(false) }
     var startingSession by remember { mutableStateOf(false) }
+    var undoSignal by remember { mutableIntStateOf(0) }
+    var lastReviewUndo by remember { mutableStateOf<ReviewUndo?>(null) }
+    val sessionSnackbar = remember { SnackbarHostState() }
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
     val characters by produceState<List<CharacterEntry>?>(initialValue = null, mode) {
         value = withContext(Dispatchers.IO) { repository.characters(mode) }
     }
-    val progressStore = remember { ProgressStore(context.applicationContext) }
-    val sessionStore = remember { LearnSessionStore(context.applicationContext) }
-    var progressVersion by remember { mutableIntStateOf(0) }
     var resumableSession by remember(mode, sessionStore, progressVersion) {
         mutableStateOf(sessionStore.load(mode))
     }
@@ -647,6 +715,7 @@ fun BihuaApp(store: SettingsStore) {
             com.bassmd.bihua.practice.DrillScreen(
                 entries = studyEntries,
                 mode = mode,
+                wifiOnlyModels = settings.wifiOnlyModels,
                 brush = settings.brush,
                 widthScale = settings.inkWidth.scale,
                 gridStyle = settings.gridStyle,
@@ -722,6 +791,7 @@ fun BihuaApp(store: SettingsStore) {
                     reduceMotion = settings.reduceMotion,
                     pronunciationPractice = settings.pronunciationPractice,
                     onlyAgainAndGood = settings.onlyAgainAndGood,
+                    wifiOnlyModels = settings.wifiOnlyModels,
                     pinyinNumbers = settings.pinyinNumbers,
                     guideMode = settings.guideMode,
                     guideInRecall = settings.guideInRecall,
@@ -739,6 +809,7 @@ fun BihuaApp(store: SettingsStore) {
                             resumableSession = state
                         }
                     },
+                    undoSignal = undoSignal,
                     onClose = {
                         // Closing leaves the saved session in place. Home offers
                         // Resume or Discard, so a mistimed back press does not
@@ -768,10 +839,41 @@ fun BihuaApp(store: SettingsStore) {
                                 )
                                 sessionXp += outcome.xpAwarded
                                 if (outcome.leveledUp) sessionLevelUp = true
+                                lastReviewUndo = outcome.undo
                                 progressVersion++
+                                sessionSnackbar.currentSnackbarData?.dismiss()
+                                val action = sessionSnackbar.showSnackbar(
+                                    message = "Grade saved",
+                                    actionLabel = "Undo",
+                                    withDismissAction = false,
+                                    duration = SnackbarDuration.Long,
+                                )
+                                if (action == SnackbarResult.ActionPerformed) {
+                                    val token = lastReviewUndo?.takeIf {
+                                        it.logId == outcome.undo.logId
+                                    }
+                                    if (token != null) {
+                                        val undone = runCatching {
+                                            progressStore.undoReview(token)
+                                        }.isSuccess
+                                        if (undone) {
+                                            sessionXp =
+                                                (sessionXp - token.xpAwarded).coerceAtLeast(0)
+                                            lastReviewUndo = null
+                                            undoSignal++
+                                            progressVersion++
+                                        }
+                                    }
+                                }
                             }
                         }
                     },
+                )
+                SnackbarHost(
+                    hostState = sessionSnackbar,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp),
                 )
             }
         } else {
@@ -1234,6 +1336,7 @@ private fun AppContent(
             allowFinger = allowFinger,
             pinyinNumbers = settings.pinyinNumbers,
             guideMode = settings.guideMode,
+            wifiOnlyModels = settings.wifiOnlyModels,
             initialCharacter = characters.firstOrNull { it.id == practiceCharacterId },
         )
 

@@ -211,6 +211,8 @@ data class AppSettings(
     val pronunciationPractice: Boolean = false,
     /** Hide Hard and Easy if the learner prefers a two-button scale. */
     val onlyAgainAndGood: Boolean = false,
+    /** Keep the ML Kit model downloads on unmetered Wi-Fi. */
+    val wifiOnlyModels: Boolean = true,
     /** Epoch millis when vacation mode started; 0 means off. */
     val vacationStartedAtMs: Long = 0L,
     /** End of the shorter-session return window after vacation. */

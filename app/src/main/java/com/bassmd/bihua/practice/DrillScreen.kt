@@ -87,6 +87,7 @@ fun DrillScreen(
     showStrokeNumbers: Boolean,
     writingSize: WritingSize,
     allowFinger: Boolean,
+    wifiOnlyModels: Boolean = true,
     onClose: () -> Unit,
 ) {
     if (entries.isEmpty()) return
@@ -234,6 +235,7 @@ fun DrillScreen(
                         ink.strokes.toList(),
                         mode,
                         entry.character,
+                        wifiOnly = wifiOnlyModels,
                     )
                     recognizing = false
                 }

@@ -113,6 +113,7 @@ fun PracticeScreen(
     allowFinger: Boolean,
     pinyinNumbers: Boolean = true,
     guideMode: com.bassmd.bihua.settings.GuideMode = com.bassmd.bihua.settings.GuideMode.FADE,
+    wifiOnlyModels: Boolean = true,
     initialCharacter: CharacterEntry? = null,
 ) {
     var selectedId by rememberSaveable { mutableStateOf(initialCharacter?.id) }
@@ -151,7 +152,12 @@ fun PracticeScreen(
         if (recognizing || strokes.isEmpty()) return
         scope.launch {
             recognizing = true
-            val result = recognitionService.recognize(strokes, mode, entry?.character)
+            val result = recognitionService.recognize(
+                strokes,
+                mode,
+                entry?.character,
+                wifiOnly = wifiOnlyModels,
+            )
             recognition = result
             recognizing = false
             val read = result.candidates.firstOrNull()

@@ -154,6 +154,16 @@ data class ReviewOutcome(
     val xpAwarded: Int,
     val stats: PlayerStats,
     val leveledUp: Boolean,
+    val undo: ReviewUndo,
+)
+
+/** The inverse of one recorded review, kept only for the next Undo action. */
+data class ReviewUndo(
+    val logId: Long,
+    val newCardId: String,
+    val previousCard: CardSnapshot?,
+    val xpAwarded: Int,
+    val day: String,
 )
 
 /**
@@ -401,9 +411,10 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         val xpBefore = readXp()
         val day = settings.today(nowMs).toString()
         var awarded = 0
+        var logId = -1L
         writableDatabase.inTransaction {
             insertWithOnConflict("card", null, snapshot.toValues(), SQLiteDatabase.CONFLICT_REPLACE)
-            insert(
+            logId = insert(
                 "review_log",
                 null,
                 ContentValues().apply {
@@ -443,7 +454,51 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
             xpAwarded = awarded,
             stats = statsAfter,
             leveledUp = statsAfter.level > statsBefore.level,
+            undo = ReviewUndo(
+                logId = logId,
+                newCardId = key,
+                previousCard = existing,
+                xpAwarded = awarded,
+                day = day,
+            ),
         )
+    }
+
+    /**
+     * Reverses one review: restores the previous card, marks the log reverted,
+     * and removes the XP awarded by that first review of the day. The caller
+     * restores the local lesson UI separately.
+     */
+    suspend fun undoReview(undo: ReviewUndo) = withContext(Dispatchers.IO) {
+        writableDatabase.inTransaction {
+            val marked = update(
+                "review_log",
+                ContentValues().apply { put("reverted", 1) },
+                "id=?",
+                arrayOf(undo.logId.toString()),
+            )
+            if (marked == 0) return@inTransaction
+            delete("card", "id=?", arrayOf(undo.newCardId))
+            undo.previousCard?.let { card ->
+                insertWithOnConflict(
+                    "card",
+                    null,
+                    card.toValues(),
+                    SQLiteDatabase.CONFLICT_REPLACE,
+                )
+            }
+            if (undo.xpAwarded > 0) {
+                delete(
+                    "xp_log",
+                    "card_id=? AND day=?",
+                    arrayOf(undo.newCardId, undo.day),
+                )
+                execSQL(
+                    "UPDATE player SET xp = MAX(0, xp - ?) WHERE id=1",
+                    arrayOf<Any>(undo.xpAwarded),
+                )
+            }
+        }
     }
 
     private fun readXp(): Int =
@@ -699,7 +754,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         val start = System.currentTimeMillis() - days * 86_400_000L
         val counts = IntArray(5)
         readableDatabase.rawQuery(
-            "SELECT grade, COUNT(*) FROM review_log WHERE reviewed_at>=? GROUP BY grade",
+            "SELECT grade, COUNT(*) FROM review_log WHERE reviewed_at>=? AND reverted=0 GROUP BY grade",
             arrayOf(start.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -731,7 +786,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         withContext(Dispatchers.IO) {
             readableDatabase.rawQuery(
                 "SELECT reviewed_at, grade, interval_days, elapsed_ms, task, strokes FROM review_log " +
-                    "WHERE character_id=? ORDER BY reviewed_at DESC LIMIT ?",
+                    "WHERE character_id=? AND reverted=0 ORDER BY reviewed_at DESC LIMIT ?",
                 arrayOf(characterId, limit.toString()),
             ).use { cursor ->
                 buildList {
@@ -759,7 +814,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         readableDatabase.rawQuery(
             "SELECT COALESCE(SUM(strokes), 0), COALESCE(SUM(elapsed_ms), 0) " +
                 "FROM review_log WHERE task='WRITE' AND strokes>0 AND elapsed_ms>0 " +
-                "AND reviewed_at>=? AND reviewed_at<?",
+                "AND reverted=0 AND reviewed_at>=? AND reviewed_at<?",
             arrayOf(start.toString(), end.toString()),
         ).use { cursor ->
             if (!cursor.moveToFirst()) return@use null
@@ -824,7 +879,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
     suspend fun practiceTimeMs(days: Int = 30): Long = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis() - days * 86_400_000L
         readableDatabase.rawQuery(
-            "SELECT COALESCE(SUM(elapsed_ms), 0) FROM review_log WHERE reviewed_at>=?",
+            "SELECT COALESCE(SUM(elapsed_ms), 0) FROM review_log WHERE reviewed_at>=? AND reverted=0",
             arrayOf(start.toString()),
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
     }
@@ -834,7 +889,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         val out = StringBuilder("reviewed_at,character,character_id,grade,interval_days,elapsed_ms,task\n")
         readableDatabase.rawQuery(
             "SELECT reviewed_at, character_id, grade, interval_days, elapsed_ms, task " +
-                "FROM review_log ORDER BY reviewed_at",
+                "FROM review_log WHERE reverted=0 ORDER BY reviewed_at",
             null,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -859,7 +914,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         val result = LinkedHashMap<String, TaskStat>()
         readableDatabase.rawQuery(
             "SELECT task, COUNT(*), SUM(CASE WHEN grade>1 THEN 1 ELSE 0 END), AVG(grade) " +
-                "FROM review_log WHERE reviewed_at>=? GROUP BY task",
+                "FROM review_log WHERE reviewed_at>=? AND reverted=0 GROUP BY task",
             arrayOf(start.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -914,7 +969,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         val reviews = HashMap<LocalDate, Int>()
         val learned = HashMap<LocalDate, Int>()
         readableDatabase.rawQuery(
-            "SELECT reviewed_at FROM review_log WHERE reviewed_at>=?",
+            "SELECT reviewed_at FROM review_log WHERE reviewed_at>=? AND reverted=0",
             arrayOf(startMs.toString()),
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -975,7 +1030,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
         withContext(Dispatchers.IO) {
             val ids = ArrayList<String>()
             readableDatabase.rawQuery(
-                "SELECT character_id, grade FROM review_log ORDER BY reviewed_at DESC LIMIT 400",
+                "SELECT character_id, grade FROM review_log WHERE reverted=0 ORDER BY reviewed_at DESC LIMIT 400",
                 null,
             ).use { cursor ->
                 val seen = HashSet<String>()
@@ -1028,7 +1083,7 @@ class ProgressStore(private val context: Context) : SQLiteOpenHelper(context, "b
     /** Distinct study dates with at least one review. No streak, no breakage. */
     suspend fun studyDays(dayStartHour: Int = DayBoundary.DEFAULT_HOUR): Int = withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
-        readableDatabase.rawQuery("SELECT reviewed_at FROM review_log", null).use { cursor ->
+        readableDatabase.rawQuery("SELECT reviewed_at FROM review_log WHERE reverted=0", null).use { cursor ->
             val days = HashSet<LocalDate>()
             while (cursor.moveToNext()) {
                 days.add(DayBoundary.date(cursor.getLong(0), dayStartHour, zone))

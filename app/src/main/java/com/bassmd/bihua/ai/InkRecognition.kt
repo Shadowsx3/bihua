@@ -38,39 +38,43 @@ class InkRecognitionService {
     suspend fun areAllModelsReady(): Boolean =
         StudyMode.entries.all { isModelReady(it) }
 
-    suspend fun prepare(mode: StudyMode): Boolean {
+    suspend fun prepare(mode: StudyMode, wifiOnly: Boolean = true): Boolean {
         val tag = languageTag(mode) ?: return false
-        return prepareTag(tag)
+        return prepareTag(tag, wifiOnly)
     }
 
-    private suspend fun prepareTag(tag: String): Boolean {
+    private suspend fun prepareTag(tag: String, wifiOnly: Boolean = true): Boolean {
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return false
         val model = DigitalInkRecognitionModel.builder(identifier).build()
         val manager = RemoteModelManager.getInstance()
         return runCatching {
             val downloaded = manager.isModelDownloaded(model).await()
             if (!downloaded) {
-                manager.download(model, DownloadConditions.Builder().build()).await()
+                val conditions = DownloadConditions.Builder().apply {
+                    if (wifiOnly) requireWifi()
+                }.build()
+                manager.download(model, conditions).await()
             }
             readyModels += tag
             true
         }.getOrDefault(false)
     }
 
-    suspend fun prepareAll(): Map<StudyMode, Boolean> =
-        StudyMode.entries.associateWith { prepare(it) }
+    suspend fun prepareAll(wifiOnly: Boolean = true): Map<StudyMode, Boolean> =
+        StudyMode.entries.associateWith { prepare(it, wifiOnly) }
 
     suspend fun recognize(
         strokes: List<InkStroke>,
         mode: StudyMode,
         target: String? = null,
+        wifiOnly: Boolean = true,
     ): RecognitionResult {
         // The Korean model reads Hangul, not Hanja. For a Han character we use
         // the Chinese model that matches the glyph tradition instead.
         val tag = targetLanguageTag(mode, target) ?: return RecognitionResult(emptyList(), false)
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return RecognitionResult(emptyList(), false)
         val model = DigitalInkRecognitionModel.builder(identifier).build()
-        val ready = prepareTag(tag)
+        val ready = prepareTag(tag, wifiOnly)
         if (!ready) return RecognitionResult(emptyList(), false)
 
         val recognizer = recognizers.getOrPut(tag) {

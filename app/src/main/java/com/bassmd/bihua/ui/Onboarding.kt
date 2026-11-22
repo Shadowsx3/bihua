@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -66,7 +68,15 @@ import com.bassmd.bihua.ui.theme.Sky
 fun OnboardingScreen(
     onFinish: (StudyMode, Int, BrushConfig, Boolean) -> Unit,
     onModePreview: (StudyMode) -> Unit = {},
+    restoring: Boolean = false,
+    restoreMessage: String? = null,
+    onRestoreBackup: (android.net.Uri) -> Unit = {},
 ) {
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) onRestoreBackup(uri)
+    }
     var step by remember { mutableIntStateOf(0) }
     var mode by remember { mutableStateOf(StudyMode.SIMPLIFIED) }
     var goal by remember { mutableIntStateOf(10) }
@@ -177,6 +187,23 @@ fun OnboardingScreen(
                         )
                     },
                 )
+                QuietAction(
+                    text = if (restoring) "Restoring…" else "Restore a backup",
+                    onClick = {
+                        restoreLauncher.launch(
+                            arrayOf("application/zip", "application/json", "text/plain", "*/*"),
+                        )
+                    },
+                    enabled = !restoring,
+                )
+                restoreMessage?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Rose,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
