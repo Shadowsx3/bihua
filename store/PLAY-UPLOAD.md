@@ -43,11 +43,8 @@ Foldable, desktop, and Android XR can stay empty for this submission.
 ## Full description
 
 The current Play Console copy is the old 2,735-character version. Replace it with
-`store/full-description.txt` (3,030 characters), or add this sentence to the
-existing copy:
-
-> Recognition is evidence, not a verdict: messy or partial strokes can be
-> missed or misread. It never presses the grade button.
+`store/full-description.txt` (3,030 characters). The local text adds the ML Kit
+diagnostics sentence and the stylus line.
 
 The full description is plain text. Google Play does not render Markdown, HTML,
 bold, or links.
