@@ -61,7 +61,8 @@ target_sdk="$("$APKANALYZER" manifest target-sdk "$APK")"
 [ "$min_sdk" -ge 29 ] && pass "minSdk $min_sdk" || fail "minSdk $min_sdk is below 29"
 pass "targetSdk $target_sdk"
 
-size_mb=$(( $(stat -f%z "$APK") / 1024 / 1024 ))
+size_bytes=$(wc -c < "$APK" | tr -d ' ')
+size_mb=$(( size_bytes / 1024 / 1024 ))
 if [ "$size_mb" -lt 200 ]; then
   pass "size ${size_mb} MB"
 else

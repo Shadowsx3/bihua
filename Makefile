@@ -56,7 +56,7 @@ test:
 	@source scripts/env.sh && ./gradlew :app:testDebugUnitTest --console=plain -q && echo "unit tests ok"
 
 lint:
-	@scripts/check.sh --lint
+	@source scripts/env.sh && ./gradlew :app:lintDebug --console=plain -q && echo "lint ok"
 
 audit:
 	@python3 tools/audit_content.py

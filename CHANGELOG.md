@@ -82,6 +82,10 @@
 - Tablet screenshots were recaptured from a 2560 × 1600 Pixel Tablet emulator
   for both the 7-inch and 10-inch slots.
 - Duplicate variant rows in character details are hidden.
+- The store copy now says “Korean: Hangul and Hanja” and discloses Google ML Kit
+  diagnostics, matching the Data Safety declaration.
+- CI runs unit tests, content audit, and lint only. It no longer assembles or
+  uploads an APK; the APK size check is portable across macOS and Linux.
 
 ### Fixed
 

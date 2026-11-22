@@ -8,13 +8,13 @@ The schedule follows your memory
 FSRS-7 keeps two stability values and a difficulty estimate for each card. It solves for the next date at a 90% target retention. Nothing resets because you missed a day. Vacation mode moves the schedule forward and the first week back is shorter.
 
 Ink feedback, not a guess
-ML Kit Digital Ink runs on the phone and suggests what you may have written. A separate guide comparison checks stroke count, shape, order, reversals, and missing or extra strokes. Recognition is evidence, not a verdict: messy or partial strokes can be missed or misread. It never presses the grade button.
+ML Kit Digital Ink runs on the phone and suggests what you may have written. A separate guide comparison checks stroke count, shape, order, reversals, and missing or extra strokes. Recognition is evidence, not a verdict: messy or partial strokes can be missed or misread. It never presses the grade button. The ink and its candidates stay on the device; Google ML Kit may send limited diagnostics and usage metrics, described in the privacy policy.
 
 Four scripts, kept apart
 Simplified Chinese: 3,180 characters.
 Traditional Chinese: 3,163 characters.
 Japanese: 2,286 characters.
-Korean Hanja: 2,239 characters.
+Korean: Hangul and Hanja, 2,239 characters.
 
 Shared glyphs stay shared. Simplified-only forms stay out of the Traditional course, and traditional-only forms stay out of the Simplified course. Traditional words use CEDICT word pairs, so you see 頭髮 rather than 頭發.
 

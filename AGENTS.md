@@ -1,23 +1,53 @@
 # Bihua — agent guide
 
+This file is the shared context for a new chat. Read it before changing code.
+
 ## What this project is
 
 Bihua is an offline-first Android app for learning to write Simplified Chinese,
-Traditional Chinese, Japanese, and Korean Hanja. Characters are the study items;
+Traditional Chinese, Japanese, and Korean. Characters are the study items;
 readings and meanings are cues. Writing is always practised. Pronunciation is an
 optional, separate review task. FSRS-7 schedules each script, with optional
-sharing between identical glyphs. No streaks and no cloud account.
+sharing between identical glyphs. No streaks, no account, no ads, no
+developer-run analytics.
+
+The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
+
+## Current release state
+
+- Version **1.0.2**, versionCode **12**.
+- Progress schema **9**; contentVersion **19**.
+- 132 unit tests.
+- Public repo: <https://github.com/Shadowsx3/bihua>
+- Pages: <https://shadowsx3.github.io/bihua/>
+- Play package: `com.bassmd.bihua`
+- Play name: `Bihua: Character Writing`
+- The app is in closed testing with 12 testers. Do not pause or replace the
+  closed-test track. Upload updates to the same track.
+- Release APK: `app/build/outputs/apk/release/app-release.apk`
+- Play AAB: `app/build/outputs/bundle/release/app-release.aab`
+- Play upload checklist: `store/PLAY-UPLOAD.md`
+- Listing copy: `store/listing.md`, `store/full-description.txt`
+- Release notes: `store/release-notes-1.0.2.txt`
+- Store screenshots: `store/phone-1..7.png`, `store/tablet-7-*`,
+  `store/tablet-10-*`
+- GitHub release tag: `v1.0.2`; the site uses `releases/latest`.
 
 ## Build, test, install
 
 ```bash
-source scripts/env.sh          # JDK 17 is required
-make check                     # compile, 131 unit tests, content audit, debug APK, verify
+source scripts/env.sh          # JDK 17
+make check                     # compile, 132 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
-make run                       # check, install, launch on the selected device
-make release                   # minified release APK
+make lint                      # Android lint
+make run                       # check, install, launch on selected device
+make release                   # signed minified release APK
+make smoke                     # on-device launch/navigation smoke test
 ```
+
+GitHub Actions runs **unit tests, content audit, and lint only**. It does not
+assemble or upload an APK. The debug APK is a local build artifact.
 
 Use the device tools instead of ad-hoc adb:
 
@@ -27,7 +57,7 @@ scripts/device.sh ui                          # visible labels + coordinates
 scripts/device.sh find "Start studying"
 scripts/device.sh tap "Start studying"
 scripts/device.sh type "ai4"
-scripts/device.sh draw 300 500 500 700 700 900 # motionevent pen path
+scripts/device.sh draw 300 500 500 700 700 900 # DOWN/MOVE/UP pen path
 scripts/device.sh swipe 540 1900 540 700
 scripts/device.sh shot before
 scripts/device.sh db-cards
@@ -41,165 +71,203 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 `-s <serial>`. DB commands need a debug build. The progress DB is
 `databases/bihua_progress.db`.
 
-## Devices and screenshots — the traps
+## Device and screenshot traps
 
-1. **Screenshots are scaled.** Never derive tap coordinates from the image.
-   Use `scripts/device.sh ui/find`; it re-dumps the current UI.
-2. **Tap by label, not by remembered coordinates.** Tabs collapse their labels
-   when inactive. `device.sh tap` matches `text` or `content-desc`, waits up to
-   10 seconds, and re-dumps, because layouts settle late.
-3. **Canvas drags need `input motionevent`.** `input swipe` often does not draw.
-   `device.sh draw x1 y1 x2 y2 ...` sends DOWN/MOVE/UP.
-4. **The tablet uses stylus input by default.** Finger drawing is a setting.
-5. **System animation scale 0 kills Compose animations.** Essential playback
-   uses `withFrameNanos` (`ink/StrokeGuide.kt`, `ui/CompareScreen.kt`). Do not
-   build essential behaviour on `Animatable`.
+1. **Never derive tap coordinates from a screenshot.** Use `device.sh ui/find`
+   or tap by label. The screenshot is scaled.
+2. **Tap by label.** The bottom navigation now has fixed positions and labels for
+   every tab, but dialogs and keyboards still move content.
+3. **Prefer `device.sh draw`.** `input swipe` works for touch on most devices but
+   can be unreliable for stylus input. `device.sh draw` sends motionevents.
+4. **Emulators and desktop input.** `hasStylus` treats emulator/goldfish/ranchu as
+   touch, and `InkCanvas` accepts mouse pointers. Real stylus devices default to
+   pen-only; finger drawing is a setting.
+5. **System animation scale 0 kills Compose animations.** Essential playback uses
+   `withFrameNanos` (`ink/StrokeGuide.kt`, `ui/CompareScreen.kt`). Do not build
+   essential behaviour on `Animatable`.
 6. **The keyboard moves the layout.** Dismiss it before tapping Check/Grade, or
-   re-dump with `device.sh ui` first.
+   re-dump with `device.sh ui`.
+7. **Tablets use a navigation rail; phones use a labelled bottom bar.** Test
+   both. The wide threshold for Characters is 780 dp; Practice uses 900 dp.
+8. **Screenshot rendering.** Phone/tablet SVGs are rendered with headless Chrome,
+   not `sips` (sips produces a missing-image placeholder). See `store/README.md`.
+9. **Tablet emulator:** `bihua_tablet`, Pixel Tablet, 2560 × 1600, 320 dpi.
+   Phone emulator: `voxbloom`.
+
+## Lesson and review flow
+
+- A lesson is **Meet → Trace → Write**.
+- Trace needs at least one stroke.
+- A reviewed card starts directly at Write; do not show Meet or Trace first.
+- Write cue is reading, meaning, or a word. The character is never shown.
+- After writing, tap **Check & grade**. A fixed grade bar shows the answer,
+  reading, meaning, four grades, the app suggestion, and Draw again.
+- Pronunciation shows the character, asks for the reading, then shows a large
+  feedback card (`Correct!`, `Almost — the tone`, `Not quite`, or `Answer`).
+- One review asks for one skill:
+  - `WRITE`: draw from a cue.
+  - `PRONOUNCE`: show the character, type the reading.
+- New cards always write. Reviewed cards alternate writing and pronunciation
+  from a deterministic phase; pronunciation is opt-in.
+- A pronunciation cue must never include the reading before the check. Writing
+  cues must never include the character.
+- Only the first grade is scheduled. Later repeats are practice.
+- A failed card returns later in the session. A failed stroke may offer
+  `Fix stroke N`, which replays and validates one isolated stroke.
+- The handwriting check is a hint. It can miss or misread a stroke. The learner
+  always chooses the grade.
+
+## Session order and progress
+
+- Settings → Study has **Session order**: Reviews first, Mixed, Lessons first.
+- Mixed uses `mixInterval` (1–10 reviews before one new character).
+- **Progress bar** can be Full session or Next lesson. Next lesson fills the
+  current block and resets at the next lesson; it shows “Next lesson in N cards.”
+- The top bar is animated and semantic; it fills through lesson steps and graded
+  reviews.
+- The pace estimate uses a realistic Good/Hard/Again mix, a completed course, and
+  a 120-day window after completion. At 10 new/day it shows roughly 88 average
+  and 113 busy-day reviews, and about 11 months to finish. Do not revert this to
+  the old “settles near 30” copy.
+- A saved lesson is per script. Discard asks for confirmation. Reset, import, and
+  sync clear paused lessons.
 
 ## Transfer practice
 
 - Word practice and paper check are free practice: never create cards, XP, or
   review-log rows.
-- Paper check must hide the character and show only reading + meaning before
-  reveal.
-- Resolve word characters in the current script and refuse mixed availability.
-
-## Word practice
-
-- Word practice is free transfer practice, not FSRS. Never create cards or XP.
-- Resolve every word character in the current script before opening; refuse
-  words that are not fully available.
-- Keep the word hidden until Show answer; cue from reading + meaning.
-
-## Lesson and review rules
-
-- A new card goes Introduce → Trace → Recall. Trace needs at least one stroke.
-- A reviewed card starts directly at Recall. Do not show Introduce or Trace
-  first; that leaks the answer.
-- One review asks for one skill:
-  - `WRITE`: draw from a cue.
-  - `PRONOUNCE`: show the character, type the reading.
-- New cards always write. Reviewed cards alternate writing and pronunciation
-  from a random phase (`ReviewTaskPlan`). Pronunciation is opt-in.
-- A pronunciation cue must never include the character's reading before the
-  check. Writing cues must never include the character.
-- Only the first grade is scheduled. Later repeats are practice.
-- Due means `dueAt <= now`. Cards in learning steps are not due. Home and the
-  session queue must use the same rule (`ProgressStore.dueCount` /
-  `ProgressStore.session`).
-- Failed cards return later in the session. A failed stroke offers
-  `Fix stroke N`, which replays and validates one isolated stroke before the
-  rewrite.
-
-## Assistant
-
-- Bihua ships no generative assistant and no LiteRT-LM runtime. Do not add one
-  without a separate Play policy review, data-safety update, and privacy review.
-
-## Publishing
-
-- Public source and Pages: `Shadowsx3/bihua`; site lives in `docs/`.
-- The upload keystore lives at `~/Documents/bihua-keystore/bihua-upload.jks`
-  and `keystore.properties` points Gradle at it. Never commit either file.
-- Release APKs are attached to the `Shadowsx3/bihua` GitHub release.
-
-## Theme
-
-- Paper, ink, grid, graphite, and guide colours come from
-  `LocalBihuaPalette`; never hardcode them in a screen.
-- Use `AccentInk` for dark text/icons on a pastel accent in both themes.
-- `BihuaTheme(themeMode)` owns the palette; System follows the device.
-- Check new screens at 1.3× font scale and in both themes.
+- Paper check hides the character and shows only reading + meaning before reveal.
+- Word practice resolves every character in the current script and refuses mixed
+  availability.
+- Word practice: cue from reading + meaning, keep the word hidden until Show
+  answer, one character at a time.
+- Character detail has top actions for Write a word and Write on paper before
+  the sharing controls.
 
 ## Ink and guides
 
-- Stroke order rules are a reading/reference dialog in Settings → Writing; the
-  actual character guide is authoritative.
-
-
+- Stroke order rules are a reference dialog in Settings → Writing; the actual
+  character guide is authoritative.
 - Canvas is square; guide coordinates scale x/y independently.
 - Completed strokes are immutable. `InkCanvas` caches smoothed geometry and
   segment widths by canvas size, density, brush, scale, and tool. Only the live
   stroke is rebuilt per frame. Preserve taper, pencil dots, and playback
-  fractions when changing this.
+  fractions.
 - Guide scaffolds: full strokes for new cards, outline for early reviews,
-  hidden for mature cards. Initialise visibility synchronously; never let a
-  review flash the guide for one frame.
+  hidden for mature cards. Initialise visibility synchronously; never flash the
+  guide for one frame.
 - `StrokeOrderGrader` stroke numbers are 1-based, including the empty-ink path.
-- Brush presets: Ink, Pen, Pencil, Marker. S Pen pressure is averaged and
-  eased; speed thins; ends taper. Finger input has no pressure.
+- Brush presets: Ink, Pen, Pencil, Marker. Stylus pressure is averaged and eased;
+  speed thins; ends taper. Finger input has no pressure.
+- The Practice screen fills the screen: title, character summary, weighted square
+  canvas, compact Guide/Order/undo/eraser row, and Check. Result opens in a
+  compact scrollable dialog.
+- The Practice character picker defaults to the first curriculum character and
+  has search by character, meaning, or reading.
+
+## Settings
+
+- Settings opens on a searchable home list of grouped rows:
+  YOU / LEARNING / WRITING / YOUR DATA / ABOUT.
+- Rows open focused subpages with a back arrow. Android Back returns to the
+  settings home while a subpage is open.
+- All sections are reachable: Profile, Practice, Study, Writing, Display, Data,
+  Sync, About.
+- Do not reintroduce the old horizontally scrolling category chips or the
+  three-row chip grid.
+- Writing has the active-script background model download; Prepare models downloads
+  all four.
+- About is transparent about Google ML Kit diagnostics and has Send feedback and
+  Source code actions.
+- The TTS engine is warmed at start/onboarding/script switch; a missing voice
+  shows a Toast instead of silently doing nothing.
+- Rotation/theme/font-scale must be tested. The app supports 1.3×+ text.
 
 ## Scheduling and data
 
 - Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
-  - `WRITE` / `PRONOUNCE` task stats and per-character history depend on it.
-  - Bump the version and add an upgrade path when the schema changes.
-- Content DB contentVersion 15. Bump it whenever the asset changes.
-  - `char_meta` holds radical, decomposition, etymology, type, phonetic, and
-    semantic. The family card prefers the phonetic part, then semantic, then
-    radical. Loaded only by the detail pane.
-  - Keep the scripts pure: no simplified-only forms in Traditional, no
-    traditional-only forms in Simplified; shared glyphs stay in both.
-  - Traditional words come from CEDICT word pairs, not character substitution.
-  - Word examples are unique per mode; glosses drop classifier/variant noise.
-  - Rebuild with `scripts/device.sh content --bump`.
-- Backups must include progress. The zip format is `backup.json` +
-  `progress.db`; import accepts the zip and legacy settings-only JSON.
+- Bump the schema and add an upgrade path when tables change.
+- Content DB contentVersion 19. Bump it whenever the asset changes.
+- Keep scripts pure: no simplified-only forms in Traditional, no
+  traditional-only forms in Simplified; shared glyphs stay in both.
+- Traditional words come from CEDICT word pairs, not character substitution.
+- Korean uses Unihan/Hangul; Hanjaro is intentionally absent.
+- Backups include progress. Zip format is `backup.json` + `progress.db`; import
+  accepts the zip and legacy settings-only JSON.
 - Reset all learning deletes cards, reviews, XP, and confusions; it keeps notes,
   study list, and settings.
-- Vacation mode is `vacationStartedAtMs > 0`. While active, due count is 0 and
-  sessions refuse to start. Ending it shifts `due_at` and `last_review_at` by
-  the elapsed pause; never shift review-log timestamps.
-- Ending vacation sets `easeBackUntilMs` for seven days; sessions are capped at
-  10 cards during that window.
+- Vacation mode: due count 0 and sessions refuse to start. Ending shifts
+  `due_at`/`last_review_at`, never review-log timestamps. Ease-back caps
+  sessions at 10 cards for seven days.
+- Local sync is opt-in, same Wi-Fi, six-digit pairing code, short-lived HTTP.
+- Android cloud backup is disabled.
 
-## Search
+## Data safety and privacy
 
-- Use `CharacterSearch.matches` for character search: form, meaning, numbered
-  or marked pinyin, Japanese romaji (kana-normalised), Korean romanised eum.
-- Word search is on demand; do not query the word table on every keystroke.
-- Speaker buttons follow `readAloud`; hide them when it is off.
+- ML Kit Digital Ink runs on-device. Strokes and candidates do not leave the
+  device.
+- ML Kit collects per-installation identifiers, device/app info, performance and
+  usage metrics, configured languages, API config, feature I/O size, event type,
+  and error codes; encrypted in transit; Google acts as a service provider and
+  does not transfer to third parties.
+- Play Data safety: **Device or other IDs + Diagnostics**, collected, not shared,
+  not ephemeral, required, purpose Analytics.
+- No advertising ID, account, location, camera, contacts, storage, or
+  developer-run analytics.
+- The privacy policy is linked in the app (Settings → About) and the store listing.
+  It must stay consistent with Data safety.
+- Do not add the generative assistant or LiteRT-LM without a separate policy,
+  data-safety, and privacy review.
 
+## Publishing and store
 
-## UI copy and layout
-
-- English UI. No streaks or guilt copy. Specific, plain text.
-- One primary action per card. Cards are near-white on the forest background.
-- Phone: compact header. Characters uses one title/count row, one search +
-  filter row, and one horizontally scrolling status row; keep the grid visible.
-- Pronunciation reviews cap at 560 dp and scroll on phones.
-- Use `formatDuration` and `formatCompactCount` from `ui/Formatting.kt`.
+- Play closed testing currently has 12 testers; the 14-day continuous opt-in
+  window must be preserved. Upload updates to the same track.
+- AAB is the Play artifact; never commit APKs, AABs, keystores,
+  `keystore.properties`, `screenshots/`, or build output.
+- Store listing is plain text; Google Play does not render Markdown/HTML.
+- Phone screenshots are 1080 × 1920, 9:16. Tablet assets are 1920 × 1080 and
+  2560 × 1440. All are real 1.0.2 captures.
+- The app UI is English-only. Do not publish AI listing translations without a
+  native review. `store/translations/listing-en-US.csv` is the source row.
+- The site `docs/` and GitHub release are separate from Play Console. Local files
+  do not upload themselves.
+- GitHub Actions must not assemble/upload APKs. `scripts/verify-apk.sh` is
+  portable across macOS/Linux (`wc -c`, not macOS `stat -f%z`).
 
 ## Testing expectations
 
-- Pure logic belongs in a unit test. Current suites include FSRS, queue,
-  session progression, pinyin, known lists, stroke grading, order grading,
-  guide scaffold, reading checks, task planning, backup archive, search, and
-  formatting.
+- Pure logic belongs in a unit test. Current suites include FSRS, queue, session
+  progression, pinyin, known lists, stroke grading, order grading, guide
+  scaffold, reading checks, task planning, backup archive, search, and formatting.
 - `make check` must be green before commit. The pre-commit hook runs compile.
-- Verify UI changes on the phone with `device.sh shot`; use a seeded review or
-  learning card when a flow needs progress.
-
-## Current gaps
-
-- Tablet/S Pen pass on the current build and real frame timing.
-- Upload keystore/privacy policy only if publishing.
-- Accessibility and dark mode.
-- Automated UI tests.
-- Full-backup file-picker test on a device.
-- Content spot-checks.
+- Verify UI changes with `device.sh shot`; use seeded reviews/learning cards when
+  a flow needs progress.
+- Test phone and tablet, light and dark, 1.3× text, emulator/mouse, and a real
+  stylus device when available.
+- Check the pre-launch report and no-crash behavior on the exact Play build.
 
 ## Files worth knowing
 
 | Area | Files |
 |---|---|
-| Shell, tabs, sessions, TTS | `ui/BihuaApp.kt` |
+| Shell, tabs, sessions, TTS, bottom bar | `ui/BihuaApp.kt` |
 | Home / Characters / Progress | `ui/HomeScreen.kt`, `ui/CharactersScreen.kt`, `ui/DashboardScreen.kt` |
-| Lesson, tasks, cues, grading | `learn/LearnScreen.kt`, `learn/SessionProgression.kt`, `learn/ReviewTask.kt`, `learn/ReadingCheck.kt` |
-| Ink, guides, grading | `ink/InkCanvas.kt`, `ink/InkModel.kt`, `ink/StrokeGuide.kt`, `ink/StrokePlayback.kt`, `ink/StrokeOrderGrader.kt` |
-| Scheduling and progress | `fsrs/Fsrs7.kt`, `progress/ProgressStore.kt`, `progress/ReviewQueue.kt` |
+| Lesson, tasks, cues, grading | `learn/LearnScreen.kt`, `learn/SessionProgression.kt`, `learn/ReviewTask.kt`, `learn/ReadingCheck.kt`, `learn/Grading.kt` |
+| Ink, guides, grading | `ink/InkCanvas.kt`, `ink/InkModel.kt`, `ink/StrokeGuide.kt`, `ink/StrokePlayback.kt`, `ink/StrokeOrderGrader.kt`, `ink/Stylus.kt` |
+| Scheduling and progress | `fsrs/Fsrs7.kt`, `fsrs/ReviewLoad.kt`, `progress/ProgressStore.kt`, `progress/ReviewQueue.kt` |
 | Content and search | `content/ContentRepository.kt`, `content/CharacterSearch.kt`, `content/Romanization.kt`, `content/Pinyin.kt` |
 | Backup and sync | `backup/BackupArchive.kt`, `sync/Sync.kt` |
 | Settings | `settings/SettingsScreen.kt`, `settings/Models.kt` |
-| Tooling | `scripts/device.sh`, `scripts/check.sh`, `Makefile` |
+| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `Makefile` |
+| Store | `store/PLAY-UPLOAD.md`, `store/README.md`, `store/listing.md` |
+
+## Known gaps
+
+- Pre-launch report and Android vitals are only available in Play Console; run
+  them on the exact versionCode being reviewed.
+- The physical stylus pass was done on the SM-X520; recheck after any ink change.
+- Full backup/import through the system file picker should be retested on a
+  release build before production.
+- Automated UI/instrumentation tests are not present.
+- Foldable, desktop, and XR screenshots are intentionally not supplied.

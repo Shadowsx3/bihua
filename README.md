@@ -73,7 +73,7 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 131 unit tests, content audit, debug APK, verification
+make check      # compile, 132 unit tests, content audit, debug APK, verification
 make lint       # Android lint
 make run        # check, install, and launch on a connected device
 make smoke      # launch/navigation smoke test on a connected device
@@ -83,6 +83,9 @@ make release    # signed minified APK when keystore.properties is present
 The release build is signed with a local upload key. Keystores and
 `keystore.properties` are ignored by git. See [PUBLISHING.md](PUBLISHING.md) for
 the release process.
+
+GitHub Actions runs unit tests, the content audit, and lint. It does not assemble
+or upload an APK.
 
 ## Content
 
