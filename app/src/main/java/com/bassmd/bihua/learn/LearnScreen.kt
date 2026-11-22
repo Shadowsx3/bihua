@@ -1486,13 +1486,13 @@ private fun PromptPanel(
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Column {
+                                    Text(
+                                        cuePrompt.label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = InkSoft,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            cuePrompt.label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = InkSoft,
-                                        )
-                                        Spacer(Modifier.width(6.dp))
                                         Box(Modifier.weight(1f)) {
                                             CuePromptText(cuePrompt)
                                         }
@@ -2571,7 +2571,7 @@ private fun StickyActionBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
         ) {
             ActionRow(
                 secondary = secondary,
@@ -2579,9 +2579,10 @@ private fun StickyActionBar(
                 primary = primary,
                 primaryEnabled = primaryEnabled,
                 accent = accent,
+                compact = true,
                 onPrimary = onPrimary,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
                 hint,
                 style = MaterialTheme.typography.labelSmall,
@@ -2598,15 +2599,27 @@ private fun ActionRow(
     primary: String,
     primaryEnabled: Boolean = true,
     accent: Color = Sky,
+    compact: Boolean = false,
     onPrimary: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        com.bassmd.bihua.ui.components.TonalAction(
-            text = secondary,
-            onClick = onSecondary,
-            modifier = Modifier.weight(1f),
-            accent = Butter.copy(alpha = 0.24f),
-        )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (compact) {
+            TextButton(
+                onClick = onSecondary,
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = InkSoft,
+                ),
+            ) {
+                Text(secondary, style = MaterialTheme.typography.labelLarge)
+            }
+        } else {
+            com.bassmd.bihua.ui.components.TonalAction(
+                text = secondary,
+                onClick = onSecondary,
+                modifier = Modifier.weight(1f),
+                accent = Butter.copy(alpha = 0.24f),
+            )
+        }
         com.bassmd.bihua.ui.components.PrimaryAction(
             text = primary,
             onClick = onPrimary,
