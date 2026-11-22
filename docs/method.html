@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How Bihua works — FSRS-7 and on-device ink</title>
+<title>How Bihua works: FSRS-7 and on-device ink</title>
 <meta name="description" content="A close look at Bihua's two engines: an FSRS-7 scheduler that chooses the next date, and on-device ink analysis that reports what the hand actually drew.">
-<meta name="theme-color" content="#fbf9ef">
+<meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="How Bihua works">
 <meta property="og:description" content="FSRS-7 scheduling, on-device handwriting evidence, and the choices behind the loop.">
 <meta property="og:type" content="article">
-<meta property="og:image" content="assets/practice-dark.png">
+<meta property="og:image" content="assets/practice-light.png">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -26,16 +26,6 @@
 <body>
 <div class="reading-progress" data-reading-progress></div>
 <a class="skip" href="#article">Skip to article</a>
-<div class="forest" aria-hidden="true">
-  <div class="beam"></div>
-  <div class="canopy"></div>
-  <span class="leaf l1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span>
-  <span class="leaf l2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
-  <span class="leaf l3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
-  <span class="leaf l4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/></svg></span>
-  <span class="firefly f1"></span><span class="firefly f2"></span><span class="firefly f3"></span>
-  <span class="firefly f4"></span><span class="firefly f5"></span><span class="firefly f6"></span>
-</div>
 <header class="site">
   <div class="wrap nav">
     <a class="brand" href="index.html">
@@ -126,11 +116,13 @@
       <p>Bihua runs its own FSRS-7 implementation, following the open-spaced-repetition formulas. There are no fixed intervals such as “1 day, 3 days, 7 days.”</p>
       <p>Each card keeps three numbers:</p>
       <ul>
-        <li><strong>Long-term stability</strong> — how long the memory is expected to survive on the long curve.</li>
-        <li><strong>Short-term stability</strong> — the same idea for same-day and next-day reviews.</li>
-        <li><strong>Difficulty</strong> — how hard this item tends to be for this learner.</li>
+        <li><strong>Long-term stability</strong>: how long the memory is expected to survive on the long curve.</li>
+        <li><strong>Short-term stability</strong>: the same idea for same-day and next-day reviews.</li>
+        <li><strong>Difficulty</strong>: how hard this item tends to be for this learner.</li>
       </ul>
       <p>On every review the app estimates retrievability from those numbers and the elapsed time. It then solves for the interval at a 90% target retention, capped at 365 days. The solver is numerical because the combined forgetting curve does not have a clean inverse.</p>
+      <p>FSRS-6 used one stability value and rounded elapsed time to whole days. FSRS-7 keeps a second, faster trace and works in fractional days, so a retry ten minutes later is not treated like a retry tomorrow. The cost is complexity: 34 weights instead of 21, and a numerical interval solver.</p>
+      <p>Bihua ships the published default weights. It does not fit a personal model from your review history yet.</p>
       <div class="callout">
         <strong>The grade is the input</strong>
         <p>Again, Hard, Good, Easy. The ink checker can suggest one, but it never submits. The scheduler only knows what you tell it. That is a feature: recognition is probabilistic, and the learner is the one who saw the attempt.</p>
@@ -142,14 +134,14 @@
       <p>There are two layers, and they answer different questions.</p>
       <div class="grid two" style="margin:22px 0">
         <div class="card"><h3>1. What might this be?</h3><p>ML Kit Digital Ink runs on the device and returns candidate characters. The model is selected for the script and the target: zh-Hans, zh-Hant, ja, or ko. Korean Hanja routes to a Han model; Hangul routes to the Korean model.</p></div>
-        <div class="card"><h3>2. How close is it to the guide?</h3><p>Bihua compares the drawn strokes with the reference centerlines. It reports stroke count, average distance from the guide, reversed strokes, strokes out of order, missing or extra strokes, and the first correction worth trying.</p></div>
+        <div class="card"><h3>2. How close is it to the guide?</h3><p>Bihua compares the drawn strokes with the reference centerlines. It reports stroke count, average distance from the guide, reversed strokes, strokes out of order, missing or extra strokes, and the first correction worth trying. Stylus pressure is averaged and eased; a finger or mouse draws at a fixed width.</p></div>
       </div>
       <p>The first layer is a downloaded local model. The second is deterministic code. Neither one is allowed to press the grade button.</p>
       <figure class="figure">
         <div class="frame">
           <div class="split">
             <div class="side"><b>Evidence</b><span>candidates · stroke count · shape score · order · reversals · start error</span></div>
-            <div class="side"><b>Decision</b><span>Again · Hard · Good · Easy — chosen by the learner</span></div>
+            <div class="side"><b>Decision</b><span>Again · Hard · Good · Easy, chosen by the learner</span></div>
           </div>
         </div>
         <figcaption>Evidence is shown as a short, readable note. The grade remains a human decision.</figcaption>
@@ -194,7 +186,7 @@
 
       <h2 id="content">Content choices</h2>
       <p>The character list is not a word list. Simplified and Traditional are separate courses, and shared glyphs stay in both. Traditional words come from CEDICT word-level pairs, because a character-by-character substitution produces forms like 頭發 instead of 頭髮.</p>
-      <p>Korean Hanja now comes from Unihan: the education list, readings, and definitions. The earlier Hanjaro source is gone because its site does not grant redistribution rights. That also means Korean word examples are absent. I kept the smaller licensed course.</p>
+      <p>The Korean course starts with Hangul, then the Hanja education list from Unihan: readings and definitions. The earlier Hanjaro source is gone because its site does not grant redistribution rights. That also means Korean word examples are absent. I kept the smaller licensed course.</p>
       <p>Chinese stroke data comes from Make Me a Hanzi; Japanese data from KanjiVG; definitions and readings from CC-CEDICT, KANJIDIC2, and JMdict. The notices and full licences ship with the app and the repository.</p>
 
       <h2 id="tradeoffs">Tradeoffs</h2>

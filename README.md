@@ -6,18 +6,18 @@
 [![Version](https://img.shields.io/badge/version-1.0.2-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
-Simplified Chinese, Traditional Chinese, Japanese, and Korean Hanja.**
+Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
 
 The hand is the interface. Bihua asks the learner to produce a character from a
 cue, fades the reference guide over time, and schedules the next review with
-FSRS-7. Writing and pronunciation are separate tasks. There is no account, no ads, and
+FSRS-7. A stylus adds pressure; a finger or mouse also works. Writing and pronunciation are separate tasks. There is no account, no ads, and
 no developer-run analytics.
 
 <p align="center">
-  <img src="docs/assets/home-dark.png" width="220" alt="Bihua home screen in dark mode">
-  <img src="docs/assets/practice-dark.png" width="220" alt="Handwriting practice with a stroke guide">
-  <img src="docs/assets/detail-dark.png" width="220" alt="Character detail">
-  <img src="docs/assets/word-dark.png" width="220" alt="Word practice">
+  <img src="docs/assets/home-light.png" width="220" alt="Bihua home screen">
+  <img src="docs/assets/practice-light.png" width="220" alt="Handwriting practice with a stroke guide">
+  <img src="docs/assets/detail-light.png" width="220" alt="Character detail">
+  <img src="docs/assets/word-light.png" width="220" alt="Word practice">
 </p>
 
 <p align="center">

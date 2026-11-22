@@ -232,6 +232,31 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   native review. `store/translations/listing-en-US.csv` is the source row.
 - The site `docs/` and GitHub release are separate from Play Console. Local files
   do not upload themselves.
+- The landing page (`docs/index.html`, `docs/style.css`) uses a crisp ink-and-paper
+  style with current 1.0.2 light-theme screenshots. Do not reintroduce the old
+  blurred forest wash, drifting leaves, fireflies, glass cards, or translucent
+  gradients. Keep hard borders, solid shadows, and the vermillion accent.
+- `docs/assets/*-light.png` are the current screenshots. Do not point the site or
+  README back at the old dark 1.0.1 images.
+- The hero leads with “Learn characters by writing them.” Do not bring back the
+  old “the character has to come out of your hand” line or similar slogans. Keep
+  copy plain and specific; avoid em dashes, “not just X, but Y”, and other
+  marketing patterns.
+- The landing has a live ink pad (`#draw`, `docs/site.js`). It counts pointer
+  strokes against a guide and keeps nothing. It uses pointer pressure when the
+  device reports it, so a stylus changes the line; a finger or mouse still works.
+  It does not run ML Kit and must not claim to recognise what the visitor drew.
+- The ink-check flow (`#recognizer`) explains the real path: ML Kit candidates,
+  the stroke comparison, then the learner's grade. Keep the claim that recognition
+  is evidence and never presses the grade button.
+- The spacing section (`#spacing`) has an interval ladder and a retention
+  sawtooth. Its values come from the shipped default weights: after Good grades
+  the intervals are about 5, 26, 92, 293, then the 365-day cap. The load estimate
+  at 10 new a day is 88 average, 113 busy, 317 days. Do not invent new numbers.
+- FSRS-7 has two stability traces and 34 weights; FSRS-6 has one stability and 21
+  weights. FSRS-7 uses fractional days and a mixed curve, and its interval is
+  solved numerically. The app still ships the published default weights and does
+  not fit a personal model yet.
 - GitHub Actions must not assemble/upload APKs. `scripts/verify-apk.sh` is
   portable across macOS/Linux (`wc -c`, not macOS `stat -f%z`).
 

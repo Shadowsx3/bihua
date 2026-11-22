@@ -86,6 +86,16 @@
   diagnostics, matching the Data Safety declaration.
 - CI runs unit tests, content audit, and lint only. It no longer assembles or
   uploads an APK; the APK size check is portable across macOS and Linux.
+- The landing page uses current 1.0.2 light-theme screenshots and a crisp
+  ink-and-paper layout. The blurred forest wash, drifting leaves, fireflies,
+  and glass cards are gone.
+- The landing page has a live ink pad, a four-step recognition diagram, a
+  retention graph, an interval ladder, and an FSRS-7 versus FSRS-6 comparison.
+  The hero now says “Learn characters by writing them.”
+- The landing page, README, method page, and store copy mention stylus pressure.
+  A finger or mouse still works.
+- The Korean course is described as Hangul and Hanja throughout the site and
+  README, matching the app and the store listing.
 
 ### Fixed
 

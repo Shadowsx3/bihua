@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bihua 筆畫 — the character has to come out of your hand</title>
+<title>Bihua: learn characters by writing them</title>
 <meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did.">
-<meta name="theme-color" content="#fbf9ef">
+<meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
-<meta property="og:title" content="Bihua 筆畫 — the character has to come out of your hand">
+<meta property="og:title" content="Bihua: learn characters by writing them">
 <meta property="og:description" content="FSRS-7 scheduling, on-device ink analysis, and a grade that stays with the learner. Open-source Android app for characters.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="assets/practice-dark.png">
+<meta property="og:image" content="assets/practice-light.png">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -25,13 +25,6 @@
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="forest" aria-hidden="true">
-  <div class="beam"></div>
-  <div class="canopy"></div>
-  <span class="leaf l1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span><span class="leaf l2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span><span class="leaf l3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span><span class="leaf l4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 8 4 12 4 16a8 8 0 0 0 16 0c0-4-3-8-8-14Z"/><path d="M12 7v11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></svg></span>
-  <span class="firefly f1"></span><span class="firefly f2"></span><span class="firefly f3"></span>
-  <span class="firefly f4"></span><span class="firefly f5"></span><span class="firefly f6"></span>
-</div>
 <header class="site">
   <div class="wrap nav">
     <a class="brand" href="index.html">
@@ -40,6 +33,7 @@
     </a>
     <nav class="links" aria-label="Primary">
       <a href="method.html">How it works</a>
+      <a href="#draw">Try it</a>
       <a href="#engines">Engines</a>
       <a href="#screens">Screens</a>
       <a href="#scripts">Scripts</a>
@@ -60,6 +54,7 @@
 <div class="mobile-menu" id="mobile-menu" data-menu hidden>
   <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
   <a href="method.html">How it works</a>
+  <a href="index.html#draw">Try it</a>
   <a href="index.html#engines">Engines</a>
   <a href="index.html#screens">Screens</a>
   <a href="index.html#scripts">Scripts</a>
@@ -69,50 +64,83 @@
 
 <main id="main">
   <div class="wrap hero">
-    <div class="reveal">
+    <div class="hero-copy reveal">
       <div class="kicker">Android · offline · MIT</div>
-      <h1>The character has to come out of your <em>hand</em>.</h1>
-      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. FSRS-7 chooses the date. The ink you actually drew gets checked on the device. The final grade stays with you.</p>
+      <h1>Learn characters by <em>writing</em> them.</h1>
+      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. FSRS-7 picks the next review date. The app checks the ink you drew on the device. You choose the grade.</p>
       <div class="hero-actions">
         <a class="button" href="#download">Download 1.0.2 <span aria-hidden="true">↓</span></a>
-        <a class="button secondary" href="method.html">How the two engines work <span aria-hidden="true">→</span></a>
+        <a class="button secondary" href="#draw">Try the ink pad <span aria-hidden="true">↓</span></a>
       </div>
       <div class="hero-meta">
-        <span><i class="dot"></i>FSRS-7 with 90% target retention</span>
-        <span><i class="dot"></i>Local ink analysis</span>
-        <span><i class="dot"></i>No account</span>
-        <span><i class="dot"></i>Android 10+ · arm64</span>
+        <span>FSRS-7 · 90% retention</span>
+        <span>On-device ink</span>
+        <span>Stylus pressure</span>
+        <span>No account</span>
+        <span>Android 10+ · arm64</span>
       </div>
+      <a class="hero-text-link" href="method.html">How the scheduling and ink check work <span aria-hidden="true">→</span></a>
     </div>
-    <div class="phone-stage reveal">
-      <svg class="hero-brush" viewBox="0 0 600 600" aria-hidden="true">
-        <path d="M70 430 C150 500 280 510 390 452 C470 410 530 350 558 278"/>
-        <circle class="dot" cx="92" cy="180" r="8"/>
-      </svg>
-      <div class="phone"><img src="assets/practice-dark.png" alt="Bihua handwriting practice screen with a stroke guide and ink"></div>
-      <div class="float one"><span class="mini">◷</span><div><b>FSRS-7</b><span>stability, difficulty, interval</span></div></div>
-      <div class="float two"><span class="mini">墨</span><div><b>Ink check</b><span>count · order · shape · starts</span></div></div>
+    <div class="hero-art reveal">
+      <div class="phone-stage">
+        <div class="seal" aria-hidden="true">筆</div>
+        <div class="phone-frame">
+          <img src="assets/practice-light.png" width="1080" height="2400" alt="Bihua practice screen with the character 愛, a numbered stroke guide, and the learner's ink">
+        </div>
+        <div class="tag tag-a"><b>FSRS-7</b><span>stability · difficulty · interval</span></div>
+        <div class="tag tag-b"><b>Ink check</b><span>count · order · shape · starts</span></div>
+      </div>
     </div>
   </div>
 
+  <section id="draw" class="wrap">
+    <div class="pad-panel reveal">
+      <div class="pad-copy">
+        <div class="kicker">Try it · local only</div>
+        <h2>Try the ink pad.</h2>
+        <p class="lead">Pick a character and draw it with a finger, mouse, or stylus. Stylus pressure changes the line where the device reports it. The guide is a shape to trace. The pad counts strokes and keeps nothing. The app also checks order and shape.</p>
+      </div>
+      <div class="pad-board" id="pad-board">
+        <div class="pad-guide" aria-hidden="true"><span id="pad-glyph">永</span></div>
+        <canvas id="ink-pad" width="600" height="600" aria-label="Drawing pad for the character 永. Use a finger, mouse, or stylus."></canvas>
+        <span class="pad-corner" aria-hidden="true">墨</span>
+      </div>
+      <div class="pad-tools">
+        <div class="pad-chars" role="group" aria-label="Choose a character">
+          <button type="button" class="pad-chip is-active" data-glyph="永" data-strokes="5" aria-pressed="true">永</button>
+          <button type="button" class="pad-chip" data-glyph="愛" data-strokes="13" aria-pressed="false">愛</button>
+          <button type="button" class="pad-chip" data-glyph="学" data-strokes="8" aria-pressed="false">学</button>
+          <button type="button" class="pad-chip" data-glyph="山" data-strokes="3" aria-pressed="false">山</button>
+          <button type="button" class="pad-chip" data-glyph="木" data-strokes="4" aria-pressed="false">木</button>
+        </div>
+        <div class="pad-actions">
+          <button type="button" class="pad-button" id="pad-undo" disabled>Undo</button>
+          <button type="button" class="pad-button" id="pad-clear" disabled>Clear</button>
+          <button type="button" class="pad-button" id="pad-guide" aria-pressed="true">Guide on</button>
+        </div>
+        <p class="pad-status" id="pad-status" aria-live="polite">0 of 5 strokes · count only · nothing leaves this page</p>
+      </div>
+    </div>
+  </section>
+
   <section id="engines" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">What is actually new here</div>
-      <h2>Two engines. One loop.</h2>
-      <p class="lead">The app has two jobs: decide when a character comes back, and tell you what your hand did. Bihua does both on the device, with code you can read.</p>
+      <div class="kicker">01 · Two engines</div>
+      <h2>Scheduling and ink checks, both on the device.</h2>
+      <p class="lead">The app has two jobs: choose the next date, and describe what your hand did. Both run on the phone, and the code is open.</p>
     </div>
     <div class="grid three">
-      <article class="card pillar reveal">
+      <article class="card pillar accent-mint reveal">
         <div class="icon">◷</div>
         <h3>FSRS-7 chooses the date</h3>
         <p>Bihua contains a direct FSRS-7 implementation: long-term stability, short-term stability, item difficulty, and a target retrievability. It solves for the next interval instead of using fixed boxes.</p>
       </article>
-      <article class="card pillar reveal">
+      <article class="card pillar accent-red reveal">
         <div class="icon">墨</div>
         <h3>The ink gets measured</h3>
-        <p>ML Kit Digital Ink runs locally and returns candidates. A separate stroke comparison measures count, coverage, order, reversals, missing strokes, and start error. Recognition is evidence; it never presses the grade button.</p>
+        <p>ML Kit Digital Ink runs locally and returns candidates. A separate stroke comparison measures count, coverage, order, reversals, missing strokes, and start error. Stylus pressure and speed shape the line; a finger or mouse still works. Recognition is evidence; it never presses the grade button.</p>
       </article>
-      <article class="card pillar reveal">
+      <article class="card pillar accent-sky reveal">
         <div class="icon">⌂</div>
         <h3>Local, including the models</h3>
         <p>The handwriting model downloads to the device. Progress lives in SQLite. Backups are zips you create. There is no account to sign into and no study history leaving the phone.</p>
@@ -125,25 +153,130 @@
       <div><b>4</b><span>local ink models</span></div>
       <div><b>0</b><span>study-data uploads</span></div>
     </div>
-    <div class="grid two" style="margin-top:18px">
-      <div class="card reveal">
-        <h3>FSRS-7 in this build</h3>
-        <p class="small" style="margin-bottom:8px">The shipped model uses 34 parameters. Each card keeps two stabilities and a difficulty estimate. The interval is solved numerically at a 90% retention target, capped at 365 days. Again, Hard, Good, Easy are the only inputs.</p>
-        <p class="small"><a href="method.html#spacing">Read the scheduler notes →</a></p>
+    <p class="small note reveal">ML Kit runs on the device. The ink and its candidates stay on your phone. Google may receive limited diagnostics and usage metrics, described in the <a href="privacy.html">privacy policy</a>.</p>
+  </section>
+
+  <section id="recognizer" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">02 · The ink check</div>
+      <h2>How the ink check works.</h2>
+      <p class="lead">ML Kit reads the ink on the device and returns candidate characters. A separate comparison measures the attempt against the guide. The app shows both, then leaves the grade to you.</p>
+    </div>
+    <div class="recognizer reveal">
+      <div class="rec-step">
+        <span class="rec-num">1</span>
+        <div class="rec-ink" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><path d="M18 72 L48 20 L78 72"/><path d="M31 52 H66"/><path d="M14 86 H86"/></svg>
+        </div>
+        <b>Your ink</b>
+        <span>3 strokes, with stylus pressure</span>
       </div>
-      <div class="card reveal">
-        <h3>What the ink check sees</h3>
-        <p class="small" style="margin-bottom:8px">A guide-aware comparison reports stroke count, average distance from the reference, reversed strokes, strokes out of order, missing or extra strokes, and the first useful correction. It is a heuristic, and the UI says so.</p>
-        <p class="small"><a href="method.html#ink">Read the ink notes →</a></p>
+      <div class="rec-arrow" aria-hidden="true">→</div>
+      <div class="rec-step">
+        <span class="rec-num">2</span>
+        <div class="rec-candidates" aria-hidden="true"><i>山</i><i>出</i><i>凵</i></div>
+        <b>ML Kit proposes</b>
+        <span>ranked candidates, on the device</span>
+      </div>
+      <div class="rec-arrow" aria-hidden="true">→</div>
+      <div class="rec-step">
+        <span class="rec-num">3</span>
+        <div class="rec-checks" aria-hidden="true"><span>count</span><span>order</span><span>shape</span><span>starts</span></div>
+        <b>The stroke check measures</b>
+        <span>missing strokes, reversals, distance</span>
+      </div>
+      <div class="rec-arrow" aria-hidden="true">→</div>
+      <div class="rec-step rec-you">
+        <span class="rec-num">4</span>
+        <div class="rec-grades" aria-hidden="true"><span>Again</span><span>Hard</span><span>Good</span><span>Easy</span></div>
+        <b>You choose the grade</b>
+        <span>recognition never presses it</span>
       </div>
     </div>
+    <div class="rec-note reveal">
+      <p>The model can read 山 as 一, or miss a stroke on 愛. The comparison can still report two missing strokes and point to the first one to fix. Both are evidence. You still decide the grade.</p>
+      <p class="small"><a href="method.html#ink">Read the ink notes →</a></p>
+    </div>
+  </section>
+
+  <section id="spacing" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">03 · The date</div>
+      <h2>FSRS-7 decides when the character comes back.</h2>
+      <p class="lead">Each card stores long-term stability, short-term stability, and difficulty. After a grade, the app solves for the day your recall probability reaches 90 percent. A hard review returns sooner. An easy review moves the date out.</p>
+    </div>
+    <div class="srs-grid">
+      <figure class="graph-card reveal">
+        <figcaption><b>After a Good grade</b><span>next interval</span></figcaption>
+        <div class="ladder" role="img" aria-label="Intervals after repeated Good grades: 5 days, 26 days, 92 days, 293 days, then the 365-day cap.">
+          <div class="ladder-row"><span>1</span><div class="ladder-track"><div class="ladder-fill" style="--w:30%;--bar:var(--mint)"></div></div><b>5 d</b></div>
+          <div class="ladder-row"><span>2</span><div class="ladder-track"><div class="ladder-fill" style="--w:56%;--bar:var(--sky)"></div></div><b>26 d</b></div>
+          <div class="ladder-row"><span>3</span><div class="ladder-track"><div class="ladder-fill" style="--w:77%;--bar:var(--lilac)"></div></div><b>92 d</b></div>
+          <div class="ladder-row"><span>4</span><div class="ladder-track"><div class="ladder-fill" style="--w:96%;--bar:var(--butter)"></div></div><b>293 d</b></div>
+          <div class="ladder-row"><span>5</span><div class="ladder-track"><div class="ladder-fill" style="--w:100%;--bar:var(--vermillion)"></div></div><b>365 d</b></div>
+        </div>
+        <p class="graph-note">Log scale. Published default weights, 90 percent target, 365-day cap.</p>
+      </figure>
+      <figure class="graph-card reveal">
+        <figcaption><b>Retention between reviews</b><span>target 90%</span></figcaption>
+        <svg class="curve" viewBox="0 0 440 210" role="img" aria-labelledby="curve-title curve-desc">
+          <title id="curve-title">Retention between reviews</title>
+          <desc id="curve-desc">Retention falls from 100 percent to the 90 percent target, then a review resets it. The intervals grow from 5 days to the 365-day cap.</desc>
+          <g class="chart-grid">
+            <line x1="44" y1="40" x2="424" y2="40"/>
+            <line x1="44" y1="80" x2="424" y2="80"/>
+            <line x1="44" y1="120" x2="424" y2="120" class="chart-target"/>
+          </g>
+          <line x1="44" y1="28" x2="44" y2="140" class="chart-axis"/>
+          <path class="chart-line" d="M54 40 C78 70 102 108 126 120 L126 40 C150 70 174 108 198 120 L198 40 C222 70 246 108 270 120 L270 40 C294 70 318 108 342 120 L342 40 C366 70 390 108 414 120"/>
+          <g class="chart-dots">
+            <circle cx="126" cy="120" r="3.5"/><circle cx="198" cy="120" r="3.5"/><circle cx="270" cy="120" r="3.5"/><circle cx="342" cy="120" r="3.5"/><circle cx="414" cy="120" r="3.5"/>
+          </g>
+          <g class="chart-labels">
+            <text x="38" y="43" text-anchor="end">100%</text>
+            <text x="38" y="123" text-anchor="end">90%</text>
+            <text x="90" y="158" text-anchor="middle">5 d</text>
+            <text x="162" y="158" text-anchor="middle">26 d</text>
+            <text x="234" y="158" text-anchor="middle">92 d</text>
+            <text x="306" y="158" text-anchor="middle">293 d</text>
+            <text x="378" y="158" text-anchor="middle">365 d</text>
+          </g>
+        </svg>
+        <p class="graph-note">Each dot is a review. The horizontal spacing is for reading, not to scale.</p>
+      </figure>
+    </div>
+    <div class="compare reveal">
+      <h3>What FSRS-7 adds over FSRS-6</h3>
+      <p class="small">The same review history produces different dates under each model. The gain is largest on same-day reviews and cards that keep slipping.</p>
+      <table>
+        <thead><tr><th>Part</th><th>FSRS-6</th><th>FSRS-7</th></tr></thead>
+        <tbody>
+          <tr><td>Memory state</td><td>one stability and difficulty</td><td>long-term stability, short-term stability, difficulty</td></tr>
+          <tr><td>Weights</td><td>21</td><td>34</td></tr>
+          <tr><td>Forgetting curve</td><td>one power curve</td><td>weighted mix of two power curves</td></tr>
+          <tr><td>Same-day reviews</td><td>rounded to whole days</td><td>fractional days, down to minutes</td></tr>
+          <tr><td>Difficulty</td><td>does not change the curve</td><td>changes the curve and the mix</td></tr>
+          <tr><td>Interval</td><td>closed form</td><td>solved numerically</td></tr>
+          <tr><td>Fitting</td><td>initial stability fitted separately</td><td>all parameters fitted together</td></tr>
+        </tbody>
+      </table>
+      <p class="small">FSRS-6 rounds elapsed time and uses one curve. FSRS-7 keeps two traces, uses fractional days, and mixes two curves. In the srs-benchmark time-series splits, FSRS-7 has lower log loss than FSRS-6. A writing app needs that because a failed attempt often leads to a retry minutes later, not tomorrow.</p>
+      <p class="small">Sources: <a href="https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm">FSRS wiki</a>, <a href="https://expertium.github.io/Algorithm_FSRS-7.html">Expertium's FSRS-7 notes</a>, and the <a href="https://open-spaced-repetition.github.io/ts-fsrs/guide/model/fsrs-7">ts-fsrs model docs</a>.</p>
+    </div>
+    <div class="load-strip reveal">
+      <div><b>10</b><span>new characters a day</span></div>
+      <div><b>88</b><span>average reviews a day</span></div>
+      <div><b>113</b><span>busy-day reviews</span></div>
+      <div><b>317</b><span>days to finish 3,180 characters</span></div>
+    </div>
+    <p class="small note reveal">One simulated learner with a 60/30/10 Good, Hard, Again mix. Bihua ships the published default weights and does not fit a personal model from your reviews yet. The chart is an example. Your dates will differ.</p>
   </section>
 
   <section class="wrap">
     <div class="method-band reveal">
-      <div class="kicker">The loop</div>
-      <h2 style="max-width:820px">Write first. Then look.</h2>
-      <p class="lead" style="max-width:720px">A review does not show the character and ask you to recognise it. You get a cue, an empty canvas, and a guide that fades as the character becomes familiar. After the attempt, the app shows what it can verify. You still choose the grade.</p>
+      <div class="kicker">04 · The loop</div>
+      <h2>The review starts with a blank canvas.</h2>
+      <p class="lead">A review does not show the character and ask you to recognise it. You get a cue, an empty canvas, and a guide that fades as the character becomes familiar. After the attempt, the app shows what it can verify. You still choose the grade.</p>
       <div class="hero-actions">
         <a class="button" href="method.html">Read the full method <span aria-hidden="true">→</span></a>
         <a class="button secondary" href="#download">Try a session</a>
@@ -153,33 +286,33 @@
 
   <section id="screens" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">On a phone</div>
-      <h2>What the work looks like.</h2>
-      <p class="lead">The canvas gets the space. The schedule, dictionary, and ink evidence stay close without taking over.</p>
+      <div class="kicker">05 · On a phone</div>
+      <h2>How a session looks.</h2>
+      <p class="lead">Real 1.0.2 screens in the light theme. The canvas, the schedule, and the ink evidence sit where you need them.</p>
     </div>
     <div class="screens">
-      <figure class="reveal"><img src="assets/characters-dark.png" alt="Character browser with search and filters"><figcaption>Find a character or a word</figcaption></figure>
-      <figure class="reveal"><img src="assets/detail-dark.png" alt="Character detail with reading, meaning, and details"><figcaption>Reading, meaning, structure, history</figcaption></figure>
-      <figure class="reveal"><img src="assets/word-dark.png" alt="Word practice with hidden character slots"><figcaption>Write a word from its cue</figcaption></figure>
-      <figure class="reveal"><img src="assets/family-dark.png" alt="Phonetic and semantic character family"><figcaption>See the parts that repeat</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/characters-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Character browser with search and script filters"><figcaption><b>01</b> Find a character or a word</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/detail-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Character detail with reading, meaning, and structure"><figcaption><b>02</b> Reading, meaning, structure</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/word-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Word practice with hidden character slots"><figcaption><b>03</b> Write the word from its cue</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/progress-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Progress screen with practice days and a growth chart"><figcaption><b>04</b> Watch the schedule fill in</figcaption></figure>
     </div>
-    <div class="grid two" style="margin-top:18px">
-      <figure class="reveal" style="margin:0;background:var(--night-2);border-radius:24px;padding:7px;box-shadow:var(--shadow-strong)"><img src="assets/practice-dark.png" alt="Practice canvas with numbered strokes" style="display:block;width:100%;border-radius:18px"><figcaption style="color:var(--night-soft);font-size:12px;padding:10px 8px 6px">Stroke order and guide, with the learner's ink on top</figcaption></figure>
-      <figure class="reveal" style="margin:0;background:var(--night-2);border-radius:24px;padding:7px;box-shadow:var(--shadow-strong)"><img src="assets/home-light.png" alt="Bihua home in light mode" style="display:block;width:100%;border-radius:18px"><figcaption style="color:var(--night-soft);font-size:12px;padding:10px 8px 6px">Warm paper by day; forest night when the lights go down</figcaption></figure>
+    <div class="grid two gap-top">
+      <figure class="shot shot-wide reveal"><img src="assets/practice-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a numbered stroke guide"><figcaption><b>05</b> Guide, order, and your own ink</figcaption></figure>
+      <figure class="shot shot-wide reveal"><img src="assets/grade-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and the four grade buttons"><figcaption><b>06</b> The answer stays. You grade.</figcaption></figure>
     </div>
   </section>
 
   <section id="scripts" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">Four courses</div>
-      <h2>No cross-contamination.</h2>
-      <p class="lead">Simplified and Traditional are separate lists. Shared glyphs stay shared. Traditional words come from CEDICT word pairs, not a character-by-character converter. Korean Hanja uses Unihan; the unlicensed Hanjaro data is gone.</p>
+      <div class="kicker">06 · Four courses</div>
+      <h2>Four courses, kept separate.</h2>
+      <p class="lead">Simplified and Traditional are separate courses. Shared glyphs stay shared. Traditional words come from CEDICT word pairs, not a character-by-character converter. Korean starts with Hangul, then Hanja.</p>
     </div>
     <div class="scripts">
-      <div class="script reveal"><b>简</b><strong>Simplified</strong><span>HSK 3.0 + Non-HSK</span></div>
-      <div class="script reveal"><b>繁</b><strong>Traditional</strong><span>CEDICT word pairs</span></div>
-      <div class="script reveal"><b>日</b><strong>Japanese</strong><span>Jōyō + kana</span></div>
-      <div class="script reveal"><b>韓</b><strong>Korean Hanja</strong><span>Unihan education list</span></div>
+      <div class="script script-mint reveal"><b>简</b><strong>Simplified</strong><span>HSK 3.0 + Non-HSK</span></div>
+      <div class="script script-red reveal"><b>繁</b><strong>Traditional</strong><span>CEDICT word pairs</span></div>
+      <div class="script script-sky reveal"><b>日</b><strong>Japanese</strong><span>Jōyō + kana</span></div>
+      <div class="script script-butter reveal"><b>韓</b><strong>Korean</strong><span>Hangul + Hanja</span></div>
     </div>
     <div class="numbers reveal">
       <div><b>4</b><span>separate courses</span></div>
@@ -187,14 +320,14 @@
       <div><b>21,162</b><span>word examples</span></div>
       <div><b>4,875</b><span>structure records</span></div>
     </div>
-    <p class="small reveal" style="margin-top:18px">Counts are course entries, not unique glyphs. Shared characters such as 日 and 人 appear in more than one course.</p>
+    <p class="small note reveal">Counts are course entries, not unique glyphs. Shared characters such as 日 and 人 appear in more than one course. Korean is 399 Hangul and 1,840 Hanja.</p>
   </section>
 
   <section class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">Where the data comes from</div>
-      <h2>The sources are in the repository.</h2>
-      <p class="lead">The content database is generated from open sources and shipped with the checksums. The app code is MIT. The data keeps its own licences.</p>
+      <div class="kicker">07 · Sources</div>
+      <h2>Where the data comes from.</h2>
+      <p class="lead">The content database is generated from open sources and shipped with checksums. The app code is MIT. The data keeps its own licences.</p>
     </div>
     <div class="license-chips reveal">
       <span class="chip">Gushi HSK 3.0 · CC BY-SA 4.0</span>
@@ -205,25 +338,25 @@
       <span class="chip">CC-CEDICT · CC BY-SA 4.0</span>
       <span class="chip">Unihan · Unicode License V3</span>
     </div>
-    <p class="small reveal" style="margin-top:16px">No Hanjaro. No Korean word examples either, because that source had no redistribution grant. The Korean course is characters only. <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Full notices</a>.</p>
+    <p class="small note reveal">No Hanjaro. The Korean course covers Hangul and Hanja without bundled Korean word examples, because that source had no redistribution grant. <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Full notices</a>.</p>
   </section>
 
   <section id="download" class="wrap">
     <div class="download-card reveal">
       <div>
-        <div class="kicker">Signed release · private beta</div>
-        <h2>Take it for a week.</h2>
-        <p>Install Bihua 1.0.2 on an Android 10+ arm64 phone. Write one character a day, or ten. The schedule will still be there when you come back.</p>
+        <div class="kicker">Signed release · 1.0.2</div>
+        <h2>Install 1.0.2.</h2>
+        <p>Install Bihua on an Android 10+ arm64 phone. Write one character a day, or ten. The schedule will still be there when you come back.</p>
         <div class="hero-actions">
           <a class="button" href="https://github.com/Shadowsx3/bihua/releases/latest">Download APK</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">Read the source</a>
         </div>
-        <p class="small" style="margin-top:16px">APK · signed release · 38 MB · content version 19 · no account</p>
+        <p class="small">APK · signed release · 38 MB · version 1.0.2 (12) · content version 19 · no account</p>
       </div>
       <div class="download-side">
-        <p class="small" style="margin-top:0">SHA-256</p>
+        <p class="small">SHA-256</p>
         <code>e27d7357dd11c5e946fff00905d8e88b7dcee733b94969f780424c3bfacbe9e9</code>
-        <p class="small" style="margin:14px 0 0"><a href="download/SHA256SUMS.txt">Checksum file</a></p>
+        <p class="small"><a href="download/SHA256SUMS.txt">Checksum file</a></p>
       </div>
     </div>
   </section>
