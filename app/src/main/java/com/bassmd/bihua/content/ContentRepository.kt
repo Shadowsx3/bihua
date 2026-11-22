@@ -19,6 +19,12 @@ interface ContentRepository {
     suspend fun find(id: String): CharacterEntry?
     suspend fun variants(character: String): Set<String>
 
+    suspend fun featuredWord(
+        mode: StudyMode,
+        includeMature: Boolean = false,
+        seed: Int = 0,
+    ): WordContext?
+
     suspend fun words(characterId: String, includeMature: Boolean = false): List<WordContext>
     suspend fun guide(characterId: String): CharacterGuide?
     suspend fun sharedModes(characterId: String): List<StudyMode>
@@ -63,6 +69,42 @@ class SqliteContentRepository(
             while (cursor.moveToNext()) found.add(cursor.getString(0))
         }
         found
+    }
+
+    override suspend fun featuredWord(
+        mode: StudyMode,
+        includeMature: Boolean,
+        seed: Int,
+    ): WordContext? = withContext(Dispatchers.IO) {
+        val mature = if (includeMature) "1" else "0"
+        val total = database.rawQuery(
+            "SELECT COUNT(*) FROM word_context WHERE mode=? AND length(word)>1 AND (mature=0 OR mature=?)",
+            arrayOf(mode.name, mature),
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+        if (total <= 0) return@withContext null
+        val offset = Math.floorMod(seed, total)
+        database.rawQuery(
+            """
+            SELECT w.word, w.reading, w.meaning, w.level, w.common, w.mature
+            FROM word_context w
+            WHERE w.mode=? AND length(w.word)>1 AND (w.mature=0 OR w.mature=?)
+            ORDER BY w.common DESC, w.frequency IS NULL, w.frequency,
+                     CASE WHEN w.level IS NULL THEN 1 ELSE 0 END,
+                     w.level, length(w.word), w.id
+            LIMIT 1 OFFSET ?
+            """.trimIndent(),
+            arrayOf(mode.name, mature, offset.toString()),
+        ).use { cursor ->
+            if (!cursor.moveToFirst()) return@withContext null
+            WordContext(
+                word = cursor.getString(0),
+                reading = cursor.getString(1),
+                meaning = cursor.getString(2),
+                level = if (cursor.isNull(3)) null else cursor.getInt(3),
+                common = !cursor.isNull(4) && cursor.getInt(4) != 0,
+                mature = !cursor.isNull(5) && cursor.getInt(5) != 0,
+            )
+        }
     }
 
     override suspend fun words(

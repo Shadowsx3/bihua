@@ -201,6 +201,8 @@ fun LearnScreen(
     recallCue: RecallCue = RecallCue.MIXED,
     showHangulRomanization: Boolean = true,
     includeMatureContent: Boolean = false,
+    showGradeIntervals: Boolean = false,
+    gradeIntervals: (LearnItem) -> Map<Grade, String> = { emptyMap() },
     mnemonicMode: MnemonicMode = MnemonicMode.EARLY,
     sessionOrder: com.bassmd.bihua.settings.SessionOrder = com.bassmd.bihua.settings.SessionOrder.REVIEWS_FIRST,
     sessionProgress: com.bassmd.bihua.settings.SessionProgress = com.bassmd.bihua.settings.SessionProgress.FULL,
@@ -540,6 +542,7 @@ fun LearnScreen(
                         onGrade = { grade -> advance(item, index, grade) },
                         reduceMotion = reduceMotion,
                         onlyAgainAndGood = onlyAgainAndGood,
+                        intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
                     )
                     Spacer(Modifier.height(20.dp))
                 }
@@ -769,6 +772,7 @@ fun LearnScreen(
                             revealed = false
                         },
                         onlyAgainAndGood = onlyAgainAndGood,
+                        intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
                     )
                 }
             } else {
@@ -963,6 +967,7 @@ fun LearnScreen(
                             revealed = false
                         },
                         onlyAgainAndGood = onlyAgainAndGood,
+                        intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
                     )
                 }
                 }
@@ -1932,6 +1937,7 @@ private fun GradeChoices(
     enabled: Boolean,
     onGrade: (Grade) -> Unit,
     onlyAgainAndGood: Boolean = false,
+    intervalLabels: Map<Grade, String> = emptyMap(),
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1976,7 +1982,7 @@ private fun GradeChoices(
                 ) {
                     Text(grade.label, style = MaterialTheme.typography.labelLarge, color = InkDark)
                     Text(
-                        grade.consequence,
+                        intervalLabels[grade] ?: grade.consequence,
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,
                         textAlign = TextAlign.Center,
@@ -1998,6 +2004,7 @@ private fun PronunciationReview(
     onGrade: (Grade) -> Unit,
     reduceMotion: Boolean = false,
     onlyAgainAndGood: Boolean = false,
+    intervalLabels: Map<Grade, String> = emptyMap(),
 ) {
     var input by remember(item.id, round) { mutableStateOf("") }
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
@@ -2218,6 +2225,7 @@ private fun PronunciationReview(
                     enabled = true,
                     onGrade = onGrade,
                     onlyAgainAndGood = onlyAgainAndGood,
+                    intervalLabels = intervalLabels,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -2539,6 +2547,7 @@ private fun StickyGradeBar(
     onGrade: (Grade) -> Unit,
     onDrawAgain: () -> Unit,
     onlyAgainAndGood: Boolean = false,
+    intervalLabels: Map<Grade, String> = emptyMap(),
 ) {
     val recognitionGrade = when {
         recognition == null || recognition.candidates.isEmpty() -> null
@@ -2609,6 +2618,7 @@ private fun StickyGradeBar(
                 enabled = true,
                 onGrade = onGrade,
                 onlyAgainAndGood = onlyAgainAndGood,
+                intervalLabels = intervalLabels,
             )
             Spacer(Modifier.height(4.dp))
             Text(

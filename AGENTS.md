@@ -38,7 +38,7 @@ Keep this in mind for every screen:
   setup, script filters, review polish, handwriting sanitisation, cleaner
   readings, and better Japanese word ordering.
 - Progress schema **10**; contentVersion **34**.
-- 209 unit tests.
+- 213 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`
@@ -70,7 +70,7 @@ some etymology quality.
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 209 tests, content audit, debug APK, verify
+make check                     # compile, 213 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint

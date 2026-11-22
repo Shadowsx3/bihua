@@ -3,8 +3,10 @@
 package com.bassmd.bihua.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -32,6 +34,7 @@ import androidx.compose.material.icons.rounded.NavigateNext
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -54,14 +57,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.bassmd.bihua.content.CharacterEntry
 import kotlinx.coroutines.launch
+import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberSharedGuidePlayer
+import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.SoftCard
+import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
@@ -69,6 +77,9 @@ import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
+import com.bassmd.bihua.settings.BrushConfig
+import com.bassmd.bihua.settings.DrawingTool
+import com.bassmd.bihua.settings.GridStyle
 
 /** How long one normalized pass takes when comparing guides. */
 private const val COMPARE_MS = 6_000f
@@ -84,11 +95,17 @@ fun CompareScreen(
     onAdd: (CharacterEntry) -> Unit,
     onRemove: (CharacterEntry) -> Unit,
     onClose: () -> Unit,
+    widthScale: Float = 1f,
+    gridStyle: GridStyle = GridStyle.MI_ZI,
+    drawingTool: DrawingTool = DrawingTool.INK,
+    brush: BrushConfig = BrushConfig(),
+    allowFinger: Boolean = false,
 ) {
     var fraction by remember { mutableFloatStateOf(1f) }
     var playing by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
     var showNumbers by remember { mutableStateOf(false) }
+    var showWriteDrill by remember { mutableStateOf(false) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
@@ -129,6 +146,11 @@ fun CompareScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
+                }
+                TextButton(onClick = { showWriteDrill = true }) {
+                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Write both")
                 }
                 TextButton(onClick = { showPicker = true }) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -241,6 +263,31 @@ fun CompareScreen(
                         Icon(Icons.Rounded.Replay, contentDescription = "Replay")
                     }
                 }
+            }
+        }
+    }
+
+    if (showWriteDrill) {
+        Dialog(
+            onDismissRequest = { showWriteDrill = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(
+                color = PaperWarm,
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+            ) {
+                CompareWriteDrill(
+                    entries = entries,
+                    widthScale = widthScale,
+                    gridStyle = gridStyle,
+                    drawingTool = drawingTool,
+                    brush = brush,
+                    allowFinger = allowFinger,
+                    onClose = { showWriteDrill = false },
+                )
             }
         }
     }
@@ -417,5 +464,129 @@ private fun ComparePicker(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CompareWriteDrill(
+    entries: List<CharacterEntry>,
+    widthScale: Float,
+    gridStyle: GridStyle,
+    drawingTool: DrawingTool,
+    brush: BrushConfig,
+    allowFinger: Boolean,
+    onClose: () -> Unit,
+) {
+    var showGuides by remember(entries) { mutableStateOf(true) }
+    val inks = remember(entries) { entries.associate { it.id to InkState() } }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Write both", style = MaterialTheme.typography.headlineSmall, color = InkDark)
+                Text(
+                    "Spot the difference in reading, strokes, and shape, then write each character once.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            }
+            IconButton(onClick = onClose) {
+                Icon(Icons.Rounded.Close, contentDescription = "Close writing drill")
+            }
+        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            entries.chunked(2).forEach { rowEntries ->
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    rowEntries.forEach { entry ->
+                        SoftCard(Modifier.weight(1f).fillMaxHeight(), color = PaperWarm) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(entry.character, fontSize = 30.sp, color = InkDark)
+                                Text(
+                                    displayReading(entry.reading, entry.mode),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    entry.meaning,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center,
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                BoxWithConstraints(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    val side = minOf(maxWidth, maxHeight)
+                                    Box(
+                                        Modifier
+                                            .size(side)
+                                            .writingSheet(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (showGuides) {
+                                            OutlineGuide(character = entry.character, side = side)
+                                        }
+                                        InkCanvas(
+                                            state = inks.getValue(entry.id),
+                                            modifier = Modifier.fillMaxSize(),
+                                            widthScale = widthScale,
+                                            gridStyle = gridStyle,
+                                            drawingTool = drawingTool,
+                                            brush = brush,
+                                            allowFinger = allowFinger,
+                                            contentDescription = "Write ${entry.character} from the comparison.",
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (rowEntries.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = { inks.values.forEach { it.clear() } },
+                shape = CircleShape,
+            ) { Text("Clear both") }
+            Button(
+                onClick = { showGuides = !showGuides },
+                shape = CircleShape,
+            ) { Text(if (showGuides) "Hide guide" else "Show guide") }
+            Spacer(Modifier.weight(1f))
+            Text(
+                "Guided practice, not scheduled.",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
     }
 }

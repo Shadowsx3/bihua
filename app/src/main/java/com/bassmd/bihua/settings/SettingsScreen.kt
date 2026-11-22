@@ -1463,6 +1463,12 @@ fun SettingsScreen(
                             onCheckedChange = { update(settings.copy(showCounters = it)) },
                         )
                         SwitchRow(
+                            title = "Intervals on grade buttons",
+                            subtitle = "Show the next review gap on Again, Hard, Good, and Easy.",
+                            checked = settings.showGradeIntervals,
+                            onCheckedChange = { update(settings.copy(showGradeIntervals = it)) },
+                        )
+                        SwitchRow(
                             title = "Reduce motion",
                             subtitle = "Keeps feedback. Removes confetti and motion.",
                             checked = settings.reduceMotion,
@@ -2671,7 +2677,7 @@ private val SETTINGS_ENTRIES = listOf(
     SettingsEntry(
         "Study", "Study", "Pace, order, cues, words, vacation",
         Icons.Rounded.School, Sky, "LEARNING",
-        "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar mature explicit words dictionary content",
+        "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar mature explicit words dictionary content intervals grade buttons schedule",
     ),
     SettingsEntry(
         "Schedule", "Schedule", "FSRS-7 weights and personal fit",

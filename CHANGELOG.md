@@ -9,6 +9,12 @@
   1,684 of the 1,799 Hanja in the course.
 - Korean pronunciation accepts Hangul or romaja and previews the composed Hangul
   while the learner types.
+- Optional FSRS interval labels on the grade buttons: Again, Hard, Good, and
+  Easy show their next review gap. Off by default.
+- A Word of the day card on Home with audio and a one-tap writing drill.
+- A leave-session sheet with Resume later, End session, and Keep studying.
+- A guided Compare writing drill for confusion pairs: spot the difference, then
+  write each character side by side.
 - A Mature words setting, off by default, for explicit dictionary examples. It
   is confirmed once and filters review cues, character cards, word search, and
   recent practice.
@@ -36,6 +42,9 @@
 - Known list import reads supplementary Han characters and reports unreadable
   files.
 - Empty review forecasts no longer list fourteen zero rows.
+- Home restores the vivid stat cards and practice calendar, keeps the new word
+  card and Study tools, and moves level, recent characters, and browse into a
+  secondary section.
 - A corrupt content database shows a retry screen instead of an endless loader.
 - Importing a newer or foreign progress database is rejected before it replaces
   local progress.

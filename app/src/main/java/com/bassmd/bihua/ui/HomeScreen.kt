@@ -1,4 +1,7 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+)
 
 package com.bassmd.bihua.ui
 
@@ -8,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +32,10 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
@@ -35,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -128,6 +137,10 @@ fun HomeScreen(
     onBrowse: () -> Unit,
     onPractice: () -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
+    featuredWord: com.bassmd.bihua.content.WordContext? = null,
+    onPracticeWord: (com.bassmd.bihua.content.WordContext) -> Unit = {},
+    speechEnabled: Boolean = true,
+    onSpeak: (String) -> Unit = {},
 ) {
     val vacation = com.bassmd.bihua.settings.Vacation.isActive(vacationStartedAtMs)
     val easeBack = com.bassmd.bihua.settings.EaseBack.isActive(
@@ -153,6 +166,7 @@ fun HomeScreen(
         else -> "Hello, ${profile.displayName}"
     }
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
+    var showMore by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     val recentPeek = characters.filter { it.status != StudyStatus.NEW }.take(8)
         .ifEmpty {
@@ -201,6 +215,26 @@ fun HomeScreen(
                                 }
                                 TextButton(onClick = { confirmDiscard = true }) { Text("Discard") }
                             }
+                            val done = if (resumeSession.total <= 0) {
+                                0f
+                            } else {
+                                ((resumeSession.total - resumeSession.remaining).toFloat() / resumeSession.total)
+                                    .coerceIn(0f, 1f)
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .background(Sky.copy(alpha = 0.22f), CircleShape),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth(done)
+                                        .height(6.dp)
+                                        .background(Sky, CircleShape),
+                                )
+                            }
                             Spacer(Modifier.height(8.dp))
                             PrimaryAction(
                                 text = "Resume",
@@ -212,41 +246,7 @@ fun HomeScreen(
                 }
             }
             item {
-                if (resumeSession == null && wide) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Column(Modifier.weight(1.15f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            StudyHero(
-                                mode = mode,
-                                due = due,
-                                fresh = fresh,
-                                learning = learning,
-                                vacation = vacation,
-                                easeBack = easeBack,
-                                onStudy = onStudy,
-                                onPractice = onPractice,
-                                onEndVacation = { showEndVacation = true },
-                            )
-                            StatRow(known = known, total = characters.size, newToday = newToday, studyDays = studyDays)
-                            LevelCard(playerStats)
-                        }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
-                            SectionTitle(
-                                title = if (known + due > 0) "Pick up where you left off" else "Start with these",
-                                action = "See all",
-                                onAction = onBrowse,
-                            )
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                items(recentPeek) { entry ->
-                                    CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
-                                }
-                            }
-                        }
-                    }
-                } else if (resumeSession == null) {
+                if (resumeSession == null || vacation) {
                     StudyHero(
                         mode = mode,
                         due = due,
@@ -258,12 +258,17 @@ fun HomeScreen(
                         onPractice = onPractice,
                         onEndVacation = { showEndVacation = true },
                     )
-                    Spacer(Modifier.height(12.dp))
-                    StatRow(known = known, total = characters.size, newToday = newToday, studyDays = studyDays)
-                    Spacer(Modifier.height(12.dp))
-                    StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
-                    Spacer(Modifier.height(12.dp))
-                    LevelCard(playerStats)
+                }
+            }
+            featuredWord?.let { word ->
+                item {
+                    WordSparkCard(
+                        word = word,
+                        mode = mode,
+                        speechEnabled = speechEnabled,
+                        onSpeak = onSpeak,
+                        onPracticeWord = onPracticeWord,
+                    )
                 }
             }
             item {
@@ -325,7 +330,85 @@ fun HomeScreen(
                     }
                 }
             }
-            if (!(wide && resumeSession == null)) {
+            item {
+                if (wide) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Column(
+                            modifier = Modifier.weight(1.15f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StatRow(
+                                known = known,
+                                total = characters.size,
+                                newToday = newToday,
+                                studyDays = studyDays,
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StudyCalendarCard(
+                                days = activity,
+                                today = today,
+                                onDayClick = { selectedDay = it },
+                            )
+                        }
+                    }
+                } else {
+                    StatRow(
+                        known = known,
+                        total = characters.size,
+                        newToday = newToday,
+                        studyDays = studyDays,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    StudyCalendarCard(
+                        days = activity,
+                        today = today,
+                        onDayClick = { selectedDay = it },
+                    )
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showMore = !showMore }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Rounded.Insights,
+                            contentDescription = null,
+                            tint = InkDark,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "More on this course",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = InkDark,
+                            )
+                            Text(
+                                "Level, recent characters, browse",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Icon(
+                            if (showMore) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = if (showMore) "Hide details" else "Show details",
+                            tint = InkSoft,
+                        )
+                    }
+                }
+            }
+            if (showMore) {
+                item {
+                    LevelCard(playerStats)
+                }
                 item {
                     SectionTitle(
                         title = if (known + due > 0) "Pick up where you left off" else "Start with these",
@@ -340,9 +423,9 @@ fun HomeScreen(
                         }
                     }
                 }
-            }
-            item {
-                BrowseCard(onBrowse = onBrowse)
+                item {
+                    BrowseCard(onBrowse = onBrowse)
+                }
             }
         }
         selectedDay?.let { day ->
@@ -421,6 +504,70 @@ private fun Header(
             )
         }
         ProfileAvatar(profile = profile, size = 64.dp)
+    }
+}
+
+@Composable
+private fun WordSparkCard(
+    word: com.bassmd.bihua.content.WordContext,
+    mode: StudyMode,
+    speechEnabled: Boolean,
+    onSpeak: (String) -> Unit,
+    onPracticeWord: (com.bassmd.bihua.content.WordContext) -> Unit,
+) {
+    val reading = displayReading(word.reading, mode)
+    val spoken = if (mode == StudyMode.KOREAN) word.reading else word.word
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = Lilac.copy(alpha = 0.20f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Word of the day",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        word.word,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = InkDark,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        reading,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+                Text(
+                    word.meaning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
+            if (speechEnabled) {
+                IconButton(onClick = { onSpeak(spoken) }) {
+                    Icon(
+                        Icons.Rounded.VolumeUp,
+                        contentDescription = "Hear the word",
+                        tint = InkSoft,
+                    )
+                }
+            }
+            TextButton(onClick = { onPracticeWord(word) }) {
+                Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Write")
+            }
+        }
     }
 }
 

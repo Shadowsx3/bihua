@@ -191,7 +191,9 @@ fun WordPracticeScreen(
                         modifier = Modifier.weight(1f),
                     )
                     if (speechEnabled) {
-                        IconButton(onClick = { onSpeak(word.word) }) {
+                        IconButton(onClick = {
+                            onSpeak(if (mode == StudyMode.KOREAN) word.reading else word.word)
+                        }) {
                             Icon(
                                 Icons.Rounded.VolumeUp,
                                 contentDescription = "Hear the word",

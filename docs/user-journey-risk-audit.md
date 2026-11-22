@@ -115,6 +115,11 @@ Status:
 | The first launch showed a bare spinner on a decorative background. | Fixed | The boot screen now says “Preparing your course…” and waits for the first settings read. |
 | Onboarding back navigation and rotation could lose the selected page or script. | Fixed | Back goes to the previous page; page, script, pace, brush, cue, and pronunciation are saveable. |
 | Tablet Practice puts the page title in the control column, away from the canvas. | Fixed | The title now sits above the canvas and control columns. |
+| Grade buttons ask the learner to guess what the algorithm will do. | Fixed | Optional interval labels show the next gap on each button; off by default. |
+| Back from review exits silently. | Fixed | Back opens a leave sheet with Resume later, End session, and Keep studying. |
+| Known characters have no contextual word moment. | Fixed | Character detail and Home show a real word with audio and a Write action. |
+| Confusion pairs can be compared but not practised together. | Fixed | Compare now has a guided Write both drill. |
+| Home lost its colourful learning dashboard in the name of fewer cards. | Fixed | Stat cards, calendar, Word of the day, and Study tools return above the fold; level and browse move into More. |
 | Characters search has a draw icon inside the field and a filter icon beside it. | Watch | Both have accessibility labels and distinct icons; no functional overlap. |
 | Tablet onboarding keeps a phone-sized column. | Fixed | The onboarding column now grows to 720 dp on tablets. |
 

@@ -29,7 +29,11 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -73,6 +77,8 @@ import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.content.SqliteContentRepository
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.content.LearnItem
+import com.bassmd.bihua.fsrs.Fsrs7
+import com.bassmd.bihua.learn.gradeIntervalLabels
 import com.bassmd.bihua.progress.CardSnapshot
 import com.bassmd.bihua.progress.DueDay
 import com.bassmd.bihua.progress.MemoryLevel
@@ -289,6 +295,7 @@ fun BihuaApp(store: SettingsStore) {
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
     }
     var inSession by remember { mutableStateOf(false) }
+    var showLeaveSession by remember { mutableStateOf(false) }
     var startingSession by remember { mutableStateOf(false) }
     var undoSignal by remember { mutableIntStateOf(0) }
     var lastReviewUndo by remember { mutableStateOf<ReviewUndo?>(null) }
@@ -341,6 +348,25 @@ fun BihuaApp(store: SettingsStore) {
     }
     val now = remember(progressVersion, clockTick) { System.currentTimeMillis() }
     val today = remember(now, settings.dayStartHour) { settings.today(now) }
+    val gradeIntervals: (LearnItem) -> Map<Grade, String> = remember(
+        now,
+        cards,
+        settings,
+        sessionCharacters,
+    ) {
+        { item ->
+            if (!settings.showGradeIntervals) {
+                emptyMap()
+            } else {
+                val entry = sessionCharacters[item.id]
+                val card = entry?.let { ProgressStore.cardFor(it, settings, cards) }
+                val weights = entry?.let {
+                    settings.parametersFor(it.mode, it.glyphGroupId)
+                } ?: Fsrs7.DEFAULT_W
+                gradeIntervalLabels(card, weights, now, settings.onlyAgainAndGood)
+            }
+        }
+    }
     val visibleCharacters = remember(characters, cards, settings, now) {
         characters?.map { entry ->
             val card = ProgressStore.cardFor(entry, settings, cards)
@@ -384,6 +410,20 @@ fun BihuaApp(store: SettingsStore) {
                 14,
                 today = today,
                 dayStartHour = settings.dayStartHour,
+            )
+        }
+    }
+    val featuredWord by produceState<com.bassmd.bihua.content.WordContext?>(
+        null,
+        mode,
+        settings.includeMatureContent,
+        today,
+    ) {
+        value = withContext(Dispatchers.IO) {
+            repository.featuredWord(
+                mode,
+                settings.includeMatureContent,
+                today.toEpochDay().toInt(),
             )
         }
     }
@@ -713,7 +753,8 @@ fun BihuaApp(store: SettingsStore) {
 
     androidx.activity.compose.BackHandler(
         enabled = wordPractice != null || paperEntries.isNotEmpty() ||
-            compareEntries.isNotEmpty() || drillOpen || inSession || tab != Tab.HOME,
+            compareEntries.isNotEmpty() || drillOpen ||
+            (inSession && !showLeaveSession) || tab != Tab.HOME,
     ) {
         when {
             wordPractice != null -> wordPractice = null
@@ -721,10 +762,63 @@ fun BihuaApp(store: SettingsStore) {
             compareEntries.isNotEmpty() -> compareEntries = emptyList()
             drillOpen -> drillOpen = false
             inSession -> {
-                inSession = false
-                tab = Tab.HOME
+                showLeaveSession = true
             }
             else -> tab = Tab.HOME
+        }
+    }
+
+    if (showLeaveSession) {
+        val leaveSheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showLeaveSession = false },
+            sheetState = leaveSheet,
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp, vertical = 10.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    "Leave this session?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = InkDark,
+                )
+                Text(
+                    "Progress is saved. Graded cards keep their schedule, and the rest of the queue can wait.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = InkSoft,
+                )
+                Spacer(Modifier.height(4.dp))
+                Button(
+                    onClick = {
+                        showLeaveSession = false
+                        inSession = false
+                        tab = Tab.HOME
+                        resumableSession = sessionStore.load(sessionMode)
+                    },
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Resume later") }
+                OutlinedButton(
+                    onClick = {
+                        showLeaveSession = false
+                        inSession = false
+                        tab = Tab.HOME
+                        sessionStore.clear(sessionMode)
+                        resumableSession = null
+                        activeResume = null
+                    },
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("End session") }
+                TextButton(
+                    onClick = { showLeaveSession = false },
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally),
+                ) { Text("Keep studying") }
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 
@@ -807,6 +901,11 @@ fun BihuaApp(store: SettingsStore) {
                     compareEntries = compareEntries.filterNot { it.id == entry.id }
                 },
                 onClose = { compareEntries = emptyList() },
+                widthScale = settings.inkWidth.scale,
+                gridStyle = settings.gridStyle,
+                drawingTool = settings.drawingTool,
+                brush = settings.brush,
+                allowFinger = allowFinger,
             )
             }
         }
@@ -849,6 +948,8 @@ fun BihuaApp(store: SettingsStore) {
                     recallCue = settings.recallCue,
                     showHangulRomanization = settings.showHangulRomanization,
                     includeMatureContent = settings.includeMatureContent,
+                    showGradeIntervals = settings.showGradeIntervals,
+                    gradeIntervals = gradeIntervals,
                     mnemonicMode = settings.mnemonicMode,
                     sessionOrder = settings.sessionOrder,
                     sessionProgress = settings.sessionProgress,
@@ -864,13 +965,9 @@ fun BihuaApp(store: SettingsStore) {
                     },
                     undoSignal = undoSignal,
                     onClose = {
-                        // Closing leaves the saved session in place. Home offers
-                        // Resume or Discard, so a mistimed back press does not
-                        // throw away the queue.
-                        inSession = false
-                        activeResume = null
-                        sessionCharacters = emptyMap()
-                        tab = Tab.HOME
+                        // Ask first. Resume later keeps the queue; End session
+                        // clears it deliberately.
+                        showLeaveSession = true
                     },
                     xpEarned = sessionXp,
                     leveledUp = sessionLevelUp,
@@ -1004,6 +1101,7 @@ fun BihuaApp(store: SettingsStore) {
                                 },
                                 onCompareFamily = compareFamily,
                                 onPracticeWord = startWordPractice,
+                                featuredWord = featuredWord,
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
                                 skippedIds = skippedToday,
@@ -1111,6 +1209,7 @@ fun BihuaApp(store: SettingsStore) {
                                 },
                                 onCompareFamily = compareFamily,
                                 onPracticeWord = startWordPractice,
+                                featuredWord = featuredWord,
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
                                 skippedIds = skippedToday,
@@ -1264,6 +1363,7 @@ private fun AppContent(
     onCompare: (CharacterEntry) -> Unit = {},
     onCompareFamily: (List<CharacterEntry>) -> Unit = {},
     onPracticeWord: (com.bassmd.bihua.content.WordContext) -> Unit = {},
+    featuredWord: com.bassmd.bihua.content.WordContext? = null,
     onPaperCharacter: (CharacterEntry) -> Unit = {},
     priorityIds: Set<String> = emptySet(),
     skippedIds: Set<String> = emptySet(),
@@ -1356,6 +1456,8 @@ private fun AppContent(
             onBrowse = onBrowse,
             onPractice = { onPractice(null) },
             onOpenCharacter = onOpenCharacter,
+            featuredWord = featuredWord,
+            onPracticeWord = onPracticeWord,
         )
 
         Tab.CHARACTERS -> CharactersScreen(

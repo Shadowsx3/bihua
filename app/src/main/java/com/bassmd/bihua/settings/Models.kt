@@ -224,6 +224,8 @@ data class AppSettings(
     val includeMatureContent: Boolean = false,
     /** Hide Hard and Easy if the learner prefers a two-button scale. */
     val onlyAgainAndGood: Boolean = false,
+    /** Show the next FSRS interval on each grade button. Off by default. */
+    val showGradeIntervals: Boolean = false,
     /** Keep the ML Kit model downloads on unmetered Wi-Fi. */
     val wifiOnlyModels: Boolean = true,
     /** Epoch millis when vacation mode started; 0 means off. */

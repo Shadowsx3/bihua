@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.PushPin
@@ -1044,6 +1045,11 @@ private fun CharacterDetail(
     var meta by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterMeta?>(null) }
     var family by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterFamily?>(null) }
     var showStory by remember(entry.id) { mutableStateOf(false) }
+    val featureWord = if (entry.status == com.bassmd.bihua.content.StudyStatus.KNOWN) {
+        words.firstOrNull { it.word.length > 1 } ?: words.firstOrNull()
+    } else {
+        null
+    }
     LaunchedEffect(entry.character, entry.mode, repository) {
         variants = repository?.variants(entry.character).orEmpty()
         meta = repository?.meta(entry.character)
@@ -1124,18 +1130,76 @@ private fun CharacterDetail(
                 Text(if (inStudyList) "In study list" else "Add to list")
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            words.firstOrNull()?.let { word ->
-                TextButton(onClick = { onPracticeWord(word) }) {
-                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Write a word", style = MaterialTheme.typography.labelLarge)
+        featureWord?.let { word ->
+            SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.16f)) {
+                Column {
+                    Text(
+                        "Use it in a word",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            word.word,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = InkDark,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            displayReading(word.reading, entry.mode),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = InkSoft,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (speechEnabled) {
+                            IconButton(onClick = {
+                                onSpeak(if (entry.mode == StudyMode.KOREAN) word.reading else word.word)
+                            }) {
+                                Icon(
+                                    Icons.Rounded.VolumeUp,
+                                    contentDescription = "Hear the word",
+                                    tint = InkSoft,
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        word.meaning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = { onPracticeWord(word) },
+                        shape = CircleShape,
+                    ) {
+                        Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Write the word")
+                    }
+                }
+            }
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (featureWord == null) {
+                words.firstOrNull()?.let { word ->
+                    TextButton(onClick = { onPracticeWord(word) }) {
+                        Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Write a word", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
             TextButton(onClick = onPaper) {
                 Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("Write on paper", style = MaterialTheme.typography.labelLarge)
+            }
+            TextButton(onClick = onCompare) {
+                Icon(Icons.Rounded.Compare, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Compare", style = MaterialTheme.typography.labelLarge)
             }
         }
 
@@ -1449,7 +1513,15 @@ private fun CharacterDetail(
                                 .fillMaxWidth()
                                 .then(
                                     if (speechEnabled) {
-                                        Modifier.clickable { onSpeak(word.word) }
+                                        Modifier.clickable {
+                                            onSpeak(
+                                                if (entry.mode == StudyMode.KOREAN) {
+                                                    word.reading
+                                                } else {
+                                                    word.word
+                                                }
+                                            )
+                                        }
                                     } else {
                                         Modifier
                                     }
