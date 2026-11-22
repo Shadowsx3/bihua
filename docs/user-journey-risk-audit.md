@@ -51,6 +51,7 @@ Status:
 | The character can leak through a word cue. | Verified | Japanese cues mask the target; Chinese and Korean cues show the reading and meaning, not the character. |
 | A word cue picks a one-character word and falls back to the meaning. | Fixed | Cue-word selection now requires a real multi-character word. |
 | Korean pronunciation needs a Korean keyboard. | Fixed | Input accepts Hangul or romaja, normalises common variants, and previews Hangul while typing. |
+| The reading input is covered by the keyboard on phones. | Verified | The field sits in the upper third of the review screen. `adjustResize` shrinks the window and the top-aligned card does not shift, so the field stays above the IME. |
 | Japanese pronunciation accepts romaji and kana. | Verified | Both work; a kana preview appears for Latin input. |
 | Mature vocabulary can appear in a review cue. | Fixed | Mature words are excluded before the cue is chosen. |
 | The last card in a session can be lost by back navigation. | Verified | The pending state is saved continuously; Home offers Resume. |

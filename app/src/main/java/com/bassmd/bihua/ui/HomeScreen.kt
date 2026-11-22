@@ -272,6 +272,46 @@ fun HomeScreen(
                 }
             }
             item {
+                if (wide) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Column(
+                            modifier = Modifier.weight(1.15f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StatRow(
+                                known = known,
+                                total = characters.size,
+                                newToday = newToday,
+                                studyDays = studyDays,
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StudyCalendarCard(
+                                days = activity,
+                                today = today,
+                                onDayClick = { selectedDay = it },
+                            )
+                        }
+                    }
+                } else {
+                    StatRow(
+                        known = known,
+                        total = characters.size,
+                        newToday = newToday,
+                        studyDays = studyDays,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    StudyCalendarCard(
+                        days = activity,
+                        today = today,
+                        onDayClick = { selectedDay = it },
+                    )
+                }
+            }
+            item {
                 val summary = buildList {
                     if (studyList.isNotEmpty()) add("${studyList.size} in the list")
                     if (pinnedCount > 0) add("$pinnedCount pinned")
@@ -328,46 +368,6 @@ fun HomeScreen(
                             }
                         }
                     }
-                }
-            }
-            item {
-                if (wide) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Column(
-                            modifier = Modifier.weight(1.15f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            StatRow(
-                                known = known,
-                                total = characters.size,
-                                newToday = newToday,
-                                studyDays = studyDays,
-                            )
-                        }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            StudyCalendarCard(
-                                days = activity,
-                                today = today,
-                                onDayClick = { selectedDay = it },
-                            )
-                        }
-                    }
-                } else {
-                    StatRow(
-                        known = known,
-                        total = characters.size,
-                        newToday = newToday,
-                        studyDays = studyDays,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    StudyCalendarCard(
-                        days = activity,
-                        today = today,
-                        onDayClick = { selectedDay = it },
-                    )
                 }
             }
             item {
