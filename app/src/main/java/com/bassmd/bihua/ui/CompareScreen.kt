@@ -147,10 +147,12 @@ fun CompareScreen(
                         color = InkSoft,
                     )
                 }
-                TextButton(onClick = { showWriteDrill = true }) {
-                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Write both")
+                if (entries.size >= 2) {
+                    TextButton(onClick = { showWriteDrill = true }) {
+                        Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Write both")
+                    }
                 }
                 TextButton(onClick = { showPicker = true }) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -538,7 +540,7 @@ private fun CompareWriteDrill(
                                         .aspectRatio(1f),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    val side = minOf(maxWidth, maxHeight)
+                                    val side = minOf(maxWidth, maxHeight, 420.dp)
                                     Box(
                                         Modifier
                                             .size(side)
@@ -563,7 +565,6 @@ private fun CompareWriteDrill(
                             }
                         }
                     }
-                    if (rowEntries.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
