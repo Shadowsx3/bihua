@@ -32,7 +32,8 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 - Play AAB: `app/build/outputs/bundle/release/app-release.aab`
 - Play upload checklist: `store/PLAY-UPLOAD.md`
 - Listing copy: `store/listing.md`, `store/full-description.txt`
-- Release notes: `store/release-notes-1.0.2.txt`
+- Release notes: `store/release-notes-1.0.2.txt` (closed test) and
+  `store/release-notes-1.0.3.txt` (next release)
 - Store screenshots: `store/phone-1..7.png`, `store/tablet-7-*`,
   `store/tablet-10-*`
 - GitHub release tag: `v1.0.2`; the site uses `releases/latest`.

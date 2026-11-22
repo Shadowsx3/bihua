@@ -11,6 +11,7 @@
 - `PLAY-UPLOAD.md` — exact Play Console upload checklist
 - `translations/listing-en-US.csv` — source row for Play import; app UI is English-only
 - `release-notes-1.0.2.txt` — Play closed-test release notes
+- `release-notes-1.0.3.txt` — next closed-test release notes
 - `phone-*-light.svg` — editable source frames for the phone shots
 - `feature-graphic.svg`, `icon-square.svg` — editable sources
 
