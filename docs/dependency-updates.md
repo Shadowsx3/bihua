@@ -49,4 +49,7 @@ Dependabot opened nine separate PRs before this policy:
 - Toolchain major: Gradle 8.11.1 -> 9.9.1, AGP 8.7.3 -> 9.5.2,
   Kotlin 2.2.21 -> 2.4.21.
 
-The grouped Actions and Gradle minor/patch PRs supersede the individual ones.
+The grouped Actions versions were applied directly in `79a59ff`; the four
+individual Actions PRs can be closed. The grouped Gradle minor/patch PR
+supersedes appcompat and serialization individually. The three toolchain majors
+remain closed/manual until a planned migration.

@@ -157,13 +157,13 @@ not a public issue.
 
 ## Status
 
-Bihua 1.0.3 is the current closed test. 1.0.4 is ready for the next closed test:
-a clearer review flow, common words on new characters, Korean word examples,
-script filters, Japanese ruby, Korean romanization, cleaner readings, and better
-Japanese word ordering. Explicit dictionary examples are tagged and hidden until
-the learner turns on Mature words. The public APK stays at 1.0.3 until 1.0.4 is
-promoted.
+Bihua **1.0.4 (versionCode 14)** was submitted to Play closed testing on
+22 November 2026. The public APK stays at 1.0.3 until 1.0.4 is promoted. This
+build adds a clearer review flow, common words on new characters, Korean word
+examples, script filters, Japanese ruby, Korean romanization, cleaner readings,
+Japanese frequency ranking, mature-word opt-in, optional grade intervals, Home
+word of the day, the leave-session sheet, and the guided Compare writing drill.
 
-The phone and tablet paths are verified; a TalkBack/large-text audit and a
-current physical S Pen pass remain on the roadmap. The app is not a clinical
-intervention or a guarantee of literacy.
+The phone and tablet paths are verified at 1.3x text. A full TalkBack pass at
+1.5x and 2x and a current physical S Pen pass remain on the roadmap. The app is
+not a clinical intervention or a guarantee of literacy.

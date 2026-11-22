@@ -106,6 +106,12 @@ type:
 draw:
 	@scripts/device.sh draw $(PTS)
 
+release-check:
+	@python3 tools/check_release.py
+
+store-images:
+	@scripts/render-store-assets.sh
+
 release:
 	@scripts/device.sh release
 

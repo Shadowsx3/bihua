@@ -27,16 +27,41 @@ Keep this in mind for every screen:
 - One clear next action per screen. Put explanations in dialogs, not paragraphs.
 - No AI sounding copy, no em dashes, no cringe slogans.
 
+## Home and review feel
+
+- Home should feel like a lived-in study desk, not a dashboard for managers.
+  Keep the mode-coloured hero or Continue card, the Word of the day, the three
+  colourful stat cards, and the practice calendar above the fold. Study tools,
+  level, recent characters, and browse may sit below or inside More.
+- The Word of the day is a real word from the current script, filtered by the
+  mature setting. It has audio and a Write action. Never show a made-up word.
+- Grade interval labels are optional and off by default. When enabled, use the
+  real FSRS interval for the current card and only the buttons the learner can
+  actually use.
+- Leave-session flow: back or X opens Resume later / End session / Keep
+  studying. Resume later keeps the queue; End session clears it deliberately.
+- The Compare writing drill is one character at a time with a large canvas,
+  switchable character chips, a guide toggle, and Next/Done. It appears only
+  when at least two characters are selected.
+- Character detail for a known character should show one real word with audio
+  and Write the word before the full word list.
+- Settings stays compact. Explanations belong in dialogs. Mature words are off
+  by default and require a confirmation when enabled.
+
 ## Current release state
 
-- Closed test: **1.0.3**, versionCode **13**.
-- Local next release: **1.0.4**, versionCode **14**. This is the design,
-  review, and content-quality build.
-- Do not upload another build with versionCode 12 or 13.
-- The 1.0.3 code includes personal FSRS weights, the day boundary, permanent
-  suspension, and selective transfer. 1.0.4 adds the vivid palette, review cue
-  setup, script filters, review polish, handwriting sanitisation, cleaner
-  readings, and better Japanese word ordering.
+- **1.0.4 (versionCode 14) was submitted to Play closed testing on
+  2026-11-22.** The submitted build is tagged `v1.0.4` at `0210e13`.
+- Submitted AAB SHA-256:
+  `4c78186c1459c4c7803ac2f274a12d06a2a55b50ca8cfd360198e843bd5b868b`.
+- Submitted APK SHA-256:
+  `e0bc22c0d25205ce8fb3d637b28c8d956f6e8187dac48aab648319c876a0ce0f`.
+- Do **not** rebuild or upload another versionCode 14 while review is active.
+  A fix goes to versionCode **15** and a new version name.
+- 1.0.4 adds the vivid palette, review cue setup, script filters, review polish,
+  handwriting sanitisation, cleaner readings, Japanese frequency ranking, Korean
+  word examples, mature-word opt-in, grade interval labels, Home word of the day,
+  leave-session sheet, and the guided Compare writing drill.
 - Progress schema **10**; contentVersion **34**.
 - 214 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
@@ -53,7 +78,7 @@ Keep this in mind for every screen:
 - Play upload checklist: `store/PLAY-UPLOAD.md`
 - Listing copy: `store/listing.md`, `store/full-description.txt`
 - Release notes: `store/release-notes-1.0.3.txt` (previous closed test) and
-  `store/release-notes-1.0.4.txt` (next release)
+  `store/release-notes-1.0.4.txt` (submitted release)
 - Store screenshots: `store/phone-1..7.png`, `store/tablet-7-*`,
   `store/tablet-10-*`
 ## Content QA backlog
@@ -65,6 +90,8 @@ before the next content release. The working checklist is
 Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
 - GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
+- Dependency policy: `docs/dependency-updates.md`.
+- Practical agent playbook and traps: `docs/agent-playbook.md`.
 
 ## Dependency updates
 
@@ -84,6 +111,8 @@ make lint                      # Android lint
 make run                       # check, install, launch on selected device
 make release                   # signed minified release APK
 make smoke                     # on-device launch/navigation smoke test
+make release-check             # verify artifact, docs, hashes, content and notes
+make store-images              # render every Play frame from its SVG source
 ```
 
 GitHub Actions runs **unit tests, content audit, and lint only**. It does not
@@ -104,9 +133,12 @@ scripts/device.sh type "ai4"
 scripts/device.sh draw 300 500 500 700 700 900 # DOWN/MOVE/UP pen path
 scripts/device.sh swipe 540 1900 540 700
 scripts/device.sh shot before
+scripts/device.sh a11y                         # clickable nodes with no spoken label
+scripts/device.sh keyboard on                  # force the soft keyboard on
+scripts/device.sh session-clear                # drop a saved lesson session
 scripts/device.sh db-cards
 scripts/device.sh db-reviews 20
-scripts/device.sh seed-review 爱 SIMPLIFIED 2  # due now, reps=2
+scripts/device.sh seed-review 爱 SIMPLIFIED 2 0 # due now, reps=2
 scripts/device.sh seed-learning 一 KOREAN 1 10 # due in 10 minutes
 scripts/device.sh content [--bump]
 ```
@@ -238,7 +270,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 ## Scheduling and data
 
-- Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
+- Progress DB schema 10. `review_log` stores `elapsed_ms`, `task`, and `strokes`; `word_practice` stores `mature`.
 - Bump the schema and add an upgrade path when tables change.
 - Content DB contentVersion 34. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
@@ -280,8 +312,9 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   the day when the app stays open.
 - `suspendedIds` is permanent. `skippedUntil` is one day. Both are excluded from
   sessions; Study tools shows them separately.
-- Reset all learning deletes cards, reviews, XP, and confusions; it keeps notes,
-  study list, and settings.
+- Reset all learning deletes cards, reviews, XP, confusions, and word-practice
+  history; it keeps notes, study list, and settings. Paused sessions are cleared
+  by the Settings screen after reset.
 - Vacation mode: due count 0 and sessions refuse to start. Ending shifts
   `due_at`/`last_review_at`, never review-log timestamps. Ease-back caps
   sessions at 10 cards for seven days.
@@ -341,8 +374,8 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   at 10 new a day is 88 average, 113 busy, 317 days. Do not invent new numbers.
 - FSRS-7 has two stability traces and 34 weights; FSRS-6 has one stability and 21
   weights. FSRS-7 uses fractional days and a mixed curve, and its interval is
-  solved numerically. The app still ships the published default weights and does
-  not fit a personal model yet.
+  solved numerically. The app ships the published defaults, accepts imported
+  weights, and can fit a local profile from 400+ reviews with a time holdout.
 - GitHub Actions must not assemble/upload APKs. `scripts/verify-apk.sh` is
   portable across macOS/Linux (`wc -c`, not macOS `stat -f%z`).
 

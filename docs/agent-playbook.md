@@ -1,0 +1,233 @@
+# Agent playbook
+
+Practical workflows and traps learned while shipping Bihua. Read this with
+`AGENTS.md`; this file is the "how" and the sharp edges.
+
+## 1. Start from a known state
+
+```bash
+cd /Users/bassmd/Documents/bihua
+git status --short
+source scripts/env.sh
+make check
+```
+
+If `git status` is not clean, identify whether the files are user work before
+editing or deleting. Do not commit `store/`, `screenshots/`, APKs, AABs, or
+keystores.
+
+While a Play release is under review:
+
+- freeze the submitted versionCode;
+- do not merge app dependency PRs;
+- do not rebuild the submitted AAB;
+- keep the release tag and hashes recorded.
+
+## 2. Release build workflow
+
+```bash
+make check
+make lint
+make audit
+source scripts/env.sh
+./gradlew :app:assembleRelease :app:bundleRelease --console=plain -q
+shasum -a 256 app/build/outputs/apk/release/app-release.apk \
+  app/build/outputs/bundle/release/app-release.aab
+```
+
+Then:
+
+1. copy the APK to `docs/download/bihua-<version>.apk`;
+2. update `docs/download/SHA256SUMS.txt`;
+3. update the hash and size in `docs/index.html`;
+4. verify the APK signature and the edge-to-edge API strings;
+5. run `make release-check` to compare the APK, AAB, docs hash, content version,
+   and release-note length;
+6. tag the submitted commit.
+
+The release build is invalid if a source file changed after it was assembled.
+
+## 3. Content database workflow
+
+```bash
+tools/fetch-content.sh
+make content-bump
+make audit
+```
+
+`make content-bump` rebuilds the database and increments `contentVersion` in
+`ContentRepository`. A schema change in `bihua_content.db` also requires updating
+the Kotlin queries and `ContentDatabaseTest`.
+
+Content rules:
+
+- A content change never touches the progress database.
+- Word `word` is the script text. For Korean it is the Hanja spelling; `reading`
+  is Hangul. Speech uses the Hangul reading for Korean.
+- The word examples are context, not a second test.
+- Explicit-only words are tagged `mature` and hidden by default.
+- Japanese and Korean examples are ranked by FrequencyWords; Chinese keeps
+  HSK/level ordering.
+- Shape notes are honest structural notes, never invented historical etymology.
+- Missing data stays missing rather than being guessed.
+
+Useful checks:
+
+```bash
+sqlite3 app/src/main/assets/bihua_content.db \
+  "select mode,count(*),sum(mature) from word_context group by mode;"
+sqlite3 app/src/main/assets/bihua_content.db \
+  "pragma table_info(word_context);"
+```
+
+Do not use SQL `LIKE` for regex-shaped audits. Use Python regex in
+`tools/audit_content.py`.
+
+When joining `char_meta` to `character`, remember a character can appear in
+several scripts; that join multiplies rows. Query `char_meta` alone for its count.
+
+## 4. Testing layers
+
+1. **Pure unit tests** for algorithms: FSRS, queue, session progression, pinyin,
+   romanization, reading checks, stroke grading, formatting, backup codec.
+2. **Robolectric tests** for SQLite, migration, content database, import
+   validation, reset, settings backup.
+3. **Content audit** for shipped data.
+4. **Emulator smoke** for screens and device-only behaviour.
+5. **Physical device** for stylus pressure and real IMEs.
+
+Hard-won test details:
+
+- Robolectric test methods must return `Unit`. An expression body returning a
+  Boolean fails with `InvalidTestClassError`.
+- `ContentDatabaseTest` resolves `src/main/assets/bihua_content.db` and
+  `app/src/main/assets/bihua_content.db` so it works from the module or root.
+- Test the backup round trip when adding a setting. A new `AppSettings` field is
+  easy to forget.
+- Test default-off settings explicitly.
+- If a builder pipeline adds a word/character field, add a content test that
+  would fail if the field silently becomes empty or unsafe.
+- Test the two-button grade scale when adding anything to `GradeChoices`.
+- `make check` runs tests + audit + debug APK + verify. `make test` alone is not
+  a release check.
+
+## 5. Compose and layout traps
+
+- **Modifier order matters.**
+  `fillMaxSize().widthIn(max = 760.dp)` does not cap the width because
+  `fillMaxSize` fixes it first. Use `widthIn(max = 760.dp).fillMaxWidth()`.
+- **Large text changes navigation.**
+  The bottom bar shortens "Characters" to "Chars" above 1.15× font scale; the
+  tablet rail is 104 dp. Test at 1.3×, 1.5×, and 2×.
+- **Clickable Surface semantics.**
+  `Surface(onClick = ...)` plus a child `semantics { contentDescription }` can
+  produce an empty clickable node with a separate description child. For custom
+  cards, use `Modifier.clickable(...).clearAndSetSemantics { ...; onClick { ... } }`.
+- **Keyboard layout.**
+  The pronunciation input sits in the upper third of the card. The screen uses
+  `adjustResize`; content is top-aligned so it does not jump. Do not centre the
+  input vertically or put it behind the IME.
+- **Tablet columns.**
+  Cap forms/settings at a readable width; do not stretch rows across 2560 px.
+  Characters uses a detail side panel; Practice uses a canvas and control column
+  with the title above both.
+- **Home hierarchy.**
+  Keep the hero/Continue, Word of the day, stat cards, and calendar above the
+  fold. More holds level, recent characters, and browse. Do not turn Home back
+  into an executive dashboard.
+- **Canvas purity.**
+  Never draw decoration under the writing sheet. The guide must remain readable
+  in light and dark.
+- **Animated essentials.**
+  System animation scale 0 stops Compose animations. Stroke playback and compare
+  use `withFrameNanos`, not `Animatable`.
+
+## 6. Emulator and UI automation
+
+The emulators are slow to cold start. A screenshot 5 seconds after launch may
+show the launcher or "Preparing your course" while the app is still starting.
+Wait 15–25 seconds before calling it a crash.
+
+Use `scripts/device.sh`:
+
+```bash
+scripts/device.sh status
+scripts/device.sh shot name
+scripts/device.sh ui /tmp/ui.xml
+scripts/device.sh a11y
+scripts/device.sh keyboard on
+scripts/device.sh session-clear
+scripts/device.sh tap "Start studying"
+scripts/device.sh find "Resume"
+scripts/device.sh draw 300 500 500 700
+scripts/device.sh swipe 540 1900 540 700
+scripts/device.sh seed-review 山 KOREAN 3 0
+scripts/device.sh seed-learning 一 SIMPLIFIED 1 10
+scripts/device.sh db-pull /tmp/progress.db
+```
+
+Tricks:
+
+- Screenshots are scaled. Do not derive `adb input tap` coordinates from a
+  screenshot; use the UI dump bounds or tap by label.
+- A soft keyboard may stay hidden on the emulator if a hardware keyboard is
+  attached. Use the keyboard command in `device.sh` when testing IME layout.
+- If the app is on a saved session, seeding a new due card will not show on Home.
+  Discard the saved session or test in a script without a session.
+- `store/` and `screenshots/` are not committed. Copy raw screenshots into
+  `store/app-shots/` before rendering marketing assets.
+
+## 7. Store and landing assets
+
+Phone store images are rendered from SVG frames with headless Chrome:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --window-size=1080,1920 \
+  --screenshot=store/phone-1.png \
+  "file://$PWD/store/phone-1-light.svg"
+```
+
+Use `scripts/render-store-assets.sh` or `make store-images` for the whole set.
+Raw captures must be
+1080 × 2400. Tablet frames use 1920 × 1080 and 2560 × 1440.
+
+Landing screenshots live in `docs/assets/*-light.png` and are NOT the framed
+store images. Update the home/detail/characters/grade assets when the UI changes,
+then update the download hash and size in `docs/index.html`.
+
+Do not publish `store/` to GitHub. It contains local-only listing copy and
+screenshots.
+
+## 8. Accessibility and large text
+
+- Test the phone bottom bar and tablet rail at 1.3× first; that is where labels
+  wrap.
+- Give character cards and calendar days a full spoken label, not just a glyph
+  or number.
+- Grade buttons should read the grade; the interval is an optional second line.
+- The writing canvas has a content description.
+- TalkBack is improved but not fully certified. A full sweep is still required
+  before claiming accessibility complete.
+
+## 9. Dependency updates
+
+See `docs/dependency-updates.md`.
+
+- Actions updates are one grouped PR.
+- Gradle minor/patch is one grouped PR.
+- Gradle/AGP/Kotlin/Compose majors are a single deliberate migration branch.
+- Never merge one toolchain major on its own.
+- Do not rebuild a submitted versionCode with dependency changes.
+
+## 10. Definition of done for a UI change
+
+- Phone and tablet at normal and 1.3× text.
+- Light and dark.
+- Empty and populated states.
+- Back navigation, keyboard, and session restore.
+- No content under the bottom bar or IME.
+- `make check`, `make lint`, and `make audit` green.
+- Store/landing assets updated if the visible UI changed.
+- Release AAB rebuilt and hashes updated if the change ships.

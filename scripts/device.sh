@@ -251,10 +251,57 @@ case "$cmd" in
   shot)
     resolve_device
     name="${1:-screen-$(date +%Y%m%d-%H%M%S)}"
-    mkdir -p "$BIHUA_ROOT/screenshots"
-    adb -s "$DEVICE" exec-out screencap -p > "$BIHUA_ROOT/screenshots/$name.png"
-    echo "screenshots/$name.png"
+    case "$name" in
+      /*) target="$name"; mkdir -p "$(dirname "$target")" ;;
+      *.png) target="$BIHUA_ROOT/screenshots/$name"; mkdir -p "$(dirname "$target")" ;;
+      *) target="$BIHUA_ROOT/screenshots/$name.png"; mkdir -p "$(dirname "$target")" ;;
+    esac
+    adb -s "$DEVICE" exec-out screencap -p > "$target"
+    echo "$target"
     ;;
+  a11y)
+    resolve_device
+    target=$(dump_ui "$BIHUA_ROOT/build/a11y.xml")
+    python3 - "$target" <<'PY'
+import re, sys
+s = open(sys.argv[1], encoding="utf-8").read()
+empty = []
+for tag in re.finditer(r"<node\b[^>]*>", s):
+    body = tag.group(0)
+    if 'clickable="true"' not in body:
+        continue
+    text = re.search(r'text="([^"]*)"', body)
+    desc = re.search(r'content-desc="([^"]*)"', body)
+    bounds = re.search(r'bounds="([^"]*)"', body)
+    label = (desc.group(1) if desc else "") or (text.group(1) if text else "")
+    if not label:
+        empty.append(bounds.group(1) if bounds else "?")
+print(f"clickable nodes without a spoken label: {len(empty)}")
+for item in empty[:20]:
+    print(" ", item)
+PY
+    ;;
+  keyboard)
+    resolve_device
+    mode="${1:-toggle}"
+    if [ "$mode" = "toggle" ]; then
+      current=$(adb -s "$DEVICE" shell settings get secure show_ime_with_hard_keyboard | tr -d '\r')
+      if [ "$current" = "1" ]; then mode=off; else mode=on; fi
+    fi
+    case "$mode" in
+      on) adb -s "$DEVICE" shell settings put secure show_ime_with_hard_keyboard 1 >/dev/null; echo "soft keyboard forced on" ;;
+      off) adb -s "$DEVICE" shell settings put secure show_ime_with_hard_keyboard 0 >/dev/null; echo "soft keyboard follows hardware" ;;
+      *) echo "usage: device.sh keyboard on|off|toggle" >&2; exit 2 ;;
+    esac
+    ;;
+  session-clear)
+    resolve_device
+    adb -s "$DEVICE" shell run-as "$APP_ID" rm -f shared_prefs/bihua_session.xml 2>/dev/null || true
+    echo "cleared saved lesson session" ;;
+
+  key)
+    resolve_device
+    adb -s "$DEVICE" shell input keyevent "${1:?keycode}" ;;
 
   ui)
     resolve_device
@@ -334,12 +381,12 @@ PY
     adb_cmd shell am force-stop "$APP_ID" >/dev/null
     db=$(mktemp -t bihua-reset.XXXXXX)
     db_pull "$db" >/dev/null
-    sqlite3 "$db" "DELETE FROM card; DELETE FROM review_log; DELETE FROM xp_log; DELETE FROM confusion; DELETE FROM player; INSERT OR IGNORE INTO player(id,xp) VALUES(1,0);"
+    sqlite3 "$db" "DELETE FROM card; DELETE FROM review_log; DELETE FROM xp_log; DELETE FROM confusion; DELETE FROM word_practice; DELETE FROM player; INSERT OR IGNORE INTO player(id,xp) VALUES(1,0);"
     db_push "$db"
     rm -f "$db"
     ;;
 
-  seed-review) seed_card review "${1:-}" "${2:-SIMPLIFIED}" "${3:-2}" "0" ;;
+  seed-review) seed_card review "${1:-}" "${2:-SIMPLIFIED}" "${3:-2}" "${4:-0}" ;;
   seed-learning) seed_card learning "${1:-}" "${2:-SIMPLIFIED}" "${3:-1}" "${4:-10}" ;;
 
   content)
