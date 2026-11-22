@@ -265,6 +265,7 @@ fun LearnScreen(
     val currentReps = currentItem?.reps ?: 0
     val scaffold = GuideScaffold.forMode(guideMode, currentReps)
     var mnemonic by remember(index, currentItem?.id) { mutableStateOf<String?>(null) }
+    var mnemonicLabel by remember(index, currentItem?.id) { mutableStateOf("Story hint") }
     var showMnemonic by remember(index, stepOrdinal) { mutableStateOf(false) }
     val mnemonicAllowed = currentItem != null && mnemonicMode.allowsHint(currentReps)
     // Initialised synchronously so a review never flashes its guide for one frame.
@@ -282,9 +283,9 @@ fun LearnScreen(
     var recallStartedAt by remember { mutableLongStateOf(0L) }
     val repository = com.bassmd.bihua.content.LocalContentRepository.current
     LaunchedEffect(currentItem?.id, repository) {
-        mnemonic = currentItem?.let { item ->
-            repository?.meta(item.character)?.etymology?.takeIf { it.isNotBlank() }
-        }
+        val meta = currentItem?.let { item -> repository?.meta(item.character) }
+        mnemonic = meta?.etymology?.takeIf { it.isNotBlank() }
+        mnemonicLabel = if (meta?.etymologyType == "shape") "Shape hint" else "Story hint"
     }
     var introWords by remember { mutableStateOf(emptyList<com.bassmd.bihua.content.WordContext>()) }
     LaunchedEffect(currentItem?.id, repository, includeMatureContent) {
@@ -654,6 +655,7 @@ fun LearnScreen(
                             scaffold = scaffold,
                             cuePrompt = cuePrompt,
                             mnemonic = mnemonic,
+                            mnemonicLabel = mnemonicLabel,
                             mnemonicAllowed = mnemonicAllowed,
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
@@ -787,6 +789,7 @@ fun LearnScreen(
                             scaffold = scaffold,
                             cuePrompt = cuePrompt,
                             mnemonic = mnemonic,
+                            mnemonicLabel = mnemonicLabel,
                             mnemonicAllowed = mnemonicAllowed,
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
@@ -826,6 +829,7 @@ fun LearnScreen(
                             scaffold = scaffold,
                             cuePrompt = cuePrompt,
                             mnemonic = mnemonic,
+                            mnemonicLabel = mnemonicLabel,
                             mnemonicAllowed = mnemonicAllowed,
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
@@ -1410,6 +1414,7 @@ private fun PromptPanel(
     scaffold: GuideScaffold = GuideScaffold.FULL,
     cuePrompt: RecallCuePrompt? = null,
     mnemonic: String? = null,
+    mnemonicLabel: String = "Story hint",
     mnemonicAllowed: Boolean = false,
     showMnemonic: Boolean = false,
     onToggleMnemonic: () -> Unit = {},
@@ -1517,6 +1522,7 @@ private fun PromptPanel(
                                             StoryHintButton(
                                                 show = showMnemonic,
                                                 mnemonic = mnemonic,
+                                                label = mnemonicLabel,
                                                 onToggle = onToggleMnemonic,
                                             )
                                         }
@@ -1564,6 +1570,7 @@ private fun PromptPanel(
 private fun StoryHintButton(
     show: Boolean,
     mnemonic: String,
+    label: String,
     onToggle: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -1629,7 +1636,7 @@ private fun StoryHintButton(
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text(
-                                "Story hint",
+                                label,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = InkSoft,
                             )

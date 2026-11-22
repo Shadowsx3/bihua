@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.ui.theme.Butter
@@ -177,6 +179,10 @@ private fun CalendarGrid(
                                         Modifier
                                     }
                                 )
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription =
+                                        "${day.date}: ${day.reviewed} reviews, ${day.learned} learned"
+                                }
                                 .clickable { onDayClick(day) },
                             contentAlignment = Alignment.Center,
                         ) {

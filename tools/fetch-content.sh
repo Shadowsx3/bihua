@@ -42,6 +42,7 @@ fetch "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.g
 fetch "https://www.edrdg.org/pub/Nihongo/JMdict_e.gz" "JMdict_e.gz"
 fetch "https://kaikki.org/dictionary/Korean/kaikki.org-dictionary-Korean.jsonl.gz" "kaikki-korean.jsonl.gz"
 fetch "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ko/ko_50k.txt" "ko_50k.txt"
+fetch "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2016/ja/ja_50k.txt" "ja_50k.txt"
 
 # Extract the archives the importer reads directly.
 if [[ ! -d "$RAW/kanjivg/kanji" || "$FORCE" == "--force" ]]; then

@@ -159,6 +159,19 @@
       "attribution": "FrequencyWords by Hermit Dave and contributors",
       "count": 50000,
       "note": "Ranking only. Common Korean word examples lead a character card."
+    },
+    {
+      "id": "frequencywords-japanese",
+      "title": "FrequencyWords Japanese list",
+      "source": "hermitdave/FrequencyWords, 2016 Japanese list",
+      "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2016/ja/ja_50k.txt",
+      "file": "ja_50k.txt",
+      "bytes": 624618,
+      "sha256": "6f734851c4881295d66947e09987ccb17010bb71cd9df7b6e326870c847508d6",
+      "license": "CC BY-SA 4.0",
+      "attribution": "FrequencyWords by Hermit Dave and contributors",
+      "count": 50000,
+      "note": "Japanese word ranking. Common words lead a character card before JMdict priority tags."
     }
   ],
   "derived": {
@@ -171,6 +184,7 @@
     "koreanHanja": 1800,
     "unihanFiles": 8,
     "koreanWords": 11157,
-    "koreanCoverage": 1680
+    "koreanCoverage": 1680,
+    "japaneseFrequencyWords": 50000
   }
 }

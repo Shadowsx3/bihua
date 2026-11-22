@@ -533,6 +533,20 @@ def load_cedict() -> tuple[
     return singles, words, traditional_singles, simplified_singles, simplified_words
 
 
+def load_japanese_frequency() -> dict[str, int]:
+    """Word frequency rank from FrequencyWords, if the Japanese list is present."""
+    path = RAW / "ja_50k.txt"
+    if not path.exists():
+        return {}
+    ranks: dict[str, int] = {}
+    with path.open(encoding="utf-8") as handle:
+        for index, line in enumerate(handle):
+            parts = line.split()
+            if len(parts) == 2 and parts[0] not in ranks:
+                ranks[parts[0]] = index
+    return ranks
+
+
 def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[str, str, str, bool]]:
     """Common Japanese words keyed by word: (reading, meaning, kanji string).
 
@@ -543,7 +557,8 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
     path = RAW / "JMdict_e"
     if not path.exists():
         return {}
-    candidates: dict[str, list[tuple[bool, int, str, str, str]]] = defaultdict(list)
+    frequency = load_japanese_frequency()
+    candidates: dict[str, list[tuple[bool, int, str, str, str, int | None]]] = defaultdict(list)
     priority_tags = {"news1", "news2", "ichi1", "ichi2"}
     context = ET.iterparse(path, events=("end",))
     for _, element in context:
@@ -580,23 +595,30 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
         hit = [char for char in keb if char in kanji]
         if not hit:
             continue
+        rank = frequency.get(keb)
         for char in hit:
-            candidates[char].append((priority, len(keb), keb, reb, gloss[:80]))
+            candidates[char].append((priority, len(keb), keb, reb, gloss[:80], rank))
 
-    chosen: dict[str, tuple[str, str, str, bool]] = {}
+    chosen: dict[str, tuple[str, str, str, bool, int | None]] = {}
     for char in sorted(candidates):
         ranked = sorted(
             candidates[char],
-            key=lambda row: (not row[0], row[1], row[2]),
+            key=lambda row: (
+                row[5] if row[5] is not None else (50_000 if row[0] else 10**9),
+                not row[0],
+                row[1],
+                row[2],
+            ),
         )
         picked = 0
-        for priority, _, keb, reb, gloss in ranked:
+        for priority, _, keb, reb, gloss, rank in ranked:
+            common = priority or (rank is not None and rank <= 30_000)
             previous = chosen.get(keb)
             if previous is not None:
-                if priority and not previous[3]:
-                    chosen[keb] = (previous[0], previous[1], previous[2], True)
+                if common and not previous[3]:
+                    chosen[keb] = (previous[0], previous[1], previous[2], True, previous[4])
                 continue
-            chosen[keb] = (reb, gloss, keb, priority)
+            chosen[keb] = (reb, gloss, keb, common, rank)
             picked += 1
             if picked >= per_kanji:
                 break
@@ -648,8 +670,8 @@ KOREAN_BINOMIAL = re.compile(r"\([A-Z][a-z]+ [a-z]+")
 KOREAN_COMMON_RANK = 10_000
 
 
-def load_korean_words(hanja: set[str]) -> list[tuple[str, str, str, bool, bool]]:
-    """Korean word examples: (hanja, hangul, gloss, common, mature).
+def load_korean_words(hanja: set[str]) -> list[tuple[str, str, str, bool, bool, int]]:
+    """Korean word examples: (hanja, hangul, gloss, common, mature, rank).
 
     The Korean Wiktionary extract gives real Korean headwords with their Hanja
     spellings. Only nouns whose Hanja spelling is fully covered by the Korean
@@ -730,7 +752,7 @@ def load_korean_words(hanja: set[str]) -> list[tuple[str, str, str, bool, bool]]
         ),
     )
     return [
-        (form, word, gloss, rank <= KOREAN_COMMON_RANK, mature)
+        (form, word, gloss, rank <= KOREAN_COMMON_RANK, mature, rank)
         for rank, word, form, gloss, mature in ordered
     ]
 
@@ -883,6 +905,38 @@ def load_unihan_korean() -> tuple[set[str], dict[str, str], dict[str, str]]:
                 definitions[char] = value
     print(f"Unihan Korean education Hanja: {len(education)}, definitions: {len(definitions)}")
     return education, hangul, definitions
+
+
+IDS_SHAPES = {
+    "⿰": "left and right",
+    "⿱": "above and below",
+    "⿲": "left, middle, and right",
+    "⿳": "top, middle, and bottom",
+    "⿴": "around the outside",
+    "⿵": "around the top",
+    "⿶": "around the bottom",
+    "⿷": "around the left",
+    "⿸": "around the upper left",
+    "⿹": "around the upper right",
+    "⿺": "around the lower left",
+    "⿻": "overlapping",
+}
+
+
+def shape_note(decomposition: str, radical: str) -> str:
+    """An honest shape note, never a made-up historical etymology."""
+    parts = [
+        char for char in decomposition
+        if char not in "⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻？?"
+    ]
+    if parts:
+        shape = IDS_SHAPES.get(decomposition[:1])
+        if shape:
+            return f"Shape: {shape}, {' + '.join(parts)}."
+        return f"Shape: built from {' + '.join(parts)}."
+    if radical:
+        return f"Shape: organized around the {radical} radical."
+    return "Shape: a rare glyph with no simple decomposition."
 
 
 def load_mmh_meta() -> dict[str, tuple[str, str, str, str, str, str]]:
@@ -1368,7 +1422,7 @@ def build(out_path: Path) -> None:
     ids_by_mode_char: dict[tuple[str, str], str] = {
         (row.mode, row.char): row.id for row in characters
     }
-    words: list[tuple[str, str, str, str, int | None, int, int]] = []
+    words: list[tuple[str, str, str, str, int | None, int, int, int | None]] = []
     links: list[tuple[int, str]] = []
     word_slots: dict[tuple[str, str], int] = {}
     word_id = 0
@@ -1382,6 +1436,7 @@ def build(out_path: Path) -> None:
         present: list[str],
         common: int = 0,
         mature: int = 0,
+        frequency: int | None = None,
     ) -> None:
         nonlocal word_id
         if not word or not present or not meaning.strip():
@@ -1398,12 +1453,15 @@ def build(out_path: Path) -> None:
         if existing is None:
             word_id += 1
             word_slots[key] = word_id
-            words.append((mode, word, reading[:120], meaning[:180], level, common, mature))
+            words.append((mode, word, reading[:120], meaning[:180], level, common, mature, frequency))
             target_id = word_id
         else:
             target_id = existing
             position = target_id - 1
-            old_mode, old_word, old_reading, old_meaning, old_level, old_common, old_mature = words[position]
+            (
+                old_mode, old_word, old_reading, old_meaning,
+                old_level, old_common, old_mature, old_frequency,
+            ) = words[position]
             readings = [part for part in old_reading.split(" / ") if part]
             if reading and reading not in readings:
                 readings.append(reading)
@@ -1421,6 +1479,9 @@ def build(out_path: Path) -> None:
                 merged_level,
                 max(old_common, common),
                 max(old_mature, mature),
+                old_frequency if frequency is None else (
+                    frequency if old_frequency is None else min(old_frequency, frequency)
+                ),
             )
         for character_id in present:
             links.append((target_id, character_id))
@@ -1434,13 +1495,14 @@ def build(out_path: Path) -> None:
         link_chars: set[str],
         common: int = 0,
         mature: int = 0,
+        frequency: int | None = None,
     ) -> None:
         present = [
             ids_by_mode_char[(mode, char)]
             for char in dict.fromkeys(link_chars)
             if (mode, char) in ids_by_mode_char
         ]
-        register_word(mode, word, reading, meaning, level, present, common, mature)
+        register_word(mode, word, reading, meaning, level, present, common, mature, frequency)
 
     def add_word(
         mode: str,
@@ -1450,6 +1512,7 @@ def build(out_path: Path) -> None:
         level: int | None,
         common: int = 0,
         mature: int = 0,
+        frequency: int | None = None,
     ) -> None:
         if not word or any((mode, char) not in ids_by_mode_char for char in word):
             return
@@ -1462,6 +1525,7 @@ def build(out_path: Path) -> None:
             [ids_by_mode_char[(mode, char)] for char in dict.fromkeys(word)],
             common,
             mature,
+            frequency,
         )
 
     for row in hsk_words:
@@ -1498,7 +1562,7 @@ def build(out_path: Path) -> None:
     # Japanese word examples from JMdict.
     joyo_chars = {row.char for row in characters if row.mode == "JAPANESE" and row.level > 0}
     japanese_words = load_jmdict_words(joyo_chars)
-    for word, (reading, meaning, _, common) in japanese_words.items():
+    for word, (reading, meaning, _, common, rank) in japanese_words.items():
         meaning, mature = sanitize_japanese_meaning(meaning)
         add_word_partial(
             "JAPANESE",
@@ -1509,6 +1573,7 @@ def build(out_path: Path) -> None:
             {char for char in word if char in joyo_chars},
             1 if common else 0,
             1 if mature else 0,
+            rank,
         )
     print(f"Japanese word examples: {len(japanese_words)}")
 
@@ -1516,7 +1581,7 @@ def build(out_path: Path) -> None:
     # is the Hanja spelling, so word practice writes Hanja; the reading is the
     # Hangul pronunciation shown on the card.
     korean_words = load_korean_words(unihan_education)
-    for hanja_word, hangul, meaning, common, mature in korean_words:
+    for hanja_word, hangul, meaning, common, mature, rank in korean_words:
         add_word_partial(
             "KOREAN",
             hanja_word,
@@ -1526,6 +1591,7 @@ def build(out_path: Path) -> None:
             {char for char in hanja_word if char in unihan_education},
             1 if common else 0,
             1 if mature else 0,
+            rank,
         )
     print(f"Korean word examples: {len(korean_words)}")
 
@@ -1611,7 +1677,8 @@ def build(out_path: Path) -> None:
           meaning TEXT NOT NULL,
           level INTEGER,
           common INTEGER NOT NULL DEFAULT 0,
-          mature INTEGER NOT NULL DEFAULT 0
+          mature INTEGER NOT NULL DEFAULT 0,
+          frequency INTEGER
         );
         CREATE TABLE word_character(
           word_id INTEGER NOT NULL,
@@ -1630,10 +1697,14 @@ def build(out_path: Path) -> None:
     for row in characters:
         meta = mmh_meta.get(row.char)
         if meta is not None:
-            meta_rows.append((row.char, *meta))
+            radical, decomposition, hint, kind, phonetic, semantic = meta
+            if not hint.strip():
+                hint = shape_note(decomposition, radical)
+                kind = "shape"
+            meta_rows.append((row.char, radical, decomposition, hint, kind, phonetic, semantic))
         elif row.char in unihan_radicals:
-            # Radical only: never invent a decomposition or etymology story.
-            meta_rows.append((row.char, unihan_radicals[row.char], "", "", "", "", ""))
+            radical = unihan_radicals[row.char]
+            meta_rows.append((row.char, radical, "", shape_note("", radical), "shape", "", ""))
     connection.executemany(
         "INSERT OR REPLACE INTO char_meta VALUES(?,?,?,?,?,?,?)",
         meta_rows,
@@ -1732,10 +1803,10 @@ def build(out_path: Path) -> None:
     )
 
     connection.executemany(
-        "INSERT INTO word_context VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO word_context VALUES(?,?,?,?,?,?,?,?,?)",
         [
-            (index + 1, mode, word, reading, meaning, level, common, mature)
-            for index, (mode, word, reading, meaning, level, common, mature) in enumerate(words)
+            (index + 1, mode, word, reading, meaning, level, common, mature, frequency)
+            for index, (mode, word, reading, meaning, level, common, mature, frequency) in enumerate(words)
         ],
     )
     connection.executemany(

@@ -54,8 +54,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -1466,7 +1470,7 @@ private fun ModeSwitch(mode: StudyMode, onModeChange: (StudyMode) -> Unit, compa
                 onClick = { onModeChange(item) },
                 shape = CircleShape,
                 color = if (active) modeColor(item.ordinal).copy(alpha = 0.95f) else PaperWarm,
-                modifier = Modifier.semantics {
+                modifier = Modifier.clearAndSetSemantics {
                     contentDescription = when (item) {
                         StudyMode.SIMPLIFIED -> "Simplified"
                         StudyMode.TRADITIONAL -> "Traditional"
@@ -1475,6 +1479,10 @@ private fun ModeSwitch(mode: StudyMode, onModeChange: (StudyMode) -> Unit, compa
                     }
                     role = Role.Button
                     selected = active
+                    onClick(label = contentDescription) {
+                        onModeChange(item)
+                        true
+                    }
                 },
             ) {
                 Row(
@@ -1521,7 +1529,7 @@ private fun NavigationRail(
     Surface(
         modifier = Modifier
             .fillMaxHeight()
-            .width(92.dp),
+            .width(104.dp),
         color = PaperWarm.copy(alpha = 0.72f),
     ) {
         Column(
@@ -1549,10 +1557,19 @@ private fun RailItem(tab: Tab, selected: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
         color = if (selected) Sky.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surface,
+        modifier = Modifier.clearAndSetSemantics {
+            contentDescription = tab.label
+            role = Role.Tab
+            this.selected = selected
+            onClick(label = tab.label) {
+                onClick()
+                true
+            }
+        },
     ) {
         Column(
             modifier = Modifier
-                .width(68.dp)
+                .width(80.dp)
                 .padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -1573,6 +1590,7 @@ private fun BihuaBottomBar(
     onSelect: (Tab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -1591,7 +1609,17 @@ private fun BihuaBottomBar(
                     onClick = { onSelect(item) },
                     shape = RoundedCornerShape(18.dp),
                     color = if (active) Sky.copy(alpha = 0.55f) else PaperWarm,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clearAndSetSemantics {
+                            contentDescription = item.label
+                            role = Role.Tab
+                            this.selected = active
+                            onClick(label = item.label) {
+                                onSelect(item)
+                                true
+                            }
+                        },
                 ) {
                     Column(
                         modifier = Modifier
@@ -1607,10 +1635,16 @@ private fun BihuaBottomBar(
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            item.label,
+                            if (item == Tab.CHARACTERS && fontScale > 1.15f) {
+                                "Chars"
+                            } else {
+                                item.label
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             color = if (active) InkDark else InkSoft,
                             maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }

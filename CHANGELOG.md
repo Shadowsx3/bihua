@@ -12,7 +12,7 @@
 - A Mature words setting, off by default, for explicit dictionary examples. It
   is confirmed once and filters review cues, character cards, word search, and
   recent practice.
-- Common-word flags for Japanese and Korean examples.
+- Common-word flags and FrequencyWords ranking for Japanese and Korean examples.
 - A shipped-content test, import validation, and a user-journey risk audit.
 
 ### Changed
@@ -25,6 +25,8 @@
 - Settings content is capped to a readable width on tablets.
 - Word glosses are tidied: no `X|Y` pairs, bracketed notes, braces, dangling
   parentheses, or truncated dictionary apparatus.
+- 587 structure rows without a source story now use an honest “Shape” note built
+  from the decomposition and radical.
 
 ### Fixed
 

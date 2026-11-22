@@ -76,6 +76,8 @@ class SqliteContentRepository(
             JOIN word_character wc ON wc.word_id = w.id
             WHERE wc.character_id = ? AND (w.mature=0 OR w.mature=?)
             ORDER BY w.common DESC,
+                     w.frequency IS NULL,
+                     w.frequency,
                      CASE WHEN w.level IS NULL THEN 1 ELSE 0 END,
                      w.level, length(w.word), w.id
             LIMIT 10
@@ -202,7 +204,10 @@ class SqliteContentRepository(
             WHERE w.mode=? AND (w.mature=0 OR w.mature=?) AND (
                 w.word LIKE ? OR w.meaning LIKE ? OR w.reading LIKE ? OR w.reading LIKE ? OR w.reading LIKE ?
             )
-            ORDER BY length(w.word), w.id
+            ORDER BY w.common DESC,
+                     w.frequency IS NULL,
+                     w.frequency,
+                     length(w.word), w.id
             LIMIT ?
             """.trimIndent(),
             arrayOf(
@@ -277,7 +282,7 @@ class SqliteContentRepository(
      * Content version. Bump this whenever the shipped database changes, so
      * existing installs replace their copy even if the byte length matches.
      */
-    private val contentVersion = 28
+    private val contentVersion = 32
 
     private fun copyIfNeeded(target: File) {
         val assetLength = context.assets.openFd("bihua_content.db").use { it.length }

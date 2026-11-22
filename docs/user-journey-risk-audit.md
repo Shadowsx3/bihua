@@ -114,9 +114,9 @@ Status:
 | An empty “Upcoming reviews” card still listed fourteen zero rows. | Fixed | The forecast collapses to the header and “Nothing scheduled yet.” until data exists. |
 | The first launch showed a bare spinner on a decorative background. | Fixed | The boot screen now says “Preparing your course…” and waits for the first settings read. |
 | Onboarding back navigation and rotation could lose the selected page or script. | Fixed | Back goes to the previous page; page, script, pace, brush, cue, and pronunciation are saveable. |
-| Tablet Practice puts the page title in the control column, away from the canvas. | Watch | The right column reads as a control panel; the canvas stays the visual focus. |
+| Tablet Practice puts the page title in the control column, away from the canvas. | Fixed | The title now sits above the canvas and control columns. |
 | Characters search has a draw icon inside the field and a filter icon beside it. | Watch | Both have accessibility labels and distinct icons; no functional overlap. |
-| Tablet onboarding keeps a phone-sized 560 dp column. | Watch | It remains readable and consistent; a wider two-column onboarding is future work. |
+| Tablet onboarding keeps a phone-sized column. | Fixed | The onboarding column now grows to 720 dp on tablets. |
 
 ## Device and accessibility
 
@@ -125,7 +125,7 @@ Status:
 | Small phone: the writing grid is squeezed by controls. | Verified | Compact prompt/action bar and weighted canvas are in place. |
 | Tablet: the canvas stretches across the whole screen. | Verified | Wrist-sized cap and two-column layouts are used. |
 | Dark theme grid and paper contrast. | Verified | Palette contrast tests pass. |
-| Large text and TalkBack labels. | Open | A full TalkBack and large-text pass remains on the roadmap; no automated substitute. |
+| Large text and TalkBack labels. | Improved | 1.3× font scale was checked on phone and tablet. The rail widens, compact labels shorten, and character/day cards have spoken descriptions. A full TalkBack sweep remains. |
 | Rotation during a session. | Verified | Session state and orientation lock are handled. |
 | Process death during a session. | Verified | Session state is serialised and restored. |
 
@@ -137,6 +137,6 @@ Status:
 | Dictionary artifacts such as `X|Y`, `[notes]`, braces, dangling parentheses, or truncated meanings. | Fixed | The importer tidies every gloss; the audit fails on the pattern if it returns. |
 | Korean course has no word examples. | Fixed | 11,266 Korean word examples cover 1,684 of 1,799 Hanja. |
 | Rare Korean Hanja with no compound. | Watch | 115 rare characters have no safe example; the character card still works. |
-| Japanese word ranking relies on JMdict priority rather than a corpus. | Watch | Common tags are now stored and used; a real frequency list is future work. |
-| 587 structure rows have no story and 286 have no decomposition. | Watch | The UI hides missing stories rather than inventing one. |
+| Japanese word ranking relies on JMdict priority rather than a corpus. | Fixed | FrequencyWords Japanese now ranks the candidates, with JMdict priority as the fallback. 学 leads with 学校. |
+| 587 structure rows had no story and 286 have no decomposition. | Fixed / Watch | The 587 now have a neutral shape note labelled “Shape”, never a made-up history. The 286 missing decompositions stay hidden; no false structure is shown. |
 | Content version and test counts drift from the docs. | Fixed | 207 unit tests, contentVersion 28, 34,362 words are reflected in the README and AGENTS notes. |

@@ -54,6 +54,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
@@ -618,6 +623,9 @@ private fun EmptyWeek(days: List<DayActivity>, onDayClick: (DayActivity) -> Unit
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "${day.date}: ${day.reviewed} reviews, ${day.learned} learned"
+                    }
                     .clickable { onDayClick(day) }
                     .padding(vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -648,6 +656,9 @@ private fun WeeklyBars(days: List<DayActivity>, onDayClick: (DayActivity) -> Uni
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "${day.date}: ${day.reviewed} reviews, ${day.learned} learned"
+                    }
                     .clickable { onDayClick(day) }
                     .padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -752,11 +763,21 @@ private fun LevelCard(stats: com.bassmd.bihua.progress.PlayerStats) {
 
 @Composable
 private fun CharacterPeek(entry: CharacterEntry, onClick: () -> Unit) {
+    val reading = displayReading(entry.reading, entry.mode)
     Surface(
-        onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         color = PaperWarm,
-        modifier = Modifier.width(104.dp),
+        modifier = Modifier
+            .width(104.dp)
+            .clickable(onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = "${entry.character}, $reading, ${entry.meaning}, ${entry.status.label}"
+                role = androidx.compose.ui.semantics.Role.Button
+                onClick(label = contentDescription) {
+                    onClick()
+                    true
+                }
+            },
     ) {
         Column(
             modifier = Modifier.padding(12.dp),

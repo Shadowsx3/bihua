@@ -211,65 +211,72 @@ fun PracticeScreen(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 900.dp
         if (wide) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Column(
+                ScreenTitle()
+                Spacer(Modifier.height(10.dp))
+                Row(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxSize(),
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    PracticeCanvas(
-                        entry = selected,
-                        ink = ink,
-                        player = player,
-                        widthScale = widthScale,
-                        gridStyle = gridStyle,
-                        showStrokeNumbers = showStrokeNumbers,
-                        writingSize = writingSize,
-                        drawingTool = drawingTool,
-                        brush = brush,
-                        allowFinger = allowFinger,
-                        showReference = showReference,
-                        outlineOnly = guideMode == com.bassmd.bihua.settings.GuideMode.OUTLINE,
-                        showOrder = showOrder,
-                        revealProgress = reveal,
-                        onStrokeStart = { trimReplay() },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .width(320.dp)
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ScreenTitle()
-                    CharacterSummary(
-                        entry = selected,
-                        showReference = showReference,
-                        pinyinNumbers = pinyinNumbers,
-                        onChange = { showPicker = true },
-                    )
-                    PracticeTools(
-                        player = player,
-                        showReference = showReference,
-                        onToggleReference = { showReference = it },
-                        ink = ink,
-                        playback = playback,
-                        showOrder = showOrder,
-                        onToggleOrder = { showOrder = it },
-                        orderAvailable = player.strokeCount > 0,
-                        checking = recognizing,
-                        onCheck = {
-                            com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
-                            checkWriting(selected, visibleInk())
-                        },
-                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                    ) {
+                        PracticeCanvas(
+                            entry = selected,
+                            ink = ink,
+                            player = player,
+                            widthScale = widthScale,
+                            gridStyle = gridStyle,
+                            showStrokeNumbers = showStrokeNumbers,
+                            writingSize = writingSize,
+                            drawingTool = drawingTool,
+                            brush = brush,
+                            allowFinger = allowFinger,
+                            showReference = showReference,
+                            outlineOnly = guideMode == com.bassmd.bihua.settings.GuideMode.OUTLINE,
+                            showOrder = showOrder,
+                            revealProgress = reveal,
+                            onStrokeStart = { trimReplay() },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .width(320.dp)
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CharacterSummary(
+                            entry = selected,
+                            showReference = showReference,
+                            pinyinNumbers = pinyinNumbers,
+                            onChange = { showPicker = true },
+                        )
+                        PracticeTools(
+                            player = player,
+                            showReference = showReference,
+                            onToggleReference = { showReference = it },
+                            ink = ink,
+                            playback = playback,
+                            showOrder = showOrder,
+                            onToggleOrder = { showOrder = it },
+                            orderAvailable = player.strokeCount > 0,
+                            checking = recognizing,
+                            onCheck = {
+                                com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+                                checkWriting(selected, visibleInk())
+                            },
+                        )
+                    }
                 }
             }
         } else {

@@ -31,13 +31,15 @@ manifest deliberately, then rebuild the content database.
 | `Unihan.zip` | Unicode Unihan | Unicode License V3 | variants, radicals, Korean Hanja, stroke counts |
 | `kaikki-korean.jsonl.gz` | kaikki.org Korean Wiktionary extract | CC BY-SA 3.0 / GFDL | 64,457 entries; 18,773 with Hanja forms |
 | `ko_50k.txt` | FrequencyWords Korean | CC BY-SA 4.0 | 50,000 ranked words |
+| `ja_50k.txt` | FrequencyWords Japanese | CC BY-SA 4.0 | 50,000 ranked words |
 
 ## Rules
 
 - Characters are the only study items. Words from `hsk30-words-all.json` and
   CC-CEDICT are read-only context on a character card.
 - JMdict supplies Japanese word examples. Never show Chinese words on a
-  Japanese card.
+  Japanese card. FrequencyWords Japanese orders the candidates before JMdict
+  priority tags when a word is in the 50k list.
 - Korean word examples come from the Korean Wiktionary extract. Keep only nouns
   whose Hanja spelling is fully inside the 1,800-character education list, so
   word practice can resolve every character. Explicit-only examples are tagged
@@ -61,8 +63,8 @@ Keep these credits in the About screen and in any exported content manifest:
 - Unihan, Unicode License V3.
 - Korean Wiktionary extract by kaikki.org / Wiktionary contributors, CC BY-SA
   3.0 and GFDL. Used for Korean word examples and Hanja spellings.
-- FrequencyWords by Hermit Dave, content CC BY-SA 4.0. Used only to rank common
-  Korean word examples.
+- FrequencyWords by Hermit Dave, content CC BY-SA 4.0. Used to rank common
+  Japanese and Korean word examples.
 
 The Korean course comes from Unihan's `kKoreanEducationHanja`, `kHangul`, and
 `kDefinition` fields, plus Korean Wiktionary word examples. Words with only

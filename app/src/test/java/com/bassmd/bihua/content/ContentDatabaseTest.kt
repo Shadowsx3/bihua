@@ -76,6 +76,18 @@ class ContentDatabaseTest {
     }
 
     @Test
+    fun japaneseExamplesLeadWithTheCommonWord() {
+        val top = query(
+            "SELECT w.word FROM word_context w " +
+                "JOIN word_character wc ON wc.word_id=w.id " +
+                "WHERE wc.character_id='JAPANESE:U+5B66' " +
+                "ORDER BY w.common DESC, w.frequency IS NULL, w.frequency, " +
+                "length(w.word), w.id LIMIT 1",
+        ).firstOrNull()?.firstOrNull()
+        assertEquals("学校", top)
+    }
+
+    @Test
     fun koreanHasHanjaWordExamplesWithFullCharacterCoverage() {
         val koreanWords = count("SELECT COUNT(*) FROM word_context WHERE mode='KOREAN'")
         assertTrue("expected Korean word examples", koreanWords > 8_000)
@@ -117,6 +129,12 @@ class ContentDatabaseTest {
                 expected != linked[word].orEmpty().toSet() || !korean.containsAll(expected)
             }
         assertTrue("Korean words cannot be practised: ${broken.take(5)}", broken.isEmpty())
+    }
+
+    @Test
+    fun everyStructureRowHasAnHonestNote() {
+        assertEquals(0, count("SELECT COUNT(*) FROM char_meta WHERE trim(etymology)=''"))
+        assertTrue(count("SELECT COUNT(*) FROM char_meta WHERE etymology_type='shape'") > 0)
     }
 
     @Test

@@ -70,6 +70,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -956,11 +961,22 @@ private fun CharacterGrid(
 
 @Composable
 private fun CharacterTile(entry: CharacterEntry, selected: Boolean, onClick: () -> Unit) {
+    val reading = displayReading(entry.reading, entry.mode)
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = if (selected) Sky.copy(alpha = 0.52f) else PaperWarm,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics {
+                contentDescription =
+                    "${entry.character}, $reading, ${entry.meaning}, ${entry.levelLabel.ifBlank { "level ${entry.level}" }}"
+                role = androidx.compose.ui.semantics.Role.Button
+                onClick(label = contentDescription) {
+                    onClick()
+                    true
+                }
+            },
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
@@ -1200,16 +1216,25 @@ private fun CharacterDetail(
                     }
                 }
                 meta?.etymology?.takeIf { it.isNotBlank() }?.let { story ->
+                    val shapeOnly = meta?.etymologyType == "shape"
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Story",
+                            if (shapeOnly) "Shape" else "Story",
                             style = MaterialTheme.typography.labelMedium,
                             color = InkSoft,
                             modifier = Modifier.weight(1f),
                         )
                         TextButton(onClick = { showStory = !showStory }) {
-                            Text(if (showStory) "Hide" else "Show story")
+                            Text(
+                                if (showStory) {
+                                    "Hide"
+                                } else if (shapeOnly) {
+                                    "Show shape"
+                                } else {
+                                    "Show story"
+                                },
+                            )
                         }
                     }
                     if (showStory) {

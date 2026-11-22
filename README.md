@@ -73,7 +73,7 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 207 unit tests, content audit, debug APK, verification
+make check      # compile, 209 unit tests, content audit, debug APK, verification
 make lint       # Android lint
 make run        # check, install, and launch on a connected device
 make smoke      # launch/navigation smoke test on a connected device
@@ -95,7 +95,7 @@ or upload an APK.
 - Korean: **2,239** (1,800 Hanja + 40 jamo + 399 syllables)
 - **34,362** word examples
 - **4,875** unique structure records
-- Content version **28**
+- Content version **32**
 
 The content database is generated, not hand-edited:
 

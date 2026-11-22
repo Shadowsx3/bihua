@@ -31,8 +31,12 @@ is correct, in the right script, and free of pipeline artifacts.
 - [x] Add Korean word examples from the Korean Wiktionary extract, with Hanja
       spellings, Hangul readings, and full character coverage for 1,684 of
       1,799 Hanja. The remaining 115 rare characters have no safe compound.
-- [x] Add a commonness signal and rank Korean examples with FrequencyWords.
-      Japanese still needs a real corpus frequency list beyond JMdict priority.
+      A CEDICT-to-Hangul reconstruction was evaluated and rejected: it produced
+      false Korean words and homographs (for example 무당 for pentose). Those
+      characters keep their reading and meaning but no word example.
+- [x] Add a commonness signal and rank Korean and Japanese examples with
+      FrequencyWords. JMdict priority tags remain the fallback when a word is
+      not in the 50k list. 学 now leads with 学校.
 - [ ] Review the words chosen for the Meet "Found in words" cards. Remove
       obscure compounds, proper nouns, and misleading homographs.
 - [x] Keep explicit words out of the default experience. Word glosses are
@@ -41,11 +45,15 @@ is correct, in the right script, and free of pipeline artifacts.
 
 ## Stories and etymology
 
-- [ ] Review all `char_meta` etymologies for accuracy, typos, and offensive or
-      misleading claims.
-- [ ] Check that the story shown in the Hint popup is the same one used in the
-      character detail.
-- [ ] Mark uncertain etymologies or move them to a neutral "shape story" label.
+- [ ] Review all real `char_meta` etymologies for accuracy, typos, and
+      offensive or misleading claims.
+- [x] Give every structure row an honest fallback. 587 rows without a source
+      story now use a neutral “Shape” note built from the decomposition and
+      radical, and the UI labels it “Shape”, not “Story”.
+- [x] Check that the story shown in the Hint popup is the same one used in the
+      character detail. The popup now says “Shape hint” for shape notes.
+- [ ] 286 rows still have no decomposition. Do not fill these with a guessed
+      IDS; they remain hidden in the detail panel.
 
 ## Pipeline and tests
 

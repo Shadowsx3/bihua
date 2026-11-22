@@ -37,8 +37,8 @@ Keep this in mind for every screen:
   suspension, and selective transfer. 1.0.4 adds the vivid palette, review cue
   setup, script filters, review polish, handwriting sanitisation, cleaner
   readings, and better Japanese word ordering.
-- Progress schema **10**; contentVersion **28**.
-- 207 unit tests.
+- Progress schema **10**; contentVersion **32**.
+- 209 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`
@@ -70,7 +70,7 @@ etymology quality.
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 207 tests, content audit, debug APK, verify
+make check                     # compile, 209 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
@@ -233,7 +233,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 - Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
 - Bump the schema and add an upgrade path when tables change.
-- Content DB contentVersion 28. Bump it whenever the asset changes.
+- Content DB contentVersion 32. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
   traditional-only forms in Simplified; shared glyphs stay in both.
 - Traditional words come from CEDICT word pairs, not character substitution.

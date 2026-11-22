@@ -273,12 +273,18 @@ def main() -> int:
 
     empty_etymology = count(db, "SELECT COUNT(*) FROM char_meta WHERE trim(etymology)=''")
     empty_structure = count(db, "SELECT COUNT(*) FROM char_meta WHERE trim(decomposition)=''")
+    shape_notes = count(
+        db, "SELECT COUNT(*) FROM char_meta WHERE etymology_type='shape'"
+    )
+    if empty_etymology:
+        warn(f"{empty_etymology} structure rows still have no shape note")
     japanese_markers = count(
         db,
         "SELECT COUNT(*) FROM character WHERE mode='JAPANESE' "
         "AND (reading LIKE '%.%' OR reading LIKE '%-%')",
     )
-    print(f"  info         {empty_etymology} structure rows have no story")
+    print(f"  info         {empty_etymology} structure rows have no shape note")
+    print(f"  info         {shape_notes} structure rows use an honest shape note")
     print(f"  info         {empty_structure} structure rows have no decomposition")
     print(f"  info         {japanese_markers} Japanese readings use dictionary markers; display cleans them")
     for mode, common, mature in db.execute(
