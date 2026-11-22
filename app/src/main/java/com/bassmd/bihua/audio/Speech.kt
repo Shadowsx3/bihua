@@ -16,11 +16,13 @@ class Speech(private val context: Context) : AutoCloseable {
     private var engine: TextToSpeech? = null
     private var ready = false
     private var rate = 0.92f
+    private var pendingMode: StudyMode? = null
 
     init {
         engine = TextToSpeech(context.applicationContext) { status ->
             ready = status == TextToSpeech.SUCCESS
             engine?.setSpeechRate(rate)
+            pendingMode?.let { applyLanguage(it) }
             engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) = Unit
                 override fun onDone(utteranceId: String?) = Unit
@@ -35,17 +37,16 @@ class Speech(private val context: Context) : AutoCloseable {
         engine?.setSpeechRate(rate)
     }
 
+    /** Warm the engine and select the script's voice before the first tap. */
+    fun prepare(mode: StudyMode) {
+        pendingMode = mode
+        if (ready) applyLanguage(mode)
+    }
+
     fun speak(text: String, mode: StudyMode) {
         val tts = engine ?: return
         if (!ready || text.isBlank()) return
-        val locale = localeFor(mode)
-        val availability = tts.isLanguageAvailable(locale)
-        if (availability == TextToSpeech.LANG_MISSING_DATA ||
-            availability == TextToSpeech.LANG_NOT_SUPPORTED
-        ) {
-            return
-        }
-        tts.language = locale
+        if (!applyLanguage(mode)) return
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "bihua-${text.hashCode()}")
     }
 
@@ -58,6 +59,20 @@ class Speech(private val context: Context) : AutoCloseable {
         engine?.shutdown()
         engine = null
         ready = false
+        pendingMode = null
+    }
+
+    private fun applyLanguage(mode: StudyMode): Boolean {
+        val tts = engine ?: return false
+        if (!ready) return false
+        val locale = localeFor(mode)
+        val availability = tts.isLanguageAvailable(locale)
+        if (availability == TextToSpeech.LANG_MISSING_DATA ||
+            availability == TextToSpeech.LANG_NOT_SUPPORTED
+        ) {
+            return false
+        }
+        return tts.setLanguage(locale) >= TextToSpeech.LANG_AVAILABLE
     }
 
     private fun localeFor(mode: StudyMode): Locale = when (mode) {

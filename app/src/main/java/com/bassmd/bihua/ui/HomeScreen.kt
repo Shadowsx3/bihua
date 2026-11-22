@@ -144,6 +144,7 @@ fun HomeScreen(
         else -> "Hello, ${profile.displayName}"
     }
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
+    var confirmDiscard by remember { mutableStateOf(false) }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 720.dp
@@ -187,7 +188,7 @@ fun HomeScreen(
                                         color = InkSoft,
                                     )
                                 }
-                                TextButton(onClick = onDiscardSession) { Text("Discard") }
+                                TextButton(onClick = { confirmDiscard = true }) { Text("Discard") }
                             }
                             Spacer(Modifier.height(8.dp))
                             PrimaryAction(
@@ -325,6 +326,28 @@ fun HomeScreen(
         selectedDay?.let { day ->
             DayDetailSheet(day = day, onDismiss = { selectedDay = null })
         }
+    }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text("Discard this lesson?") },
+            text = {
+                Text(
+                    "Graded cards keep their schedule. The current card and the rest of this queue will be waiting next time."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDiscard = false
+                    onDiscardSession()
+                }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDiscard = false }) { Text("Keep lesson") }
+            },
+        )
     }
     if (showEndVacation) {
         AlertDialog(

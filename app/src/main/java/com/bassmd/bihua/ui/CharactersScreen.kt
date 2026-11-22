@@ -1055,6 +1055,35 @@ private fun CharacterDetail(
                 Text("${entry.knownDots} of 2 to Known", style = MaterialTheme.typography.labelSmall, color = InkSoft)
             }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onPractice,
+                shape = CircleShape,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Practice")
+            }
+            OutlinedButton(onClick = onAddToList, shape = CircleShape) {
+                Text(if (inStudyList) "In study list" else "Add to list")
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            words.firstOrNull()?.let { word ->
+                TextButton(onClick = { onPracticeWord(word) }) {
+                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Write a word", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            TextButton(onClick = onPaper) {
+                Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Write on paper", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+
         if (sharedModes.size > 1) {
             val names = sharedModes.filter { it != entry.mode }.joinToString(" and ") { it.label() }
             Surface(
@@ -1084,35 +1113,6 @@ private fun CharacterDetail(
                         Text("Use the global setting", style = MaterialTheme.typography.labelSmall)
                     }
                 }
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = onPractice,
-                shape = CircleShape,
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Practice")
-            }
-            OutlinedButton(onClick = onAddToList, shape = CircleShape) {
-                Text(if (inStudyList) "In study list" else "Add to list")
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            words.firstOrNull()?.let { word ->
-                TextButton(onClick = { onPracticeWord(word) }) {
-                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Write a word", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            TextButton(onClick = onPaper) {
-                Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Write on paper", style = MaterialTheme.typography.labelLarge)
             }
         }
 

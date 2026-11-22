@@ -65,6 +65,7 @@ import com.bassmd.bihua.progress.MemoryLevel
 import com.bassmd.bihua.progress.PlayerStats
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.progress.ProgressStore
+import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.audio.Speech
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
@@ -117,19 +118,33 @@ fun BihuaApp(store: SettingsStore) {
     val repository = remember { SqliteContentRepository(context.applicationContext) }
     val scope = rememberCoroutineScope()
     val mode = settings.studyMode
-    val speechState = remember { mutableStateOf<Speech?>(null) }
+    var showOnboarding by remember { mutableStateOf(false) }
+    var previewMode by remember { mutableStateOf<StudyMode?>(null) }
+    val preloadMode: StudyMode? = when {
+        showOnboarding -> previewMode
+        settings.onboarded -> mode
+        else -> null
+    }
+    val speech = remember { Speech(context.applicationContext) }
+    val handwriting = remember { InkRecognitionService() }
     val speak: (String) -> Unit = { text ->
         if (settings.readAloud && text.isNotBlank()) {
-            val engine = speechState.value ?: Speech(context.applicationContext).also {
-                speechState.value = it
-            }
-            engine.speak(text, mode)
+            speech.speak(text, mode)
         }
     }
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose { speechState.value?.close() }
+    LaunchedEffect(preloadMode, settings.readAloud) {
+        val target = preloadMode ?: return@LaunchedEffect
+        // Give a quick script change time to settle before starting a download.
+        kotlinx.coroutines.delay(350)
+        withContext(Dispatchers.IO) { handwriting.prepare(target) }
+        if (settings.readAloud) speech.prepare(target)
     }
-    var showOnboarding by remember { mutableStateOf(false) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            speech.close()
+            handwriting.close()
+        }
+    }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(250)
         val current = store.settings.first()
@@ -137,6 +152,7 @@ fun BihuaApp(store: SettingsStore) {
     }
     if (showOnboarding) {
         OnboardingScreen(
+            onModePreview = { previewMode = it },
             onFinish = { chosenMode, goal, brush, share ->
                 scope.launch {
                     store.updateSettings { current ->
@@ -171,12 +187,12 @@ fun BihuaApp(store: SettingsStore) {
     }
     val progressStore = remember { ProgressStore(context.applicationContext) }
     val sessionStore = remember { LearnSessionStore(context.applicationContext) }
-    var resumableSession by remember(mode, sessionStore) {
+    var progressVersion by remember { mutableIntStateOf(0) }
+    var resumableSession by remember(mode, sessionStore, progressVersion) {
         mutableStateOf(sessionStore.load(mode))
     }
     var activeResume by remember { mutableStateOf<LearnSessionState?>(null) }
     var sessionCharacters by remember { mutableStateOf<Map<String, CharacterEntry>>(emptyMap()) }
-    var progressVersion by remember { mutableIntStateOf(0) }
     var clockTick by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         while (true) {

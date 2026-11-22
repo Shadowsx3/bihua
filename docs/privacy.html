@@ -86,9 +86,9 @@
       <p>Bihua does not create an account. The developer does not receive this data. Android cloud backup is disabled in the app manifest, so the app data is not copied to Google Drive by the operating system. The app has its own backup export when you want one. Data remains on the device until you delete it from the app, remove the relevant item, or uninstall the app.</p>
 
       <h2 id="network">Network access</h2>
-      <p>Bihua does not run a developer-operated server. Network access is used only when you start one of these actions:</p>
+      <p>Bihua does not run a developer-operated server. Network access is used for these actions:</p>
       <ul>
-        <li><strong>Handwriting model download.</strong> ML Kit Digital Ink downloads a recognition model through Google Play services. The model runs on the device.</li>
+        <li><strong>Handwriting model download.</strong> When Bihua starts, when you switch scripts, or when you first use the handwriting check, ML Kit Digital Ink may download the small recognition model for the active script through Google Play services. The model runs on the device. You can also prepare all four models from Settings.</li>
         <li><strong>Local Wi-Fi sync.</strong> Two devices on the same network can exchange a backup using a short-lived local server and a pairing code.</li>
       </ul>
       <p>Text-to-speech uses the voice engine installed on the device. Handwriting model downloads use HTTPS and are handled by Google Play services. Local Wi-Fi sync uses a short-lived HTTP server on your local network and is not relayed through the internet. Bihua does not send study history to a third party.</p>

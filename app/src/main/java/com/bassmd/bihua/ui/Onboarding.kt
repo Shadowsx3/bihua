@@ -35,12 +35,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.StudyMode
+import com.bassmd.bihua.ink.hasStylus
 import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.DrawingTool
 import com.bassmd.bihua.ui.components.InkMascot
@@ -65,6 +67,7 @@ import com.bassmd.bihua.ui.theme.Sky
 @Composable
 fun OnboardingScreen(
     onFinish: (StudyMode, Int, BrushConfig, Boolean) -> Unit,
+    onModePreview: (StudyMode) -> Unit = {},
 ) {
     var step by remember { mutableIntStateOf(0) }
     var mode by remember { mutableStateOf(StudyMode.SIMPLIFIED) }
@@ -122,7 +125,10 @@ fun OnboardingScreen(
                         0 -> WelcomePage()
                         1 -> ScriptPage(
                         mode = mode,
-                        onPick = { mode = it },
+                        onPick = {
+                            onModePreview(it)
+                            mode = it
+                        },
                         shareProgress = shareProgress,
                         onShareChange = { shareProgress = it },
                     )
@@ -180,6 +186,8 @@ fun OnboardingScreen(
 
 @Composable
 private fun WelcomePage() {
+    val context = LocalContext.current
+    val hasPen = remember(context) { hasStylus(context) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         InkMascot(size = 120.dp)
         Spacer(Modifier.height(18.dp))
@@ -206,7 +214,13 @@ private fun WelcomePage() {
         Spacer(Modifier.height(22.dp))
         listOf(
             "1" to ("Meet the character" to "See its shape, reading, and meaning."),
-            "2" to ("Trace it once" to "Follow the green guide with your finger or pen."),
+            "2" to (
+                "Trace it once" to if (hasPen) {
+                    "Follow the green guide with your stylus."
+                } else {
+                    "Follow the green guide with your finger."
+                }
+            ),
             "3" to ("Write and grade" to "Write from memory, then choose Again, Hard, Good, or Easy."),
         ).forEach { (number, content) ->
             Row(
@@ -360,11 +374,17 @@ private fun PacePage(goal: Int, onPick: (Int) -> Unit) {
 
 @Composable
 private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
+    val context = LocalContext.current
+    val hasPen = remember(context) { hasStylus(context) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Pick a writing feel", style = MaterialTheme.typography.headlineMedium, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
-            "A finger works. With a stylus, the line also follows pressure. Tune it later in Settings.",
+            if (hasPen) {
+                "Use your stylus; the line follows pressure. Finger drawing can be enabled later in Settings."
+            } else {
+                "Use your finger. A stylus adds pressure if you have one. Tune it later in Settings."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,
             textAlign = TextAlign.Center,

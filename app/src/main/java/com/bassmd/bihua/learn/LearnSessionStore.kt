@@ -37,5 +37,10 @@ class LearnSessionStore(context: Context) {
         prefs.edit().remove(key(mode)).apply()
     }
 
+    /** Remove every paused lesson. Used when progress is reset or replaced. */
+    fun clearAll() {
+        prefs.edit().clear().apply()
+    }
+
     private fun key(mode: StudyMode): String = "active_${mode.name}"
 }

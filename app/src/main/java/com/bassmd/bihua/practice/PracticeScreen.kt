@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -165,7 +167,15 @@ fun PracticeScreen(
         if (!recognizing) recognition = null
     }
 
-    val selected = characters.firstOrNull { it.id == selectedId } ?: characters.firstOrNull()
+    val curriculumFirst = remember(mode, characters) {
+        com.bassmd.bihua.content.Curriculum.order(
+            characters,
+            com.bassmd.bihua.content.CharacterOrder.CURRICULUM,
+        ).firstOrNull()
+    }
+    val selected = characters.firstOrNull { it.id == selectedId }
+        ?: curriculumFirst
+        ?: characters.firstOrNull()
     val player = rememberStrokeOrderPlayer(selected?.id)
 
     LaunchedEffect(selected?.id) {
@@ -176,7 +186,7 @@ fun PracticeScreen(
             val sameGlyph = selectedGlyph?.let { glyph ->
                 characters.firstOrNull { it.character == glyph }
             }
-            val next = sameGlyph ?: characters.firstOrNull()
+            val next = sameGlyph ?: curriculumFirst ?: characters.firstOrNull()
             selectedId = next?.id
             selectedGlyph = next?.character
         }
@@ -325,7 +335,12 @@ fun PracticeScreen(
                 tonalElevation = 6.dp,
                 modifier = Modifier.widthIn(max = 400.dp),
             ) {
-                Column(Modifier.padding(12.dp)) {
+                Column(
+                    Modifier
+                        .heightIn(max = 560.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(12.dp),
+                ) {
                     RecognitionResultView(
                         result = recognition,
                         target = selected?.character,
@@ -589,6 +604,10 @@ private fun CharacterPicker(
     onDismiss: () -> Unit,
     onSelect: (CharacterEntry) -> Unit,
 ) {
+    var query by remember { mutableStateOf("") }
+    val filtered = remember(entries, query) {
+        entries.filter { com.bassmd.bihua.content.CharacterSearch.matches(it, query) }
+    }
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -602,7 +621,24 @@ private fun CharacterPicker(
                     Text("Choose a character", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismiss) { Text("Close") }
                 }
+                Spacer(Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it.take(40) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Character, meaning, or reading") },
+                    shape = RoundedCornerShape(16.dp),
+                )
                 Spacer(Modifier.height(8.dp))
+                if (filtered.isEmpty()) {
+                    Text(
+                        "No characters match.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                        modifier = Modifier.padding(vertical = 24.dp),
+                    )
+                } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(72.dp),
                     modifier = Modifier
@@ -612,7 +648,7 @@ private fun CharacterPicker(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(entries, key = { it.id }) { entry ->
+                    items(filtered, key = { it.id }) { entry ->
                         Surface(
                             onClick = { onSelect(entry) },
                             shape = RoundedCornerShape(16.dp),
@@ -632,6 +668,7 @@ private fun CharacterPicker(
                             }
                         }
                     }
+                }
                 }
             }
         }

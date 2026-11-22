@@ -996,7 +996,7 @@ fun SettingsScreen(
                         Spacer(Modifier.height(10.dp))
                         Text("Handwriting models", style = MaterialTheme.typography.titleSmall, color = InkDark)
                         Text(
-                            "Optional. A reading can miss or misread a stroke, so treat it as a hint. You always choose the grade.",
+                            "The active script downloads in the background. Use this to prepare all four. A reading can miss or misread a stroke, so treat it as a hint; you always choose the grade.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -1446,6 +1446,7 @@ fun SettingsScreen(
                         confirmReset = false
                         scope.launch {
                             progress?.resetAllLearning()
+                            com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
                             onProgressChanged()
                             message = "All progress reset."
                         }
@@ -1489,6 +1490,8 @@ fun SettingsScreen(
                             store.restore(incoming.backup)
                         }
                         if (result.isSuccess) {
+                            com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
+                            onProgressChanged()
                             message = "Sync complete."
                             context.findActivity()?.recreate()
                         } else {
@@ -1526,6 +1529,8 @@ fun SettingsScreen(
                         store.restore(bundle)
                     }
                     if (restored.isSuccess) {
+                        com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
+                        onProgressChanged()
                         message = "Backup restored."
                         if (progressBytes != null) context.findActivity()?.recreate()
                     } else {
