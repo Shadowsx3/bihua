@@ -37,13 +37,13 @@ Artifacts:
 
 - APK: `app/build/outputs/apk/release/app-release.apk`
 - AAB: `app/build/outputs/bundle/release/app-release.aab`
-- Current version: `1.0.2` (`versionCode 12`)
+- Current version: `1.0.4` (`versionCode 14`)
 
 ## Play closed testing
 
 1. Upload the AAB to **Test and release → Testing → Closed testing**.
-2. Release name: `1.0.2 closed test`.
-3. Release notes: `store/release-notes-1.0.2.txt`, including `<en-US>` tags.
+2. Release name: `1.0.4 closed test`.
+3. Release notes: `store/release-notes-1.0.4.txt`, including `<en-US>` tags.
 4. Roll out to the existing closed-test track; do not pause it or create a new track.
 5. Keep the same 12 testers opted in continuously for 14 days.
 6. Store images and listing copy: `store/PLAY-UPLOAD.md`.
@@ -54,9 +54,9 @@ the test for testers who stay opted in.
 
 ## GitHub release
 
-1. Push the `v1.0.2` tag.
+1. Push the `v1.0.4` tag.
 2. Create a GitHub release from that tag.
-3. Upload the APK as `bihua-1.0.2.apk`.
+3. Upload the APK as `bihua-1.0.4.apk`.
 4. The site uses `releases/latest`, so it will point at the newest release.
 5. Update the SHA-256 in `docs/index.html` and `docs/download/SHA256SUMS.txt`
    when the local APK is rebuilt.

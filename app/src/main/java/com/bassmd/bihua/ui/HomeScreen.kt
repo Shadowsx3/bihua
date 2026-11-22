@@ -149,6 +149,13 @@ fun HomeScreen(
     }
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
     var confirmDiscard by remember { mutableStateOf(false) }
+    val recentPeek = characters.filter { it.status != StudyStatus.NEW }.take(8)
+        .ifEmpty {
+            Curriculum.order(
+                characters.filter { it.status == StudyStatus.NEW },
+                CharacterOrder.CURRICULUM,
+            ).take(8)
+        }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 720.dp
@@ -204,6 +211,7 @@ fun HomeScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         Column(Modifier.weight(1.15f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             StudyHero(
+                                mode = mode,
                                 due = due,
                                 fresh = fresh,
                                 learning = learning,
@@ -216,12 +224,26 @@ fun HomeScreen(
                             StatRow(known = known, total = characters.size, newToday = newToday, studyDays = studyDays)
                             LevelCard(playerStats)
                         }
-                        Column(Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
                             StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
+                            SectionTitle(
+                                title = if (known + due > 0) "Pick up where you left off" else "Start with these",
+                                action = "See all",
+                                onAction = onBrowse,
+                            )
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                items(recentPeek) { entry ->
+                                    CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
+                                }
+                            }
                         }
                     }
                 } else if (resumeSession == null) {
                     StudyHero(
+                        mode = mode,
                         due = due,
                         fresh = fresh,
                         learning = learning,
@@ -298,24 +320,19 @@ fun HomeScreen(
                     }
                 }
             }
-            item {
-                SectionTitle(
-                    title = if (known + due > 0) "Pick up where you left off" else "Start with these",
-                    action = "See all",
-                    onAction = onBrowse,
-                )
-            }
-            item {
-                val recent = characters.filter { it.status != StudyStatus.NEW }.take(8)
-                    .ifEmpty {
-                        Curriculum.order(
-                            characters.filter { it.status == StudyStatus.NEW },
-                            CharacterOrder.CURRICULUM,
-                        ).take(8)
-                    }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(recent) { entry ->
-                        CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
+            if (!(wide && resumeSession == null)) {
+                item {
+                    SectionTitle(
+                        title = if (known + due > 0) "Pick up where you left off" else "Start with these",
+                        action = "See all",
+                        onAction = onBrowse,
+                    )
+                }
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(recentPeek) { entry ->
+                            CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
+                        }
                     }
                 }
             }
@@ -404,6 +421,7 @@ private fun Header(
 
 @Composable
 private fun StudyHero(
+    mode: StudyMode,
     due: Int,
     fresh: Int,
     learning: Int,
@@ -421,9 +439,13 @@ private fun StudyHero(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        Gem.copy(alpha = 0.92f),
-                        Mint.copy(alpha = 0.88f),
-                        Lilac.copy(alpha = 0.55f),
+                        when (mode) {
+                            StudyMode.SIMPLIFIED -> Sky
+                            StudyMode.TRADITIONAL -> Peach
+                            StudyMode.JAPANESE -> Lilac
+                            StudyMode.KOREAN -> Mint
+                        }.copy(alpha = 0.94f),
+                        (if (mode == StudyMode.KOREAN) Gem else Mint).copy(alpha = 0.88f),
                     )
                 )
             )

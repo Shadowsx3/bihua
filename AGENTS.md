@@ -29,16 +29,16 @@ Keep this in mind for every screen:
 
 ## Current release state
 
-- Closed test: **1.0.3**, versionCode **13**, submitted. Confirm the current
-  review state in Play Console before uploading anything else.
-- Local working tree: post-1.0.3 design and review polish. The next upload needs
-  versionCode **14** and a new review.
+- Closed test: **1.0.3**, versionCode **13**.
+- Local next release: **1.0.4**, versionCode **14**. This is the design,
+  review, and content-quality build.
 - Do not upload another build with versionCode 12 or 13.
 - The 1.0.3 code includes personal FSRS weights, the day boundary, permanent
-  suspension, and selective transfer. Later local work adds the vivid palette,
-  review cue setup, script filters, review polish, and handwriting sanitisation.
-- Progress schema **9**; contentVersion **19**.
-- 184 unit tests.
+  suspension, and selective transfer. 1.0.4 adds the vivid palette, review cue
+  setup, script filters, review polish, handwriting sanitisation, cleaner
+  readings, and better Japanese word ordering.
+- Progress schema **9**; contentVersion **22**.
+- 186 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
 - Play package: `com.bassmd.bihua`
@@ -52,17 +52,23 @@ Keep this in mind for every screen:
   checklist, listing copy, release notes, and store screenshots.
 - Play upload checklist: `store/PLAY-UPLOAD.md`
 - Listing copy: `store/listing.md`, `store/full-description.txt`
-- Release notes: `store/release-notes-1.0.2.txt` (closed test) and
-  `store/release-notes-1.0.3.txt` (next release)
+- Release notes: `store/release-notes-1.0.3.txt` (previous closed test) and
+  `store/release-notes-1.0.4.txt` (next release)
 - Store screenshots: `store/phone-1..7.png`, `store/tablet-7-*`,
   `store/tablet-10-*`
-- GitHub release tag: `v1.0.2`; the site uses `releases/latest`.
+## Content QA backlog
+
+Every character, word, reading, meaning, and story users see must be checked
+before the next content release. The working checklist is
+`docs/content-qa-backlog.md`. Known gaps: Japanese word frequency ordering,
+Korean word coverage, and some etymology quality.
+- GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
 
 ## Build, test, install
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 155 tests, content audit, debug APK, verify
+make check                     # compile, 186 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
@@ -225,7 +231,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 - Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
 - Bump the schema and add an upgrade path when tables change.
-- Content DB contentVersion 19. Bump it whenever the asset changes.
+- Content DB contentVersion 22. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
   traditional-only forms in Simplified; shared glyphs stay in both.
 - Traditional words come from CEDICT word pairs, not character substitution.
@@ -297,13 +303,13 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   `keystore.properties`, `screenshots/`, or build output.
 - Store listing is plain text; Google Play does not render Markdown/HTML.
 - Phone screenshots are 1080 × 1920, 9:16. Tablet assets are 1920 × 1080 and
-  2560 × 1440. All are real 1.0.2 captures.
+  2560 × 1440. All are real 1.0.4 captures.
 - The app UI is English-only. Do not publish AI listing translations without a
   native review. `store/translations/listing-en-US.csv` is the source row.
 - The site `docs/` and GitHub release are separate from Play Console. Local files
   do not upload themselves.
 - The landing page (`docs/index.html`, `docs/style.css`) uses a crisp ink-and-paper
-  style with current 1.0.2 light-theme screenshots. Do not reintroduce the old
+  style with current 1.0.4 light-theme screenshots. Do not reintroduce the old
   blurred forest wash, drifting leaves, fireflies, glass cards, or translucent
   gradients. Keep hard borders, solid shadows, and the vermillion accent.
 - `docs/assets/*-light.png` are the current screenshots. Do not point the site or

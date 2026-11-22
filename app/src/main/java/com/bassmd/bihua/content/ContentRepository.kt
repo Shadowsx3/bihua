@@ -63,11 +63,13 @@ class SqliteContentRepository(
     override suspend fun words(characterId: String): List<WordContext> = withContext(Dispatchers.IO) {
         database.rawQuery(
             """
-            SELECT w.word, w.reading, w.meaning, w.level
+            SELECT w.word, w.reading, w.meaning, w.level, w.common
             FROM word_context w
             JOIN word_character wc ON wc.word_id = w.id
             WHERE wc.character_id = ?
-            ORDER BY CASE WHEN w.level IS NULL THEN 1 ELSE 0 END, w.level, length(w.word), w.id
+            ORDER BY w.common DESC,
+                     CASE WHEN w.level IS NULL THEN 1 ELSE 0 END,
+                     w.level, length(w.word), w.id
             LIMIT 10
             """.trimIndent(),
             arrayOf(characterId),
@@ -80,6 +82,7 @@ class SqliteContentRepository(
                             reading = cursor.getString(1),
                             meaning = cursor.getString(2),
                             level = if (cursor.isNull(3)) null else cursor.getInt(3),
+                            common = !cursor.isNull(4) && cursor.getInt(4) != 0,
                         )
                     )
                 }
@@ -257,7 +260,7 @@ class SqliteContentRepository(
      * Content version. Bump this whenever the shipped database changes, so
      * existing installs replace their copy even if the byte length matches.
      */
-    private val contentVersion = 19
+    private val contentVersion = 22
 
     private fun copyIfNeeded(target: File) {
         val assetLength = context.assets.openFd("bihua_content.db").use { it.length }

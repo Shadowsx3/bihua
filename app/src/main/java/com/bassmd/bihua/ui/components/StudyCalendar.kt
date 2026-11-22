@@ -70,25 +70,69 @@ fun StudyCalendarCard(
                     Sky.copy(alpha = 0.45f),
                 )
             }
-            Spacer(Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
-                    Text(
-                        label,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkSoft,
-                    )
+            if (practiced == 0) {
+                Spacer(Modifier.height(10.dp))
+                val weekStart = today.minusDays((today.dayOfWeek.value % 7).toLong())
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    repeat(7) { index ->
+                        val day = weekStart.plusDays(index.toLong())
+                        val isToday = day == today
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(28.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    RoundedCornerShape(8.dp),
+                                )
+                                .then(
+                                    if (isToday) {
+                                        Modifier.border(2.dp, InkDark, RoundedCornerShape(8.dp))
+                                    } else {
+                                        Modifier
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                day.dayOfMonth.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isToday) InkDark else InkSoft,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
                 }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Your first practice day will fill this calendar.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
+            } else {
+                Spacer(Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
+                        Text(
+                            label,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                CalendarGrid(days = days, today = today, onDayClick = onDayClick)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Tap any day to see what you wrote.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
             }
-            Spacer(Modifier.height(4.dp))
-            CalendarGrid(days = days, today = today, onDayClick = onDayClick)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Tap any day to see what you wrote.",
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
-            )
         }
     }
 }

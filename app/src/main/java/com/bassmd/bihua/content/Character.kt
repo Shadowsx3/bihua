@@ -16,6 +16,8 @@ data class WordContext(
     val readingAlt: String = "",
     val meaning: String,
     val level: Int? = null,
+    /** JMdict priority word, used to put common examples first. */
+    val common: Boolean = false,
     val traditional: String = "",
     val simplified: String = "",
 )

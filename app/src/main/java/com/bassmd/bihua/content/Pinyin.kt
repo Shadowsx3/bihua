@@ -153,13 +153,35 @@ object Pinyin {
     }
 
     /** Display form for a reading, honouring the numbered-pinyin setting. */
-    fun display(reading: String, mode: com.bassmd.bihua.content.StudyMode, numbers: Boolean): String =
-        if (mode == com.bassmd.bihua.content.StudyMode.SIMPLIFIED ||
+    fun display(reading: String, mode: com.bassmd.bihua.content.StudyMode, numbers: Boolean): String {
+        val shown = if (mode == com.bassmd.bihua.content.StudyMode.SIMPLIFIED ||
             mode == com.bassmd.bihua.content.StudyMode.TRADITIONAL
         ) {
             if (numbers) toNumbered(reading) else reading
         } else {
             reading
+        }
+        return cleanForDisplay(shown, mode)
+    }
+
+    /**
+     * KANJIDIC marks okurigana with a dot and affixes with a hyphen. Those
+     * markers are useful in a dictionary, not in a review cue. Chinese readings
+     * with commas are shown as alternatives.
+     */
+    private fun cleanForDisplay(reading: String, mode: com.bassmd.bihua.content.StudyMode): String =
+        when (mode) {
+            com.bassmd.bihua.content.StudyMode.JAPANESE ->
+                reading.split('/')
+                    .map { it.replace(".", "").replace("-", "").trim() }
+                    .filter { it.isNotEmpty() }
+                    .distinct()
+                    .joinToString(" / ")
+            com.bassmd.bihua.content.StudyMode.KOREAN -> reading.trim()
+            else -> reading.split(',')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .joinToString(" / ")
         }
 
     /** True when a reading matches the query as typed, with or without tones. */

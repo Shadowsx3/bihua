@@ -463,18 +463,18 @@ def load_cedict() -> tuple[
     return singles, words, traditional_singles, simplified_singles, simplified_words
 
 
-def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[str, str, str]]:
+def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[str, str, str, bool]]:
     """Common Japanese words keyed by word: (reading, meaning, kanji string).
 
-    Prefers entries with JMdict priority tags (news/ichi/spec), then shorter
-    words. Only words containing at least one Jōyō kanji are kept.
+    JMdict priority tags come first, then shorter words. This matters because
+    the entry order is not a frequency order and can otherwise surface rare
+    compounds for a beginner character.
     """
     path = RAW / "JMdict_e"
     if not path.exists():
         return {}
-    chosen: dict[str, tuple[str, str, str]] = {}
-    per: dict[str, int] = defaultdict(int)
-    priority_tags = {"news1", "news2", "ichi1", "ichi2", "spec1", "spec2"}
+    candidates: dict[str, list[tuple[bool, int, str, str, str]]] = defaultdict(list)
+    priority_tags = {"news1", "news2", "ichi1", "ichi2"}
     context = ET.iterparse(path, events=("end",))
     for _, element in context:
         if not element.tag.endswith("entry"):
@@ -483,7 +483,6 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
         reb = None
         gloss = None
         priority = False
-        kanji_text = ""
         for child in element:
             tag = child.tag.split("}")[-1]
             if tag == "k_ele":
@@ -491,13 +490,15 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
                     name = part.tag.split("}")[-1]
                     if name == "keb" and keb is None and part.text:
                         keb = part.text
-                    elif name in ("ke_pri",):
+                    elif name == "ke_pri" and part.text in priority_tags:
                         priority = True
             elif tag == "r_ele" and reb is None:
                 for part in child:
-                    if part.tag.split("}")[-1] == "reb" and part.text:
+                    name = part.tag.split("}")[-1]
+                    if name == "reb" and part.text and reb is None:
                         reb = part.text
-                        break
+                    elif name == "re_pri" and part.text in priority_tags:
+                        priority = True
             elif tag == "sense" and gloss is None:
                 for part in child:
                     if part.tag.split("}")[-1] == "gloss" and part.text:
@@ -509,15 +510,27 @@ def load_jmdict_words(kanji: set[str], per_kanji: int = 3) -> dict[str, tuple[st
         hit = [char for char in keb if char in kanji]
         if not hit:
             continue
-        if any(per[char] >= per_kanji for char in hit):
-            continue
-        if keb in chosen:
-            continue
-        chosen[keb] = (reb, gloss[:80], keb)
         for char in hit:
-            per[char] += 1
-    return chosen
+            candidates[char].append((priority, len(keb), keb, reb, gloss[:80]))
 
+    chosen: dict[str, tuple[str, str, str, bool]] = {}
+    for char in sorted(candidates):
+        ranked = sorted(
+            candidates[char],
+            key=lambda row: (not row[0], row[1], row[2]),
+        )
+        picked = 0
+        for priority, _, keb, reb, gloss in ranked:
+            previous = chosen.get(keb)
+            if previous is not None:
+                if priority and not previous[3]:
+                    chosen[keb] = (previous[0], previous[1], previous[2], True)
+                continue
+            chosen[keb] = (reb, gloss, keb, priority)
+            picked += 1
+            if picked >= per_kanji:
+                break
+    return chosen
 
 def load_total_strokes() -> dict[str, int]:
     """kTotalStrokes: the official stroke count, used when no guide exists."""
@@ -1153,7 +1166,7 @@ def build(out_path: Path) -> None:
     ids_by_mode_char: dict[tuple[str, str], str] = {
         (row.mode, row.char): row.id for row in characters
     }
-    words: list[tuple[str, str, str, str, int | None]] = []
+    words: list[tuple[str, str, str, str, int | None, int]] = []
     links: list[tuple[int, str]] = []
     word_slots: dict[tuple[str, str], int] = {}
     word_id = 0
@@ -1165,6 +1178,7 @@ def build(out_path: Path) -> None:
         meaning: str,
         level: int | None,
         present: list[str],
+        common: int = 0,
     ) -> None:
         nonlocal word_id
         if not word or not present or not meaning.strip():
@@ -1181,12 +1195,12 @@ def build(out_path: Path) -> None:
         if existing is None:
             word_id += 1
             word_slots[key] = word_id
-            words.append((mode, word, reading[:120], meaning[:180], level))
+            words.append((mode, word, reading[:120], meaning[:180], level, common))
             target_id = word_id
         else:
             target_id = existing
             position = target_id - 1
-            old_mode, old_word, old_reading, old_meaning, old_level = words[position]
+            old_mode, old_word, old_reading, old_meaning, old_level, old_common = words[position]
             readings = [part for part in old_reading.split(" / ") if part]
             if reading and reading not in readings:
                 readings.append(reading)
@@ -1202,6 +1216,7 @@ def build(out_path: Path) -> None:
                 " / ".join(readings)[:120],
                 "; ".join(meanings)[:180],
                 merged_level,
+                max(old_common, common),
             )
         for character_id in present:
             links.append((target_id, character_id))
@@ -1213,15 +1228,23 @@ def build(out_path: Path) -> None:
         meaning: str,
         level: int | None,
         link_chars: set[str],
+        common: int = 0,
     ) -> None:
         present = [
             ids_by_mode_char[(mode, char)]
             for char in dict.fromkeys(link_chars)
             if (mode, char) in ids_by_mode_char
         ]
-        register_word(mode, word, reading, meaning, level, present)
+        register_word(mode, word, reading, meaning, level, present, common)
 
-    def add_word(mode: str, word: str, reading: str, meaning: str, level: int | None) -> None:
+    def add_word(
+        mode: str,
+        word: str,
+        reading: str,
+        meaning: str,
+        level: int | None,
+        common: int = 0,
+    ) -> None:
         if not word or any((mode, char) not in ids_by_mode_char for char in word):
             return
         register_word(
@@ -1231,6 +1254,7 @@ def build(out_path: Path) -> None:
             meaning,
             level,
             [ids_by_mode_char[(mode, char)] for char in dict.fromkeys(word)],
+            common,
         )
 
     for row in hsk_words:
@@ -1242,6 +1266,7 @@ def build(out_path: Path) -> None:
             row.get("pinyin", ""),
             clean_word_meaning(row.get("meaning", "")),
             level,
+            1 if level is not None else 0,
         )
         # Use CEDICT's word-level simplified→traditional mapping. Mechanical
         # character substitution produces wrong forms such as 頭發 for 頭髮.
@@ -1256,12 +1281,13 @@ def build(out_path: Path) -> None:
                 reading,
                 clean_word_meaning(meaning),
                 level,
+                1 if level is not None else 0,
             )
 
     # Japanese word examples from JMdict.
     joyo_chars = {row.char for row in characters if row.mode == "JAPANESE" and row.level > 0}
     japanese_words = load_jmdict_words(joyo_chars)
-    for word, (reading, meaning, _) in japanese_words.items():
+    for word, (reading, meaning, _, common) in japanese_words.items():
         add_word_partial(
             "JAPANESE",
             word,
@@ -1269,6 +1295,7 @@ def build(out_path: Path) -> None:
             meaning,
             None,
             {char for char in word if char in joyo_chars},
+            1 if common else 0,
         )
     print(f"Japanese word examples: {len(japanese_words)}")
 
@@ -1355,7 +1382,8 @@ def build(out_path: Path) -> None:
           word TEXT NOT NULL,
           reading TEXT NOT NULL,
           meaning TEXT NOT NULL,
-          level INTEGER
+          level INTEGER,
+          common INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE word_character(
           word_id INTEGER NOT NULL,
@@ -1476,10 +1504,10 @@ def build(out_path: Path) -> None:
     )
 
     connection.executemany(
-        "INSERT INTO word_context VALUES(?,?,?,?,?,?)",
+        "INSERT INTO word_context VALUES(?,?,?,?,?,?,?)",
         [
-            (index + 1, mode, word, reading, meaning, level)
-            for index, (mode, word, reading, meaning, level) in enumerate(words)
+            (index + 1, mode, word, reading, meaning, level, common)
+            for index, (mode, word, reading, meaning, level, common) in enumerate(words)
         ],
     )
     connection.executemany(

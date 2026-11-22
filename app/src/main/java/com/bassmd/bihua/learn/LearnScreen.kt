@@ -9,6 +9,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.bassmd.bihua.ui.theme.ButterInk
 import com.bassmd.bihua.ui.theme.ButterDeep
 import androidx.compose.foundation.background
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -17,6 +18,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
@@ -911,6 +914,7 @@ fun LearnScreen(
                         secondary = "Draw again",
                         onSecondary = { resetDrawing() },
                         accent = PinkFor(mode),
+                        compact = shortScreen,
                         primary = if (step == Step.TRACE) "Next: write" else "Check & grade",
                         primaryEnabled = ink.strokes.isNotEmpty(),
                         hint = when {
@@ -1477,11 +1481,15 @@ private fun PromptPanel(
                             border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                            Row(
+                                Modifier
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                                    .height(IntrinsicSize.Min),
+                            ) {
                                 Box(
                                     Modifier
                                         .width(4.dp)
-                                        .height(40.dp)
+                                        .fillMaxHeight()
                                         .background(accent, CircleShape),
                                 )
                                 Spacer(Modifier.width(10.dp))
@@ -2565,13 +2573,17 @@ private fun StickyActionBar(
     primaryEnabled: Boolean,
     hint: String,
     accent: Color = Sky,
+    compact: Boolean = false,
     onPrimary: () -> Unit,
 ) {
     Surface(color = PaperWarm, shadowElevation = 14.dp) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(
+                    horizontal = if (compact) 12.dp else 16.dp,
+                    vertical = if (compact) 2.dp else 6.dp,
+                ),
         ) {
             ActionRow(
                 secondary = secondary,
@@ -2580,14 +2592,17 @@ private fun StickyActionBar(
                 primaryEnabled = primaryEnabled,
                 accent = accent,
                 compact = true,
+                dense = compact,
                 onPrimary = onPrimary,
             )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                hint,
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
-            )
+            if (!compact) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    hint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
+            }
         }
     }
 }
@@ -2600,25 +2615,30 @@ private fun ActionRow(
     primaryEnabled: Boolean = true,
     accent: Color = Sky,
     compact: Boolean = false,
+    dense: Boolean = false,
     onPrimary: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (compact) {
-            TextButton(
-                onClick = onSecondary,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                    contentColor = InkSoft,
-                ),
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            onClick = onSecondary,
+            shape = CircleShape,
+            color = Butter.copy(alpha = 0.22f),
+            border = BorderStroke(1.dp, Butter.copy(alpha = 0.38f)),
+            modifier = Modifier.height(if (dense) 38.dp else 46.dp),
+        ) {
+            Box(
+                modifier = Modifier.padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(secondary, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    secondary,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = ButterInk,
+                )
             }
-        } else {
-            com.bassmd.bihua.ui.components.TonalAction(
-                text = secondary,
-                onClick = onSecondary,
-                modifier = Modifier.weight(1f),
-                accent = Butter.copy(alpha = 0.24f),
-            )
         }
         com.bassmd.bihua.ui.components.PrimaryAction(
             text = primary,
@@ -2626,6 +2646,7 @@ private fun ActionRow(
             modifier = Modifier.weight(1f),
             enabled = primaryEnabled,
             accent = accent,
+            compact = dense,
         )
     }
 }

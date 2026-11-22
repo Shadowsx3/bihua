@@ -39,6 +39,7 @@ fun PrimaryAction(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     accent: Color = Sky,
+    compact: Boolean = false,
 ) {
     Button(
         onClick = onClick,
@@ -50,7 +51,7 @@ fun PrimaryAction(
             disabledContainerColor = accent.copy(alpha = 0.35f),
             disabledContentColor = InkSoft,
         ),
-        modifier = modifier.heightIn(min = TouchTarget),
+        modifier = modifier.heightIn(min = if (compact) 40.dp else TouchTarget),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))

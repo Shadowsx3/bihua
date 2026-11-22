@@ -129,6 +129,81 @@ def main() -> int:
     if bracket_meanings:
         fail(f"{bracket_meanings} character meanings still contain dictionary references")
 
+    blank_character = count(
+        db,
+        "SELECT COUNT(*) FROM character WHERE trim(mode)='' OR trim(character)='' "
+        "OR trim(level_label)='' OR trim(reading)='' OR trim(meaning)=''",
+    )
+    if blank_character:
+        fail(f"{blank_character} character rows have a blank required field")
+    blank_word = count(
+        db,
+        "SELECT COUNT(*) FROM word_context WHERE trim(mode)='' OR trim(word)='' "
+        "OR trim(reading)='' OR trim(meaning)=''",
+    )
+    if blank_word:
+        fail(f"{blank_word} word rows have a blank required field")
+
+    def codepoint(value: str) -> int:
+        return ord(value[0]) if value else 0
+
+    def is_han(cp: int) -> bool:
+        return (0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF
+                or 0xF900 <= cp <= 0xFAFF or 0x20000 <= cp <= 0x2FA1F)
+
+    def is_hiragana(cp: int) -> bool:
+        return 0x3040 <= cp <= 0x309F
+
+    def is_katakana(cp: int) -> bool:
+        return (0x30A0 <= cp <= 0x30FF or 0x31F0 <= cp <= 0x31FF
+                or 0xFF66 <= cp <= 0xFF9D)
+
+    def is_hangul(cp: int) -> bool:
+        return (0xAC00 <= cp <= 0xD7AF or 0x1100 <= cp <= 0x11FF
+                or 0x3130 <= cp <= 0x318F)
+
+    bad_script = []
+    for mode, character in db.execute("SELECT mode, character FROM character"):
+        cp = codepoint(character)
+        ok = (
+            is_han(cp) if mode in {"SIMPLIFIED", "TRADITIONAL"}
+            else (is_han(cp) or is_hiragana(cp) or is_katakana(cp))
+            if mode == "JAPANESE"
+            else (is_han(cp) or is_hangul(cp))
+            if mode == "KOREAN"
+            else True
+        )
+        if not ok:
+            bad_script.append((mode, character))
+    if bad_script:
+        fail(f"{len(bad_script)} characters are in the wrong script")
+        for mode, character in bad_script[:5]:
+            warn(f"  {mode} contains {character!r}")
+
+    orphan_links = count(
+        db,
+        "SELECT COUNT(*) FROM word_character wc "
+        "WHERE NOT EXISTS (SELECT 1 FROM word_context w WHERE w.id=wc.word_id) "
+        "OR NOT EXISTS (SELECT 1 FROM character c WHERE c.id=wc.character_id)",
+    )
+    if orphan_links:
+        fail(f"{orphan_links} word links point at missing rows")
+
+    empty_etymology = count(db, "SELECT COUNT(*) FROM char_meta WHERE trim(etymology)=''")
+    empty_structure = count(db, "SELECT COUNT(*) FROM char_meta WHERE trim(decomposition)=''")
+    japanese_markers = count(
+        db,
+        "SELECT COUNT(*) FROM character WHERE mode='JAPANESE' "
+        "AND (reading LIKE '%.%' OR reading LIKE '%-%')",
+    )
+    print(f"  info         {empty_etymology} structure rows have no story")
+    print(f"  info         {empty_structure} structure rows have no decomposition")
+    print(f"  info         {japanese_markers} Japanese readings use dictionary markers; display cleans them")
+    for mode, common in db.execute(
+        "SELECT mode, SUM(common) FROM word_context GROUP BY mode ORDER BY mode"
+    ):
+        print(f"  info         {mode} common words: {common or 0}")
+
     if CRITICAL:
         print(f"audit failed: {CRITICAL} critical problem(s)")
         return 1

@@ -56,6 +56,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -601,6 +602,45 @@ private fun PacePage(mode: StudyMode, goal: Int, onPick: (Int) -> Unit) {
             color = InkSoft,
             textAlign = TextAlign.Center,
         )
+        Spacer(Modifier.height(12.dp))
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = Mint.copy(alpha = 0.12f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Mint.copy(alpha = 0.28f)),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .background(Mint.copy(alpha = 0.24f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.EventRepeat,
+                        contentDescription = null,
+                        tint = GuideGreen,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(Modifier.size(10.dp))
+                Column {
+                    Text(
+                        "How often?",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = InkDark,
+                    )
+                    Text(
+                        "A few minutes most days. FSRS-7 spaces the reviews, and a missed day is safe. After about 400 reviews, you can fit the schedule to your memory.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+            }
+        }
     }
 }
 

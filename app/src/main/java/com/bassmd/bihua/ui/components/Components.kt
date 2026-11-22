@@ -68,32 +68,32 @@ fun BihuaBackground(
         if (decorated) Canvas(Modifier.fillMaxSize()) {
             // Canopy light, sun through leaves, and undergrowth.
             drawCircle(
-                color = Gem.copy(alpha = 0.20f),
+                color = Gem.copy(alpha = 0.10f),
                 radius = size.minDimension * 0.52f,
                 center = Offset(size.width * 0.92f, size.height * 0.04f),
             )
             drawCircle(
-                color = Mint.copy(alpha = 0.18f),
+                color = Mint.copy(alpha = 0.09f),
                 radius = size.minDimension * 0.46f,
                 center = Offset(size.width * 0.02f, size.height * 0.90f),
             )
             drawCircle(
-                color = Butter.copy(alpha = 0.20f),
+                color = Butter.copy(alpha = 0.10f),
                 radius = size.minDimension * 0.26f,
                 center = Offset(size.width * 0.10f, size.height * 0.10f),
             )
             drawCircle(
-                color = Lilac.copy(alpha = 0.14f),
+                color = Lilac.copy(alpha = 0.08f),
                 radius = size.minDimension * 0.30f,
                 center = Offset(size.width * 0.80f, size.height * 0.94f),
             )
             drawCircle(
-                color = Peach.copy(alpha = 0.12f),
+                color = Peach.copy(alpha = 0.07f),
                 radius = size.minDimension * 0.20f,
                 center = Offset(size.width * 0.62f, size.height * 0.72f),
             )
             drawCircle(
-                color = Rose.copy(alpha = 0.09f),
+                color = Rose.copy(alpha = 0.05f),
                 radius = size.minDimension * 0.18f,
                 center = Offset(size.width * 0.40f, size.height * 0.30f),
             )

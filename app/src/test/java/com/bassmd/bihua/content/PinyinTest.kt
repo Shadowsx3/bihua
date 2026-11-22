@@ -33,6 +33,20 @@ class PinyinTest {
     }
 
     @Test
+    fun displayCleansJapaneseDictionaryMarkers() {
+        assertEquals(
+            "イチ / イツ / ひと / ひとつ",
+            Pinyin.display("イチ / イツ / ひと- / ひと.つ", StudyMode.JAPANESE, false),
+        )
+    }
+
+    @Test
+    fun displaySeparatesChineseAlternativeReadings() {
+        assertEquals("dōu / dū", Pinyin.display("dōu,dū", StudyMode.SIMPLIFIED, false))
+        assertEquals("dou1 / du1", Pinyin.display("dōu,dū", StudyMode.SIMPLIFIED, true))
+    }
+
+    @Test
     fun stripsTonesForPlainComparison() {
         assertEquals("bai", Pinyin.plain("bǎi"))
         assertEquals("nu", Pinyin.plain("nǚ"))

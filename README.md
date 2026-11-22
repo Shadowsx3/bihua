@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.0.2-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.4-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -17,7 +17,7 @@ no developer-run analytics.
   <img src="docs/assets/home-light.png" width="220" alt="Bihua home screen">
   <img src="docs/assets/practice-light.png" width="220" alt="Handwriting practice with a stroke guide">
   <img src="docs/assets/detail-light.png" width="220" alt="Character detail">
-  <img src="docs/assets/word-light.png" width="220" alt="Word practice">
+  <img src="docs/assets/review-light.png" width="220" alt="Review from a meaning and reading cue">
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 155 unit tests, content audit, debug APK, verification
+make check      # compile, 186 unit tests, content audit, debug APK, verification
 make lint       # Android lint
 make run        # check, install, and launch on a connected device
 make smoke      # launch/navigation smoke test on a connected device
@@ -93,9 +93,9 @@ or upload an APK.
 - Traditional: **3,163**
 - Japanese: **2,286** (2,136 Jōyō + 150 kana)
 - Korean: **2,239** (1,800 Hanja + 40 jamo + 399 syllables)
-- **21,162** word examples
+- **23,124** word examples
 - **4,875** unique structure records
-- Content version **19**
+- Content version **22**
 
 The content database is generated, not hand-edited:
 
@@ -155,10 +155,10 @@ not a public issue.
 
 ## Status
 
-Bihua 1.0.2 is in closed testing. The main branch also contains 1.0.3 work:
-personal FSRS weights, a selectable day boundary, permanent suspension, selective
-transfer, edge-to-edge cleanup, and a two-button grade scale. The public APK
-stays at 1.0.2 until 1.0.3 is released.
+Bihua 1.0.3 is the current closed test. 1.0.4 is ready for the next closed test:
+a clearer review flow, common words on new characters, script filters, Japanese
+ruby, Korean romanization, cleaner readings, and better Japanese word ordering.
+The public APK stays at 1.0.3 until 1.0.4 is promoted.
 
 The phone and tablet paths are verified; a TalkBack/large-text audit and a
 current physical S Pen pass remain on the roadmap. The app is not a clinical
