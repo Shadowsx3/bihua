@@ -86,6 +86,9 @@
   diagnostics, matching the Data Safety declaration.
 - CI runs unit tests, content audit, and lint only. It no longer assembles or
   uploads an APK; the APK size check is portable across macOS and Linux.
+- The Makefile now uses `/bin/bash` for its recipes. `scripts/env.sh` uses bash
+  syntax, so `make test`, `make lint`, and `make apk` failed under Ubuntu's
+  `/bin/sh` in CI.
 - The landing page uses current 1.0.2 light-theme screenshots and a crisp
   ink-and-paper layout. The blurred forest wash, drifting leaves, fireflies,
   and glass cards are gone.

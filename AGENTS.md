@@ -49,6 +49,10 @@ make smoke                     # on-device launch/navigation smoke test
 GitHub Actions runs **unit tests, content audit, and lint only**. It does not
 assemble or upload an APK. The debug APK is a local build artifact.
 
+The Makefile sets `SHELL := /bin/bash` because `scripts/env.sh` uses
+`BASH_SOURCE`. Do not remove it: Ubuntu CI runs recipes with `/bin/sh`, and
+`source` plus `BASH_SOURCE` fail there. Use `. scripts/env.sh` inside recipes.
+
 Use the device tools instead of ad-hoc adb:
 
 ```bash

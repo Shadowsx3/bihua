@@ -1,3 +1,6 @@
+# Recipes source scripts/env.sh, which uses bash syntax. Use bash on every platform.
+SHELL := /bin/bash
+
 # Shortcuts for the build, check, and device loop. Run `make help` for the list.
 
 .PHONY: help check quick test lint audit smoke apk verify install run log crash shot status hooks clean clean-shots \
@@ -53,10 +56,10 @@ quick:
 	@scripts/check.sh --quick
 
 test:
-	@source scripts/env.sh && ./gradlew :app:testDebugUnitTest --console=plain -q && echo "unit tests ok"
+	@. scripts/env.sh && ./gradlew :app:testDebugUnitTest --console=plain -q && echo "unit tests ok"
 
 lint:
-	@source scripts/env.sh && ./gradlew :app:lintDebug --console=plain -q && echo "lint ok"
+	@. scripts/env.sh && ./gradlew :app:lintDebug --console=plain -q && echo "lint ok"
 
 audit:
 	@python3 tools/audit_content.py
@@ -65,7 +68,7 @@ smoke:
 	@scripts/smoke.sh
 
 apk:
-	@source scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"
+	@. scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"
 
 verify:
 	@scripts/verify-apk.sh
@@ -140,7 +143,7 @@ hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"
 
 clean:
-	@source scripts/env.sh && ./gradlew clean -q && echo "clean"
+	@. scripts/env.sh && ./gradlew clean -q && echo "clean"
 
 clean-shots:
 	@rm -rf screenshots && echo "screenshots removed"
