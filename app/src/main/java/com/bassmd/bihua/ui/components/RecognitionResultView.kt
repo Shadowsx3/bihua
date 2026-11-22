@@ -234,9 +234,9 @@ fun RecognitionResultView(
                     Spacer(Modifier.height(10.dp))
                     Text(
                         if (practiceOnly) {
-                            "This never changes your schedule."
+                            "A reading can miss or misread a stroke. Practice only; your schedule stays the same."
                         } else {
-                            "This is only a check. You choose the grade."
+                            "A reading can miss or misread a stroke. Use it as a hint; you choose the grade."
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,

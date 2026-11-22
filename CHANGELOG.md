@@ -22,6 +22,18 @@
 - Word rows have a visible Write action; the character detail no longer uses
   SRS/model jargon.
 - Stylus and finger drawing controls fit above the canvas on a phone.
+- Practice uses the full height of the screen, with the result in a compact
+  dialog instead of a long scroll.
+- The Meet step centres the character and pins Next to the bottom, instead of
+  leaving most of the screen empty.
+- Home, Characters, Progress, and Settings no longer add bottom padding on top
+  of the navigation bar, so more content fits on screen.
+- Character detail has top actions for Write a word and Write on paper.
+- Home names the active course in the greeting line.
+- The privacy policy now states that handwriting strokes are processed on the
+  device and explains ML Kit model updates and metrics.
+- Handwriting results now say plainly that a reading can miss or misread a
+  stroke. It is a hint; the learner still chooses the grade.
 
 ### Fixed
 

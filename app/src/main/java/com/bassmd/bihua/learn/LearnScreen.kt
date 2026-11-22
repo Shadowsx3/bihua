@@ -581,6 +581,41 @@ fun LearnScreen(
                 }
             } else {
                 Column(Modifier.fillMaxSize()) {
+                if (step == Step.INTRODUCE) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                    ) {
+                        PromptPanel(
+                            item = item,
+                            step = step,
+                            mode = mode,
+                            revealed = revealed,
+                            scaffold = scaffold,
+                            cuePrompt = cuePrompt,
+                            mnemonic = mnemonic,
+                            mnemonicAllowed = mnemonicAllowed,
+                            showMnemonic = showMnemonic,
+                            onToggleMnemonic = { showMnemonic = !showMnemonic },
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            IntroCharacter(item, mode, onSpeak, speechEnabled)
+                        }
+                        Button(
+                            onClick = { stepOrdinal++ },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = CircleShape,
+                        ) { Text("Next: trace") }
+                    }
+                } else {
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -684,7 +719,7 @@ fun LearnScreen(
                             )
                         }
                     }
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
                 if (step == Step.TRACE || (step == Step.RECALL && !revealed)) {
                     StickyActionBar(
@@ -725,6 +760,7 @@ fun LearnScreen(
                             revealed = false
                         },
                     )
+                }
                 }
                 }
             }
@@ -963,7 +999,7 @@ private fun PromptPanel(
                         GuideScaffold.OUTLINE -> "The stroke paths are hidden. Trace the outline from memory."
                         GuideScaffold.HIDDEN -> "No guide this time. Write it once from memory, then check."
                     }
-                    Step.RECALL -> "Write it from the cue. Tap Check & grade when you are ready. The guide starts hidden, and you choose the grade."
+                    Step.RECALL -> "Write from the cue, then tap Check & grade. The reading is a hint and can miss a stroke. You choose the grade."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
@@ -1721,7 +1757,7 @@ private fun StickyGradeBar(
             Spacer(Modifier.height(4.dp))
             Text(
                 if (suggestion != null) {
-                    "App suggests ${suggestion.grade.label}. You still choose."
+                    "App suggests ${suggestion.grade.label}. A hint only; you decide."
                 } else {
                     "No suggestion. Use your own judgement."
                 },

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -253,32 +254,23 @@ fun PracticeScreen(
                             checkWriting(selected, visibleInk())
                         },
                     )
-                    StrokePlaybackControls(playback, Modifier.fillMaxWidth())
-                    RecognitionResultView(
-                    result = recognition,
-                    target = selected?.character,
-                    recognizing = recognizing,
-                    practiceOnly = true,
-                )
-                    TipCard()
                 }
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 120.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 8.dp),
             ) {
                 ScreenTitle()
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 CharacterSummary(
                     entry = selected,
                     showReference = showReference,
                     pinyinNumbers = pinyinNumbers,
                     onChange = { showPicker = true },
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(4.dp))
                 PracticeCanvas(
                     entry = selected,
                     ink = ink,
@@ -293,10 +285,15 @@ fun PracticeScreen(
                     showReference = showReference,
                     showOrder = showOrder,
                     revealProgress = reveal,
-                    onStrokeStart = { trimReplay() },
-                    modifier = Modifier.fillMaxWidth(),
+                    onStrokeStart = {
+                        recognition = null
+                        trimReplay()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(6.dp))
                 PracticeTools(
                     player = player,
                     showReference = showReference,
@@ -316,13 +313,31 @@ fun PracticeScreen(
                         checkWriting(selected, visibleInk())
                     },
                 )
-                StrokePlaybackControls(playback, Modifier.fillMaxWidth())
-                RecognitionResultView(
-                    result = recognition,
-                    target = selected?.character,
-                    recognizing = recognizing,
-                    practiceOnly = true,
-                )
+            }
+        }
+    }
+
+    if (recognition != null && !recognizing) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { recognition = null }) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = PaperWarm,
+                tonalElevation = 6.dp,
+                modifier = Modifier.widthIn(max = 400.dp),
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    RecognitionResultView(
+                        result = recognition,
+                        target = selected?.character,
+                        recognizing = false,
+                        practiceOnly = true,
+                        compact = true,
+                    )
+                    TextButton(
+                        onClick = { recognition = null },
+                        modifier = Modifier.align(Alignment.End),
+                    ) { Text("Close") }
+                }
             }
         }
     }
@@ -419,21 +434,7 @@ private fun PracticeTools(
     hasInk: Boolean,
     onCheck: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        com.bassmd.bihua.ui.components.QuietAction(
-            text = when {
-                player.isPlaying -> "Playing stroke ${(player.progress + 1).toInt().coerceAtMost(player.strokeCount)} of ${player.strokeCount}"
-                player.strokeCount > 0 -> "Play stroke order · ${player.strokeCount} ${if (player.strokeCount == 1) "stroke" else "strokes"}"
-                else -> "No stroke guide"
-            },
-            onClick = {
-                onToggleReference(true)
-                player.play()
-            },
-            enabled = player.strokeCount > 0,
-            icon = Icons.Rounded.PlayArrow,
-            modifier = Modifier.fillMaxWidth(),
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (!orderAvailable) {
             Text(
                 "No stroke-order source for this character. Trace the outline instead.",
@@ -441,86 +442,92 @@ private fun PracticeTools(
                 color = InkSoft,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = {
+                    onToggleReference(true)
+                    player.play()
+                },
+                enabled = player.strokeCount > 0,
+            ) {
+                Icon(
+                    Icons.Rounded.PlayArrow,
+                    contentDescription = "Play stroke order",
+                    tint = if (player.strokeCount > 0) InkDark else InkSoft.copy(alpha = 0.35f),
+                )
+            }
             com.bassmd.bihua.ui.components.TonalAction(
-                text = if (showReference) "Hide guide" else "Show guide",
+                text = "Guide",
                 onClick = { onToggleReference(!showReference) },
                 modifier = Modifier.weight(1f),
-                icon = if (showReference) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                accent = Mint.copy(alpha = 0.55f),
+                icon = if (showReference) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                accent = if (showReference) Mint.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surfaceVariant,
             )
             com.bassmd.bihua.ui.components.TonalAction(
-                text = if (showOrder) "Order on" else "Order off",
+                text = "Order",
                 onClick = { onToggleOrder(!showOrder) },
                 enabled = showReference && orderAvailable,
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.FormatListNumbered,
-                accent = Lilac.copy(alpha = 0.40f),
+                accent = if (showOrder && showReference) Lilac.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant,
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
-                IconButton(onClick = onUndo, enabled = canUndo, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        Icons.Rounded.Undo,
-                        contentDescription = "Undo",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
-                }
-                IconButton(onClick = onRedo, enabled = canRedo, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.Redo,
-                        contentDescription = "Redo",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
-                }
-                IconButton(onClick = onClear, enabled = canUndo, modifier = Modifier.size(40.dp)) {
-                    com.bassmd.bihua.ui.components.EraserIcon(
-                        size = 20.dp,
-                        tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
-                    )
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onUndo, enabled = canUndo, modifier = Modifier.size(40.dp)) {
+                        Icon(
+                            Icons.Rounded.Undo,
+                            contentDescription = "Undo",
+                            modifier = Modifier.size(20.dp),
+                            tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(onClick = onRedo, enabled = canRedo, modifier = Modifier.size(40.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Redo,
+                            contentDescription = "Redo",
+                            modifier = Modifier.size(20.dp),
+                            tint = if (canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(onClick = onClear, enabled = canUndo, modifier = Modifier.size(40.dp)) {
+                        com.bassmd.bihua.ui.components.EraserIcon(
+                            size = 20.dp,
+                            tint = if (canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
                 }
             }
-        }
-        }
-        com.bassmd.bihua.ui.components.PrimaryAction(
-            text = if (checking) "Reading your writing…" else "Check handwriting",
-            onClick = onCheck,
-            enabled = hasInk && !checking,
-            icon = Icons.Rounded.CheckCircle,
-            accent = Sky.copy(alpha = 0.85f),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
-private fun TipCard() {
-    SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.16f)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Brush, contentDescription = null, tint = InkDark)
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "Trace the green guide. Your ink stays on top.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InkSoft,
+            com.bassmd.bihua.ui.components.PrimaryAction(
+                text = when {
+                    checking -> "Reading…"
+                    !hasInk -> "Draw first"
+                    else -> "Check"
+                },
+                onClick = onCheck,
+                enabled = hasInk && !checking,
+                icon = Icons.Rounded.CheckCircle,
+                accent = Sky.copy(alpha = 0.85f),
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
+
 
 @Composable
 private fun PracticeCanvas(

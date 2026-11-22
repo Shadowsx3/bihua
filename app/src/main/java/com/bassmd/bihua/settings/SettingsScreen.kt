@@ -348,8 +348,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .widthIn(max = 900.dp),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 156.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Column {
@@ -996,7 +996,7 @@ fun SettingsScreen(
                         Spacer(Modifier.height(10.dp))
                         Text("Handwriting models", style = MaterialTheme.typography.titleSmall, color = InkDark)
                         Text(
-                            "One small model per script. Used only to suggest a grade.",
+                            "Optional. A reading can miss or misread a stroke, so treat it as a hint. You always choose the grade.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )

@@ -153,13 +153,14 @@ fun HomeScreen(
                 start = if (wide) 32.dp else 20.dp,
                 end = if (wide) 32.dp else 20.dp,
                 top = 20.dp,
-                bottom = 156.dp,
+                bottom = 16.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Header(
                     greeting = greeting,
+                    mode = mode,
                     profile = profile,
                     due = due,
                     fresh = fresh,
@@ -353,6 +354,7 @@ fun HomeScreen(
 @Composable
 private fun Header(
     greeting: String,
+    mode: StudyMode,
     profile: UserProfile,
     due: Int,
     fresh: Int,
@@ -370,16 +372,17 @@ private fun Header(
                 style = MaterialTheme.typography.headlineLarge,
                 color = InkDark,
             )
+            val course = stringResource(mode.labelRes)
             Text(
                 when {
-                    vacation -> "Vacation mode · reviews are paused."
-                    due > 0 && fresh > 0 -> "$due to review, $fresh new to learn" +
+                    vacation -> "$course · vacation mode, reviews are paused."
+                    due > 0 && fresh > 0 -> "$course · $due to review, $fresh new to learn" +
                         if (easeBack) " · ease back in" else ""
-                    due > 0 -> "$due characters to review" +
+                    due > 0 -> "$course · $due characters to review" +
                         if (easeBack) " · ease back in" else ""
-                    fresh > 0 -> "$fresh new characters ready"
-                    learning > 0 -> "$learning cards are in learning steps. They return shortly."
-                    else -> "Nothing is waiting. Practice whatever you like."
+                    fresh > 0 -> "$course · $fresh new characters ready"
+                    learning > 0 -> "$course · $learning cards are in learning steps. They return shortly."
+                    else -> "$course · nothing is waiting. Practice whatever you like."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = InkSoft,

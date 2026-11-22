@@ -196,7 +196,14 @@ private fun WelcomePage() {
             color = InkSoft,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "No account, no ads, and it works offline.",
+            style = MaterialTheme.typography.bodySmall,
+            color = InkSoft,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(22.dp))
         listOf(
             "1" to ("Meet the character" to "See its shape, reading, and meaning."),
             "2" to ("Trace it once" to "Follow the green guide with your finger or pen."),

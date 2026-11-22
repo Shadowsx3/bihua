@@ -908,7 +908,7 @@ private fun CharacterGrid(
     LazyVerticalGrid(
         columns = GridCells.Adaptive(86.dp),
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 156.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -1052,7 +1052,7 @@ private fun CharacterDetail(
                         )
                     }
                 }
-                Text("${entry.knownDots}/2 to Known", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Text("${entry.knownDots} of 2 to Known", style = MaterialTheme.typography.labelSmall, color = InkSoft)
             }
         }
         if (sharedModes.size > 1) {
@@ -1101,6 +1101,20 @@ private fun CharacterDetail(
                 Text(if (inStudyList) "In study list" else "Add to list")
             }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            words.firstOrNull()?.let { word ->
+                TextButton(onClick = { onPracticeWord(word) }) {
+                    Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Write a word", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            TextButton(onClick = onPaper) {
+                Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Write on paper", style = MaterialTheme.typography.labelLarge)
+            }
+        }
 
         SoftCard(Modifier.fillMaxWidth()) {
             Column {
@@ -1116,10 +1130,12 @@ private fun CharacterDetail(
                 if (entry.simplified.isNotBlank() && entry.simplified != entry.character) {
                     DetailRow("Simplified", entry.simplified)
                 }
-                if (variants.isNotEmpty()) {
-                    DetailRow("Variants", variants.take(8).joinToString(" "))
+                val shownVariants = variants.filter {
+                    it != entry.character && it != entry.traditional
                 }
-                if (entry.writingSet) DetailRow("Handwriting", "HSK 3.0 set")
+                if (shownVariants.isNotEmpty()) {
+                    DetailRow("Variants", shownVariants.take(8).joinToString(" "))
+                }
                 meta?.radical?.takeIf { it.isNotBlank() }?.let { DetailRow("Radical", it) }
                 meta?.decomposition
                     ?.takeIf { structureText(it) != "—" }

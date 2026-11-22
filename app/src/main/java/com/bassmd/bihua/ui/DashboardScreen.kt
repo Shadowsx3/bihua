@@ -114,9 +114,9 @@ fun DashboardScreen(
                 start = if (wide) 32.dp else 20.dp,
                 end = if (wide) 32.dp else 20.dp,
                 top = 20.dp,
-                bottom = 156.dp,
+                bottom = 16.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Row(
