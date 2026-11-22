@@ -48,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -479,8 +480,12 @@ private fun CompareWriteDrill(
     allowFinger: Boolean,
     onClose: () -> Unit,
 ) {
+    var index by remember(entries) { mutableIntStateOf(0) }
     var showGuides by remember(entries) { mutableStateOf(true) }
     val inks = remember(entries) { entries.associate { it.id to InkState() } }
+    val entry = entries.getOrNull(index) ?: entries.firstOrNull() ?: return
+    val last = index == entries.lastIndex
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -500,94 +505,110 @@ private fun CompareWriteDrill(
                 Icon(Icons.Rounded.Close, contentDescription = "Close writing drill")
             }
         }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            entries.chunked(2).forEach { rowEntries ->
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+            entries.forEachIndexed { itemIndex, item ->
+                val active = itemIndex == index
+                Surface(
+                    onClick = { index = itemIndex },
+                    shape = CircleShape,
+                    color = if (active) Sky.copy(alpha = 0.55f) else PaperWarm,
                 ) {
-                    rowEntries.forEach { entry ->
-                        SoftCard(Modifier.weight(1f).fillMaxHeight(), color = PaperWarm) {
-                            Column(
-                                modifier = Modifier.padding(10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(entry.character, fontSize = 30.sp, color = InkDark)
-                                Text(
-                                    displayReading(entry.reading, entry.mode),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                    maxLines = 1,
-                                )
-                                Text(
-                                    entry.meaning,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                    maxLines = 2,
-                                    textAlign = TextAlign.Center,
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                BoxWithConstraints(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    val side = minOf(maxWidth, maxHeight, 420.dp)
-                                    Box(
-                                        Modifier
-                                            .size(side)
-                                            .writingSheet(),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (showGuides) {
-                                            OutlineGuide(character = entry.character, side = side)
-                                        }
-                                        InkCanvas(
-                                            state = inks.getValue(entry.id),
-                                            modifier = Modifier.fillMaxSize(),
-                                            widthScale = widthScale,
-                                            gridStyle = gridStyle,
-                                            drawingTool = drawingTool,
-                                            brush = brush,
-                                            allowFinger = allowFinger,
-                                            contentDescription = "Write ${entry.character} from the comparison.",
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(item.character, style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            displayReading(item.reading, item.mode),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
                     }
                 }
             }
         }
+
+        SoftCard(Modifier.weight(1f).fillMaxWidth(), color = PaperWarm) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(entry.character, fontSize = 42.sp, color = InkDark)
+                Text(
+                    displayReading(entry.reading, entry.mode),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = InkDark,
+                )
+                Text(
+                    entry.meaning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val side = minOf(maxWidth, maxHeight, 420.dp)
+                    Box(
+                        Modifier
+                            .size(side)
+                            .writingSheet(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (showGuides) {
+                            OutlineGuide(character = entry.character, side = side)
+                        }
+                        InkCanvas(
+                            state = inks.getValue(entry.id),
+                            modifier = Modifier.fillMaxSize(),
+                            widthScale = widthScale,
+                            gridStyle = gridStyle,
+                            drawingTool = drawingTool,
+                            brush = brush,
+                            allowFinger = allowFinger,
+                            contentDescription = "Write ${entry.character} from the comparison.",
+                        )
+                    }
+                }
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Text(
+                "Character ${index + 1} of ${entries.size}",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+            Spacer(Modifier.weight(1f))
             OutlinedButton(
-                onClick = { inks.values.forEach { it.clear() } },
+                onClick = { inks.getValue(entry.id).clear() },
                 shape = CircleShape,
-            ) { Text("Clear both") }
+            ) { Text("Clear") }
             Button(
                 onClick = { showGuides = !showGuides },
                 shape = CircleShape,
             ) { Text(if (showGuides) "Hide guide" else "Show guide") }
-            Spacer(Modifier.weight(1f))
-            Text(
-                "Guided practice, not scheduled.",
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
-            )
+            Button(
+                onClick = { if (last) onClose() else index++ },
+                shape = CircleShape,
+            ) { Text(if (last) "Done" else "Next character") }
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
     }
 }
