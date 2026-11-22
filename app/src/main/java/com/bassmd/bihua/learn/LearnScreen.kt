@@ -284,7 +284,7 @@ fun LearnScreen(
             repository?.words(item.id).orEmpty()
                 .filter { it.word.length > 1 && it.word != item.character }
                 .distinctBy { it.word }
-                .take(6)
+                .take(10)
         }.orEmpty()
     }
     var targetVariants by remember { mutableStateOf(emptySet<String>()) }
@@ -433,6 +433,7 @@ fun LearnScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 860.dp
+        val shortScreen = maxHeight < 760.dp
         val currentItem = items.getOrNull(index)
         val currentIsLesson = currentItem?.needsLesson == true
         val completed = items.size - pending.size
@@ -647,7 +648,12 @@ fun LearnScreen(
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
                         )
                         if (step == Step.INTRODUCE && introWords.isNotEmpty()) {
-                            IntroWords(words = introWords, mode = mode)
+                            IntroWords(
+                                words = introWords,
+                                mode = mode,
+                                limit = 10,
+                                maxHeight = 420.dp,
+                            )
                         }
                         if (step != Step.INTRODUCE) {
                             CanvasTools(
@@ -794,7 +800,9 @@ fun LearnScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .verticalScroll(pageScroll)
+                        .then(
+                            if (revealed) Modifier.verticalScroll(pageScroll) else Modifier
+                        )
                         .padding(horizontal = 20.dp, vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -810,8 +818,9 @@ fun LearnScreen(
                             mnemonicAllowed = mnemonicAllowed,
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
+                            compact = shortScreen,
                         )
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(if (shortScreen) 6.dp else 12.dp))
                     } else {
                         Text(
                             "${item.character} · ${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
@@ -861,7 +870,14 @@ fun LearnScreen(
                             revealProgress = reveal,
                             onStrokeStart = { trimReplay() },
                             enabled = !revealed,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = if (revealed) {
+                                Modifier.fillMaxWidth()
+                            } else {
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                            },
+                            maxSide = if (shortScreen) 240.dp else null,
                         )
                         Spacer(Modifier.height(10.dp))
                         WritingFeedback(
@@ -1128,8 +1144,11 @@ private fun IntroCharacter(
 private fun IntroWords(
     words: List<com.bassmd.bihua.content.WordContext>,
     mode: StudyMode,
+    limit: Int = 6,
+    maxHeight: androidx.compose.ui.unit.Dp = 236.dp,
 ) {
-    if (words.isEmpty()) return
+    val shown = words.take(limit)
+    if (shown.isEmpty()) return
     Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -1145,26 +1164,26 @@ private fun IntroWords(
                     color = InkSoft,
                     modifier = Modifier.weight(1f),
                 )
-                Pill("${words.size}", Mint.copy(alpha = 0.30f))
+                Pill("${shown.size}", Mint.copy(alpha = 0.30f))
             }
             Spacer(Modifier.height(8.dp))
             val accents = listOf(Mint, Sky, Butter, Lilac, Peach, Gem)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 236.dp)
+                    .heightIn(max = maxHeight)
                     .verticalScroll(rememberScrollState()),
             ) {
                 IntroWordCard(
-                    word = words.first(),
+                    word = shown.first(),
                     mode = mode,
                     accent = Mint,
                     featured = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (words.size > 1) {
+                if (shown.size > 1) {
                     Spacer(Modifier.height(8.dp))
-                    val rows = words.drop(1).chunked(2)
+                    val rows = shown.drop(1).chunked(2)
                     rows.forEachIndexed { rowIndex, pair ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1317,16 +1336,18 @@ private fun CanvasStage(
     onStrokeStart: (() -> Unit)? = null,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
+    maxSide: androidx.compose.ui.unit.Dp? = null,
 ) {
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        val side = minOf(
+        val available = minOf(
             maxWidth,
             if (maxHeight == androidx.compose.ui.unit.Dp.Infinity) maxWidth else maxHeight,
             writingSize.sideDp.dp,
         )
+        val side = maxSide?.let { minOf(available, it) } ?: available
         Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
             if (showReference) {
                 if (!outlineOnly && player.strokeCount > 0) {
@@ -1380,6 +1401,7 @@ private fun PromptPanel(
     mnemonicAllowed: Boolean = false,
     showMnemonic: Boolean = false,
     onToggleMnemonic: () -> Unit = {},
+    compact: Boolean = false,
 ) {
     val accent = PinkFor(mode)
     Surface(
@@ -1405,25 +1427,32 @@ private fun PromptPanel(
                     size = Size(size.width * 0.34f, size.width * 0.34f),
                 )
             }
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        when (step) {
-                            Step.INTRODUCE -> "Meet ${item.character}"
-                            Step.TRACE -> "Trace it slowly"
-                            Step.RECALL -> "Write from memory"
-                        },
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = InkDark,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Pill(
-                        modeName(mode),
-                        accent.copy(alpha = 0.26f),
-                        textColor = InkDark,
-                    )
+            Column(
+                Modifier.padding(
+                    horizontal = if (compact) 12.dp else 14.dp,
+                    vertical = if (compact) 8.dp else 12.dp,
+                ),
+            ) {
+                if (!compact) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            when (step) {
+                                Step.INTRODUCE -> "Meet ${item.character}"
+                                Step.TRACE -> "Trace it slowly"
+                                Step.RECALL -> "Write from memory"
+                            },
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = InkDark,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Pill(
+                            modeName(mode),
+                            accent.copy(alpha = 0.26f),
+                            textColor = InkDark,
+                        )
+                    }
                 }
-                if (step != Step.RECALL) {
+                if (!compact && step != Step.RECALL) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         when (step) {
@@ -1440,7 +1469,7 @@ private fun PromptPanel(
                     )
                 }
                 if (step != Step.INTRODUCE) {
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(if (compact) 0.dp else 10.dp))
                     if (step == Step.RECALL && !revealed && cuePrompt != null) {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
