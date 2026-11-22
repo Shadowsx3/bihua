@@ -76,6 +76,17 @@ class ContentDatabaseTest {
     }
 
     @Test
+    fun everyCourseHasAWordOfTheDay() {
+        listOf("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN").forEach { mode ->
+            val count = count(
+                "SELECT COUNT(*) FROM word_context WHERE mode='$mode' " +
+                    "AND length(word)>1 AND mature=0",
+            )
+            assertTrue("$mode has no featured word", count > 0)
+        }
+    }
+
+    @Test
     fun japaneseExamplesLeadWithTheCommonWord() {
         val top = query(
             "SELECT w.word FROM word_context w " +
