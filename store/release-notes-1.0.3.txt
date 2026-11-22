@@ -1,0 +1,11 @@
+<en-US>
+1.0.3
+- Fit FSRS-7 weights to your reviews or import weights. Each script can have its own profile; shared glyphs use the shared one.
+- The study day can start at midnight through 6 AM.
+- Skip for a day or suspend until you resume.
+- Move settings and progress together or separately.
+- Practice has stroke playback: play, reverse, previous, next.
+- After checking, the canvas locks. Draw again starts over.
+- Optional Again and Good only grades.
+- Edge-to-edge updated for Android 15+.
+</en-US>
