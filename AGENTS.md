@@ -66,6 +66,13 @@ Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
 - GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
 
+## Dependency updates
+
+See `docs/dependency-updates.md`. GitHub Actions and Gradle minor/patch updates
+arrive as grouped PRs. Gradle, AGP, Kotlin, and Compose toolchain majors are
+manual migrations and must not be merged one at a time. Keep app dependency PRs
+unmerged while a Play release is under review.
+
 ## Build, test, install
 
 ```bash

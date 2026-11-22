@@ -1,11 +1,44 @@
 version: 2
 updates:
   - package-ecosystem: gradle
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      gradle-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Toolchain majors are a coordinated migration, never a drive-by bump.
+      - dependency-name: "com.android.application"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "org.jetbrains.kotlin.android"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "org.jetbrains.kotlin.plugin.compose"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "org.jetbrains.kotlin.plugin.serialization"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "gradle"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "gradle-wrapper"
+        update-types:
+          - version-update:semver-major
+
   - package-ecosystem: github-actions
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns:
+          - "*"
