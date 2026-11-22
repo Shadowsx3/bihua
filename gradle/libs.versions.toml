@@ -1,18 +1,18 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.2.21"
+agp = "8.13.2"
+kotlin = "2.4.21"
 composeBom = "2024.12.01"
 activityCompose = "1.9.3"
-appcompat = "1.7.0"
+appcompat = "1.8.0"
 coreKtx = "1.15.0"
-datastore = "1.1.2"
+datastore = "1.3.0"
 lifecycle = "2.8.7"
-serialization = "1.7.3"
+serialization = "1.13.0"
 junit = "4.13.2"
 robolectric = "4.18.1"
 androidxTestCore = "1.6.1"
 mlkitDigitalInk = "19.0.0"
-playServicesCoroutines = "1.10.2"
+playServicesCoroutines = "1.11.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
