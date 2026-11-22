@@ -818,7 +818,7 @@ fun BihuaApp(store: SettingsStore) {
                             Modifier
                                 .weight(1f)
                                 .navigationBarsPadding()
-                                .padding(bottom = 86.dp),
+                                .padding(bottom = 96.dp),
                         ) {
                             AppContent(
                                 tab = tab,
@@ -1292,34 +1292,36 @@ private fun BihuaBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                .padding(horizontal = 6.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Tab.entries.forEach { item ->
                 val active = selected == item
                 Surface(
                     onClick = { onSelect(item) },
-                    shape = CircleShape,
+                    shape = RoundedCornerShape(18.dp),
                     color = if (active) Sky.copy(alpha = 0.55f) else PaperWarm,
+                    modifier = Modifier.weight(1f),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(
                             item.icon,
                             contentDescription = item.label,
                             tint = if (active) InkDark else InkSoft,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(21.dp),
                         )
-                        if (active) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                item.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = InkDark,
-                            )
-                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            item.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (active) InkDark else InkSoft,
+                            maxLines = 1,
+                        )
                     }
                 }
             }

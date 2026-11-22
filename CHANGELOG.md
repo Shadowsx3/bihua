@@ -75,6 +75,10 @@
 - Home shows the course under the greeting; the hero card carries the counts.
 - Emulator and mouse input now work, and emulators are no longer treated as
   stylus-only devices.
+- The bottom navigation keeps fixed positions and shows every tab label, so
+  the icons no longer move when the selected tab changes.
+- Play screenshots were regenerated from the real 1.0.2 app in light mode, with
+  a grade-sheet shot and a Progress shot added.
 
 ### Fixed
 

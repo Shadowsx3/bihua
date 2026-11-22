@@ -2,14 +2,23 @@
 
 - `icon-512.png` — app icon, 512 × 512
 - `feature-graphic.png` — 1024 × 500
-- `phone-1.png` … `phone-5.png` — 1080 × 1920, 9:16
+- `phone-1.png` … `phone-7.png` — 1080 × 1920, 9:16, captured from 1.0.2
 - `tablet-10-*.png` — 2560 × 1440, 16:9, for 10-inch tablets
 - `tablet-7-*.png` — 1920 × 1080, 16:9, for 7-inch tablets
-- `tablet-1-home.png` … `tablet-4-progress.png` — 2304 × 1440 source captures
+- `app-shots/` — raw 1080 × 2400 captures of Home, Characters, detail, Practice, word practice, Progress, and the grade sheet
+- `tablet-1-home.png` … `tablet-4-progress.png` — older tablet source captures; refresh before uploading tablet shots
 - `listing.md` — names, descriptions, category, tags, contact
 - `release-notes-1.0.2.txt` — Play closed-test release notes
 - `phone-*-light.svg` — editable source frames for the phone shots
 - `feature-graphic.svg`, `icon-square.svg` — editable sources
 
-The app screenshots use a seeded showcase save (`tools/seed_showcase.py`) and
-the light theme. The tablet shots were captured in landscape on the SM-X520.
+The app screenshots use a seeded showcase save (`tools/seed_showcase.py`), the
+light theme, and the real app. Phone frames are rendered from the editable
+`phone-*-light.svg` sources with headless Chrome:
+
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"   --headless=new --disable-gpu --hide-scrollbars   --window-size=1080,1920   --screenshot=store/phone-1.png   "file://$PWD/store/phone-1-light.svg"
+```
+
+`phone-6` shows the answer/grade sheet; `phone-7` shows Progress. Tablet shots
+should be recaptured from 1.0.2 before they are uploaded.
