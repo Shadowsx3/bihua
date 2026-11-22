@@ -803,7 +803,7 @@ fun LearnScreen(
                         .then(
                             if (revealed) Modifier.verticalScroll(pageScroll) else Modifier
                         )
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     if (!revealed) {
@@ -820,7 +820,7 @@ fun LearnScreen(
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
                             compact = shortScreen,
                         )
-                        Spacer(Modifier.height(if (shortScreen) 6.dp else 12.dp))
+                        Spacer(Modifier.height(if (shortScreen) 4.dp else 10.dp))
                     } else {
                         Text(
                             "${item.character} · ${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
@@ -972,7 +972,7 @@ private fun SessionTopBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) {
@@ -1491,9 +1491,13 @@ private fun PromptPanel(
                                             cuePrompt.label,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = InkSoft,
-                                            modifier = Modifier.weight(1f),
                                         )
+                                        Spacer(Modifier.width(6.dp))
+                                        Box(Modifier.weight(1f)) {
+                                            CuePromptText(cuePrompt)
+                                        }
                                         if (mnemonicAllowed && mnemonic != null) {
+                                            Spacer(Modifier.width(4.dp))
                                             StoryHintButton(
                                                 show = showMnemonic,
                                                 mnemonic = mnemonic,
@@ -1508,7 +1512,6 @@ private fun PromptPanel(
                                             color = InkSoft,
                                         )
                                     }
-                                    CuePromptText(cuePrompt)
                                     cuePrompt.detail?.let { detail ->
                                         Spacer(Modifier.height(2.dp))
                                         Text(
@@ -2349,6 +2352,50 @@ private fun DonePanel(
 }
 
 @Composable
+private fun CompactToolChip(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    active: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = when {
+            !enabled -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            active -> accent.copy(alpha = 0.30f)
+            else -> PaperWarm
+        },
+        border = BorderStroke(
+            1.dp,
+            if (active && enabled) accent.copy(alpha = 0.50f) else InkSoft.copy(alpha = 0.16f),
+        ),
+        modifier = Modifier.height(40.dp),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (enabled) InkDark else InkSoft.copy(alpha = 0.45f),
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (enabled) InkDark else InkSoft.copy(alpha = 0.55f),
+            )
+        }
+    }
+}
+
+@Composable
 private fun CanvasTools(
     player: StrokeOrderPlayer,
     showReference: Boolean,
@@ -2360,7 +2407,7 @@ private fun CanvasTools(
     orderAvailable: Boolean,
     editable: Boolean = true,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (!orderAvailable) {
             Text(
                 "No stroke-order source for this character. Trace the outline instead.",
@@ -2369,7 +2416,7 @@ private fun CanvasTools(
             )
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -2378,6 +2425,7 @@ private fun CanvasTools(
                     player.play()
                 },
                 enabled = player.strokeCount > 0,
+                modifier = Modifier.size(40.dp),
             ) {
                 Icon(
                     Icons.Rounded.PlayArrow,
@@ -2385,20 +2433,20 @@ private fun CanvasTools(
                     tint = if (player.strokeCount > 0) InkDark else InkSoft.copy(alpha = 0.35f),
                 )
             }
-            com.bassmd.bihua.ui.components.TonalAction(
+            CompactToolChip(
                 text = "Guide",
-                onClick = { onToggleReference(!showReference) },
-                modifier = Modifier.weight(1f),
                 icon = if (showReference) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                accent = if (showReference) Mint.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surfaceVariant,
+                active = showReference,
+                accent = Mint,
+                onClick = { onToggleReference(!showReference) },
             )
-            com.bassmd.bihua.ui.components.TonalAction(
+            CompactToolChip(
                 text = "Order",
-                onClick = { onToggleOrder(!showOrder) },
-                enabled = showReference && orderAvailable,
-                modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.FormatListNumbered,
-                accent = if (showOrder && showReference) Lilac.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant,
+                active = showOrder && showReference,
+                accent = Lilac,
+                enabled = showReference && orderAvailable,
+                onClick = { onToggleOrder(!showOrder) },
             )
         }
         InkHistoryPlaybackBar(
