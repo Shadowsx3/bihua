@@ -1131,7 +1131,7 @@ private fun CharacterDetail(
                     DetailRow("Simplified", entry.simplified)
                 }
                 val shownVariants = variants.filter {
-                    it != entry.character && it != entry.traditional
+                    it != entry.character && it != entry.traditional && it != entry.simplified
                 }
                 if (shownVariants.isNotEmpty()) {
                     DetailRow("Variants", shownVariants.take(8).joinToString(" "))

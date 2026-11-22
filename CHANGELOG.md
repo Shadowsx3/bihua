@@ -79,6 +79,9 @@
   the icons no longer move when the selected tab changes.
 - Play screenshots were regenerated from the real 1.0.2 app in light mode, with
   a grade-sheet shot and a Progress shot added.
+- Tablet screenshots were recaptured from a 2560 × 1600 Pixel Tablet emulator
+  for both the 7-inch and 10-inch slots.
+- Duplicate variant rows in character details are hidden.
 
 ### Fixed
 

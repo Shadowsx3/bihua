@@ -20,7 +20,7 @@ android {
         applicationId = "com.bassmd.bihua"
         minSdk = 29
         targetSdk = 36
-        versionCode = 11
+        versionCode = 12
         versionName = "1.0.2"
         ndk {
             // The tablet and phone are arm64. Dropping emulator ABIs keeps the

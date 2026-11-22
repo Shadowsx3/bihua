@@ -254,7 +254,7 @@ fun HomeScreen(
                                 )
                                 Text(
                                     if (summary.isEmpty()) {
-                                        "Pin, skip, or add a character from its detail pane."
+                                        "Pin, skip, or add characters."
                                     } else {
                                         summary.joinToString(" · ")
                                     },

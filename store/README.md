@@ -3,10 +3,10 @@
 - `icon-512.png` — app icon, 512 × 512
 - `feature-graphic.png` — 1024 × 500
 - `phone-1.png` … `phone-7.png` — 1080 × 1920, 9:16, captured from 1.0.2
-- `tablet-10-*.png` — 2560 × 1440, 16:9, for 10-inch tablets
-- `tablet-7-*.png` — 1920 × 1080, 16:9, for 7-inch tablets
+- `tablet-10-*.png` — 2560 × 1440, 16:10 app inside a 16:9 frame, current 1.0.2
+- `tablet-7-*.png` — 1920 × 1080, 16:10 app inside a 16:9 frame, current 1.0.2
 - `app-shots/` — raw 1080 × 2400 captures of Home, Characters, detail, Practice, word practice, Progress, and the grade sheet
-- `tablet-1-home.png` … `tablet-4-progress.png` — older tablet source captures; refresh before uploading tablet shots
+- `tablet-1-home.png` … `tablet-4-progress.png` — raw 2560 × 1600 tablet captures
 - `listing.md` — names, descriptions, category, tags, contact
 - `release-notes-1.0.2.txt` — Play closed-test release notes
 - `phone-*-light.svg` — editable source frames for the phone shots
@@ -21,4 +21,4 @@ light theme, and the real app. Phone frames are rendered from the editable
 ```
 
 `phone-6` shows the answer/grade sheet; `phone-7` shows Progress. Tablet shots
-should be recaptured from 1.0.2 before they are uploaded.
+are current 1.0.2 captures from a 2560 × 1600 Pixel Tablet emulator.
