@@ -34,3 +34,6 @@ docs/download/*.apk
 
 # Local device screenshots and scratch captures
 screenshots/
+
+# Local-only Play upload assets and release copy. Never publish these.
+store/

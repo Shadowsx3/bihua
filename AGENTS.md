@@ -30,6 +30,9 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
   closed-test track. Upload updates to the same track.
 - Release APK: `app/build/outputs/apk/release/app-release.apk`
 - Play AAB: `app/build/outputs/bundle/release/app-release.aab`
+- Play upload assets and listing copy live in the local-only `store/` folder.
+  `store/` is ignored by git and must not be published. It contains the upload
+  checklist, listing copy, release notes, and store screenshots.
 - Play upload checklist: `store/PLAY-UPLOAD.md`
 - Listing copy: `store/listing.md`, `store/full-description.txt`
 - Release notes: `store/release-notes-1.0.2.txt` (closed test) and
