@@ -135,6 +135,10 @@ class ContentDatabaseTest {
     fun everyStructureRowHasAnHonestNote() {
         assertEquals(0, count("SELECT COUNT(*) FROM char_meta WHERE trim(etymology)=''"))
         assertTrue(count("SELECT COUNT(*) FROM char_meta WHERE etymology_type='shape'") > 0)
+        assertTrue(
+            "too many missing decompositions",
+            count("SELECT COUNT(*) FROM char_meta WHERE trim(decomposition)=''") < 50,
+        )
     }
 
     @Test

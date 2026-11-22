@@ -37,7 +37,7 @@ Keep this in mind for every screen:
   suspension, and selective transfer. 1.0.4 adds the vivid palette, review cue
   setup, script filters, review polish, handwriting sanitisation, cleaner
   readings, and better Japanese word ordering.
-- Progress schema **10**; contentVersion **32**.
+- Progress schema **10**; contentVersion **34**.
 - 209 unit tests.
 - Public repo: <https://github.com/Shadowsx3/bihua>
 - Pages: <https://shadowsx3.github.io/bihua/>
@@ -61,9 +61,9 @@ Keep this in mind for every screen:
 Every character, word, reading, meaning, and story users see must be checked
 before the next content release. The working checklist is
 `docs/content-qa-backlog.md`. The screen and journey risk list is
-`docs/user-journey-risk-audit.md`. Known gaps: Japanese word frequency ordering,
-Korean coverage for 115 rare Hanja, a full TalkBack/large-text pass, and some
-etymology quality.
+`docs/user-journey-risk-audit.md`. Known gaps: Korean coverage for 115 rare
+Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
+some etymology quality.
 - GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
 
 ## Build, test, install
@@ -233,7 +233,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 - Progress DB schema 9. `review_log` stores `elapsed_ms`, `task`, and `strokes`.
 - Bump the schema and add an upgrade path when tables change.
-- Content DB contentVersion 32. Bump it whenever the asset changes.
+- Content DB contentVersion 34. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
   traditional-only forms in Simplified; shared glyphs stay in both.
 - Traditional words come from CEDICT word pairs, not character substitution.

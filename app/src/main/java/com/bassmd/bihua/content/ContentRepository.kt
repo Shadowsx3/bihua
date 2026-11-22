@@ -282,7 +282,7 @@ class SqliteContentRepository(
      * Content version. Bump this whenever the shipped database changes, so
      * existing installs replace their copy even if the byte length matches.
      */
-    private val contentVersion = 32
+    private val contentVersion = 34
 
     private fun copyIfNeeded(target: File) {
         val assetLength = context.assets.openFd("bihua_content.db").use { it.length }

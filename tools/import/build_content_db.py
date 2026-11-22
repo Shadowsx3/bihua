@@ -925,6 +925,8 @@ IDS_SHAPES = {
 
 def shape_note(decomposition: str, radical: str) -> str:
     """An honest shape note, never a made-up historical etymology."""
+    if decomposition and " " in decomposition:
+        return f"Shape: made from {' + '.join(decomposition.split())}."
     parts = [
         char for char in decomposition
         if char not in "⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻？?"
@@ -937,6 +939,39 @@ def shape_note(decomposition: str, radical: str) -> str:
     if radical:
         return f"Shape: organized around the {radical} radical."
     return "Shape: a rare glyph with no simple decomposition."
+
+
+def load_kanjivg_components(char: str) -> list[str]:
+    """Top-level component names from KanjiVG, used only when MMH is silent."""
+    path = RAW / "kanjivg" / "kanji" / f"{ord(char):05x}.svg"
+    if not path.exists():
+        return []
+    try:
+        root = ET.parse(path).getroot()
+    except Exception:
+        return []
+    code = f"kvg:{ord(char):05x}"
+    target = next(
+        (node for node in root.iter() if node.tag.endswith("g") and node.get("id") == code),
+        None,
+    )
+    if target is None:
+        return []
+    parts: list[str] = []
+
+    def collect(parent: ET.Element) -> None:
+        for child in list(parent):
+            if not child.tag.endswith("g"):
+                continue
+            element = child.get("{http://kanjivg.tagaini.net}element") or child.get("kvg:element")
+            if element and element != char:
+                if element not in parts:
+                    parts.append(element)
+            else:
+                collect(child)
+
+    collect(target)
+    return parts
 
 
 def load_mmh_meta() -> dict[str, tuple[str, str, str, str, str, str]]:
@@ -1698,13 +1733,21 @@ def build(out_path: Path) -> None:
         meta = mmh_meta.get(row.char)
         if meta is not None:
             radical, decomposition, hint, kind, phonetic, semantic = meta
+            if not decomposition:
+                parts = load_kanjivg_components(row.char)
+                if len(parts) >= 2:
+                    decomposition = " ".join(parts)
             if not hint.strip():
                 hint = shape_note(decomposition, radical)
                 kind = "shape"
             meta_rows.append((row.char, radical, decomposition, hint, kind, phonetic, semantic))
         elif row.char in unihan_radicals:
             radical = unihan_radicals[row.char]
-            meta_rows.append((row.char, radical, "", shape_note("", radical), "shape", "", ""))
+            parts = load_kanjivg_components(row.char)
+            decomposition = " ".join(parts) if len(parts) >= 2 else ""
+            meta_rows.append(
+                (row.char, radical, decomposition, shape_note(decomposition, radical), "shape", "", "")
+            )
     connection.executemany(
         "INSERT OR REPLACE INTO char_meta VALUES(?,?,?,?,?,?,?)",
         meta_rows,

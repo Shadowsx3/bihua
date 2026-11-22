@@ -1651,13 +1651,20 @@ private val ideographicDescriptionChars = setOf(
     '⿰', '⿱', '⿲', '⿳', '⿴', '⿵', '⿶', '⿷', '⿸', '⿹', '⿺', '⿻', '？',
 )
 
+private fun structureParts(decomposition: String): List<String> {
+    if (decomposition.any { it in ideographicDescriptionChars }) {
+        return decomposition.filterNot { it in ideographicDescriptionChars }
+            .map { it.toString() }
+            .filter { it.isNotBlank() }
+    }
+    return decomposition.split(Regex("\\s+")).filter { it.isNotBlank() }
+}
+
 private fun structureComponents(decomposition: String): List<String> =
-    decomposition.filterNot { it in ideographicDescriptionChars }
-        .map { it.toString() }
-        .distinct()
+    structureParts(decomposition).distinct()
 
 private fun structureText(decomposition: String): String {
-    val parts = decomposition.filterNot { it in ideographicDescriptionChars }
-    if (parts.isBlank()) return "—"
-    return parts.map { it.toString() }.joinToString(" ")
+    val parts = structureParts(decomposition)
+    if (parts.isEmpty()) return "—"
+    return parts.joinToString(" ")
 }

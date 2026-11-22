@@ -95,7 +95,7 @@ or upload an APK.
 - Korean: **2,239** (1,800 Hanja + 40 jamo + 399 syllables)
 - **34,362** word examples
 - **4,875** unique structure records
-- Content version **32**
+- Content version **34**
 
 The content database is generated, not hand-edited:
 

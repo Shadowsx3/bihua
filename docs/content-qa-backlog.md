@@ -52,8 +52,10 @@ is correct, in the right script, and free of pipeline artifacts.
       radical, and the UI labels it “Shape”, not “Story”.
 - [x] Check that the story shown in the Hint popup is the same one used in the
       character detail. The popup now says “Shape hint” for shape notes.
-- [ ] 286 rows still have no decomposition. Do not fill these with a guessed
-      IDS; they remain hidden in the detail panel.
+- [x] Fill decompositions from KanjiVG component groups when Make Me a Hanzi
+      has no entry. This reduced missing decompositions from 286 to 29.
+- [ ] 29 rare variants still have no decomposition. Do not fill these with a
+      guessed IDS; they remain hidden in the detail panel.
 
 ## Pipeline and tests
 

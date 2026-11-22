@@ -138,5 +138,5 @@ Status:
 | Korean course has no word examples. | Fixed | 11,266 Korean word examples cover 1,684 of 1,799 Hanja. |
 | Rare Korean Hanja with no compound. | Watch | 115 rare characters have no safe example; the character card still works. |
 | Japanese word ranking relies on JMdict priority rather than a corpus. | Fixed | FrequencyWords Japanese now ranks the candidates, with JMdict priority as the fallback. 学 leads with 学校. |
-| 587 structure rows had no story and 286 have no decomposition. | Fixed / Watch | The 587 now have a neutral shape note labelled “Shape”, never a made-up history. The 286 missing decompositions stay hidden; no false structure is shown. |
+| 587 structure rows had no story and 286 had no decomposition. | Fixed / Watch | The 587 now have a neutral shape note labelled “Shape”, never a made-up history. KanjiVG component groups filled 257 decompositions, leaving 29 rare variants; those stay hidden rather than guessed. |
 | Content version and test counts drift from the docs. | Fixed | 207 unit tests, contentVersion 28, 34,362 words are reflected in the README and AGENTS notes. |
