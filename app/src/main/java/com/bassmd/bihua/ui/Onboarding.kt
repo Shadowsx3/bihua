@@ -258,7 +258,7 @@ fun OnboardingScreen(
                             BrushConfig.preset(DrawingTool.INK),
                             false,
                             RecallCue.MEANING_READING,
-                            true,
+                            false,
                             MemoryModel.FSRS7,
                             0.90f,
                             true,
@@ -360,7 +360,11 @@ private fun ScriptPage(
     shareProgress: Boolean,
     onShareChange: (Boolean) -> Unit,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text("What are you learning?", style = MaterialTheme.typography.headlineMedium, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
@@ -866,7 +870,11 @@ private fun RecallPage(
     onPronunciation: (Boolean) -> Unit,
 ) {
     val examples = cueExamples(mode)
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text("Set up your reviews", style = MaterialTheme.typography.headlineMedium, color = InkDark)
         Spacer(Modifier.height(4.dp))
         Text(
@@ -1220,7 +1228,13 @@ private fun BrushPage(
             InkState().apply { add(previewStroke()) }
         }
     }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text("Pick a writing feel", style = MaterialTheme.typography.headlineMedium, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(

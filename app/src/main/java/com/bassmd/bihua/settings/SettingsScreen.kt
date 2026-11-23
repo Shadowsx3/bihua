@@ -2030,7 +2030,7 @@ fun SettingsScreen(
                                     color = InkDark,
                                 )
                                 Text(
-                                    "Always on. This device has no stylus, so use your finger.",
+                                    "Always on. This device has no stylus support.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = InkSoft,
                                 )

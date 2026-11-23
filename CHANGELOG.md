@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.9 (in progress)
+
+- A tap now records a dot stroke instead of losing a single-point stroke.
+- While a stylus is down, a palm or finger touch no longer starts a second stroke.
+- Onboarding pages scroll on small screens and large text.
+- The Compare writing drill has a back arrow to the character detail.
+- The no-stylus settings note is calmer: "Always on. This device has no stylus support."
+
 ## 1.0.8 — 2026-11-23
 
 ### Added

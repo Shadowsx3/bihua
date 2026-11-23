@@ -29,15 +29,9 @@ import com.bassmd.bihua.settings.DrawingTool
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.ui.theme.LocalBihuaPalette
 
-/**
- * Ink width before the learner's width setting. Pressure scales it 1.0x to
- * 1.35x, with a floor so the first millimetres of a light S Pen stroke still
- * read as ink instead of a hairline.
- */
-private const val BASE_WIDTH_DP = 2.4f
 private const val ERASER_RADIUS = 0.04f
 
-/** Ink comes only from the S Pen tip or its eraser end. Finger and palm input is ignored. */
+/** Stylus and eraser always win; touch is accepted only when finger drawing is on. */
 private fun PointerInputChange.isPen(allowFinger: Boolean): Boolean =
     type == PointerType.Stylus ||
         type == PointerType.Eraser ||
@@ -72,6 +66,8 @@ fun InkCanvas(
     val palette = LocalBihuaPalette.current
     var live by remember { mutableStateOf<InkStroke?>(null) }
     var liveIsEraser by remember { mutableStateOf(false) }
+    var liveIsTouch by remember { mutableStateOf(false) }
+    var activePointerId by remember { mutableStateOf<androidx.compose.ui.input.pointer.PointerId?>(null) }
     val renderCache = remember { InkRenderCache() }
     // pointerInput keeps its first lambda; always call the latest callback so a
     // trimmed replay cannot delete strokes with a stale progress value.
@@ -90,14 +86,26 @@ fun InkCanvas(
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Main)
                         if (!enabled) continue
-                        val change = event.changes.firstOrNull() ?: continue
-                        if (!change.isPen(allowFinger)) continue
+                        // A stylus always wins over a finger or palm. If a palm
+                        // started a touch stroke just before the pen, drop it.
+                        val stylus = event.changes.firstOrNull { it.type == PointerType.Stylus || it.type == PointerType.Eraser }
+                        if (stylus != null && live != null && liveIsTouch) {
+                            live = null
+                            liveIsTouch = false
+                            activePointerId = null
+                        }
+                        val change = stylus
+                            ?: event.changes.firstOrNull { it.isPen(allowFinger) }
+                            ?: continue
+                        if (activePointerId != null && change.id != activePointerId) continue
 
                         val x = (change.position.x / size.width).coerceIn(0f, 1f)
                         val y = (change.position.y / size.height).coerceIn(0f, 1f)
 
                         when {
                             change.changedToDown() -> {
+                                activePointerId = change.id
+                                liveIsTouch = change.type == PointerType.Touch
                                 liveIsEraser = change.isEraser()
                                 if (liveIsEraser) {
                                     state.eraseAt(x, y, ERASER_RADIUS)
@@ -121,10 +129,14 @@ fun InkCanvas(
 
                             change.changedToUp() -> {
                                 if (!liveIsEraser) {
-                                    live?.let { if (it.points.size > 1) state.add(it) }
+                                    // A single tap is a dot stroke, not a lost
+                                    // point. Dots are real strokes in these scripts.
+                                    live?.let { if (it.points.isNotEmpty()) state.add(it) }
                                 }
                                 live = null
                                 liveIsEraser = false
+                                liveIsTouch = false
+                                activePointerId = null
                                 change.consume()
                             }
                         }

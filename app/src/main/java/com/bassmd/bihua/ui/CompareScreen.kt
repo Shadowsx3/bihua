@@ -304,6 +304,7 @@ fun CompareScreen(
                     drawingTool = drawingTool,
                     brush = brush,
                     allowFinger = allowFinger,
+                    onBackToCharacter = onBackToCharacter,
                     onClose = { showWriteDrill = false },
                 )
             }
@@ -496,6 +497,7 @@ private fun CompareWriteDrill(
     drawingTool: DrawingTool,
     brush: BrushConfig,
     allowFinger: Boolean,
+    onBackToCharacter: (CharacterEntry) -> Unit = {},
     onClose: () -> Unit,
 ) {
     var index by remember(entries) { mutableIntStateOf(0) }
@@ -511,6 +513,12 @@ private fun CompareWriteDrill(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { entry.let(onBackToCharacter) }) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Back to character details",
+                )
+            }
             Column(Modifier.weight(1f)) {
                 Text("Write both", style = MaterialTheme.typography.headlineSmall, color = InkDark)
                 Text(
@@ -579,7 +587,7 @@ private fun CompareWriteDrill(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val side = minOf(maxWidth, 360.dp)
+                    val side = minOf(maxWidth, maxHeight, 360.dp)
                     val guidePlayer = rememberStrokeOrderPlayer(
                         if (guideMode == CompareGuide.STROKES) entry.id else null,
                     )
