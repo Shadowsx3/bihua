@@ -219,7 +219,9 @@ fun InkMascot(
     sparkle: Boolean = true,
     withBrush: Boolean = false,
 ) {
-    val palette = LocalBihuaPalette.current
+    // The pet is a fixed paper-and-ink sticker: it must not invert with the theme.
+    val petPaper = Color(0xFFFFFDF4)
+    val petInk = Color(0xFF1F2B23)
     Canvas(Modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
@@ -228,7 +230,7 @@ fun InkMascot(
         // Coral badge and sticker halo.
         drawCircle(Coral, radius = w * 0.44f, center = Offset(w * 0.50f, h * 0.50f))
         drawCircle(
-            palette.paperWarm,
+            petPaper,
             radius = w * 0.375f,
             center = Offset(w * 0.50f, h * 0.50f),
         )
@@ -241,10 +243,10 @@ fun InkMascot(
             cubicTo(w * 0.20f, h * 0.44f, w * 0.32f, h * 0.28f, w * 0.50f, h * 0.25f)
             close()
         }
-        drawPath(body, color = palette.paperWarm)
+        drawPath(body, color = petPaper)
         drawPath(
             body,
-            color = palette.inkDark,
+            color = petInk,
             style = Stroke(width = w * 0.028f),
         )
 
@@ -263,19 +265,19 @@ fun InkMascot(
             close()
         }
         drawPath(leaf, color = Mint)
-        drawPath(leaf, color = palette.inkDark, style = Stroke(width = w * 0.018f))
+        drawPath(leaf, color = petInk, style = Stroke(width = w * 0.018f))
 
         // Face.
         val eyeY = h * 0.55f
-        drawCircle(palette.inkDark, radius = w * 0.034f, center = Offset(w * 0.41f, eyeY))
-        drawCircle(palette.inkDark, radius = w * 0.034f, center = Offset(w * 0.59f, eyeY))
-        drawCircle(palette.paper, radius = w * 0.011f, center = Offset(w * 0.40f, eyeY - h * 0.012f))
-        drawCircle(palette.paper, radius = w * 0.011f, center = Offset(w * 0.58f, eyeY - h * 0.012f))
+        drawCircle(petInk, radius = w * 0.034f, center = Offset(w * 0.41f, eyeY))
+        drawCircle(petInk, radius = w * 0.034f, center = Offset(w * 0.59f, eyeY))
+        drawCircle(petPaper, radius = w * 0.011f, center = Offset(w * 0.40f, eyeY - h * 0.012f))
+        drawCircle(petPaper, radius = w * 0.011f, center = Offset(w * 0.58f, eyeY - h * 0.012f))
         drawCircle(Rose.copy(alpha = 0.42f), radius = w * 0.060f, center = Offset(w * 0.33f, h * 0.65f))
         drawCircle(Rose.copy(alpha = 0.42f), radius = w * 0.060f, center = Offset(w * 0.67f, h * 0.65f))
         if (happy) {
             drawArc(
-                color = palette.inkDark,
+                color = petInk,
                 startAngle = 12f,
                 sweepAngle = 156f,
                 useCenter = false,
@@ -285,7 +287,7 @@ fun InkMascot(
             )
         } else {
             drawLine(
-                palette.inkDark,
+                petInk,
                 Offset(w * 0.45f, h * 0.69f),
                 Offset(w * 0.55f, h * 0.69f),
                 strokeWidth = w * 0.025f,
@@ -296,7 +298,7 @@ fun InkMascot(
         if (withBrush && detailed) {
             // A smaller version of the launcher brush, leaning at the right.
             drawLine(
-                palette.inkDark,
+                petInk,
                 Offset(w * 0.70f, h * 0.88f),
                 Offset(w * 0.83f, h * 0.60f),
                 strokeWidth = w * 0.060f,
@@ -323,7 +325,7 @@ fun InkMascot(
                 cubicTo(w * 0.83f, h * 0.48f, w * 0.81f, h * 0.54f, w * 0.80f, h * 0.57f)
                 close()
             }
-            drawPath(bristles, color = palette.inkDark)
+            drawPath(bristles, color = petInk)
         }
 
         if (sparkle) {

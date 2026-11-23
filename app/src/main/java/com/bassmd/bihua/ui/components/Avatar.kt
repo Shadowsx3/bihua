@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.settings.UserProfile
-import com.bassmd.bihua.ui.theme.Sky
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -52,7 +51,7 @@ fun ProfileAvatar(profile: UserProfile, size: Dp = 56.dp) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Sky.copy(alpha = 0.30f)),
+            .background(androidx.compose.ui.graphics.Color(0xFFFFFDF4)),
         contentAlignment = Alignment.Center,
     ) {
         if (bitmap != null) {

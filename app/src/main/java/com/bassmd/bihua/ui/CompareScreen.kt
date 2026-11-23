@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.Replay
@@ -34,10 +35,16 @@ import androidx.compose.material.icons.rounded.NavigateNext
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.automirrored.rounded.Redo
+import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -96,6 +103,7 @@ fun CompareScreen(
     pool: List<CharacterEntry>,
     onAdd: (CharacterEntry) -> Unit,
     onRemove: (CharacterEntry) -> Unit,
+    onBackToCharacter: (CharacterEntry) -> Unit = {},
     onClose: () -> Unit,
     widthScale: Float = 1f,
     gridStyle: GridStyle = GridStyle.MI_ZI,
@@ -138,6 +146,12 @@ fun CompareScreen(
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { entries.firstOrNull()?.let(onBackToCharacter) }) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Back to character details",
+                    )
+                }
                 IconButton(onClick = onClose) {
                     Icon(Icons.Rounded.Close, contentDescription = "Close comparison")
                 }
@@ -472,6 +486,8 @@ private fun ComparePicker(
     }
 }
 
+private enum class CompareGuide { OFF, FAINT, STROKES }
+
 @Composable
 private fun CompareWriteDrill(
     entries: List<CharacterEntry>,
@@ -483,7 +499,7 @@ private fun CompareWriteDrill(
     onClose: () -> Unit,
 ) {
     var index by remember(entries) { mutableIntStateOf(0) }
-    var showGuides by remember(entries) { mutableStateOf(true) }
+    var guideMode by remember(entries) { mutableStateOf(CompareGuide.FAINT) }
     val inks = remember(entries) { entries.associate { it.id to InkState() } }
     val entry = entries.getOrNull(index) ?: entries.firstOrNull() ?: return
     val last = index == entries.lastIndex
@@ -552,6 +568,7 @@ private fun CompareWriteDrill(
                     entry.meaning,
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
+                    minLines = 2,
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                 )
@@ -562,15 +579,29 @@ private fun CompareWriteDrill(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val side = minOf(maxWidth, maxHeight, 420.dp)
+                    val side = minOf(maxWidth, 360.dp)
+                    val guidePlayer = rememberStrokeOrderPlayer(
+                        if (guideMode == CompareGuide.STROKES) entry.id else null,
+                    )
                     Box(
                         Modifier
                             .size(side)
                             .writingSheet(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (showGuides) {
-                            OutlineGuide(character = entry.character, side = side)
+                        when (guideMode) {
+                            CompareGuide.FAINT -> OutlineGuide(
+                                character = entry.character,
+                                side = side,
+                                alpha = 0.13f,
+                            )
+                            CompareGuide.STROKES -> StrokeGuideLayer(
+                                player = guidePlayer,
+                                showNumbers = true,
+                                modifier = Modifier.fillMaxSize().padding(4.dp),
+                                ghostCharacter = entry.character,
+                            )
+                            CompareGuide.OFF -> Unit
                         }
                         InkCanvas(
                             state = inks.getValue(entry.id),
@@ -587,6 +618,23 @@ private fun CompareWriteDrill(
             }
         }
 
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            listOf(
+                CompareGuide.OFF to "Off",
+                CompareGuide.FAINT to "Faint",
+                CompareGuide.STROKES to "Strokes",
+            ).forEach { (mode, label) ->
+                FilterChip(
+                    selected = guideMode == mode,
+                    onClick = { guideMode = mode },
+                    label = { Text(label) },
+                    shape = CircleShape,
+                )
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -598,14 +646,49 @@ private fun CompareWriteDrill(
                 color = InkSoft,
             )
             Spacer(Modifier.weight(1f))
-            OutlinedButton(
-                onClick = { inks.getValue(entry.id).clear() },
-                shape = CircleShape,
-            ) { Text("Clear") }
-            Button(
-                onClick = { showGuides = !showGuides },
-                shape = CircleShape,
-            ) { Text(if (showGuides) "Hide guide" else "Show guide") }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = { inks.getValue(entry.id).undo() },
+                        enabled = inks.getValue(entry.id).canUndo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Undo,
+                            contentDescription = "Undo",
+                            modifier = Modifier.size(19.dp),
+                            tint = if (inks.getValue(entry.id).canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(
+                        onClick = { inks.getValue(entry.id).redo() },
+                        enabled = inks.getValue(entry.id).canRedo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Redo,
+                            contentDescription = "Redo",
+                            modifier = Modifier.size(19.dp),
+                            tint = if (inks.getValue(entry.id).canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(
+                        onClick = { inks.getValue(entry.id).clear() },
+                        enabled = inks.getValue(entry.id).canUndo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = "Clear",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (inks.getValue(entry.id).canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                }
+            }
             Button(
                 onClick = { if (last) onClose() else index++ },
                 shape = CircleShape,

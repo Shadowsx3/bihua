@@ -39,7 +39,10 @@ device pass below.
 | SBD scheduler | Reference recurrence, pass/fail, interval inversion, per-user fit | `Sbd7Test`, `SbdOptimizerTest`, `ProgressStoreSbdTest` |
 | Target recall | 70–97% changes intervals for SBD/FSRS | `Sbd7Test`, `ProgressStoreSbdTest`, manual Settings review |
 | RWKV package | Manifest, checksum, tensor shapes, ONNX inference, state BLOB | `RwkvOnnxEngineTest`, manual package import |
-| Onboarding method | Three answers, recommendation, model choice, target recall | manual phone/tablet review |
+| Onboarding | Five pages, one schedule choice, target recall, writing-only default | manual phone/tablet review |
+| Dark theme | Pet stays paper-and-ink, contrast and navigation bar spacing | manual light/dark review |
+| Paper check | Strokes toggle after reveal, back to character details | manual phone/tablet review |
+| Compare write drill | Fixed canvas, Off/Faint/Strokes, undo/redo/clear, back | manual phone/tablet review |
 | Word of the Day quality | At least 365 non-mature quality candidates per course; curated + pool | `ContentDatabaseTest` |
 | Cold start | Minimum hold, reduce-motion, tap-to-skip | manual launch on phone and tablet |
 | Pet identity | Launcher icon, profile avatar, top icon use the same pet | manual light/dark review |

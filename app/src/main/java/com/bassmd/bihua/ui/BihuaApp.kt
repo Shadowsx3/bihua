@@ -968,6 +968,12 @@ fun BihuaApp(
                                     wordQueueIndex = 0
                                 }
                             },
+                            onBackToCharacter = { entry ->
+                                wordQueue = null
+                                wordQueueIndex = 0
+                                characterId = entry.id
+                                tab = Tab.CHARACTERS
+                            },
                             onClose = {
                                 wordQueue = null
                                 wordQueueIndex = 0
@@ -1036,13 +1042,20 @@ fun BihuaApp(
 
     if (paperEntries.isNotEmpty()) {
         BihuaBackground(decorated = false) {
-            com.bassmd.bihua.practice.PaperDrillScreen(
-                entries = paperEntries,
-                mode = mode,
-                onSpeak = speak,
-                speechEnabled = settings.readAloud,
-                onClose = { paperEntries = emptyList() },
-            )
+            BihuaLocals(repository, progressStore, settings) {
+                com.bassmd.bihua.practice.PaperDrillScreen(
+                    entries = paperEntries,
+                    mode = mode,
+                    onSpeak = speak,
+                    speechEnabled = settings.readAloud,
+                    onBackToCharacter = { entry ->
+                        paperEntries = emptyList()
+                        characterId = entry.id
+                        tab = Tab.CHARACTERS
+                    },
+                    onClose = { paperEntries = emptyList() },
+                )
+            }
         }
         return
     }
@@ -1063,6 +1076,11 @@ fun BihuaApp(
                 },
                 onRemove = { entry ->
                     compareEntries = compareEntries.filterNot { it.id == entry.id }
+                },
+                onBackToCharacter = { entry ->
+                    compareEntries = emptyList()
+                    characterId = entry.id
+                    tab = Tab.CHARACTERS
                 },
                 onClose = { compareEntries = emptyList() },
                 widthScale = settings.inkWidth.scale,
@@ -1343,8 +1361,7 @@ fun BihuaApp(
                         Box(
                             Modifier
                                 .weight(1f)
-                                .appNavigationBarsPadding()
-                                .padding(bottom = 86.dp),
+                                .padding(bottom = 72.dp),
                         ) {
                             AppContent(
                                 tab = tab,

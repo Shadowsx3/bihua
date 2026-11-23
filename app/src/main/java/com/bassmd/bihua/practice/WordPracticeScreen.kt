@@ -22,7 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FormatListNumbered
@@ -107,6 +109,7 @@ fun WordPracticeScreen(
     nextLabel: String = "Next word",
     onAddToList: (() -> Unit)? = null,
     addedToList: Boolean = false,
+    onBackToCharacter: (CharacterEntry) -> Unit = {},
     onClose: () -> Unit,
 ) {
     if (characters.isEmpty()) return
@@ -127,6 +130,12 @@ fun WordPracticeScreen(
             .padding(horizontal = 20.dp, vertical = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onBackToCharacter(characters.getOrNull(index) ?: characters.first()) }) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Back to character details",
+                )
+            }
             IconButton(onClick = onClose) {
                 Icon(Icons.Rounded.Close, contentDescription = "Close word practice")
             }

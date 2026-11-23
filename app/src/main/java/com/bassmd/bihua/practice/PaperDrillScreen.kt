@@ -1,6 +1,8 @@
 package com.bassmd.bihua.practice
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.VolumeUp
@@ -42,6 +45,8 @@ import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
+import com.bassmd.bihua.ink.StrokeGuideLayer
+import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ui.theme.PaperWarm
 import kotlin.random.Random
 
@@ -55,6 +60,7 @@ fun PaperDrillScreen(
     mode: StudyMode,
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
+    onBackToCharacter: (CharacterEntry) -> Unit = {},
     onClose: () -> Unit,
 ) {
     if (entries.isEmpty()) return
@@ -62,7 +68,9 @@ fun PaperDrillScreen(
     var order by remember(entries) { mutableStateOf(entries) }
     var index by remember(entries) { mutableIntStateOf(0) }
     var revealed by remember(entries, index) { mutableStateOf(false) }
+    var showStrokes by remember(entries, index) { mutableStateOf(false) }
     val entry = order.getOrNull(index) ?: order.first()
+    val player = rememberStrokeOrderPlayer(if (revealed && showStrokes) entry.id else null)
 
     Column(
         Modifier
@@ -72,6 +80,12 @@ fun PaperDrillScreen(
             .padding(horizontal = 20.dp, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onBackToCharacter(entry) }) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Back to character details",
+                )
+            }
             IconButton(onClick = onClose) {
                 Icon(Icons.Rounded.Close, contentDescription = "Close paper check")
             }
@@ -140,11 +154,23 @@ fun PaperDrillScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 if (revealed) {
-                    Text(
-                        entry.character,
-                        fontSize = 132.sp,
-                        color = InkDark,
-                    )
+                    Box(Modifier.size(180.dp), contentAlignment = Alignment.Center) {
+                        if (!showStrokes) {
+                            Text(
+                                entry.character,
+                                fontSize = 132.sp,
+                                color = InkDark,
+                            )
+                        }
+                        if (showStrokes) {
+                            StrokeGuideLayer(
+                                player = player,
+                                modifier = Modifier.fillMaxSize(),
+                                showNumbers = true,
+                                ghostCharacter = entry.character,
+                            )
+                        }
+                    }
                     if (speechEnabled) {
                         IconButton(onClick = { onSpeak(entry.character) }) {
                             Icon(
@@ -160,6 +186,24 @@ fun PaperDrillScreen(
                         style = MaterialTheme.typography.labelMedium,
                         color = InkSoft,
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = showStrokes,
+                            onClick = { showStrokes = !showStrokes },
+                            label = { Text("Strokes") },
+                            shape = CircleShape,
+                        )
+                        if (showStrokes) {
+                            IconButton(onClick = { player.play() }) {
+                                Icon(
+                                    Icons.Rounded.PlayArrow,
+                                    contentDescription = "Play stroke order",
+                                    tint = InkDark,
+                                )
+                            }
+                        }
+                    }
                 } else {
                     Text(
                         "Write it on paper",
@@ -181,7 +225,10 @@ fun PaperDrillScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TonalAction(
                 text = if (revealed) "Hide answer" else "Show answer",
-                onClick = { revealed = !revealed },
+                onClick = {
+                    revealed = !revealed
+                    if (!revealed) showStrokes = false
+                },
                 modifier = Modifier.weight(1f),
             )
             PrimaryAction(

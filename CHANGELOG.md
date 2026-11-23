@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.8 (in progress)
+## 1.0.8 — 2026-11-23
 
 ### Added
 
@@ -18,6 +18,15 @@
 - An optional, user-supplied RWKV-Instant step model can be imported in Settings
   with ONNX Runtime. Bihua does not bundle or advertise the weights; the package
   is validated, run on-device, and kept in app-private storage.
+- Free paper check can reveal the character and then show stroke order, and it
+  can return to the character's detail page.
+- Word practice and Compare have a back arrow to character details; the Compare
+  writing drill uses one fixed canvas size and the Off / Faint / Strokes guide
+  choice.
+- Onboarding is shorter: one schedule choice, target recall, and writing as the
+  default. Pronunciation practice stays off until the learner enables it.
+- Dark theme keeps the pet's paper-and-ink identity, and the bottom content no
+  longer leaves an empty strip above the navigation bar.
 - Study lists are named collections of characters and words. They support
   presets, streaming TXT/CSV/TSV/JSON import, `.txt` export, and a quick-add
   list that never changes the review queue. Word lists run free word practice

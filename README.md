@@ -154,7 +154,7 @@ Bihua stands on open research and open content. Thank you to:
   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and in Settings → About.
 
 Android TextToSpeech reads aloud with an installed on-device voice. There is no
-cloud speech service. Any future Piper voice support will also run locally.
+cloud speech service.
 
 ## Privacy
 

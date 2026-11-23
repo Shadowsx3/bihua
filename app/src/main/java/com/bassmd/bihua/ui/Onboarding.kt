@@ -141,13 +141,7 @@ fun OnboardingScreen(
     var tool by rememberSaveable { mutableStateOf(DrawingTool.INK) }
     var shareProgress by rememberSaveable { mutableStateOf(false) }
     var cue by rememberSaveable { mutableStateOf(RecallCue.MEANING_READING) }
-    var pronunciation by rememberSaveable { mutableStateOf(true) }
-    var volume by rememberSaveable { mutableIntStateOf(-1) }
-    var priority by rememberSaveable { mutableIntStateOf(-1) }
-    var tuning by rememberSaveable { mutableIntStateOf(-1) }
-    var methodChoice by rememberSaveable { mutableStateOf<MemoryModel?>(null) }
-    var retention by rememberSaveable { mutableFloatStateOf(0.90f) }
-    val recommended = recommendModel(volume, priority, tuning)
+    var pronunciation by rememberSaveable { mutableStateOf(false) }
     val brush = BrushConfig.preset(tool)
 
     BackHandler(enabled = step > 0) { step-- }
@@ -189,21 +183,8 @@ fun OnboardingScreen(
                         shareProgress = shareProgress,
                         onShareChange = { shareProgress = it },
                     )
-                        2 -> MethodPage(
-                            volume = volume,
-                            priority = priority,
-                            tuning = tuning,
-                            recommended = recommended,
-                            choice = methodChoice ?: recommended,
-                            onVolume = { volume = it },
-                            onPriority = { priority = it },
-                            onTuning = { tuning = it },
-                            onChoose = { methodChoice = it },
-                            retention = retention,
-                            onRetention = { retention = it },
-                        )
-                        3 -> PacePage(mode = mode, goal = goal, onPick = { goal = it })
-                        4 -> BrushPage(tool = tool, onPick = { tool = it })
+                        2 -> PacePage(mode = mode, goal = goal, onPick = { goal = it })
+                        3 -> BrushPage(tool = tool, onPick = { tool = it })
                         else -> RecallPage(
                             mode = mode,
                             cue = cue,
@@ -215,7 +196,7 @@ fun OnboardingScreen(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(6) { index ->
+                repeat(5) { index ->
                     Box(
                         Modifier
                             .size(if (index == step) 22.dp else 8.dp, 8.dp)
@@ -236,9 +217,9 @@ fun OnboardingScreen(
                 }
                 Spacer(Modifier.weight(1f))
                 PrimaryAction(
-                    text = if (step == 5) "Start writing" else "Continue",
+                    text = if (step == 4) "Start writing" else "Continue",
                     onClick = {
-                        if (step == 5) {
+                        if (step == 4) {
                             onFinish(
                                 mode,
                                 goal,
@@ -246,8 +227,8 @@ fun OnboardingScreen(
                                 shareProgress,
                                 cue,
                                 pronunciation,
-                                methodChoice ?: recommended,
-                                retention,
+                                MemoryModel.FSRS7,
+                                0.90f,
                             )
                         } else {
                             step++
@@ -862,193 +843,6 @@ private fun ReviewProjectionChart(
                 floatArrayOf(6.dp.toPx(), 6.dp.toPx()),
             ),
         )
-    }
-}
-
-private fun recommendModel(volume: Int, priority: Int, tuning: Int): MemoryModel {
-    // A simple answer wins first. Otherwise the proven default stays in place.
-    if (priority == 1) return MemoryModel.SBD
-    if (volume >= 2 && tuning >= 1) return MemoryModel.FSRS7
-    return MemoryModel.FSRS7
-}
-
-@Composable
-private fun MethodPage(
-    volume: Int,
-    priority: Int,
-    tuning: Int,
-    recommended: MemoryModel,
-    choice: MemoryModel,
-    onVolume: (Int) -> Unit,
-    onPriority: (Int) -> Unit,
-    onTuning: (Int) -> Unit,
-    onChoose: (MemoryModel) -> Unit,
-    retention: Float,
-    onRetention: (Float) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            "How you study",
-            style = MaterialTheme.typography.headlineMedium,
-            color = InkDark,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "Three quick answers. Bihua uses them to suggest how reviews are spaced; you can switch later in Settings.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = InkSoft,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(max = 520.dp),
-        )
-        Spacer(Modifier.height(18.dp))
-        SoftCard(Modifier.fillMaxWidth().widthIn(max = 560.dp), color = PaperWarm) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Question(
-                    title = "On a study day, how many reviews do you expect?",
-                    options = listOf("Under 20", "20 to 80", "More than 80"),
-                    selected = volume,
-                    onSelect = onVolume,
-                )
-                Question(
-                    title = "What matters more in the schedule?",
-                    options = listOf("The most precise dates", "A model I can inspect"),
-                    selected = priority,
-                    onSelect = onPriority,
-                )
-                Question(
-                    title = "How do you feel about tuning weights?",
-                    options = listOf("Keep it automatic", "I may tune it", "I like tuning"),
-                    selected = tuning,
-                    onSelect = onTuning,
-                )
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            "Suggested for you: ${recommended.label}",
-            style = MaterialTheme.typography.titleMedium,
-            color = InkDark,
-        )
-        Text(
-            when (recommended) {
-                MemoryModel.SBD ->
-                    "You asked for a schedule you can inspect, so start with SBD. Its seven values are easy to read and it can be refitted from your own reviews."
-                MemoryModel.FSRS7, MemoryModel.RWKV ->
-                    "Start with FSRS-7. It is the most tested schedule in the app, with 34 weights fitted per script and precise intervals."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = InkSoft,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(max = 520.dp),
-        )
-        Spacer(Modifier.height(14.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp),
-        ) {
-            listOf(MemoryModel.FSRS7, MemoryModel.SBD).forEach { model ->
-                val selected = choice == model
-                Surface(
-                    onClick = { onChoose(model) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (selected) Mint.copy(alpha = 0.22f) else Paper,
-                    border = androidx.compose.foundation.BorderStroke(
-                        if (selected) 2.dp else 1.dp,
-                        if (selected) Mint else InkSoft.copy(alpha = 0.18f),
-                    ),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                model.label,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = InkDark,
-                            )
-                            if (model == recommended) {
-                                Spacer(Modifier.width(6.dp))
-                                Pill("Suggested", Butter.copy(alpha = 0.55f))
-                            }
-                        }
-                        Text(
-                            model.short,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        SoftCard(Modifier.fillMaxWidth().widthIn(max = 560.dp), color = Butter.copy(alpha = 0.16f)) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Target recall",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = InkDark,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Pill("90% recommended", Mint.copy(alpha = 0.45f))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Slider(
-                        value = retention,
-                        onValueChange = { onRetention((it * 100f).let { v -> kotlin.math.round(v) / 100f }) },
-                        valueRange = 0.70f..0.97f,
-                        steps = 0,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        "${(retention * 100f).roundToInt()}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = InkDark,
-                    )
-                }
-                Text(
-                    "Ninety percent is the balance most learners keep. Lower it if the daily load feels heavy; raise it before an exam.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkSoft,
-                )
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "Both use the same four grades and keep your progress. You can change this in Settings → Schedule.",
-            style = MaterialTheme.typography.labelSmall,
-            color = InkSoft,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun Question(
-    title: String,
-    options: List<String>,
-    selected: Int,
-    onSelect: (Int) -> Unit,
-) {
-    Column {
-        Text(title, style = MaterialTheme.typography.titleSmall, color = InkDark)
-        Spacer(Modifier.height(6.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            options.forEachIndexed { index, option ->
-                FilterChip(
-                    selected = selected == index,
-                    onClick = { onSelect(index) },
-                    label = { Text(option) },
-                )
-            }
-        }
     }
 }
 
