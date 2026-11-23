@@ -18,6 +18,7 @@ class Speech(private val context: Context) : AutoCloseable {
     private var failed = false
     private var rate = 0.92f
     private var pendingMode: StudyMode? = null
+    private var pendingSpeak: Pair<String, StudyMode>? = null
 
     init {
         engine = TextToSpeech(context.applicationContext) { status ->
@@ -25,6 +26,17 @@ class Speech(private val context: Context) : AutoCloseable {
             failed = !ready
             engine?.setSpeechRate(rate)
             pendingMode?.let { applyLanguage(it) }
+            pendingSpeak?.let { (pendingText, pendingLanguage) ->
+                pendingSpeak = null
+                if (applyLanguage(pendingLanguage)) {
+                    engine?.speak(
+                        pendingText,
+                        TextToSpeech.QUEUE_FLUSH,
+                        null,
+                        "bihua-${pendingText.hashCode()}",
+                    )
+                }
+            }
             engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) = Unit
                 override fun onDone(utteranceId: String?) = Unit
@@ -49,7 +61,12 @@ class Speech(private val context: Context) : AutoCloseable {
     fun speak(text: String, mode: StudyMode): Boolean {
         if (text.isBlank() || failed) return false
         val tts = engine ?: return false
-        if (!ready) return true
+        if (!ready) {
+            // TTS init takes a moment. Keep the first tap instead of silently
+            // dropping it.
+            pendingSpeak = text to mode
+            return true
+        }
         if (!applyLanguage(mode)) return false
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "bihua-${text.hashCode()}")
         return true
@@ -66,6 +83,7 @@ class Speech(private val context: Context) : AutoCloseable {
         ready = false
         failed = false
         pendingMode = null
+        pendingSpeak = null
     }
 
     private fun applyLanguage(mode: StudyMode): Boolean {

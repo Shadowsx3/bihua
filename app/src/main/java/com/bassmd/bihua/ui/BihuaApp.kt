@@ -1685,6 +1685,8 @@ private fun AppContent(
             onOpenCharacter = onOpenCharacter,
             featuredWord = featuredWord,
             onPracticeWord = onPracticeWord,
+            speechEnabled = settings.readAloud,
+            onSpeak = onSpeak,
         )
 
         Tab.CHARACTERS -> CharactersScreen(

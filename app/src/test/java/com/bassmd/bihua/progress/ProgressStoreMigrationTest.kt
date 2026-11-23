@@ -31,7 +31,7 @@ class ProgressStoreMigrationTest {
 
     @Test
     fun everyOldVersionUpgradesToCurrentWithoutLosingCards() {
-        for (version in 1..9) {
+        for (version in 1..10) {
             context.deleteDatabase(DB_NAME)
             createDatabaseAt(version)
             val store = ProgressStore(context)
@@ -112,6 +112,9 @@ class ProgressStoreMigrationTest {
             db.execSQL(
                 "CREATE TABLE word_practice(mode TEXT NOT NULL, word TEXT NOT NULL, reading TEXT NOT NULL, meaning TEXT NOT NULL, practiced_at INTEGER NOT NULL, completions INTEGER NOT NULL, PRIMARY KEY(mode, word))"
             )
+            if (version >= 10) {
+                db.execSQL("ALTER TABLE word_practice ADD COLUMN mature INTEGER NOT NULL DEFAULT 0")
+            }
         }
         val now = 1_700_000_000_000L
         db.execSQL(

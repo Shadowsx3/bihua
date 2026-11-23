@@ -874,7 +874,7 @@ class ProgressStore(private val context: Context) :
     }
 
     companion object {
-        const val SCHEMA_VERSION = 11
+        const val SCHEMA_VERSION = 12
 
         fun cardKey(character: CharacterEntry, settings: AppSettings): String =
             if (settings.effectiveSharing(character.glyphGroupId)) {
