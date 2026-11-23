@@ -117,8 +117,15 @@ Hard-won test details:
 - **Filled guides are expensive to parse.** Parse the outline once per guide in
   `toRenderStroke`; only transform it per frame. Re-parsing every animation
   frame causes visible jank.
-- **One pet.** Use `InkMascot` for the launcher, profile avatar, and top icon.
-  Do not fork a second mascot drawing.
+- **One pet: Mò.** Use `InkMascot` for the launcher, profile avatar, top icon,
+  opening, completion, and guided tour. Do not fork a second mascot drawing.
+  The tour adds moods, a brush swing, and small held props; the widgets add
+  hats, a monocle, a witch hat, a vampire cape, a nightcap, and a party hat.
+  Still one pet.
+- **The tour lives over the real app.** `GuidedTour.kt` uses live `TourAnchors`
+  and a spotlight, not screenshots. Keep the overlay in-app so window
+  coordinates match the anchors. Use one finite beat per stop; a perpetual
+  animation stops TalkBack and UI tests from ever seeing an idle screen.
 
 ## 5. Compose and layout traps
 

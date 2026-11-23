@@ -44,6 +44,21 @@ class WordWidgetProvider : AppWidgetProvider() {
                 )
                 views.setTextViewText(R.id.widget_note, copy.note)
                 views.setImageViewResource(R.id.widget_icon, WidgetLook.icon(copy.icon))
+                views.setImageViewResource(
+                    R.id.widget_pet,
+                    WidgetLook.pet(
+                        if (snapshot.placeholder) {
+                            PetProp.MONOCLE
+                        } else {
+                            WidgetCopy.wordPet(
+                                due = snapshot.due,
+                                newLeft = snapshot.newLeft,
+                                vacation = snapshot.vacation,
+                                hour = hour,
+                            )
+                        },
+                    ),
+                )
                 views.setInt(
                     R.id.widget_accent,
                     "setBackgroundColor",

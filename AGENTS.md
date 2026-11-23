@@ -31,6 +31,40 @@ Keep this in mind for every screen:
 - Prefer short sentences and real verbs. Error copy says what happened and what
   to try next. It does not blame the learner.
 
+## Mò and the guided tour
+
+- The pet has one name: **Mò** (墨, "ink"). The landing page, launcher, opening,
+  profile avatar, tour, and completion screens all use the same `InkMascot`.
+  Do not invent a second pet or rename Mò in one screen only.
+- The guided tour is a short visual-novel moment, not a slideshow of mock
+  screens. It runs as a live overlay over the real app with a spotlight hole
+  around real controls, then moves the real tab stack to the next stop.
+- Mò talks in first person, uses a typewriter line, and can wave, point, nod,
+  scribble, shrug, or cheer. Each stop can give Mò a small prop: card, clock,
+  magnifier, grade dots, pencil, scroll, or star. Keep the gestures quiet and
+  warm, never a cartoon overload.
+- Tour copy is spoken and concrete. Explain reviews without naming SRS jargon:
+  the character returns just before you would forget it, the gap grows after an
+  easy review, and shrinks after a hard one. Say what each grade means in plain
+  words ("Again: it slipped away.").
+- Keep the tour optional. The Home invite is dismissible, "Not now" goes
+  straight to the app, and Settings → Help & tour can replay it. A finished or
+  skipped tour marks `tourInviteDismissed`; it must never gate study.
+- Anchor IDs live in `TourAnchors`: `home.start`, `home.reviews`,
+  `home.today`, `characters.search`, `practice.canvas`, `help.grades`,
+  `help.modes`, `help.sheets`, `about.free`. If a stop moves, move its anchor,
+  not the copy around a missing hole.
+- Respect reduce-motion and TalkBack: no typewriter, confetti, bobbing, or
+  pulse when motion is reduced; screen readers get the full line at once.
+- Sound cues are optional (`soundEffects`) and synthesised in `audio/Sfx.kt`.
+  Use them for meaningful feedback, not every tap.
+- The widget pet wears one tiny costume from the same Mò palette: a graduation
+  hat while work waits by day, a monocle on the Word widget by day, a witch hat
+  in the evening, a vampire at night, a nightcap on vacation, and a party hat
+  when the desk is clear. The in-app completion panel also uses the party hat.
+  Keep the widget layer-lists aligned to the 1024 art; do not draw a second
+  widget pet. Hats sit on the 1024 head line, not over the eyes.
+
 ## Home and review feel
 
 - Home should feel like a lived-in study desk, not a dashboard for managers.
@@ -134,7 +168,11 @@ Keep this in mind for every screen:
   also ask the launcher every 30 minutes. Keep the update cheap.
 - Widget counts must use the same hidden-character filter as Home: skipped and
   suspended cards never appear in the widget's due or new counts.
-- The default profile avatar and the small top icon use the launcher pet:
+- The widget pet is a static `layer-list`: the 1024 art plus a 1024-viewport
+  accessory vector. `WidgetLook.pet(PetProp)` picks the hat, monocle, or party
+  overlay. Keep new accessories in the same square viewport so they align
+  without per-widget offsets.
+- The default profile avatar and the small top icon use Mò, the launcher pet:
   `InkMascot` with the brush, plus the sparkle on the profile avatar. Do not fork
   a second pet.
 - The cold-start welcome holds for at least 1,050 ms (520 ms with reduce-motion)
@@ -489,7 +527,9 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 | Backup and sync | `backup/BackupArchive.kt`, `backup/TransferScope.kt`, `sync/Sync.kt` |
 | Settings | `settings/SettingsScreen.kt`, `settings/Models.kt`, `settings/DayBoundary.kt` |
 | Dictionary and print | `ui/DictionaryScreen.kt`, `settings/WorksheetScreen.kt`, `worksheet/WorksheetPdf.kt` |
-| Mascot and opening | `ui/components/Components.kt` (`InkMascot`), `ui/components/OpeningInk.kt`, `ui/theme/Color.kt` |
+| Mascot and opening | `ui/components/Components.kt` (`InkMascot`, Mò), `ui/components/OpeningInk.kt`, `ui/theme/Color.kt` |
+| Guided tour | `ui/GuidedTour.kt` (MoActor, anchors, overlay), `ui/BihuaApp.kt`, `settings/SettingsScreen.kt` |
+| Widgets and pet costumes | `widget/WidgetCopy.kt`, `widget/WidgetLook.kt`, `res/layout/widget_*.xml`, `res/drawable/widget_pet_*.xml` |
 | Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `scripts/journey.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
 | Local journeys | `qa/journey.py`, `qa/state.py`, `qa/driver.py`, `qa/scenarios.py` |
 

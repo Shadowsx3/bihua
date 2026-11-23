@@ -2839,7 +2839,11 @@ private fun DonePanel(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        InkMascot(size = 110.dp, withBrush = true)
+        InkMascot(
+            size = 110.dp,
+            withBrush = true,
+            headwear = com.bassmd.bihua.ui.components.MascotHeadwear.PARTY,
+        )
         Spacer(Modifier.height(12.dp))
         InkSeal(
             text = "完",

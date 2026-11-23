@@ -33,6 +33,21 @@ class TodayWidgetProvider : AppWidgetProvider() {
                 views.setTextViewText(R.id.widget_detail, copy.detail)
                 views.setTextViewText(R.id.widget_action, copy.action)
                 views.setImageViewResource(R.id.widget_icon, WidgetLook.icon(copy.icon))
+                views.setImageViewResource(
+                    R.id.widget_pet,
+                    WidgetLook.pet(
+                        if (snapshot.placeholder) {
+                            PetProp.HAT
+                        } else {
+                            WidgetCopy.todayPet(
+                                due = snapshot.due,
+                                newLeft = snapshot.newLeft,
+                                vacation = snapshot.vacation,
+                                hour = hour,
+                            )
+                        },
+                    ),
+                )
                 views.setInt(
                     R.id.widget_accent,
                     "setBackgroundColor",

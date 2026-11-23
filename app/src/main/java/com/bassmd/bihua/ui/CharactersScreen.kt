@@ -320,10 +320,18 @@ fun CharactersScreen(
                                     }
                                 },
                                 onAddToList = {
+                                    val adding = selected.id !in studyList
                                     onToggleStudyList(selected)
+                                    com.bassmd.bihua.audio.Sfx.play(
+                                        if (adding) {
+                                            com.bassmd.bihua.audio.Sfx.Effect.ADD
+                                        } else {
+                                            com.bassmd.bihua.audio.Sfx.Effect.TICK
+                                        },
+                                    )
                                     scope.launch {
                                         snackbar.showSnackbar(
-                                            if (selected.id in studyList) "Removed from the active list." else "Added to the active list."
+                                            if (adding) "Added to the active list." else "Removed from the active list."
                                         )
                                     }
                                 },
@@ -406,10 +414,18 @@ fun CharactersScreen(
                                 }
                             },
                             onAddToList = {
+                                val adding = selected.id !in studyList
                                 onToggleStudyList(selected)
+                                com.bassmd.bihua.audio.Sfx.play(
+                                    if (adding) {
+                                        com.bassmd.bihua.audio.Sfx.Effect.ADD
+                                    } else {
+                                        com.bassmd.bihua.audio.Sfx.Effect.TICK
+                                    },
+                                )
                                 scope.launch {
                                     snackbar.showSnackbar(
-                                        if (selected.id in studyList) "Removed from the active list." else "Added to the active list."
+                                        if (adding) "Added to the active list." else "Removed from the active list."
                                     )
                                 }
                             },
@@ -674,7 +690,9 @@ private fun ListHeader(
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .tourAnchor("characters.search"),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 placeholder = {
@@ -1157,7 +1175,12 @@ private fun CharacterDetail(
                                             color = InkDark,
                                         )
                                         IconButton(
-                                            onClick = { onRemoveSynonym(synonym) },
+                                            onClick = {
+                                                com.bassmd.bihua.audio.Sfx.play(
+                                                    com.bassmd.bihua.audio.Sfx.Effect.TICK,
+                                                )
+                                                onRemoveSynonym(synonym)
+                                            },
                                             modifier = Modifier.size(30.dp),
                                         ) {
                                             Icon(
@@ -1722,6 +1745,9 @@ private fun CharacterDetail(
                     onClick = {
                         if (cleaned != null) {
                             onAddSynonym(cleaned)
+                            com.bassmd.bihua.audio.Sfx.play(
+                                com.bassmd.bihua.audio.Sfx.Effect.ADD,
+                            )
                             synonymDraft = ""
                             synonymsOpen = false
                         }

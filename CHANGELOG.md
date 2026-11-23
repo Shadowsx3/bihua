@@ -2,6 +2,12 @@
 
 ## 1.1.0 (in progress)
 
+- A guided tour with Mò, the paper-ink pet. It runs as a live overlay over the
+  real app: a spotlight on the real control, a typewriter line, small pet
+  gestures and props, and a gentle sound cue. The Home invite is optional, and
+  Settings → Help & tour can replay it.
+- Settings now has a Help & tour section with plain-word grading help, the exact
+  paths to printable sheets and saved lists, show-answer help, and the replay.
 - Optional meaning reviews: type the meaning in your own words, show the clean
   gloss, see a real word that uses the character, and grade. Off by default.
 - User synonyms for meanings, with add/remove editors in the review and on
@@ -34,6 +40,12 @@
   voice instead of staying silent.
 - Onboarding cannot be finished while a backup restore is still running.
 - Stylus copy is consistent, and no-stylus screens stop mentioning a pen.
+- Small synthesised sound effects now cover checking, grading, adding to a list
+  or synonym set, changing tabs, and the tour. One Settings switch turns them off.
+- Mò now dresses for the desk: a study cap in the morning or afternoon, a
+  monocle on the Word widget, a witch hat in the evening, a vampire at night, a
+  nightcap on vacation, and a party hat when reviews and lessons are clear. The
+  session-complete panel uses the party hat too.
 
 ## 1.0.9 — 2026-11-23
 

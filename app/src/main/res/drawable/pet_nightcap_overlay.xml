@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- A soft nightcap for vacation: the desk is resting. -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M390,282 L520,150 Q590,104 654,146 Q620,180 606,228 L644,282 Z" />
+    <path
+        android:fillColor="#F7E5C4"
+        android:pathData="M382,272 L646,272 L652,302 L376,302 Z" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M654,146 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
+    <path
+        android:fillColor="#F7E5C4"
+        android:pathData="M644,134 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M525,218 m-13,0 a13,13 0 1,1 26,0 a13,13 0 1,1 -26,0" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M533,208 m-13,0 a13,13 0 1,1 26,0 a13,13 0 1,1 -26,0" />
+</vector>

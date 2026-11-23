@@ -145,7 +145,11 @@ fun HomeScreen(
     featuredWord: com.bassmd.bihua.content.WordContext? = null,
     onPracticeWord: (com.bassmd.bihua.content.WordContext) -> Unit = {},
     speechEnabled: Boolean = true,
+    reduceMotion: Boolean = false,
     onSpeak: (String) -> Unit = {},
+    showTourInvite: Boolean = false,
+    onStartTour: () -> Unit = {},
+    onDismissTour: () -> Unit = {},
 ) {
     val vacation = com.bassmd.bihua.settings.Vacation.isActive(vacationStartedAtMs)
     val easeBack = com.bassmd.bihua.settings.EaseBack.isActive(
@@ -213,9 +217,23 @@ fun HomeScreen(
                     profile = profile,
                 )
             }
+            if (showTourInvite) {
+                item {
+                    TourInviteCard(
+                        onStart = onStartTour,
+                        onDismiss = onDismissTour,
+                        reduceMotion = reduceMotion,
+                    )
+                }
+            }
             if (resumeSession != null && !vacation) {
                 item {
-                    SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.18f)) {
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("home.today"),
+                        color = Sky.copy(alpha = 0.18f),
+                    ) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
@@ -223,6 +241,7 @@ fun HomeScreen(
                                         "Continue your lesson",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = InkDark,
+                                        modifier = Modifier.tourAnchor("home.reviews"),
                                     )
                                     Text(
                                         "${stringResource(resumeSession.mode.labelRes)} · " +
@@ -257,7 +276,9 @@ fun HomeScreen(
                             PrimaryAction(
                                 text = "Resume",
                                 onClick = onResumeSession,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .tourAnchor("home.start"),
                             )
                         }
                     }
@@ -425,9 +446,23 @@ fun HomeScreen(
                             profile = profile,
                         )
                     }
+                    if (showTourInvite) {
+                        item {
+                            TourInviteCard(
+                        onStart = onStartTour,
+                        onDismiss = onDismissTour,
+                        reduceMotion = reduceMotion,
+                    )
+                        }
+                    }
                     if (resumeSession != null && !vacation) {
                         item {
-                            SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.18f)) {
+                            SoftCard(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .tourAnchor("home.today"),
+                                color = Sky.copy(alpha = 0.18f),
+                            ) {
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f)) {
@@ -435,6 +470,7 @@ fun HomeScreen(
                                                 "Continue your lesson",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 color = InkDark,
+                                                modifier = Modifier.tourAnchor("home.reviews"),
                                             )
                                             Text(
                                                 "${stringResource(resumeSession.mode.labelRes)} · " +
@@ -469,7 +505,9 @@ fun HomeScreen(
                                     PrimaryAction(
                                         text = "Resume",
                                         onClick = onResumeSession,
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .tourAnchor("home.start"),
                                     )
                                 }
                             }
@@ -769,6 +807,7 @@ private fun StudyHero(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .tourAnchor("home.today")
             .clip(RoundedCornerShape(32.dp))
             .background(
                 Brush.linearGradient(
@@ -806,6 +845,7 @@ private fun StudyHero(
                 },
                 style = MaterialTheme.typography.headlineMedium,
                 color = InkDark,
+                modifier = Modifier.tourAnchor("home.reviews"),
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -842,7 +882,10 @@ private fun StudyHero(
                     disabledContentColor = Paper.copy(alpha = 0.7f),
                 ),
                 shape = CircleShape,
-                modifier = Modifier.fillMaxWidth().clearAndSetSemantics {
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .tourAnchor("home.start")
+                    .clearAndSetSemantics {
                     contentDescription = label
                     role = Role.Button
                     onClick(label = label) {

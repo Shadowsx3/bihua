@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- Bat wings, small fangs, and a bow tie. The cape is a separate layer. -->
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M300,430 Q230,352 166,398 Q200,440 180,482 Q222,492 210,532 Q252,544 262,582 Q302,552 318,602 Q342,530 330,466 Z" />
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M724,430 Q794,352 858,398 Q824,440 844,482 Q802,492 814,532 Q772,544 762,582 Q722,552 706,602 Q682,530 694,466 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M262,430 L252,512 M224,468 L238,540 M774,430 L784,512 M812,468 L798,540"
+        android:strokeColor="#A78BFA"
+        android:strokeLineCap="round"
+        android:strokeWidth="8" />
+    <path
+        android:fillColor="#FFFDF4"
+        android:pathData="M470,624 L498,624 L484,676 Z" />
+    <path
+        android:fillColor="#FFFDF4"
+        android:pathData="M526,624 L554,624 L540,676 Z" />
+    <path
+        android:fillColor="#BE123C"
+        android:pathData="M452,704 L500,728 L452,752 Z" />
+    <path
+        android:fillColor="#BE123C"
+        android:pathData="M572,704 L524,728 L572,752 Z" />
+    <path
+        android:fillColor="#BE123C"
+        android:pathData="M512,728 m-16,0 a16,16 0 1,1 32,0 a16,16 0 1,1 -32,0" />
+</vector>

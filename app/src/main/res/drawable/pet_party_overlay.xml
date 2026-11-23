@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- A party hat for the all-clear desk. -->
+    <path
+        android:fillColor="#FB7185"
+        android:pathData="M400,282 L515,86 L630,282 Z" />
+    <path
+        android:fillColor="#A78BFA"
+        android:pathData="M432,224 L598,224 L616,266 L414,266 Z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M398,274 L632,274 L638,300 L392,300 Z" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M515,86 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
+    <path
+        android:fillColor="#F7E5C4"
+        android:pathData="M505,76 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+    <path
+        android:fillColor="#4ADE80"
+        android:pathData="M360,190 m-11,0 a11,11 0 1,1 22,0 a11,11 0 1,1 -22,0" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M676,166 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0" />
+    <path
+        android:fillColor="#A78BFA"
+        android:pathData="M694,232 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M330,250 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+</vector>

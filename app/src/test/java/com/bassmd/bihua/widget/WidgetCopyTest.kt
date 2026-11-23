@@ -52,6 +52,21 @@ class WidgetCopyTest {
     }
 
     @Test
+    fun theWidgetPetWearsTheRightCostume() {
+        assertEquals(PetProp.PARTY, WidgetCopy.todayPet(0, 0, false, hour = 8))
+        assertEquals(PetProp.HAT, WidgetCopy.todayPet(3, 0, false, hour = 8))
+        assertEquals(PetProp.WITCH, WidgetCopy.todayPet(3, 0, false, hour = 19))
+        assertEquals(PetProp.VAMPIRE, WidgetCopy.todayPet(3, 0, false, hour = 23))
+        assertEquals(PetProp.HAT, WidgetCopy.todayPet(0, 2, false, hour = 8))
+        assertEquals(PetProp.NIGHTCAP, WidgetCopy.todayPet(0, 0, true, hour = 23))
+        assertEquals(PetProp.NIGHTCAP, WidgetCopy.wordPet(0, 0, true, hour = 23))
+        assertEquals(PetProp.MONOCLE, WidgetCopy.wordPet(3, 0, false, hour = 8))
+        assertEquals(PetProp.MONOCLE, WidgetCopy.wordPet(3, 0, false, hour = 19))
+        assertEquals(PetProp.MONOCLE, WidgetCopy.wordPet(3, 0, false, hour = 23))
+        assertEquals(PetProp.PARTY, WidgetCopy.wordPet(0, 0, false, hour = 23))
+    }
+
+    @Test
     fun theWordWidgetChangesItsToneWithTheHour() {
         val morning = WidgetCopy.word(8)
         val night = WidgetCopy.word(23)

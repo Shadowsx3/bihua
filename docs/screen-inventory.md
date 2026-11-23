@@ -39,7 +39,17 @@ layout can differ. Landscape and large font scale are separate passes.
 | Practice calendar | Home | empty, partial month, 35-day range | A |
 | Study list card | Home | empty, active list, words, Study/Draw/Paper | A |
 | Study tools card | Home | counts, Manage | A |
-| Widget picker preview | Launcher | Today/Word, small/large, dark | M |
+| Widget picker preview | Launcher | Today/Word, small/large, dark, pet costume by state and time of day | M |
+| Tour invite | Home | first run, dismissed, replay available | A |
+
+## Guided tour
+
+| Screen / surface | Entry | Main states | A |
+|---|---|---|---|
+| Tour overlay | Home invite, Settings → Help & tour | 9 stops, spotlight hole, Mò gesture and prop, typewriter, Back/Next/Skip, final confetti | A |
+| Tour stops | Overlay | Home desk, new character, reviews, search, practice, grades, show answer, paper/lists, About | A |
+| Tour accessibility | Overlay | 1.5x, dark, tablet, reduce motion, TalkBack full-line | P |
+| Help & tour section | Settings | grading legend, sheets/lists, guided tour, show-answer help | A |
 
 ## Characters
 

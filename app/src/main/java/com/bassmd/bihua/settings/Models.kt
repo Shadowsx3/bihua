@@ -246,6 +246,8 @@ data class AppSettings(
     val ankiMeaning: Boolean = false,
     /** User wordings accepted for a meaning, keyed by character id. */
     val meaningSynonyms: Map<String, List<String>> = emptyMap(),
+    /** The one-time Home invitation to the guided tour has been answered. */
+    val tourInviteDismissed: Boolean = false,
     /** Japanese kana can be excluded so the queue is kanji only. */
     val includeHiragana: Boolean = true,
     val includeKatakana: Boolean = true,

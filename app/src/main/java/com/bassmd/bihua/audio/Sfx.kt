@@ -19,7 +19,34 @@ import kotlin.math.sin
  */
 object Sfx {
 
-    enum class Effect { TICK, CHECK, GRADE, SESSION }
+    enum class Effect {
+        /** A quiet navigation tick. */
+        TICK,
+
+        /** A small pop when something opens or is picked up. */
+        POP,
+
+        /** A warm two-note confirmation when something is added. */
+        ADD,
+
+        /** The answer was checked. */
+        CHECK,
+
+        /** A grade was saved. */
+        GRADE,
+
+        /** A session or list was finished. */
+        SESSION,
+
+        /** Mò starts a line in the guided tour. */
+        TOUR_TALK,
+
+        /** The tour moves to the next stop. */
+        TOUR_NEXT,
+
+        /** The tour is finished. */
+        TOUR_DONE,
+    }
 
     @Volatile
     var enabled: Boolean = true
@@ -67,9 +94,19 @@ object Sfx {
 
     private fun synthesise(effect: Effect): ShortArray = when (effect) {
         Effect.TICK -> tone(frequency = 880f, durationMs = 34, volume = 0.18f, decay = 55f)
+        Effect.POP -> tone(frequency = 640f, durationMs = 52, volume = 0.14f, decay = 46f)
+        Effect.ADD -> arpeggio(listOf(560f, 740f), noteMs = 62, volume = 0.16f)
         Effect.GRADE -> tone(frequency = 660f, durationMs = 70, volume = 0.22f, decay = 24f)
         Effect.CHECK -> sweep(from = 520f, to = 820f, durationMs = 150, volume = 0.20f)
         Effect.SESSION -> arpeggio(listOf(660f, 880f, 1100f), noteMs = 95, volume = 0.22f)
+        // A soft, breathy greeting rather than a game chirp.
+        Effect.TOUR_TALK -> tone(frequency = 480f, durationMs = 92, volume = 0.11f, decay = 21f)
+        Effect.TOUR_NEXT -> sweep(from = 460f, to = 760f, durationMs = 140, volume = 0.15f)
+        Effect.TOUR_DONE -> arpeggio(
+            listOf(523f, 659f, 784f, 1047f),
+            noteMs = 105,
+            volume = 0.18f,
+        )
     }
 
     private fun tone(

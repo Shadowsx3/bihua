@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- A little witch hat for evening study. The brim rests on the head. -->
+    <path
+        android:fillColor="#1F2B23"
+        android:pathData="M300,262 Q512,232 724,262 Q768,272 724,288 Q512,312 300,288 Q256,272 300,262 Z" />
+    <path
+        android:fillColor="#1F2B23"
+        android:pathData="M402,270 Q462,170 552,92 Q584,64 606,84 Q568,150 622,270 Z" />
+    <path
+        android:fillColor="#A78BFA"
+        android:pathData="M394,250 L628,250 L632,276 L390,276 Z" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M492,250 L532,250 L532,276 L492,276 Z" />
+    <path
+        android:fillColor="#1F2B23"
+        android:pathData="M504,256 L520,256 L520,270 L504,270 Z" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M590,112 m-18,0 a18,18 0 1,1 36,0 a18,18 0 1,1 -36,0" />
+</vector>

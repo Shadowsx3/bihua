@@ -24,6 +24,7 @@ class SettingsSanitizeTest {
         assertFalse(settings.ankiMeaning)
         assertFalse(settings.meaningPractice)
         assertTrue(settings.meaningSynonyms.isEmpty())
+        assertFalse(settings.tourInviteDismissed)
     }
 
     @Test
@@ -50,6 +51,11 @@ class SettingsSanitizeTest {
         ).sanitized()
         assertEquals(listOf("affection"), settings.meaningSynonyms["U+611B"])
         assertFalse(settings.meaningSynonyms.containsKey("U+7231"))
+    }
+
+    @Test
+    fun keepsTheTourInviteChoice() {
+        assertTrue(AppSettings(tourInviteDismissed = true).sanitized().tourInviteDismissed)
     }
 
     @Test

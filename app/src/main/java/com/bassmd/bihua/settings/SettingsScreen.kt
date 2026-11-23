@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.FlightTakeoff
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
@@ -154,12 +155,14 @@ import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.AccentInk
 import com.bassmd.bihua.ui.theme.InkDark
+import com.bassmd.bihua.ui.tourAnchor
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
+import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.SkyInk
 import kotlinx.coroutines.flow.collectLatest
@@ -178,6 +181,9 @@ fun SettingsScreen(
     progress: com.bassmd.bihua.progress.ProgressStore? = null,
     onProgressChanged: () -> Unit = {},
     onOpenStudyLists: () -> Unit = {},
+    onStartTour: () -> Unit = {},
+    openSection: String? = null,
+    onSectionOpened: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -214,6 +220,13 @@ fun SettingsScreen(
     var syncApplyProgress by remember { mutableStateOf(true) }
     var settingsSection by rememberSaveable { mutableStateOf<String?>(null) }
     var settingsQuery by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(openSection) {
+        if (openSection != null) {
+            settingsSection = openSection
+            settingsQuery = ""
+            onSectionOpened()
+        }
+    }
     val settingsListState = rememberLazyListState()
     var showLicences by remember { mutableStateOf(false) }
     var showStrokeRules by remember { mutableStateOf(false) }
@@ -2434,7 +2447,7 @@ fun SettingsScreen(
                         )
                         SwitchRow(
                             title = "Sound effects",
-                            subtitle = "A short tick when you check, grade, or finish a session.",
+                            subtitle = "A short cue when you navigate, check, grade, add, or finish.",
                             checked = settings.soundEffects,
                             onCheckedChange = { update(settings.copy(soundEffects = it)) },
                         )
@@ -2792,9 +2805,88 @@ fun SettingsScreen(
             }
 
             }
+            if (settingsSection == "Help") {
+            item {
+                SoftCard(
+                    Modifier
+                        .fillMaxWidth()
+                        .tourAnchor("help.grades"),
+                    color = PaperWarm,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Grading", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Text(
+                            "You grade. Bihua picks the next date.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        HelpGrade("Again", "It slipped away.", Rose)
+                        HelpGrade("Hard", "Slow, but you got there.", Peach)
+                        HelpGrade("Good", "Right with a little thought.", Mint)
+                        HelpGrade("Easy", "Instant and effortless.", Sky)
+                    }
+                }
+            }
+            item {
+                SoftCard(
+                    Modifier
+                        .fillMaxWidth()
+                        .tourAnchor("help.sheets"),
+                    color = Butter.copy(alpha = 0.22f),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Paper and lists", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Text(
+                            "Sheets: Settings → Data → Print practice sheets (PDF).",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Text(
+                            "Lists: Settings → Study → Study lists.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.14f)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        SettingTitle(
+                            icon = Icons.Rounded.HelpOutline,
+                            title = "Guided tour",
+                            subtitle = "One minute with Mò. The desk, reviews, grades, and paper.",
+                        )
+                        TextButton(onClick = onStartTour) { Text("Start tour") }
+                    }
+                }
+            }
+            item {
+                SoftCard(
+                    Modifier
+                        .fillMaxWidth()
+                        .tourAnchor("help.modes"),
+                    color = Mint.copy(alpha = 0.12f),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Show-answer mode", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Text(
+                            "Settings → Practice. Writing, pronunciation, or meaning. No drawing or typing. Off by default.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+
+            }
             if (settingsSection == "About") {
             item {
-                SoftCard(Modifier.fillMaxWidth()) {
+                SoftCard(
+                    Modifier
+                        .fillMaxWidth()
+                        .tourAnchor("about.free"),
+                ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(shape = RoundedCornerShape(18.dp), color = Mint.copy(alpha = 0.45f)) {
@@ -3314,13 +3406,18 @@ private val SETTINGS_ENTRIES = listOf(
         "sync wifi device code transfer copy progress",
     ),
     SettingsEntry(
+        "Help", "Help & tour", "Guided tour, grading, character sheets",
+        Icons.Rounded.HelpOutline, Sky, "HELP",
+        "help tour guide grading again hard good easy anki show answer character sheets print worksheet",
+    ),
+    SettingsEntry(
         "About", "About", "Version, licences, privacy, feedback",
         Icons.Rounded.Info, Peach, "ABOUT",
         "version licence license privacy feedback source about",
     ),
 )
 
-private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "ABOUT")
+private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "HELP", "ABOUT")
 
 /** Stop a Wi-Fi-only model download from blocking the settings screen forever. */
 private const val MODEL_DOWNLOAD_WAIT_MS = 30_000L
@@ -3461,6 +3558,22 @@ private fun SettingTitle(
         }
     }
     Spacer(Modifier.height(10.dp))
+}
+
+@Composable
+private fun HelpGrade(label: String, body: String, accent: androidx.compose.ui.graphics.Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(shape = CircleShape, color = accent.copy(alpha = 0.45f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = InkDark,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(body, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+    }
 }
 
 @Composable

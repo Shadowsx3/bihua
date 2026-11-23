@@ -62,6 +62,8 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("meaning", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True}, runner="meaning"),
     ScenarioSpec("meaning-anki", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True, "anki_meaning": True}, runner="meaning_anki"),
     ScenarioSpec("synonyms", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="synonyms"),
+    ScenarioSpec("tour", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour"),
+    ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
 ]
 
 
@@ -890,15 +892,39 @@ def _settings_section(journey: Journey, label: str) -> None:
     journey.open_tab("Settings")
     journey.wait("Make Bihua yours", timeout=8, exact=False)
     # Settings rows use text; the bottom navigation uses content descriptions.
-    # "Practice" exists in both, so tap the text row explicitly.
-    row = journey.d(text=label)
-    for _ in range(6):
-        if row.exists:
+    # "Practice" exists in both, so use the row text explicitly. The hierarchy
+    # fallback matters because uiautomator's idle wait can fail after a theme
+    # switch even though the row is on screen.
+    row = journey.find(label, timeout=1.0)
+    for _ in range(8):
+        if row is not None or journey._match_hierarchy(label, True):
             break
         journey.scroll_down()
-    if not row.exists:
+        time.sleep(0.3)
+        row = journey.find(label, timeout=0.5)
+    if row is None and not journey._match_hierarchy(label, True):
+        # Help is below several groups. Search narrows the list and is also a
+        # useful check of the settings search itself. Re-find the field after
+        # every edit: large text and tablet recomposition can stale the node.
+        for _ in range(3):
+            try:
+                field = journey.d(className="android.widget.EditText")
+                if not field.exists:
+                    time.sleep(0.3)
+                    continue
+                field.click()
+                time.sleep(0.2)
+                field.set_text(label)
+            except Exception:
+                time.sleep(0.3)
+                continue
+            time.sleep(0.8)
+            row = journey.find(label, timeout=0.6)
+            if row is not None or journey._match_hierarchy(label, True):
+                break
+    if row is None and not journey._match_hierarchy(label, True):
         raise JourneyFailure(f"settings row missing: {label}")
-    row.click()
+    journey.tap(label)
     time.sleep(0.5)
 
 
@@ -1070,6 +1096,7 @@ SETTINGS_MARKERS = [
     ("Display", "Orientation"),
     ("Data", "Backups stay with you"),
     ("Sync", "Move settings and progress"),
+    ("Help & tour", "Grading"),
     ("About", "Made by Shadowsx3"),
 ]
 
@@ -1301,6 +1328,49 @@ def synonyms(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def tour(journey: Journey, state: ScenarioState) -> None:
+    """Skip the invite, then replay Mò's live overlay tour from Settings."""
+    with journey.step("invite is optional"):
+        journey.assert_home()
+        journey.wait("Need a hand?", timeout=8)
+        journey.assert_text("One minute with Mò")
+        journey.screenshot("tour-invite")
+        journey.tap("Not now")
+        time.sleep(0.4)
+        if journey.exists("Need a hand?", timeout=0.4):
+            raise JourneyFailure("tour invite did not dismiss")
+    with journey.step("start from help"):
+        _settings_section(journey, "Help & tour")
+        journey.wait("Grading", timeout=8)
+        journey.tap_visible("Start tour", max_scrolls=10)
+        journey.wait("Hi, I’m Mò", timeout=8)
+        journey.screenshot("tour-1")
+    with journey.step("tap the dialogue to move on"):
+        time.sleep(2.8)
+        journey.tap("Tap to continue")
+        time.sleep(2.4)
+        journey.wait("A new character", timeout=8)
+        journey.assert_text("you grade it")
+        journey.screenshot("tour-2")
+    steps = [
+        ("Why things come back", "hard means sooner"),
+        ("Look anything up", "strokes and words"),
+        ("Practice without pressure", "exactly where they are"),
+        ("The four buttons", "Easy: instant"),
+        ("No pen today?", "Off by default"),
+        ("Paper and lists", "Settings → Study"),
+        ("That’s the tour", "Go write something"),
+    ]
+    for index, (title, body) in enumerate(steps, start=3):
+        journey.tap("Next")
+        time.sleep(2.4)
+        journey.wait(title, timeout=8)
+        journey.assert_text(body)
+        journey.screenshot(f"tour-{index}")
+    journey.tap("Back to app")
+    journey.assert_home()
+
+
 def accessibility(journey: Journey, state: ScenarioState) -> None:
     issues: list[str] = []
     for screen in ("Home", "Characters", "Progress", "Practice", "Settings"):
@@ -1345,4 +1415,5 @@ RUNNERS = {
     "meaning": meaning,
     "meaning_anki": meaning_anki,
     "synonyms": synonyms,
+    "tour": tour,
 }

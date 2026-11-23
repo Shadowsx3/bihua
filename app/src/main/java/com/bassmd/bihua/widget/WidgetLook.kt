@@ -20,6 +20,15 @@ internal object WidgetLook {
         WidgetIcon.LEAF -> R.drawable.ic_widget_leaf
     }
 
+    fun pet(prop: PetProp): Int = when (prop) {
+        PetProp.HAT -> R.drawable.widget_pet_hat
+        PetProp.MONOCLE -> R.drawable.widget_pet_monocle
+        PetProp.PARTY -> R.drawable.widget_pet_party
+        PetProp.NIGHTCAP -> R.drawable.widget_pet_nightcap
+        PetProp.WITCH -> R.drawable.widget_pet_witch
+        PetProp.VAMPIRE -> R.drawable.widget_pet_vampire
+    }
+
     fun openApp(context: Context): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

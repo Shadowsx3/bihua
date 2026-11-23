@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- The cape sits behind the pet art. -->
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M240,620 Q512,520 784,620 L824,900 Q700,962 624,900 Q512,984 400,900 Q324,962 200,900 Z" />
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M330,660 L400,548 L450,700 Z" />
+    <path
+        android:fillColor="#4C1D95"
+        android:pathData="M694,660 L624,548 L574,700 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M270,650 Q512,556 754,650"
+        android:strokeColor="#BE123C"
+        android:strokeLineCap="round"
+        android:strokeWidth="15" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M364,616 L416,580"
+        android:strokeColor="#BE123C"
+        android:strokeLineCap="round"
+        android:strokeWidth="12" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M660,616 L608,580"
+        android:strokeColor="#BE123C"
+        android:strokeLineCap="round"
+        android:strokeWidth="12" />
+</vector>

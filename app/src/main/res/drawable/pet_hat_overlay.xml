@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1024dp"
+    android:height="1024dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- A small graduation cap for a desk with work waiting. -->
+    <path
+        android:fillColor="#1F2B23"
+        android:pathData="M418,222 L606,222 L606,286 Q512,320 418,286 Z" />
+    <path
+        android:fillColor="#1F2B23"
+        android:pathData="M330,232 L512,150 L694,232 L512,304 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M330,232 L512,304 L694,232"
+        android:strokeColor="#4ADE80"
+        android:strokeLineCap="round"
+        android:strokeWidth="11" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M512,232 Q600,244 642,282"
+        android:strokeColor="#E9B96E"
+        android:strokeLineCap="round"
+        android:strokeWidth="12" />
+    <path
+        android:fillColor="#E9B96E"
+        android:pathData="M642,282 m-18,0 a18,18 0 1,1 36,0 a18,18 0 1,1 -36,0" />
+    <path
+        android:fillColor="#F7E5C4"
+        android:pathData="M470,190 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0" />
+</vector>

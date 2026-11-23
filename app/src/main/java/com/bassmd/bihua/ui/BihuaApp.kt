@@ -364,10 +364,29 @@ fun BihuaApp(
     val allowFinger = settings.allowFingerDrawing || !stylus
 
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    var showTour by rememberSaveable { mutableStateOf(false) }
+    var tourStep by rememberSaveable { mutableIntStateOf(0) }
+    var requestedSettingsSection by remember { mutableStateOf<String?>(null) }
+    val dismissTourInvite: () -> Unit = {
+        scope.launch {
+            store.updateSettings { it.copy(tourInviteDismissed = true) }
+        }
+    }
+    val openTour: () -> Unit = {
+        tourStep = 0
+        showTour = true
+    }
+
     val changeMode: (StudyMode) -> Unit = { next ->
         // Do not let a reading in the old script continue over the new course.
         speech.stop()
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
+    }
+    val changeTab: (Tab) -> Unit = { next ->
+        if (next != tab) {
+            com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.TICK)
+        }
+        tab = next
     }
     var inSession by remember { mutableStateOf(false) }
     var sessionComplete by remember { mutableStateOf(false) }
@@ -379,6 +398,25 @@ fun BihuaApp(
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(showTour, tourStep) {
+        if (!showTour) return@LaunchedEffect
+        when (TOUR_STEPS[tourStep].destination) {
+            TourDestination.HOME -> tab = Tab.HOME
+            TourDestination.CHARACTERS -> {
+                tab = Tab.CHARACTERS
+                characterId = null
+            }
+            TourDestination.PRACTICE -> tab = Tab.PRACTICE
+            TourDestination.SETTINGS_HELP -> {
+                tab = Tab.SETTINGS
+                requestedSettingsSection = "Help"
+            }
+            TourDestination.SETTINGS_ABOUT -> {
+                tab = Tab.SETTINGS
+                requestedSettingsSection = "About"
+            }
+        }
+    }
     var contentRetry by remember { mutableIntStateOf(0) }
     var contentError by remember { mutableStateOf<String?>(null) }
     val characters by produceState<List<CharacterEntry>?>(
@@ -1320,7 +1358,7 @@ fun BihuaApp(
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(
                         selected = tab,
-                        onSelect = { tab = it },
+                        onSelect = changeTab,
                     )
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         GlobalHeader(
@@ -1427,6 +1465,10 @@ fun BihuaApp(
                                 onRetryContent = { contentRetry++ },
                                 onAddMeaningSynonym = addMeaningSynonym,
                                 onRemoveMeaningSynonym = removeMeaningSynonym,
+                                onStartTour = openTour,
+                                onDismissTour = dismissTourInvite,
+                                openSection = requestedSettingsSection,
+                                onSectionOpened = { requestedSettingsSection = null },
                             )
                         }
                     }
@@ -1538,12 +1580,16 @@ fun BihuaApp(
                                 onRetryContent = { contentRetry++ },
                                 onAddMeaningSynonym = addMeaningSynonym,
                                 onRemoveMeaningSynonym = removeMeaningSynonym,
+                                onStartTour = openTour,
+                                onDismissTour = dismissTourInvite,
+                                openSection = requestedSettingsSection,
+                                onSectionOpened = { requestedSettingsSection = null },
                             )
                         }
                     }
                     BihuaBottomBar(
                         selected = tab,
-                        onSelect = { tab = it },
+                        onSelect = changeTab,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .appNavigationBarsPadding(trim = 10.dp)
@@ -1624,6 +1670,25 @@ fun BihuaApp(
         )
     }
     if (startingSession) BusyDialog("Preparing your session…")
+    if (showTour) {
+        GuidedTourOverlay(
+            stepIndex = tourStep,
+            reduceMotion = settings.reduceMotion,
+            onNext = {
+                if (tourStep < TOUR_STEPS.lastIndex) tourStep++
+            },
+            onBack = {
+                if (tourStep > 0) tourStep--
+            },
+            onClose = {
+                showTour = false
+                tourStep = 0
+                requestedSettingsSection = null
+                tab = Tab.HOME
+                dismissTourInvite()
+            },
+        )
+    }
 }
 
 @Composable
@@ -1700,6 +1765,10 @@ private fun AppContent(
     onRetryContent: () -> Unit = {},
     onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
+    onStartTour: () -> Unit = {},
+    onDismissTour: () -> Unit = {},
+    openSection: String? = null,
+    onSectionOpened: () -> Unit = {},
 ) {
     if (characters == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1770,6 +1839,10 @@ private fun AppContent(
             onPracticeWord = onPracticeWord,
             speechEnabled = settings.readAloud,
             onSpeak = onSpeak,
+            reduceMotion = settings.reduceMotion,
+            showTourInvite = !settings.tourInviteDismissed,
+            onStartTour = onStartTour,
+            onDismissTour = onDismissTour,
         )
 
         Tab.CHARACTERS -> CharactersScreen(
@@ -1847,6 +1920,9 @@ private fun AppContent(
             progress = progressStore,
             onProgressChanged = { onProgressChanged() },
             onOpenStudyLists = onOpenStudyLists,
+            onStartTour = onStartTour,
+            openSection = openSection,
+            onSectionOpened = onSectionOpened,
         )
     }
 }

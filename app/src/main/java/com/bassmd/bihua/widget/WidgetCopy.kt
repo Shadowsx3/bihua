@@ -5,6 +5,9 @@ enum class DayPart { MORNING, AFTERNOON, EVENING, NIGHT }
 
 enum class WidgetIcon { SUN, MOON, LEAF }
 
+/** A tiny costume so the widget pet reflects the desk, not a random sticker. */
+enum class PetProp { HAT, MONOCLE, PARTY, NIGHTCAP, WITCH, VAMPIRE }
+
 data class TodayCopy(
     val greeting: String,
     val headline: String,
@@ -132,6 +135,24 @@ object WidgetCopy {
                 )
             }
         }
+    }
+
+    /** Study hat while work waits, party hat when the desk is clear. */
+    fun todayPet(due: Int, newLeft: Int, vacation: Boolean, hour: Int): PetProp = when {
+        vacation -> PetProp.NIGHTCAP
+        due == 0 && newLeft == 0 -> PetProp.PARTY
+        else -> when (dayPart(hour)) {
+            DayPart.MORNING, DayPart.AFTERNOON -> PetProp.HAT
+            DayPart.EVENING -> PetProp.WITCH
+            DayPart.NIGHT -> PetProp.VAMPIRE
+        }
+    }
+
+    /** The word pet keeps its monocle; the party hat overrides it when clear. */
+    fun wordPet(due: Int, newLeft: Int, vacation: Boolean, hour: Int): PetProp = when {
+        vacation -> PetProp.NIGHTCAP
+        due == 0 && newLeft == 0 -> PetProp.PARTY
+        else -> PetProp.MONOCLE
     }
 
     fun word(hour: Int): WordCopy = when (dayPart(hour)) {

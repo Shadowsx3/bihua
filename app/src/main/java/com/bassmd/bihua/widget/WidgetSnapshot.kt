@@ -19,6 +19,7 @@ data class WidgetSnapshot(
     val newLeft: Int,
     val word: WordContext?,
     val vacation: Boolean,
+    val placeholder: Boolean = false,
 ) {
     companion object {
         suspend fun load(context: Context): WidgetSnapshot? = withContext(Dispatchers.IO) {
@@ -66,6 +67,7 @@ data class WidgetSnapshot(
             newLeft = 0,
             word = null,
             vacation = false,
+            placeholder = true,
         )
     }
 }

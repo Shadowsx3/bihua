@@ -68,16 +68,75 @@ class Journey:
             time.sleep(0.2)
         return None
 
+    # ---------- hierarchy fallback ----------
+    # uiautomator's selector queries wait for an idle window. A live tour,
+    # confetti, or a typewriter can keep the window busy even though the node is
+    # present and tappable. Dump the hierarchy and click the bounds instead.
+
+    def _hierarchy_nodes(self) -> list[tuple[str, tuple[int, int, int, int], bool]]:
+        try:
+            xml = self.d.dump_hierarchy(compressed=False)
+            root = ET.fromstring(xml)
+        except Exception:
+            return []
+        out = []
+        for node in root.iter("node"):
+            value = node.attrib.get("text") or node.attrib.get("content-desc") or ""
+            if not value or node.attrib.get("visible-to-user") != "true":
+                continue
+            match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
+            if not match:
+                continue
+            x1, y1, x2, y2 = (int(part) for part in match.groups())
+            out.append((value, (x1, y1, x2, y2), node.attrib.get("clickable") == "true"))
+        return out
+
+    def _match_hierarchy(self, label: str, exact: bool) -> list[tuple[str, tuple[int, int, int, int], bool]]:
+        found = []
+        for value, bounds, clickable in self._hierarchy_nodes():
+            if (value == label) if exact else (label in value):
+                found.append((value, bounds, clickable))
+        return found
+
+    def _tap_hierarchy(self, label: str, timeout: float, exact: bool) -> bool:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            matches = self._match_hierarchy(label, exact)
+            if matches:
+                # Prefer a clickable node, then the nearest parent bounds.
+                value, (x1, y1, x2, y2), _ = matches[0]
+                self.d.click((x1 + x2) // 2, (y1 + y2) // 2)
+                time.sleep(0.12)
+                return True
+            time.sleep(0.2)
+        return False
+
     def wait(self, label: str, timeout: float = 8.0, exact: bool = True) -> None:
-        if self.find(label, timeout=timeout, exact=exact) is None:
-            raise JourneyFailure(f"not visible: {label}")
+        if self.find(label, timeout=min(timeout, 2.0), exact=exact) is not None:
+            return
+        if self._match_hierarchy(label, exact):
+            return
+        if self._wait_hierarchy(label, timeout - 2.0, exact):
+            return
+        raise JourneyFailure(f"not visible: {label}")
+
+    def _wait_hierarchy(self, label: str, timeout: float, exact: bool) -> bool:
+        deadline = time.time() + max(timeout, 0.0)
+        while time.time() < deadline:
+            if self._match_hierarchy(label, exact):
+                return True
+            time.sleep(0.2)
+        return False
 
     def tap(self, label: str, timeout: float = 8.0, exact: bool = True) -> None:
-        selector = self.find(label, timeout=timeout, exact=exact)
-        if selector is None:
-            raise JourneyFailure(f"could not tap: {label}")
-        selector.click()
-        time.sleep(0.12)
+        selector = self.find(label, timeout=min(timeout, 2.0), exact=exact)
+        if selector is not None:
+            selector.click()
+            time.sleep(0.12)
+            return
+        if self._tap_hierarchy(label, timeout - 2.0, exact):
+            return
+        raise JourneyFailure(f"could not tap: {label}")
 
     def tap_any(self, labels: list[str], timeout: float = 8.0) -> str:
         deadline = time.time() + timeout
@@ -111,8 +170,13 @@ class Journey:
         return any(needle in text for text in self.texts())
 
     def assert_text(self, needle: str) -> None:
-        if self.find(needle, timeout=4, exact=False) is None:
-            raise JourneyFailure(f"missing text: {needle}\ntexts={self.texts()}")
+        if self.find(needle, timeout=2, exact=False) is not None:
+            return
+        if self._match_hierarchy(needle, exact=False):
+            return
+        if self._wait_hierarchy(needle, 2.0, exact=False):
+            return
+        raise JourneyFailure(f"missing text: {needle}\ntexts={self.texts()}")
 
     def assert_home(self) -> None:
         self.wait("Home", timeout=12)
@@ -340,6 +404,7 @@ class Journey:
         deadline = time.time() + max(60, max_cards * 4)
         while time.time() < deadline:
             if self.d(text="Session complete").exists:
+                self.screenshot("session-complete")
                 self.tap("Back to home")
                 self.assert_home()
                 return done

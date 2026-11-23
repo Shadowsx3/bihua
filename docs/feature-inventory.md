@@ -29,6 +29,20 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Skips / suspensions | One-day or permanent | A |
 | Resume session | Process death, app restart | A |
 
+## Help and tour
+
+| Feature | Behaviour | A |
+|---|---|---|
+| Guided tour | Optional live overlay with Mò over real screens; spotlight, gestures, props, typewriter line, sound cues | A |
+| Tour invite | Dismissible Home card once; “Not now” goes straight to the app | A |
+| Tour replay | Settings → Help & tour → Start tour; Skip/Back/Next and final Back to app | A |
+| Grading help | Again/Hard/Good/Easy explained in plain words with colour | A |
+| Paper and lists help | Exact Settings paths for printable sheets and saved lists | A |
+| Reduce motion + TalkBack | No typewriter, bobbing, pulse, or confetti; full line read at once | P |
+| Sound effects | Synthesised tick, check, grade, add, tour, and session cues; one Settings switch | P |
+| Widget pet costumes | Study cap or word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat when the desk is clear | P |
+| Completion party hat | Mò wears a party hat on the session-complete panel | P |
+
 ## Writing
 
 | Feature | Behaviour | A |

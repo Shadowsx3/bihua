@@ -14,6 +14,9 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Restore backup in onboarding | Welcome → Restore → pick file | Settings/progress restored, onboarding closes | P |
 | Stylus choice | Brush → Stylus + finger / Stylus only | Canvas follows choice; Settings can change it | G |
 | Stylus absent | No stylus feature | No choice shown; finger always works | M |
+| Guided tour invite | Home → Show me / Not now | Optional; dismiss persists; Not now opens the app | A |
+| Guided tour | Home invite or Help & tour → Start | Live spotlight over real screens, Mò gestures, Back/Next/Skip, ends Home | A |
+| Tour reduce motion | Reduce motion on → Start | No typewriter, bob, pulse, or confetti; full line visible | P |
 
 ## Daily study
 
@@ -95,6 +98,8 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Theme | Display | Light/dark immediate, every tab, pet fixed | A |
 | Pinyin display | Display | Marks/numbers, input both | A |
 | Read aloud | Display | Speaker hidden/shown, system voice | P |
+| Sound effects | Display | Tick, check, grade, add, tour, session; off silences all cues | P |
+| Help & tour | Help & tour | Grading legend, sheets/lists paths, show-answer help, Start tour | A |
 
 ## System
 
