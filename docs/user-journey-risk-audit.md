@@ -221,8 +221,6 @@ Status:
 | Word lists drift from their characters or lose their meaning. | Mitigated | Words are stored as text, characters are stored in the same list, and practice resolves meanings from the dictionary with a writing-only fallback. |
 | SBD and FSRS states diverge or get reset on switch. | Fixed | Both states are written on every review; SBD is replayed from the card log when a pre-upgrade card first needs it. |
 | A target-recall change silently rewrites history. | Avoided | Only future intervals use the new target; stored reviews and states are kept. |
-| RWKV weights are redistributed without permission. | Avoided | No weights are shipped or fetched. Settings only validates a package the user obtained; the licence and source are required in the manifest. |
-| A malformed ONNX package crashes or runs with the wrong tensors. | Guarded | Zip paths, size, checksum, tensor names, and shapes are validated before the package is accepted. |
 | A meaning check adds another review debt. | Open | Design proposal keeps the meaning check optional and outside the main schedule until tested. |
 
 ## Local journey harness

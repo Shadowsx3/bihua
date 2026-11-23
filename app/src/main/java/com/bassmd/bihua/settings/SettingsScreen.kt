@@ -8,10 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import com.bassmd.bihua.rwkv.RwkvModelStore
-import com.bassmd.bihua.rwkv.RwkvOnnxEngine
-import com.bassmd.bihua.rwkv.RwkvPackage
-import com.bassmd.bihua.rwkv.RwkvPackageState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -228,10 +224,6 @@ fun SettingsScreen(
     var optimizingSbd by remember { mutableStateOf(false) }
     var weightReviewCount by remember { mutableStateOf(0) }
     var sbdReviewCount by remember { mutableStateOf(0) }
-    val rwkvStore = remember { RwkvModelStore(context) }
-    var rwkvState by remember { mutableStateOf<RwkvPackageState>(RwkvPackageState.Missing) }
-    var rwkvImporting by remember { mutableStateOf(false) }
-    var rwkvProblem by remember { mutableStateOf<String?>(null) }
     var weightProfile by rememberSaveable { mutableStateOf(AppSettings.SHARED_WEIGHTS) }
     var weightProfileMenu by remember { mutableStateOf(false) }
     var weightMoreMenu by remember { mutableStateOf(false) }
@@ -320,52 +312,6 @@ fun SettingsScreen(
                 sbdWeights = settings.sbdParameters(),
                 desiredRetention = settings.desiredRetention,
             )
-        }
-    }
-    val rwkvLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        rwkvImporting = true
-        rwkvProblem = null
-        scope.launch {
-            val imported = withContext(Dispatchers.IO) { rwkvStore.import(uri) }
-            val checked = if (imported is RwkvPackageState.Installed) {
-                val file = rwkvStore.installedFile()
-                val manifest = imported.manifest
-                val problem = if (file == null) {
-                    "The package could not be stored."
-                } else {
-                    withContext(Dispatchers.Default) { RwkvOnnxEngine.inspect(file, manifest) }
-                }
-                if (problem != null) {
-                    withContext(Dispatchers.IO) { rwkvStore.remove() }
-                    RwkvPackageState.Invalid(problem)
-                } else {
-                    imported
-                }
-            } else {
-                imported
-            }
-            rwkvState = checked
-            rwkvImporting = false
-            when (checked) {
-                is RwkvPackageState.Installed -> message = "Model package validated on this device."
-                is RwkvPackageState.Invalid -> rwkvProblem = checked.reason
-                RwkvPackageState.Missing -> Unit
-            }
-        }
-    }
-    LaunchedEffect(settingsSection) {
-        if (settingsSection == "Schedule") {
-            rwkvState = withContext(Dispatchers.IO) { rwkvStore.state() }
-        }
-    }
-    LaunchedEffect(rwkvState) {
-        if (settings.memoryModel == MemoryModel.RWKV && rwkvState !is RwkvPackageState.Installed) {
-            scope.launch {
-                store.updateSettings { it.copy(memoryModel = MemoryModel.FSRS7) }
-            }
         }
     }
     LaunchedEffect(settings.shareIdenticalGlyphs) {
@@ -1025,18 +971,14 @@ fun SettingsScreen(
                             title = "Memory model",
                             subtitle = "How Bihua decides when a character comes back.",
                         )
-                        val availableModels = buildList {
-                            add(MemoryModel.FSRS7)
-                            add(MemoryModel.SBD)
-                            if (rwkvState is RwkvPackageState.Installed) add(MemoryModel.RWKV)
-                        }
+                        val availableModels = listOf(MemoryModel.FSRS7, MemoryModel.SBD)
                         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                             availableModels.forEachIndexed { index, model ->
                                 SegmentedButton(
                                     shape = SegmentedButtonDefaults.itemShape(index, availableModels.size),
                                     onClick = { update(settings.copy(memoryModel = model)) },
                                     selected = settings.memoryModel == model,
-                                ) { Text(if (model == MemoryModel.RWKV) "RWKV" else model.label) }
+                                ) { Text(model.label) }
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -1046,8 +988,6 @@ fun SettingsScreen(
                                     "FSRS-7 is the proven default: 34 weights, fitted per script, with precise intervals. Best when you want the most tested schedule."
                                 MemoryModel.SBD ->
                                     "SBD is a newer, simpler model: 7 weights fitted to your whole history. It is easier to inspect and close to FSRS-7 in the public benchmark. Published defaults work before your first fit."
-                                MemoryModel.RWKV ->
-                                    "RWKV-Instant is an optional research model. Bihua does not ship its weights. Import a compatible package below; it runs on the device and is never uploaded."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
@@ -1366,94 +1306,6 @@ fun SettingsScreen(
                     }
                 }
             }
-            }
-            }
-
-            if (settingsSection == "Schedule") {
-            item {
-                SoftCard(Modifier.fillMaxWidth(), color = Paper) {
-                    Column {
-                        SettingTitle(
-                            icon = Icons.Rounded.UploadFile,
-                            title = "Research model package",
-                            subtitle = "Optional. Bihua does not include RWKV weights.",
-                        )
-                        when (val state = rwkvState) {
-                            RwkvPackageState.Missing -> {
-                                Text(
-                                    "No package installed. Import a compatible ONNX step model that you obtained and are allowed to use.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkSoft,
-                                )
-                            }
-                            is RwkvPackageState.Installed -> {
-                                Text(
-                                    state.manifest.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = InkDark,
-                                )
-                                Text(
-                                    "${state.manifest.architecture} · ${state.manifest.stateSize} state values · ${formatBytes(state.sizeBytes)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                )
-                                Text(
-                                    "SHA-256 ${state.manifest.sha256.take(12)}… · runs on this device",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                )
-                            }
-                            is RwkvPackageState.Invalid -> {
-                                Text(
-                                    state.reason,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkSoft,
-                                )
-                            }
-                        }
-                        rwkvProblem?.let {
-                            Text(it, style = MaterialTheme.typography.labelSmall, color = InkSoft)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { rwkvLauncher.launch(arrayOf("application/zip", "*/*")) },
-                                enabled = !rwkvImporting,
-                                shape = CircleShape,
-                            ) {
-                                if (rwkvImporting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                }
-                                Text(if (rwkvImporting) "Checking…" else "Import package")
-                            }
-                            if (rwkvState is RwkvPackageState.Installed) {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            withContext(Dispatchers.IO) { rwkvStore.remove() }
-                                            rwkvState = RwkvPackageState.Missing
-                                            if (settings.memoryModel == MemoryModel.RWKV) {
-                                                update(settings.copy(memoryModel = MemoryModel.FSRS7))
-                                            }
-                                            message = "Model package removed."
-                                        }
-                                    },
-                                ) { Text("Remove") }
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "The package is validated on this device and never uploaded. Check its licence before use; the published RWKV weights are research-only. This option is not advertised elsewhere in the app.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
-                    }
-                }
             }
             }
 
@@ -2849,7 +2701,7 @@ fun SettingsScreen(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "Scheduling uses FSRS-7 and SBD. Thanks to Jarrett Ye and the open-spaced-repetition contributors, and to A. Schill for SBD. RWKV-Instant is an optional imported research model; its weights are not included.",
+                            "Scheduling uses FSRS-7 and SBD. Thanks to Jarrett Ye and the open-spaced-repetition contributors, and to A. Schill for SBD.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -3769,18 +3621,6 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
             "Published research; implementation original",
             "A. Schill, Interpretable Memory Models for Spaced Repetition (2026)",
             "https://doi.org/10.5281/zenodo.22727105",
-        ),
-        LicenceEntry(
-            "ONNX Runtime",
-            "MIT License",
-            "Microsoft",
-            "https://github.com/microsoft/onnxruntime",
-        ),
-        LicenceEntry(
-            "RWKV-Instant research (optional import)",
-            "Weights not included; research/personal use",
-            "JSchoreels, Expertium, BlinkDL, and open-spaced-repetition. See the weights notice before importing.",
-            "https://github.com/JSchoreels/anki-rwkv/blob/main/WEIGHTS-NOTICE.md",
         ),
         LicenceEntry(
             "ML Kit Digital Ink Recognition",

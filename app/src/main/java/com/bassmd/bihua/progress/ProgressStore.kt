@@ -14,9 +14,6 @@ import com.bassmd.bihua.fsrs.Fsrs7
 import com.bassmd.bihua.fsrs.Sbd7
 import com.bassmd.bihua.fsrs.SbdMemory
 import com.bassmd.bihua.settings.MemoryModel
-import com.bassmd.bihua.rwkv.RwkvFeatureFrame
-import com.bassmd.bihua.rwkv.RwkvReviewEvent
-import com.bassmd.bihua.rwkv.RwkvRuntime
 import com.bassmd.bihua.fsrs.FsrsTrainingRow
 import com.bassmd.bihua.fsrs.FsrsGrade
 import com.bassmd.bihua.fsrs.FsrsMemory
@@ -71,8 +68,6 @@ data class CardSnapshot(
     val lastGrade: Int,
     /** SBD state, kept current alongside FSRS so switching is instant. */
     val sbd: SbdMemory? = null,
-    /** Optional RWKV recurrent state. Null until a compatible model is used. */
-    val rwkvState: FloatArray? = null,
 ) {
     val known: Boolean get() = knownDots >= 2
     val leech: Boolean get() = lapses >= 5
@@ -199,12 +194,6 @@ data class ReviewUndo(
 class ProgressStore(private val context: Context) :
     SQLiteOpenHelper(context, "bihua_progress.db", null, SCHEMA_VERSION) {
 
-    private val rwkv = RwkvRuntime(context)
-
-    override fun close() {
-        rwkv.close()
-        super.close()
-    }
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -226,8 +215,7 @@ class ProgressStore(private val context: Context) :
               last_grade INTEGER NOT NULL,
               sbd_log_s REAL,
               sbd_grade REAL,
-              sbd_n REAL,
-              rwkv_state BLOB
+              sbd_n REAL
             )
             """.trimIndent()
         )
@@ -249,8 +237,7 @@ class ProgressStore(private val context: Context) :
               strokes INTEGER NOT NULL DEFAULT 0,
               sbd_log_s REAL,
               sbd_grade REAL,
-              sbd_n REAL,
-              rwkv_state BLOB
+              sbd_n REAL
             )
             """.trimIndent()
         )
@@ -317,10 +304,6 @@ class ProgressStore(private val context: Context) :
             db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_log_s REAL")
             db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_grade REAL")
             db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_n REAL")
-        }
-        if (oldVersion < 12) {
-            db.execSQL("ALTER TABLE card ADD COLUMN rwkv_state BLOB")
-            db.execSQL("ALTER TABLE review_log ADD COLUMN rwkv_state BLOB")
         }
     }
 
@@ -423,48 +406,6 @@ class ProgressStore(private val context: Context) :
             if (cursor.moveToFirst()) cursor.toSnapshot() else null
         }
 
-    /** Replays this card's stored reviews through an imported RWKV model. */
-    private fun rebuildRwkv(cardId: String, engine: com.bassmd.bihua.rwkv.RwkvEngine): FloatArray? {
-        val rows = ArrayList<Pair<Int, Long>>()
-        readableDatabase.rawQuery(
-            "SELECT grade, reviewed_at FROM review_log " +
-                "WHERE card_id=? AND reverted=0 ORDER BY reviewed_at, id",
-            arrayOf(cardId),
-        ).use { cursor ->
-            while (cursor.moveToNext()) rows += cursor.getInt(0) to cursor.getLong(1)
-        }
-        if (rows.isEmpty()) return FloatArray(engine.stateSize)
-        var state = FloatArray(engine.stateSize)
-        var previousAt = 0L
-        var reps = 0
-        var lapses = 0
-        rows.forEach { (grade, at) ->
-            reps++
-            if (grade == 1) lapses++
-            val elapsed = if (previousAt == 0L) {
-                0f
-            } else {
-                (at - previousAt).coerceAtLeast(0L) / 86_400_000f
-            }
-            val zoned = java.time.Instant.ofEpochMilli(at)
-                .atZone(java.time.ZoneId.systemDefault())
-            val event = RwkvReviewEvent(
-                elapsedDays = elapsed,
-                grade = grade,
-                reps = reps,
-                lapses = lapses,
-                sameDayReviews = 0,
-                hourOfDay = zoned.hour,
-                dayOfWeek = zoned.dayOfWeek.value - 1,
-            )
-            state = runCatching {
-                engine.predict(RwkvFeatureFrame.encode(event), state).state
-            }.getOrElse { return state }
-            previousAt = at
-        }
-        return state
-    }
-
     /** Replays this card's stored reviews to recover an SBD state. */
     private fun rebuildSbd(cardId: String, weights: FloatArray): SbdMemory? =
         readableDatabase.rawQuery(
@@ -542,43 +483,7 @@ class ProgressStore(private val context: Context) :
                 Sbd7.review(it, grade.value, elapsed, nowMs, desiredRetention = retention, w = sbdWeights)
             }
         }
-        val rwkvEngine = if (settings.memoryModel == MemoryModel.RWKV) rwkv.engine() else null
-        val rwkvBefore = rwkvEngine?.let { engine ->
-            existing?.rwkvState?.takeIf { it.size == engine.stateSize }
-                ?: existing?.let { rebuildRwkv(it.id, engine) }
-                ?: FloatArray(engine.stateSize)
-        }
-        val rwkvEvent = rwkvBefore?.let {
-            val zoned = java.time.Instant.ofEpochMilli(nowMs)
-                .atZone(java.time.ZoneId.systemDefault())
-            RwkvReviewEvent(
-                elapsedDays = elapsed,
-                grade = grade.value,
-                reps = (existing?.reps ?: 0) + 1,
-                lapses = (existing?.lapses ?: 0) + if (grade == FsrsGrade.AGAIN) 1 else 0,
-                sameDayReviews = 0,
-                hourOfDay = zoned.hour,
-                dayOfWeek = zoned.dayOfWeek.value - 1,
-            )
-        }
-        val rwkvPrediction = if (rwkvEngine != null && rwkvBefore != null && rwkvEvent != null) {
-            runCatching {
-                rwkvEngine.predict(RwkvFeatureFrame.encode(rwkvEvent), rwkvBefore)
-            }.getOrNull()
-        } else {
-            null
-        }
-        val rwkvInterval = if (rwkvEngine != null && rwkvBefore != null && rwkvEvent != null) {
-            val after = rwkvPrediction?.state ?: rwkvBefore
-            runCatching {
-                rwkvEngine.intervalDays(after, rwkvEvent, retention, 365)
-            }.getOrNull()
-        } else {
-            null
-        }
         val chosen = when {
-            settings.memoryModel == MemoryModel.RWKV && rwkvInterval != null ->
-                rwkvInterval to nowMs + (rwkvInterval * 86_400_000f).toLong()
             settings.memoryModel == MemoryModel.SBD && sbdResult != null ->
                 sbdResult.intervalDays to sbdResult.dueAtMs
             else -> fsrsResult.intervalDays to fsrsResult.dueAtMs
@@ -606,7 +511,6 @@ class ProgressStore(private val context: Context) :
             knownDots = knownDots,
             lastGrade = grade.value,
             sbd = sbdResult?.memory,
-            rwkvState = rwkvPrediction?.state ?: existing?.rwkvState,
         )
         val knownBefore = existing?.known == true
         val baseXp = when (grade) {
@@ -639,7 +543,6 @@ class ProgressStore(private val context: Context) :
                     put("sbd_log_s", sbdResult?.memory?.logS)
                     put("sbd_grade", sbdResult?.memory?.gradeIndex)
                     put("sbd_n", sbdResult?.memory?.n)
-                    put("rwkv_state", snapshot.rwkvState?.toBytes())
                     put("elapsed_ms", elapsedMs.coerceAtLeast(0L))
                     put("task", task)
                     put("strokes", strokes.coerceAtLeast(0))
@@ -971,7 +874,7 @@ class ProgressStore(private val context: Context) :
     }
 
     companion object {
-        const val SCHEMA_VERSION = 12
+        const val SCHEMA_VERSION = 11
 
         fun cardKey(character: CharacterEntry, settings: AppSettings): String =
             if (settings.effectiveSharing(character.glyphGroupId)) {
@@ -1416,18 +1319,6 @@ class ProgressStore(private val context: Context) :
 
 }
 
-private fun FloatArray.toBytes(): ByteArray {
-    val buffer = java.nio.ByteBuffer.allocate(size * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-    forEach { buffer.putFloat(it) }
-    return buffer.array()
-}
-
-private fun ByteArray.toFloats(): FloatArray? {
-    if (size % 4 != 0) return null
-    val buffer = java.nio.ByteBuffer.wrap(this).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-    return FloatArray(size / 4) { buffer.float }
-}
-
 private fun Cursor.toSnapshot(): CardSnapshot = CardSnapshot(
     id = getString(getColumnIndexOrThrow("id")),
     characterId = getString(getColumnIndexOrThrow("character_id")),
@@ -1445,10 +1336,6 @@ private fun Cursor.toSnapshot(): CardSnapshot = CardSnapshot(
     introducedAtMs = getLong(getColumnIndexOrThrow("introduced_at")),
     knownDots = getInt(getColumnIndexOrThrow("known_dots")),
     lastGrade = getInt(getColumnIndexOrThrow("last_grade")),
-    rwkvState = run {
-        val index = getColumnIndex("rwkv_state")
-        if (index < 0) null else getBlob(index)?.toFloats()
-    },
     sbd = run {
         val logS = getColumnIndex("sbd_log_s")
         val grade = getColumnIndex("sbd_grade")
@@ -1483,7 +1370,6 @@ private fun CardSnapshot.toValues(): ContentValues = ContentValues().apply {
     put("sbd_log_s", sbd?.logS)
     put("sbd_grade", sbd?.gradeIndex)
     put("sbd_n", sbd?.n)
-    put("rwkv_state", rwkvState?.toBytes())
 }
 
 private inline fun SQLiteDatabase.inTransaction(block: SQLiteDatabase.() -> Unit) {

@@ -25,7 +25,6 @@ enum class UiLanguage(val tag: String, val nativeName: String) {
 enum class MemoryModel(val label: String, val short: String) {
     FSRS7("FSRS-7", "Proven, precise intervals"),
     SBD("SBD", "Simple, interpretable, fitted to you"),
-    RWKV("RWKV-Instant", "Optional imported model"),
 }
 
 @Serializable
@@ -274,7 +273,9 @@ data class AppSettings(
     val inkWidth: InkWidth = InkWidth.BOLD,
     val brush: BrushConfig = BrushConfig(),
     val drawingTool: DrawingTool = DrawingTool.INK,
-    val allowFingerDrawing: Boolean = false,
+    val allowFingerDrawing: Boolean = true,
+    /** One-time migration: 1.0.7 shipped finger drawing off even on stylus phones. */
+    val fingerDrawingMigrated: Boolean = false,
     val orientation: OrientationLock = OrientationLock.AUTO,
     val dailyNewGoal: Int = 5,
     /** Hour when the study day ends. 0 is midnight, 4 is the default. */
@@ -422,6 +423,8 @@ data class AppSettings(
             fsrsWeightsSource = if (hasShared) fsrsWeightsSource else "",
             fsrsWeightsUpdatedAtMs = if (hasShared) fsrsWeightsUpdatedAtMs.coerceAtLeast(0L) else 0L,
             fsrsProfiles = profiles,
+            allowFingerDrawing = if (fingerDrawingMigrated) allowFingerDrawing else true,
+            fingerDrawingMigrated = true,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
             sbdWeights = sbd,
             sbdWeightsSource = if (sbd.isNotEmpty()) sbdWeightsSource else "",

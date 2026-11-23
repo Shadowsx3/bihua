@@ -38,7 +38,6 @@ device pass below.
 | List export | `.txt` round-trips characters and words | manual file-picker export |
 | SBD scheduler | Reference recurrence, pass/fail, interval inversion, per-user fit | `Sbd7Test`, `SbdOptimizerTest`, `ProgressStoreSbdTest` |
 | Target recall | 70–97% changes intervals for SBD/FSRS | `Sbd7Test`, `ProgressStoreSbdTest`, manual Settings review |
-| RWKV package | Manifest, checksum, tensor shapes, ONNX inference, state BLOB | `RwkvOnnxEngineTest`, manual package import |
 | Onboarding | Five pages, one schedule choice, target recall, writing-only default | manual phone/tablet review |
 | Dark theme | Pet stays paper-and-ink, contrast and navigation bar spacing | manual light/dark review |
 | Paper check | Strokes toggle after reveal, back to character details | manual phone/tablet review |

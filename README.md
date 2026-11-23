@@ -58,7 +58,6 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
-| **Optional research model** | A validated, user-supplied ONNX step model can be imported in Settings only. No RWKV weights are shipped or advertised. |
 | **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
 | **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
 | **Foldables** | Book-style inner layout with two pages; the outer display keeps the phone layout. |
@@ -145,11 +144,6 @@ Bihua stands on open research and open content. Thank you to:
 - **A. Schill** for SBD (Stability, Brittleness, Difficulty), *Interpretable
   Memory Models for Spaced Repetition* (2026),
   <https://doi.org/10.5281/zenodo.22727105>.
-- **JSchoreels**, **Expertium**, **BlinkDL**, and the **open-spaced-repetition**
-  contributors for the RWKV-Instant research. Bihua does **not** bundle those
-  weights: their notice marks them research/personal-use only and asks for the
-  dataset owners' permission before distribution. The optional import path is a
-  compatibility slot for a model the user obtained themselves.
 - The character, dictionary, stroke, and frequency sources credited in
   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and in Settings → About.
 
