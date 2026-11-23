@@ -4,8 +4,8 @@
 
 - Optional meaning reviews: type the meaning in your own words, show the clean
   gloss, see a real word that uses the character, and grade. Off by default.
-- User synonyms for meanings, with a small add/remove editor in the review.
-  Wordings are trimmed, deduplicated, and capped.
+- User synonyms for meanings, with add/remove editors in the review and on
+  character detail. Wordings are trimmed, deduplicated, and capped.
 - Meaning data is sanitized before it is taught: blank, placeholder, and
   structural glosses such as "variant of" or "surname" are skipped.
 - Optional Anki-style reviews for writing, pronunciation, or meaning. The cue

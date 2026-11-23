@@ -40,7 +40,7 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Anki writing | Optional cue → Show answer → grade with no canvas | A |
 | Anki pronunciation | Optional character → Show answer → grade with no typing | A |
 | Meaning review | Optional character → type wording → gloss, example word, grade | A |
-| Meaning synonyms | Add/remove user wordings, cleaned and capped | A |
+| Meaning synonyms | Add/remove user wordings in the reveal or character detail, cleaned and capped | A |
 | Meaning data sanitizer | Skip blank/structural glosses; filter words | A |
 | Eraser / undo / redo / clear | Ink-only edits | A |
 | Guide modes | Off/Faint/Strokes, fixed layout | P |

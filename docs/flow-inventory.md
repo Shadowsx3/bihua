@@ -77,6 +77,7 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Practise words | List → Words | Queue, next, bookmark | G |
 | Rename/duplicate/delete | Overflow | Unique names, active cleared | G |
 | Add word | Word practice bookmark | Active list words updated | G |
+| Meaning synonyms | Meaning reveal or character detail | Add/remove a wording, clean and persist | A |
 
 ## Settings
 

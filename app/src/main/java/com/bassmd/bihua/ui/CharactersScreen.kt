@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -154,6 +155,9 @@ fun CharactersScreen(
     onSetMemoryLevel: (CharacterEntry, com.bassmd.bihua.progress.MemoryLevel?) -> Unit = { _, _ -> },
     onSpeak: (String) -> Unit = {},
     includeMatureContent: Boolean = false,
+    meaningSynonyms: Map<String, List<String>> = emptyMap(),
+    onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
+    onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
 ) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -324,6 +328,9 @@ fun CharactersScreen(
                                     }
                                 },
                                 onReset = { showReset = true },
+                                synonyms = meaningSynonyms[selected.id].orEmpty(),
+                                onAddSynonym = { text -> onAddMeaningSynonym(selected.id, text) },
+                                onRemoveSynonym = { text -> onRemoveMeaningSynonym(selected.id, text) },
                             )
                         }
                     } else {
@@ -407,6 +414,9 @@ fun CharactersScreen(
                                 }
                             },
                             onReset = { showReset = true },
+                            synonyms = meaningSynonyms[selected.id].orEmpty(),
+                            onAddSynonym = { text -> onAddMeaningSynonym(selected.id, text) },
+                            onRemoveSynonym = { text -> onRemoveMeaningSynonym(selected.id, text) },
                         )
                     }
                 } else {
@@ -985,6 +995,9 @@ private fun CharacterDetail(
     onSuspend: () -> Unit,
     onAddToList: () -> Unit,
     onReset: () -> Unit,
+    synonyms: List<String> = emptyList(),
+    onAddSynonym: (String) -> Unit = {},
+    onRemoveSynonym: (String) -> Unit = {},
 ) {
     val repository = LocalContentRepository.current
     val progress = LocalProgressStore.current
@@ -1000,6 +1013,14 @@ private fun CharacterDetail(
     var meta by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterMeta?>(null) }
     var family by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterFamily?>(null) }
     var showStory by remember(entry.id) { mutableStateOf(false) }
+    var synonymsOpen by remember(entry.id) { mutableStateOf(false) }
+    var synonymDraft by remember(entry.id) { mutableStateOf("") }
+    val synonymList = remember(synonyms, entry.meaning) {
+        synonyms.mapNotNull {
+            com.bassmd.bihua.settings.MeaningSanitizer.synonym(it, entry.meaning)
+        }.distinctBy { it.lowercase() }
+    }
+    val canTeachMeaning = com.bassmd.bihua.settings.MeaningSanitizer.isTeachableView(entry.meaning)
     val featureWord = if (entry.status == com.bassmd.bihua.content.StudyStatus.KNOWN) {
         words.firstOrNull { it.word.length > 1 } ?: words.firstOrNull()
     } else {
@@ -1083,6 +1104,75 @@ private fun CharacterDetail(
             }
             OutlinedButton(onClick = onAddToList, shape = CircleShape) {
                 Text(if (inStudyList) "In study list" else "Add to list")
+            }
+        }
+        if (canTeachMeaning) {
+            SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.13f)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Rounded.Translate,
+                            contentDescription = null,
+                            tint = InkDark,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Your synonyms",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            onClick = {
+                                synonymDraft = ""
+                                synonymsOpen = true
+                            },
+                        ) {
+                            Text(if (synonymList.isEmpty()) "Add synonym" else "Add another")
+                        }
+                    }
+                    if (synonymList.isEmpty()) {
+                        Text(
+                            "A wording you would accept for this meaning.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    } else {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            synonymList.forEach { synonym ->
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Mint.copy(alpha = 0.28f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(start = 10.dp, end = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            synonym,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = InkDark,
+                                        )
+                                        IconButton(
+                                            onClick = { onRemoveSynonym(synonym) },
+                                            modifier = Modifier.size(30.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Close,
+                                                contentDescription = "Remove $synonym",
+                                                modifier = Modifier.size(14.dp),
+                                                tint = InkSoft,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         featureWord?.let { word ->
@@ -1584,6 +1674,65 @@ private fun CharacterDetail(
         TextButton(onClick = onReset, modifier = Modifier.align(Alignment.Start)) {
             Text("Reset this character", color = MaterialTheme.colorScheme.error)
         }
+    }
+    if (synonymsOpen) {
+        val cleaned = com.bassmd.bihua.settings.MeaningSanitizer.synonym(
+            synonymDraft,
+            entry.meaning,
+        )
+        AlertDialog(
+            onDismissRequest = { synonymsOpen = false },
+            title = { Text("Add a synonym") },
+            text = {
+                Column {
+                    Text(
+                        "A wording you would accept for ${entry.character}.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    if (synonymList.isNotEmpty()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Already accepted: ${synonymList.joinToString(" · ")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = synonymDraft,
+                        onValueChange = { synonymDraft = it.take(60) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("For example, affection") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    if (synonymDraft.isNotBlank() && cleaned == null) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Try a different wording.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (cleaned != null) {
+                            onAddSynonym(cleaned)
+                            synonymDraft = ""
+                            synonymsOpen = false
+                        }
+                    },
+                    enabled = cleaned != null,
+                ) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { synonymsOpen = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

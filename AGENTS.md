@@ -200,7 +200,8 @@ some etymology quality.
   "syllable ga" are not meaning checks; those cards fall back to writing and
   pronunciation. A character with no teachable gloss also falls back to writing.
 - Synonyms are user wordings keyed by character id in
-  `AppSettings.meaningSynonyms`. They are trimmed, deduplicated ignoring case,
+  `AppSettings.meaningSynonyms`. They can be added or removed in the meaning
+  reveal and in character detail; keep the two editors consistent. They are trimmed, deduplicated ignoring case,
   capped at 12 per character and 60 characters each, cleaned on restore, and
   removed when the learner taps the chip's x. They travel in settings backups.
 - The reveal shows the official gloss, the learner's words if typed, accepted

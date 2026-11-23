@@ -50,7 +50,7 @@ layout can differ. Landscape and large font scale are separate passes.
 | Character tile | Grid | new, learning, review, known, leech, selected | A |
 | Search | Grid | empty, no result, reading, meaning, pinyin | A |
 | Filters | Grid | status, level, frequency, writing only | P |
-| Character detail | Tile | new/known, note, family, memory level, list/pin/skip/suspend | A |
+| Character detail | Tile | new/known, note, family, memory level, synonyms, list/pin/skip/suspend | A |
 | Draw search | Grid | valid/empty drawing | M |
 | Dictionary entry | Grid/detail | search, results, detail, practise | A |
 | Compare picker | Detail/compare | add, remove, max four, no result | P |

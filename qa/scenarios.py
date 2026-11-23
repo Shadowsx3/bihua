@@ -61,6 +61,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("anki", level="standard", state={"reviews": 8, "new": 2, "days": 7, "pronunciation": True, "anki_writing": True, "anki_pronunciation": True}, runner="anki"),
     ScenarioSpec("meaning", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True}, runner="meaning"),
     ScenarioSpec("meaning-anki", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True, "anki_meaning": True}, runner="meaning_anki"),
+    ScenarioSpec("synonyms", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="synonyms"),
 ]
 
 
@@ -1261,6 +1262,35 @@ def meaning_anki(journey: Journey, state: ScenarioState) -> None:
             journey.leave_session("End session")
 
 
+def synonyms(journey: Journey, state: ScenarioState) -> None:
+    """Add and remove a synonym from character detail."""
+    with journey.step("open a character detail"):
+        journey.open_tab("Characters")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+        _search_character(journey, "爱")
+        journey.wait("Your synonyms", timeout=8)
+    with journey.step("add a synonym"):
+        journey.tap("Add synonym")
+        journey.wait("Add a synonym", timeout=6)
+        field = journey.d(className="android.widget.EditText")
+        if not field.exists:
+            raise JourneyFailure("synonym field missing")
+        field.set_text("affection")
+        journey.tap("Add")
+        journey.wait("affection", timeout=6)
+        journey.screenshot("character-synonyms")
+    with journey.step("remove a synonym"):
+        journey.tap("Remove affection")
+        time.sleep(0.5)
+        if journey.exists("affection", timeout=0.5):
+            raise JourneyFailure("synonym was not removed")
+    with journey.step("bottom of detail is reachable"):
+        if journey.ensure_visible("Reset this character", max_scrolls=8) is None:
+            raise JourneyFailure("detail bottom is unreachable")
+        journey.screenshot("character-detail-bottom")
+    journey.assert_no_crash()
+
+
 def accessibility(journey: Journey, state: ScenarioState) -> None:
     issues: list[str] = []
     for screen in ("Home", "Characters", "Progress", "Practice", "Settings"):
@@ -1304,4 +1334,5 @@ RUNNERS = {
     "anki": anki,
     "meaning": meaning,
     "meaning_anki": meaning_anki,
+    "synonyms": synonyms,
 }

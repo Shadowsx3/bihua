@@ -34,7 +34,7 @@ Status:
 | Settings subpages, Compare, Paper, Practice picker, study lists, and the study tools sheet have no back-stack regression. | Fixed | `navigation-deep` walks all of them on every standard run. |
 | Writing or reading review without a canvas or keyboard is impossible. | Fixed | Optional independent Anki-style switches for writing, pronunciation, and meaning, off by default. |
 | Meaning prompts can show blank, placeholder, or structural dictionary redirects. | Fixed | `MeaningSanitizer` filters them; a character with no teachable gloss falls back to writing. Phonetic kana/Hangul stay in pronunciation. |
-| A learner's own wording for a meaning is lost. | Fixed | Synonyms are stored per character, cleaned, deduplicated, capped, removable, and included in backups. |
+| A learner's own wording for a meaning is lost. | Fixed | Synonyms are stored per character, cleaned, deduplicated, capped, removable from the reveal and character detail, and included in backups. |
 | Anki meaning still shows a typing field. | Fixed | `meaning-anki` journey asserts no field; `Show answer` reveals the gloss and example word. |
 
 ## Startup and content

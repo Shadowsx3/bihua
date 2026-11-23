@@ -1425,6 +1425,8 @@ fun BihuaApp(
                                 },
                                 contentError = contentError,
                                 onRetryContent = { contentRetry++ },
+                                onAddMeaningSynonym = addMeaningSynonym,
+                                onRemoveMeaningSynonym = removeMeaningSynonym,
                             )
                         }
                     }
@@ -1534,6 +1536,8 @@ fun BihuaApp(
                                 },
                                 contentError = contentError,
                                 onRetryContent = { contentRetry++ },
+                                onAddMeaningSynonym = addMeaningSynonym,
+                                onRemoveMeaningSynonym = removeMeaningSynonym,
                             )
                         }
                     }
@@ -1694,6 +1698,8 @@ private fun AppContent(
     onSharingOverride: (String, Boolean?) -> Unit = { _, _ -> },
     contentError: String? = null,
     onRetryContent: () -> Unit = {},
+    onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
+    onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
 ) {
     if (characters == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1787,6 +1793,9 @@ private fun AppContent(
             skippedIds = skippedIds,
             suspendedIds = suspendedIds,
             studyList = studyList,
+            meaningSynonyms = settings.meaningSynonyms,
+            onAddMeaningSynonym = onAddMeaningSynonym,
+            onRemoveMeaningSynonym = onRemoveMeaningSynonym,
             onPrioritize = onPrioritize,
             onSkip = onSkip,
             onSuspend = onSuspend,

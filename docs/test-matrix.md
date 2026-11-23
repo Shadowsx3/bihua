@@ -13,6 +13,7 @@ harness; pure composables and physical hardware still need the device pass.
 | Meaning review | Type a wording → reveal clean gloss and example word → add synonym → grade | `MeaningSanitizerTest`, `meaning` journey |
 | Meaning Anki | Reveal-only meaning, no typing field, synonyms still available | `meaning-anki` journey |
 | Meaning data | Blank, placeholder, structural, overlong, duplicate synonym, cap; shipped glosses stay 98% teachable | `MeaningSanitizerTest`, `ContentDatabaseTest` |
+| Synonym management | Add and remove from character detail; card and chips render at 1.5x; detail bottom reachable | `synonyms` journey |
 | Task mix | Writing keeps half when meaning or pronunciation is enabled; meaning never starts a new card | `ReviewTaskTest` |
 | Settings switches | Writing and pronunciation are independent, off by default, and survive sanitize | `SettingsSanitizeTest`, `anki` journey |
 | Deep navigation | Every Settings section, Compare, Paper, Practice picker, study lists, and study tools sheet, closed with system back | `navigation-deep` journey |
