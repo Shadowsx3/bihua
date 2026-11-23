@@ -245,6 +245,7 @@ fun OnboardingScreen(
                         }
                     },
                     accent = Mint.copy(alpha = 0.9f),
+                    enabled = !restoring,
                 )
             }
             if (step == 0) {
@@ -264,6 +265,7 @@ fun OnboardingScreen(
                             true,
                         )
                     },
+                    enabled = !restoring,
                 )
                 QuietAction(
                     text = if (restoring) "Restoring…" else "Restore a backup",
@@ -321,7 +323,7 @@ private fun WelcomePage() {
                 "Trace it once" to if (hasPen) {
                     "Follow the green guide with your stylus or finger."
                 } else {
-                    "Follow the green guide with your pen or finger."
+                    "Follow the green guide with your finger."
                 }
             ),
             "3" to ("Write and grade" to "Write from memory, then choose Again, Hard, Good, or Easy."),
@@ -1241,7 +1243,7 @@ private fun BrushPage(
             if (hasPen) {
                 "Stylus detected. The line follows pressure, and finger drawing is on by default. You can turn the finger off later in Settings → Writing."
             } else {
-                "Use a pen for pressure, or a finger. Finger drawing is on by default; tune the line later in Settings."
+                "Draw with a finger. Finger drawing is on by default; tune the line later in Settings."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,

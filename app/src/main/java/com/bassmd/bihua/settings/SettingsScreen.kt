@@ -59,7 +59,9 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -857,8 +859,8 @@ fun SettingsScreen(
                     Column {
                         SettingTitle(
                             icon = Icons.Rounded.School,
-                            title = "Two practice modes",
-                            subtitle = "Writing is the core of every review. Pronunciation is the extra check you can switch on.",
+                            title = "Practice modes",
+                            subtitle = "Writing is the default. Pronunciation and meaning are optional checks you can switch on.",
                         )
                         Surface(
                             shape = RoundedCornerShape(18.dp),
@@ -882,14 +884,22 @@ fun SettingsScreen(
                                         color = InkDark,
                                     )
                                     Text(
-                                        "Draw the character from memory. This is always part of a review.",
+                                        if (settings.ankiWriting) {
+                                            "Reveal the character and grade. Anki-style is on below."
+                                        } else {
+                                            "Draw the character from memory. Anki-style can reveal it instead, below."
+                                        },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = InkSoft,
                                     )
                                 }
                                 Icon(
-                                    Icons.Rounded.CheckCircle,
-                                    contentDescription = "Always on",
+                                    if (settings.ankiWriting) Icons.Rounded.Visibility else Icons.Rounded.CheckCircle,
+                                    contentDescription = if (settings.ankiWriting) {
+                                        "Reveal-only"
+                                    } else {
+                                        "Always on"
+                                    },
                                     tint = InkDark,
                                 )
                             }
@@ -948,12 +958,110 @@ fun SettingsScreen(
                             }
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text(
-                            if (settings.pronunciationPractice) {
-                                "On: reviews alternate between drawing and reading, so both skills are practised across reviews."
-                            } else {
-                                "Off: every review asks only for the drawing. You can turn pronunciation on any time."
+                        Surface(
+                            onClick = {
+                                update(settings.copy(meaningPractice = !settings.meaningPractice))
                             },
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (settings.meaningPractice) {
+                                Peach.copy(alpha = 0.30f)
+                            } else {
+                                PaperWarm
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    1.dp,
+                                    if (settings.meaningPractice) {
+                                        Peach
+                                    } else {
+                                        InkSoft.copy(alpha = 0.18f)
+                                    },
+                                    RoundedCornerShape(18.dp),
+                                ),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Translate,
+                                    contentDescription = null,
+                                    tint = if (settings.meaningPractice) InkDark else InkSoft,
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "Meaning",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = InkDark,
+                                    )
+                                    Text(
+                                        "Some reviews show the character and ask what it means, with a real word for context.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                    )
+                                }
+                                Switch(
+                                    checked = settings.meaningPractice,
+                                    onCheckedChange = {
+                                        update(settings.copy(meaningPractice = it))
+                                    },
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            if (settings.pronunciationPractice || settings.meaningPractice) {
+                                "On: reviews mix writing with the checks you enabled, so writing stays the core."
+                            } else {
+                                "Off: every review asks only for the drawing. You can turn either check on any time."
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.18f)) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.Visibility,
+                            title = "Anki-style review",
+                            subtitle = "Show the answer, then grade. Skip the canvas, keyboard, or choices if that suits you.",
+                        )
+                        SwitchRow(
+                            title = "Writing: tap to reveal",
+                            subtitle = "The cue appears first. Show the character, then grade. No canvas.",
+                            checked = settings.ankiWriting,
+                            onCheckedChange = { update(settings.copy(ankiWriting = it)) },
+                        )
+                        SwitchRow(
+                            title = "Pronunciation: tap to reveal",
+                            subtitle = if (settings.pronunciationPractice) {
+                                "The character appears first. Show the reading, then grade. No typing."
+                            } else {
+                                "Turn pronunciation on above to use this."
+                            },
+                            checked = settings.ankiPronunciation,
+                            onCheckedChange = { update(settings.copy(ankiPronunciation = it)) },
+                            enabled = settings.pronunciationPractice,
+                        )
+                        SwitchRow(
+                            title = "Meaning: tap to reveal",
+                            subtitle = if (settings.meaningPractice) {
+                                "The character appears first. Show the meaning and an example word, then grade."
+                            } else {
+                                "Turn meaning on above to use this."
+                            },
+                            checked = settings.ankiMeaning,
+                            onCheckedChange = { update(settings.copy(ankiMeaning = it)) },
+                            enabled = settings.meaningPractice,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "All three are optional. They change how you answer, not the review dates or XP.",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -1941,7 +2049,7 @@ fun SettingsScreen(
                         Spacer(Modifier.height(6.dp))
                         Text(
                             if (hasStylus) {
-                                "The S Pen reports pressure, so these settings change the line while you draw."
+                                "A stylus reports pressure, so these settings change the line while you draw."
                             } else {
                                 "This device has no stylus, so pressure is fixed and only width applies."
                             },
@@ -2014,7 +2122,7 @@ fun SettingsScreen(
                         if (hasStylus) {
                             SwitchRow(
                                 title = "Draw with a finger",
-                                subtitle = "Off means only your pen draws, so your palm does not leave marks.",
+                                subtitle = "Off means only your stylus draws, so your palm does not leave marks.",
                                 checked = settings.allowFingerDrawing,
                                 onCheckedChange = { update(settings.copy(allowFingerDrawing = it)) },
                             )
@@ -2168,10 +2276,14 @@ fun SettingsScreen(
                                             preparingMode = mode
                                             scope.launch {
                                                 try {
-                                                    val ready = inkRecognition.prepare(
-                                                        mode,
-                                                        settings.wifiOnlyModels,
-                                                    )
+                                                    val ready = kotlinx.coroutines.withTimeoutOrNull(
+                                                        MODEL_DOWNLOAD_WAIT_MS,
+                                                    ) {
+                                                        inkRecognition.prepare(
+                                                            mode,
+                                                            settings.wifiOnlyModels,
+                                                        )
+                                                    } ?: false
                                                     modelStates[mode] = ready
                                                     handwritingReady = StudyMode.entries.all {
                                                         modelStates[it] == true
@@ -2179,7 +2291,7 @@ fun SettingsScreen(
                                                     message = if (ready) {
                                                         "${mode.modelLabel()} model ready."
                                                     } else {
-                                                        "Could not download the ${mode.modelLabel()} model."
+                                                        "The ${mode.modelLabel()} model did not arrive. Check Wi-Fi and try again."
                                                     }
                                                 } finally {
                                                     preparingMode = null
@@ -2196,7 +2308,13 @@ fun SettingsScreen(
                                 preparingHandwriting = true
                                 scope.launch {
                                     try {
-                                        val result = inkRecognition.prepareAll(settings.wifiOnlyModels)
+                                        val result = StudyMode.entries.associateWith { mode ->
+                                            kotlinx.coroutines.withTimeoutOrNull(
+                                                MODEL_DOWNLOAD_WAIT_MS,
+                                            ) {
+                                                inkRecognition.prepare(mode, settings.wifiOnlyModels)
+                                            } ?: false
+                                        }
                                         result.forEach { (mode, ready) ->
                                             modelStates[mode] = ready
                                         }
@@ -2204,7 +2322,7 @@ fun SettingsScreen(
                                         message = if (handwritingReady) {
                                             "Handwriting models are ready."
                                         } else {
-                                            "Some handwriting models could not download."
+                                            "Some handwriting models did not arrive. Check Wi-Fi and try again."
                                         }
                                     } finally {
                                         preparingHandwriting = false
@@ -2691,6 +2809,11 @@ fun SettingsScreen(
                             Column(Modifier.weight(1f)) {
                                 Text("Bihua ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleMedium)
                                 Text("Made by Shadowsx3", style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                                Text(
+                                    "Made with ❤️ in 🇺🇾 Uruguay",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                )
                             }
                         }
                         Spacer(Modifier.height(12.dp))
@@ -3151,9 +3274,9 @@ private val SETTINGS_ENTRIES = listOf(
         "name photo avatar greeting profile",
     ),
     SettingsEntry(
-        "Practice", "Practice", "Writing and pronunciation",
+        "Practice", "Practice", "Writing, pronunciation, meaning",
         Icons.Rounded.RecordVoiceOver, Mint, "LEARNING",
-        "writing pronunciation reading practice modes",
+        "writing pronunciation reading meaning comprehension anki tap reveal practice modes",
     ),
     SettingsEntry(
         "Study", "Study", "Pace, order, cues, words, vacation",
@@ -3198,6 +3321,9 @@ private val SETTINGS_ENTRIES = listOf(
 )
 
 private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "ABOUT")
+
+/** Stop a Wi-Fi-only model download from blocking the settings screen forever. */
+private const val MODEL_DOWNLOAD_WAIT_MS = 30_000L
 
 private val REMINDER_DAYS = listOf(
     1 to "Mon",

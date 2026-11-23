@@ -1,8 +1,26 @@
 # Flow and test matrix
 
-Scope: 1.0.7, phone, foldable, and tablet. The automated suite is JVM/Robolectric, so it
-covers rules, persistence, and content. Composables and hardware still need the
-device pass below.
+Scope: 1.1.0 (1.0.9 in Play review), phone, foldable, tablet, light and dark,
+and 1.5x text. The automated suite is JVM/Robolectric plus the local journey
+harness; pure composables and physical hardware still need the device pass.
+
+## 1.1.0 additions
+
+| Flow | What is covered | Where |
+|---|---|---|
+| Anki-style writing | Cue → Show answer → grade with no canvas; new cards go Meet → Reveal and skip Trace | `ReviewTaskTest`, `anki` journey |
+| Anki-style pronunciation | Character → Show answer → grade with no typing field or unfair grade suggestion | `ReviewTaskTest`, `anki` journey |
+| Meaning review | Type a wording → reveal clean gloss and example word → add synonym → grade | `MeaningSanitizerTest`, `meaning` journey |
+| Meaning Anki | Reveal-only meaning, no typing field, synonyms still available | `meaning-anki` journey |
+| Meaning data | Blank, placeholder, structural, overlong, duplicate synonym, cap; shipped glosses stay 98% teachable | `MeaningSanitizerTest`, `ContentDatabaseTest` |
+| Task mix | Writing keeps half when meaning or pronunciation is enabled; meaning never starts a new card | `ReviewTaskTest` |
+| Settings switches | Writing and pronunciation are independent, off by default, and survive sanitize | `SettingsSanitizeTest`, `anki` journey |
+| Deep navigation | Every Settings section, Compare, Paper, Practice picker, study lists, and study tools sheet, closed with system back | `navigation-deep` journey |
+| Large-text layout | Home study tools, Compare header, and Paper header at 1.5x | manual phone pass |
+| Loading states | Model download and recognition timeouts, TTS first tap, content Retry, session prepare | `InkRecognition` timeout test plus manual phone pass |
+| Widget parity | Skipped and suspended cards excluded; refresh on stop | `WidgetCopyTest`, manual launcher pass |
+| Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
+| List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
 
 ## Automated coverage
 
@@ -33,16 +51,17 @@ device pass below.
 | Pinyin display | Tone marks default, numbers optional, numeric input still accepted | `PinyinTest` and `ReadingCheckTest` plus manual Settings review |
 | Feedback colour | No punitive red for a missing stroke or a recognition difference | manual light/dark review |
 | Home-screen widgets | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
-| Study lists | Named character and word lists, migration, presets, quick add, word bookmark and queue | `StudyListsTest`, `StudyListImportTest`, manual phone review |
-| List import | TXT, CSV, TSV, JSON streaming; words kept; no item cap | `StudyListImportTest` plus manual file-picker import |
+| Study lists | Named character and word lists, migration, presets, quick add, word bookmark and queue | `StudyListsTest`, `StudyListImportTest`, `study-lists` journey |
+| List import | TXT, CSV, TSV, JSON streaming; BOM, nested names; words kept; no item cap | `StudyListImportTest` plus manual file-picker import |
 | List export | `.txt` round-trips characters and words | manual file-picker export |
 | SBD scheduler | Reference recurrence, pass/fail, interval inversion, per-user fit | `Sbd7Test`, `SbdOptimizerTest`, `ProgressStoreSbdTest` |
 | Target recall | 70–97% changes intervals for SBD/FSRS | `Sbd7Test`, `ProgressStoreSbdTest`, manual Settings review |
 | Onboarding | Five pages, one schedule choice, target recall, writing-only default | manual phone/tablet review |
-| Dark theme | Pet stays paper-and-ink, contrast and navigation bar spacing | manual light/dark review |
-| Paper check | Strokes toggle after reveal, back to character details | manual phone/tablet review |
-| Compare write drill | Fixed canvas, Off/Faint/Strokes, undo/redo/clear, back | manual phone/tablet review |
+| Dark theme | Pet stays paper-and-ink, contrast, navigation bar, every tab | `appearance` journey plus manual light/dark review |
+| Paper check | Strokes toggle after reveal, back to character details | `paper-compare` journey plus phone review |
+| Compare write drill | Fixed canvas, Off/Faint/Strokes, undo/redo/clear, back | `paper-compare` journey plus phone review |
 | Word of the Day quality | At least 365 non-mature quality candidates per course; curated + pool | `ContentDatabaseTest` |
+| Word of the Day audio | Speaker present, tap is safe, missing voice is reported | `word-audio` journey plus manual audio pass |
 | Cold start | Minimum hold, reduce-motion, tap-to-skip | manual launch on phone and tablet |
 | Pet identity | Launcher icon, profile avatar, top icon use the same pet | manual light/dark review |
 | Review tasks | Writing and typing paths, wrong/correct/tone feedback, real guide-stroke drawing | `review-modes`, `draw-recognition` journeys; `ReadingCheckTest`, `ReviewTaskTest` |
@@ -111,7 +130,7 @@ These are not fully automated yet.
 | Settings, backup, import, export | Yes | Yes | Invalid file errors |
 | Local sync | Yes | Yes | Two devices on one Wi-Fi |
 | Reminders, permission, test notification | Yes | Yes | Off by default |
-| Dark theme and 1.3x text | Yes | Yes | Full TalkBack sweep still open |
+| Dark theme and 1.5x text | Yes | Yes | Full TalkBack sweep at 2x still open |
 | Fold postures | n/a | Partial | Folded and unfolded checked; tabletop is detected but not used |
 
 ## Open gaps
@@ -120,7 +139,7 @@ These are not fully automated yet.
    and restore would catch more than the current unit suite.
 2. Tabletop posture is detected but layouts do not use it yet.
 3. A full TalkBack sweep on all screens and both fold postures remains.
-4. Physical S Pen pressure and palm rejection still need a hardware pass.
+4. Physical stylus pressure and palm rejection still need a hardware pass.
 
 ## Fixed in this pass
 

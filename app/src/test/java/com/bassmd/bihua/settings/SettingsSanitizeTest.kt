@@ -1,6 +1,7 @@
 package com.bassmd.bihua.settings
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,6 +14,42 @@ class SettingsSanitizeTest {
         assertEquals(SessionOrder.MIXED, settings.sessionOrder)
         assertEquals(5, settings.mixInterval)
         assertEquals(SessionProgress.NEXT_LESSON, settings.sessionProgress)
+    }
+
+    @Test
+    fun ankiModesAreOffByDefault() {
+        val settings = AppSettings()
+        assertFalse(settings.ankiWriting)
+        assertFalse(settings.ankiPronunciation)
+        assertFalse(settings.ankiMeaning)
+        assertFalse(settings.meaningPractice)
+        assertTrue(settings.meaningSynonyms.isEmpty())
+    }
+
+    @Test
+    fun sanitizeKeepsAnkiChoices() {
+        val settings = AppSettings(
+            ankiWriting = true,
+            ankiPronunciation = true,
+            ankiMeaning = true,
+            meaningPractice = true,
+        ).sanitized()
+        assertTrue(settings.ankiWriting)
+        assertTrue(settings.ankiPronunciation)
+        assertTrue(settings.ankiMeaning)
+        assertTrue(settings.meaningPractice)
+    }
+
+    @Test
+    fun sanitizeCleansMeaningSynonyms() {
+        val settings = AppSettings(
+            meaningSynonyms = mapOf(
+                "U+611B" to listOf("affection", "Affection", "", "n/a", "x".repeat(100)),
+                "U+7231" to listOf(" "),
+            ),
+        ).sanitized()
+        assertEquals(listOf("affection"), settings.meaningSynonyms["U+611B"])
+        assertFalse(settings.meaningSynonyms.containsKey("U+7231"))
     }
 
     @Test

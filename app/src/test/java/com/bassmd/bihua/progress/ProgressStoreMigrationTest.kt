@@ -31,7 +31,7 @@ class ProgressStoreMigrationTest {
 
     @Test
     fun everyOldVersionUpgradesToCurrentWithoutLosingCards() {
-        for (version in 1..10) {
+        for (version in 1..11) {
             context.deleteDatabase(DB_NAME)
             createDatabaseAt(version)
             val store = ProgressStore(context)
@@ -76,6 +76,11 @@ class ProgressStoreMigrationTest {
             )
             """.trimIndent()
         )
+        if (version >= 11) {
+            db.execSQL("ALTER TABLE card ADD COLUMN sbd_log_s REAL")
+            db.execSQL("ALTER TABLE card ADD COLUMN sbd_grade REAL")
+            db.execSQL("ALTER TABLE card ADD COLUMN sbd_n REAL")
+        }
         val reviewColumns = buildString {
             append("CREATE TABLE review_log(")
             append("id INTEGER PRIMARY KEY AUTOINCREMENT, card_id TEXT NOT NULL, ")
@@ -86,6 +91,9 @@ class ProgressStoreMigrationTest {
             if (version >= 5) append(", elapsed_ms INTEGER NOT NULL DEFAULT 0")
             if (version >= 6) append(", task TEXT NOT NULL DEFAULT 'WRITE'")
             if (version >= 8) append(", strokes INTEGER NOT NULL DEFAULT 0")
+            if (version >= 11) {
+                append(", sbd_log_s REAL, sbd_grade REAL, sbd_n REAL")
+            }
             append(")")
         }
         db.execSQL(reviewColumns)
@@ -117,8 +125,15 @@ class ProgressStoreMigrationTest {
             }
         }
         val now = 1_700_000_000_000L
+        val cardSql = if (version >= 11) {
+            "INSERT INTO card(id, character_id, glyph_group_id, mode, s_long, s_short, " +
+                "difficulty, due_at, last_review_at, reps, lapses, introduced_at, known_dots, last_grade) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        } else {
+            "INSERT INTO card VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        }
         db.execSQL(
-            "INSERT INTO card VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            cardSql,
             arrayOf(CARD_ID, CHARACTER_ID, "SIMPLIFIED:U+4E00", "SIMPLIFIED", 2f, 1.6f, 5f, now, now, 1, 0, now, 1, 3),
         )
         val columns = buildList {

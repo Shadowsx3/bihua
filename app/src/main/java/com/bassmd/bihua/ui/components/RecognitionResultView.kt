@@ -98,7 +98,7 @@ fun RecognitionResultView(
 
         !result.modelReady -> SoftCard(modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
             Text(
-                "Handwriting check is unavailable right now. You can still choose a grade. You can download the models in Settings → Writing.",
+                "The handwriting check is unavailable right now. You can still choose a grade. Models live in Settings → Writing.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -299,7 +299,7 @@ private fun RecognitionSummary(
             modifier = modifier.fillMaxWidth(),
         ) {
             Text(
-                "Handwriting check unavailable. You still choose the grade.",
+                "The handwriting check is unavailable. You still choose the grade.",
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),

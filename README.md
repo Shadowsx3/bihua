@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.0.9-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -51,12 +51,15 @@ Read the full rationale in [The Bihua method](docs/method.html).
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
 | **Scheduling** | FSRS-7 or SBD, shared profile for shared glyphs, local weight fitting, a 70–97% target recall, 4 AM default day boundary, vacation mode, seven-day ease-back. |
-| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
+| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. |
+| **Meaning** | Optional character-to-meaning reviews: type a wording, reveal the clean gloss, see a real word, and grade. User synonyms are kept as accepted wordings. Off by default; Anki-style reveal available. |
+| **Anki-style review** | Optional writing, pronunciation, and/or meaning reviews that show **Show answer** and then grade, with no canvas, keyboard, or choices. Independent switches; off by default. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
 | **Home-screen widgets** | A Today widget with due reviews and new lessons that changes with the time of day, and a Word of the Day widget with the pet, reading, and meaning. |
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
+| **Study lists** | Named character and word lists, presets, streaming TXT/CSV/TSV/JSON import, `.txt` export, quick add, and list-only study. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
 | **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
 | **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
@@ -185,12 +188,22 @@ not a public issue.
 
 ## Status
 
-The current development version is **1.0.8 (versionCode 18)**. New learners
-start with five new characters a day, reviews are mixed with new lessons, and
-the session progress bar fills to the next lesson. It also adds encrypted local
-sync, off-by-default study reminders, foldable book layouts, and the regression
-fixes listed in the changelog.
+**1.0.9 is in Play review.** The current development version is **1.1.0
+(versionCode 20)**. It adds optional meaning reviews and synonyms, an Anki-style
+reveal for writing, pronunciation, and meaning, large-text layout fixes, safer
+study-list imports, widget count parity, loading timeouts, and a deep navigation
+pass.
 
-The phone, tablet, and foldable paths are verified at normal and 1.3x text. A
-full TalkBack pass at 1.5x and 2x and a current physical S Pen pass remain on
-the roadmap. The app is not a clinical intervention or a guarantee of literacy.
+New learners start with five new characters a day, reviews are mixed with new
+lessons, and the session progress bar fills to the next lesson. The app also has
+encrypted local sync, off-by-default study reminders, and foldable book layouts.
+
+The phone, tablet, and foldable paths are checked at normal and 1.5x text. The
+journey harness covers onboarding, daily queues, process death, fold changes,
+dictionary, worksheet export, paper/Compare, study lists, appearance,
+Word of the Day audio, Anki-style reviews, and a walk through every Settings
+section and overlay. A full TalkBack sweep at 2x and a current physical stylus
+pass remain on the roadmap. The app is not a clinical intervention or a
+guarantee of literacy.
+
+Made with ❤️ from 🇺🇾 Uruguay.

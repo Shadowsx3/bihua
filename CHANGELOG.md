@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.1.0 (in progress)
+
+- Optional meaning reviews: type the meaning in your own words, show the clean
+  gloss, see a real word that uses the character, and grade. Off by default.
+- User synonyms for meanings, with a small add/remove editor in the review.
+  Wordings are trimmed, deduplicated, and capped.
+- Meaning data is sanitized before it is taught: blank, placeholder, and
+  structural glosses such as "variant of" or "surname" are skipped.
+- Optional Anki-style reviews for writing, pronunciation, or meaning. The cue
+  and the character appear first, then Show answer and grade. No canvas, typing,
+  or choices; scheduling and XP stay the same. Off by default.
+- System back from Paper check or Compare returns to the character detail
+  instead of dropping to the grid.
+- Anki new cards go Meet → Reveal and skip Trace; the step tabs match.
+- The pronunciation answer card shows the reading instead of leaking a raw
+  result object.
+- Large-text layouts stay readable: the Home Study tools card, Compare header,
+  and Paper check header no longer squeeze titles into vertical strips.
+- Study tools now has one clear Study action and separate Draw and Paper actions.
+- Study list import handles Windows byte-order marks and nested JSON `name`
+  fields without losing the first character or renaming the list.
+- Long study list names stay unique instead of collapsing to the same string.
+- Word practice starts again with a clean canvas, and the single-word back arrow
+  returns to the character.
+- Leaving a word-practice queue with the system back gesture no longer exits the app.
+- Practice clears the previous character's ink when the target changes.
+- Widget counts now match Home for skipped and suspended characters, and widgets
+  refresh when the app goes to the background.
+- Recognition and handwriting-model downloads time out with a clear message
+  instead of spinning forever.
+- The first read-aloud tap now queues during voice startup and reports a missing
+  voice instead of staying silent.
+- Onboarding cannot be finished while a backup restore is still running.
+- Stylus copy is consistent, and no-stylus screens stop mentioning a pen.
+
 ## 1.0.9 — 2026-11-23
 
 - A tap now records a dot stroke instead of losing a single-point stroke.

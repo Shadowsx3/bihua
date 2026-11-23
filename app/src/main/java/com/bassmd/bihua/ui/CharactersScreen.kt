@@ -149,6 +149,7 @@ fun CharactersScreen(
     onSuspend: (CharacterEntry, Boolean) -> Unit = { _, _ -> },
     onToggleStudyList: (CharacterEntry) -> Unit = {},
     brush: com.bassmd.bihua.settings.BrushConfig = com.bassmd.bihua.settings.BrushConfig(),
+    allowFinger: Boolean = false,
     memoryLevels: Map<String, com.bassmd.bihua.progress.MemoryLevel> = emptyMap(),
     onSetMemoryLevel: (CharacterEntry, com.bassmd.bihua.progress.MemoryLevel?) -> Unit = { _, _ -> },
     onSpeak: (String) -> Unit = {},
@@ -473,6 +474,7 @@ fun CharactersScreen(
         DrawSearchDialog(
             mode = mode,
             brush = brush,
+            allowFinger = allowFinger,
             onPick = { glyph ->
                 showDrawSearch = false
                 scope.launch {
@@ -1363,7 +1365,13 @@ private fun CharacterDetail(
                                             }
                                         )
                                         append(" · ")
-                                        append(if (review.task == "PRONOUNCE") "pronunciation" else "writing")
+                                        append(
+                                            when (review.task) {
+                                                "PRONOUNCE" -> "pronunciation"
+                                                "MEANING" -> "meaning"
+                                                else -> "writing"
+                                            }
+                                        )
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = InkSoft,

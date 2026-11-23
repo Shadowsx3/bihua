@@ -100,6 +100,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -202,6 +203,13 @@ fun LearnScreen(
     showCounters: Boolean,
     reduceMotion: Boolean = false,
     pronunciationPractice: Boolean = false,
+    meaningPractice: Boolean = false,
+    ankiWriting: Boolean = false,
+    ankiPronunciation: Boolean = false,
+    ankiMeaning: Boolean = false,
+    meaningSynonyms: Map<String, List<String>> = emptyMap(),
+    onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
+    onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onlyAgainAndGood: Boolean = false,
     wifiOnlyModels: Boolean = true,
     pinyinNumbers: Boolean = false,
@@ -235,10 +243,14 @@ fun LearnScreen(
     }
     val pending = session.pending
     var attempts by remember(items) { mutableStateOf(resume?.attemptsMap() ?: emptyMap()) }
+    val savedStep = resume?.stepOrdinal
     var stepOrdinal by remember {
         mutableIntStateOf(
-            resume?.stepOrdinal
-                ?: if (items.firstOrNull()?.needsLesson == true) 0 else 2
+            when {
+                savedStep == null -> if (items.firstOrNull()?.needsLesson == true) 0 else 2
+                ankiWriting && savedStep == Step.TRACE.ordinal -> Step.RECALL.ordinal
+                else -> savedStep
+            }
         )
     }
     var learned by remember { mutableIntStateOf(resume?.learned ?: 0) }
@@ -252,15 +264,32 @@ fun LearnScreen(
     val index = session.current ?: -1
     val currentItem = items.getOrNull(index)
     val step = steps[stepOrdinal]
-    val task = remember(currentItem?.id, currentItem?.reps, pronunciationPractice) {
+    val plannedTask = remember(
+        currentItem?.id,
+        currentItem?.reps,
+        pronunciationPractice,
+        meaningPractice,
+    ) {
         currentItem?.let {
             ReviewTaskPlan.forCard(
                 pronunciationEnabled = pronunciationPractice,
+                meaningEnabled = meaningPractice,
                 reps = it.reps,
                 seed = it.id.hashCode(),
             )
         } ?: ReviewTask.WRITE
     }
+    // A dictionary redirect such as "variant of 挨" is not a teachable idea.
+    val task = if (
+        plannedTask == ReviewTask.MEANING &&
+        currentItem != null &&
+        !com.bassmd.bihua.settings.MeaningSanitizer.isTeachableView(currentItem.meaning)
+    ) {
+        ReviewTask.WRITE
+    } else {
+        plannedTask
+    }
+    val revealOnly = task.revealsAnswer(ankiWriting, ankiPronunciation, ankiMeaning)
     var ink by remember { mutableStateOf(InkState()) }
     var gradeUndo by remember { mutableStateOf<GradeUndoSnapshot?>(null) }
     fun resetDrawing() {
@@ -288,6 +317,15 @@ fun LearnScreen(
                 else -> true
             }
         )
+    }
+    fun advanceFromIntro() {
+        if (ankiWriting) {
+            stepOrdinal = Step.RECALL.ordinal
+            showReference = false
+        } else {
+            stepOrdinal++
+        }
+        resetDrawing()
     }
     val recognitionService = remember { InkRecognitionService() }
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
@@ -419,7 +457,7 @@ fun LearnScreen(
         )
     }
     LaunchedEffect(revealed, index, stepOrdinal) {
-        if (revealed && step == Step.RECALL && index < items.size) {
+        if (revealed && step == Step.RECALL && index < items.size && !revealOnly) {
             checkWriting()
         } else if (!revealed) {
             recognition = null
@@ -498,6 +536,7 @@ fun LearnScreen(
                 showCounters = showCounters,
                 isLesson = currentIsLesson,
                 task = task,
+                ankiWriting = ankiWriting,
                 progress = block.fraction,
                 blockHint = block.hint,
                 reduceMotion = reduceMotion,
@@ -534,9 +573,29 @@ fun LearnScreen(
                         reduceMotion = reduceMotion,
                         onlyAgainAndGood = onlyAgainAndGood,
                         intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
+                        revealOnly = revealOnly,
                     )
                     Spacer(Modifier.height(20.dp))
                 }
+                return@Column
+            }
+            if (task == ReviewTask.MEANING && step == Step.RECALL) {
+                MeaningReview(
+                    item = item,
+                    mode = mode,
+                    words = introWords,
+                    round = drawingRound,
+                    revealOnly = revealOnly,
+                    practiceOnly = (attempts[index] ?: 0) > 1,
+                    onlyAgainAndGood = onlyAgainAndGood,
+                    intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
+                    speechEnabled = speechEnabled,
+                    onSpeak = onSpeak,
+                    synonyms = meaningSynonyms[item.id].orEmpty(),
+                    onAddSynonym = { text -> onAddMeaningSynonym(item.id, text) },
+                    onRemoveSynonym = { text -> onRemoveMeaningSynonym(item.id, text) },
+                    onGrade = { grade -> advance(item, index, grade) },
+                )
                 return@Column
             }
             val cue = remember(item.id, recallCue) {
@@ -568,6 +627,28 @@ fun LearnScreen(
                     target = item.character,
                     romanizeHangul = showHangulRomanization,
                 )
+            }
+            if (step == Step.RECALL && revealOnly && task == ReviewTask.WRITE) {
+                AnkiWritingRecall(
+                    item = item,
+                    mode = mode,
+                    cuePrompt = cuePrompt,
+                    revealed = revealed,
+                    mnemonic = mnemonic,
+                    mnemonicLabel = mnemonicLabel,
+                    mnemonicAllowed = mnemonicAllowed,
+                    showMnemonic = showMnemonic,
+                    onToggleMnemonic = { showMnemonic = !showMnemonic },
+                    practiceOnly = (attempts[index] ?: 0) > 1,
+                    onlyAgainAndGood = onlyAgainAndGood,
+                    intervalLabels = if (showGradeIntervals) gradeIntervals(item) else emptyMap(),
+                    ink = ink,
+                    recommender = recommender,
+                    onReveal = { revealed = true },
+                    onGrade = { grade -> advance(item, index, grade) },
+                    modifier = Modifier.weight(1f),
+                )
+                return@Column
             }
             if (wide) {
                 Row(
@@ -682,10 +763,10 @@ fun LearnScreen(
                         }
                         when (step) {
                             Step.INTRODUCE -> Button(
-                                onClick = { stepOrdinal++; resetDrawing() },
+                                onClick = { advanceFromIntro() },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = CircleShape,
-                            ) { Text("Next: trace") }
+                            ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
                             Step.TRACE -> {
                                 ActionRow(
                                     secondary = "Draw again",
@@ -799,10 +880,10 @@ fun LearnScreen(
                             IntroCharacter(item, mode, onSpeak, speechEnabled, introWords)
                         }
                         Button(
-                            onClick = { stepOrdinal++; resetDrawing() },
+                            onClick = { advanceFromIntro() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
-                        ) { Text("Next: trace") }
+                        ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
                     }
                 } else {
                 Column(
@@ -842,10 +923,10 @@ fun LearnScreen(
                         IntroCharacter(item, mode, onSpeak, speechEnabled, introWords)
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { stepOrdinal++; resetDrawing() },
+                            onClick = { advanceFromIntro() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
-                        ) { Text("Next: trace") }
+                        ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
                     } else {
                         // Keep the guide and ink controls above the canvas so they
                         // are never hidden behind the sticky action bar.
@@ -977,6 +1058,7 @@ private fun SessionTopBar(
     showCounters: Boolean,
     isLesson: Boolean,
     task: ReviewTask,
+    ankiWriting: Boolean = false,
     progress: Float,
     blockHint: String?,
     reduceMotion: Boolean,
@@ -1003,8 +1085,10 @@ private fun SessionTopBar(
                 )
                 Text(
                     when {
-                        isLesson -> step.label
+                        isLesson -> if (ankiWriting && step == Step.RECALL) "Reveal" else step.label
                         task == ReviewTask.PRONOUNCE -> "Pronunciation"
+                        task == ReviewTask.MEANING -> "Meaning"
+                        ankiWriting -> "Reveal"
                         else -> "From memory"
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -1070,9 +1154,14 @@ private fun SessionTopBar(
         if (isLesson) {
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                steps.forEachIndexed { index, item ->
-                    val active = index == step.ordinal && current < total
-                    val done = index < step.ordinal || current >= total
+                val visibleSteps = if (ankiWriting) {
+                    listOf(Step.INTRODUCE, Step.RECALL)
+                } else {
+                    steps
+                }
+                visibleSteps.forEach { item ->
+                    val active = item == step && current < total
+                    val done = item.ordinal < step.ordinal || current >= total
                     Surface(
                         shape = CircleShape,
                         color = when {
@@ -1082,7 +1171,7 @@ private fun SessionTopBar(
                         },
                     ) {
                         Text(
-                            item.label,
+                            if (ankiWriting && item == Step.RECALL) "Reveal" else item.label,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (active || done) AccentInk else InkSoft,
@@ -1423,6 +1512,7 @@ private fun PromptPanel(
     showMnemonic: Boolean = false,
     onToggleMnemonic: () -> Unit = {},
     compact: Boolean = false,
+    ankiWriting: Boolean = false,
 ) {
     val accent = PinkFor(mode)
     Surface(
@@ -1460,7 +1550,7 @@ private fun PromptPanel(
                             when (step) {
                                 Step.INTRODUCE -> "Meet ${item.character}"
                                 Step.TRACE -> "Trace it slowly"
-                                Step.RECALL -> "Write from memory"
+                                Step.RECALL -> if (ankiWriting) "Do you remember it?" else "Write from memory"
                             },
                             style = MaterialTheme.typography.headlineSmall,
                             color = InkDark,
@@ -1781,6 +1871,540 @@ private fun GradeChoices(
 }
 
 @Composable
+private fun AnkiWritingRecall(
+    item: LearnItem,
+    mode: StudyMode,
+    cuePrompt: RecallCuePrompt,
+    revealed: Boolean,
+    mnemonic: String?,
+    mnemonicLabel: String,
+    mnemonicAllowed: Boolean,
+    showMnemonic: Boolean,
+    onToggleMnemonic: () -> Unit,
+    practiceOnly: Boolean,
+    onlyAgainAndGood: Boolean,
+    intervalLabels: Map<Grade, String>,
+    ink: InkState,
+    recommender: GradeRecommender,
+    onReveal: () -> Unit,
+    onGrade: (Grade) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 560.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+            if (!revealed) {
+                PromptPanel(
+                    item = item,
+                    step = Step.RECALL,
+                    mode = mode,
+                    revealed = false,
+                    cuePrompt = cuePrompt,
+                    mnemonic = mnemonic,
+                    mnemonicLabel = mnemonicLabel,
+                    mnemonicAllowed = mnemonicAllowed,
+                    showMnemonic = showMnemonic,
+                    onToggleMnemonic = onToggleMnemonic,
+                    ankiWriting = true,
+                )
+                Spacer(Modifier.height(16.dp))
+                com.bassmd.bihua.ui.components.PrimaryAction(
+                    text = "Show answer",
+                    onClick = {
+                        com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+                        onReveal()
+                    },
+                    icon = Icons.Rounded.Visibility,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Say it once in your head. Then grade honestly.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                    textAlign = TextAlign.Center,
+                )
+            } else {
+                SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Pill("Answer", PinkFor(mode).copy(alpha = 0.26f), textColor = InkDark)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            item.character,
+                            fontSize = 112.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = InkDark,
+                        )
+                        Text(
+                            com.bassmd.bihua.ui.displayReading(item.reading, mode),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = InkSoft,
+                        )
+                        if (item.meaning.isNotBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                item.meaning,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = InkSoft,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        if (item.strokeCount > 0) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "${item.strokeCount} ${if (item.strokeCount == 1) "stroke" else "strokes"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "How did that feel?",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = InkDark,
+                )
+                Text(
+                    "Choose the grade you would have given yourself.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            }
+        }
+        if (revealed) {
+            StickyGradeBar(
+                item = item,
+                mode = mode,
+                ink = ink,
+                recommender = recommender,
+                recognition = null,
+                targetVariants = emptySet(),
+                evidence = null,
+                orderCheck = null,
+                practiceOnly = practiceOnly,
+                onGrade = onGrade,
+                onDrawAgain = null,
+                onlyAgainAndGood = onlyAgainAndGood,
+                intervalLabels = intervalLabels,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MeaningReview(
+    item: LearnItem,
+    mode: StudyMode,
+    words: List<com.bassmd.bihua.content.WordContext>,
+    round: Int,
+    revealOnly: Boolean,
+    practiceOnly: Boolean,
+    onlyAgainAndGood: Boolean,
+    intervalLabels: Map<Grade, String>,
+    speechEnabled: Boolean,
+    onSpeak: (String) -> Unit,
+    synonyms: List<String>,
+    onAddSynonym: (String) -> Unit,
+    onRemoveSynonym: (String) -> Unit,
+    onGrade: (Grade) -> Unit,
+) {
+    var revealed by remember(item.id, round) { mutableStateOf(false) }
+    var typed by remember(item.id, round) { mutableStateOf("") }
+    var addOpen by remember(item.id) { mutableStateOf(false) }
+    var draft by remember(item.id) { mutableStateOf("") }
+    val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val accent = PinkFor(mode)
+    val reading = com.bassmd.bihua.ui.displayReading(item.reading, mode)
+    val gloss = com.bassmd.bihua.settings.MeaningSanitizer.gloss(item.meaning)
+        ?: "No meaning available"
+    val accepted = remember(synonyms, gloss) {
+        synonyms.mapNotNull { com.bassmd.bihua.settings.MeaningSanitizer.synonym(it, gloss) }
+            .distinctBy { it.lowercase() }
+    }
+    val matched = typed.isNotBlank() &&
+        com.bassmd.bihua.settings.MeaningSanitizer.matches(typed, gloss, accepted)
+    fun reveal() {
+        if (revealed) return
+        revealed = true
+        keyboard?.hide()
+        com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Pill("Meaning", Lilac.copy(alpha = 0.40f))
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        item.character,
+                        fontSize = 96.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = InkDark,
+                    )
+                    Text(
+                        reading,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkSoft,
+                    )
+                    if (!revealed) {
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            "What does it mean?",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = InkDark,
+                            textAlign = TextAlign.Center,
+                        )
+                        if (!revealOnly) {
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = typed,
+                                onValueChange = { typed = it.take(80) },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("In your own words") },
+                                minLines = 1,
+                                maxLines = 2,
+                                shape = RoundedCornerShape(14.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        com.bassmd.bihua.ui.components.PrimaryAction(
+                            text = "Show answer",
+                            onClick = { reveal() },
+                            icon = Icons.Rounded.Visibility,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            if (revealOnly) {
+                                "Say it in your head first. Then grade honestly."
+                            } else {
+                                "Type it if you like. Then show the answer and grade."
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+            if (revealed) {
+                if (typed.isNotBlank()) {
+                    SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.14f)) {
+                        Column {
+                            Text(
+                                "Your words",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                            Text(
+                                typed,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = InkDark,
+                            )
+                        }
+                    }
+                }
+                SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.16f)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        InkSeal(text = "意", size = 30.dp, rotation = -4f)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            gloss,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = InkDark,
+                            textAlign = TextAlign.Center,
+                        )
+                        if (reading.isNotBlank()) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                reading,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        if (typed.isNotBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (matched) Mint.copy(alpha = 0.32f) else Butter.copy(alpha = 0.38f),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        if (matched) Icons.Rounded.CheckCircle else Icons.Rounded.Lightbulb,
+                                        contentDescription = null,
+                                        tint = InkDark,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        if (matched) {
+                                            "That matches."
+                                        } else {
+                                            "Compare it with the gloss. If your wording is right, add it below."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkDark,
+                                    )
+                                }
+                            }
+                        }
+                        if (speechEnabled) {
+                            TextButton(onClick = { onSpeak(item.character) }) {
+                                Icon(
+                                    Icons.Rounded.VolumeUp,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Hear the character")
+                            }
+                        }
+                    }
+                }
+                if (accepted.isNotEmpty()) {
+                    Text(
+                        "Also accepted",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        accepted.forEach { synonym ->
+                            Surface(
+                                shape = CircleShape,
+                                color = Mint.copy(alpha = 0.28f),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(start = 10.dp, end = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        synonym,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = InkDark,
+                                    )
+                                    IconButton(
+                                        onClick = { onRemoveSynonym(synonym) },
+                                        modifier = Modifier.size(28.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Remove $synonym",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = InkSoft,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        draft = typed.trim().take(60)
+                        addOpen = true
+                    },
+                ) {
+                    Text("Add a synonym")
+                }
+                val exampleWords = words
+                    .filter { com.bassmd.bihua.settings.MeaningSanitizer.gloss(it.meaning) != null }
+                    .take(2)
+                if (exampleWords.isNotEmpty()) {
+                    Text(
+                        "In a word",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    exampleWords.forEach { word ->
+                        val annotated = remember(word.word, item.character, accent) {
+                            buildAnnotatedString {
+                                word.word.forEach { char ->
+                                    if (char.toString() == item.character) {
+                                        withStyle(
+                                            SpanStyle(
+                                                color = accent,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                        ) { append(char) }
+                                    } else {
+                                        append(char)
+                                    }
+                                }
+                            }
+                        }
+                        SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        annotated,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = InkDark,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        com.bassmd.bihua.ui.displayReading(word.reading, mode),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    if (speechEnabled) {
+                                        IconButton(
+                                            onClick = {
+                                                onSpeak(
+                                                    if (mode == StudyMode.KOREAN) {
+                                                        word.reading
+                                                    } else {
+                                                        word.word
+                                                    }
+                                                )
+                                            },
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.VolumeUp,
+                                                contentDescription = "Hear ${word.word}",
+                                                modifier = Modifier.size(18.dp),
+                                                tint = InkSoft,
+                                            )
+                                        }
+                                    }
+                                }
+                                if (word.meaning.isNotBlank()) {
+                                    Text(
+                                        word.meaning,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Column(Modifier.fillMaxWidth()) {
+                    Text(
+                        if (practiceOnly) "Practice only. Schedule unchanged." else "How did that feel?",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = InkDark,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Choose a grade. Writing stays the core of the session.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    GradeChoices(
+                        suggestion = null,
+                        enabled = true,
+                        onGrade = onGrade,
+                        onlyAgainAndGood = onlyAgainAndGood,
+                        intervalLabels = intervalLabels,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (onlyAgainAndGood) {
+                            "Choose Again or Good. You still choose."
+                        } else {
+                            "Choose the grade that fits. You still choose."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+    if (addOpen) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { addOpen = false },
+            title = { Text("Add a synonym") },
+            text = {
+                Column {
+                    Text(
+                        "A wording you would accept for ${item.character}.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it.take(60) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("For example, affection") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val cleaned = com.bassmd.bihua.settings.MeaningSanitizer.synonym(draft, gloss)
+                        if (cleaned != null) {
+                            onAddSynonym(cleaned)
+                            com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+                            haptic.performHapticFeedback(
+                                androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                            )
+                        }
+                        addOpen = false
+                        draft = ""
+                    },
+                    enabled = com.bassmd.bihua.settings.MeaningSanitizer.synonym(draft, gloss) != null,
+                ) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { addOpen = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
 private fun PronunciationReview(
     item: LearnItem,
     mode: StudyMode,
@@ -1792,6 +2416,7 @@ private fun PronunciationReview(
     reduceMotion: Boolean = false,
     onlyAgainAndGood: Boolean = false,
     intervalLabels: Map<Grade, String> = emptyMap(),
+    revealOnly: Boolean = false,
 ) {
     var input by remember(item.id, round) { mutableStateOf("") }
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
@@ -1824,6 +2449,7 @@ private fun PronunciationReview(
         null
     }
     val suggestion = when {
+        revealOnly -> null
         result == null -> null
         result?.correct == true -> GradeSuggestion(Grade.GOOD)
         result?.toneOnly == true -> GradeSuggestion(Grade.HARD)
@@ -1893,78 +2519,104 @@ private fun PronunciationReview(
                     )
                 }
                 Spacer(Modifier.height(14.dp))
-                Text(
-                    "Type the reading",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = InkSoft,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = input,
-                        onValueChange = {
-                            input = it
-                            result = null
-                            revealed = false
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                when (mode) {
-                                    StudyMode.JAPANESE -> "kana or romaji"
-                                    StudyMode.KOREAN -> "Hangul or romaja"
-                                    else -> "pinyin, e.g. ni3"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { check() }),
-                        shape = RoundedCornerShape(14.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = { check() },
-                        enabled = input.isNotBlank() && result == null,
-                        shape = CircleShape,
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = 18.dp,
-                            vertical = 12.dp,
-                        ),
-                    ) { Text(if (result == null) "Check" else "Checked") }
-                }
-                Text(
-                    when (mode) {
-                        StudyMode.JAPANESE -> "Type kana, or romaji such as san."
-                        StudyMode.KOREAN -> "Type Hangul, or romaja such as san."
-                        else -> "Type pinyin, with or without tone numbers."
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkSoft,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                val preview = when {
-                    hangulPreview != null && hangulPreview != input -> "Hangul: $hangulPreview"
-                    kanaPreview != null -> "Kana: $kanaPreview"
-                    else -> null
-                }
-                preview?.let {
+                if (!revealOnly) {
                     Text(
-                        it,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = GuideGreen,
+                        "Type the reading",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = InkSoft,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = input,
+                            onValueChange = {
+                                input = it
+                                result = null
+                                revealed = false
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(focusRequester),
+                            singleLine = true,
+                            placeholder = {
+                                Text(
+                                    when (mode) {
+                                        StudyMode.JAPANESE -> "kana or romaji"
+                                        StudyMode.KOREAN -> "Hangul or romaja"
+                                        else -> "pinyin, e.g. ni3"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { check() }),
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = { check() },
+                            enabled = input.isNotBlank() && result == null,
+                            shape = CircleShape,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 18.dp,
+                                vertical = 12.dp,
+                            ),
+                        ) { Text(if (result == null) "Check" else "Checked") }
+                    }
+                    Text(
+                        when (mode) {
+                            StudyMode.JAPANESE -> "Type kana, or romaji such as san."
+                            StudyMode.KOREAN -> "Type Hangul, or romaja such as san."
+                            else -> "Type pinyin, with or without tone numbers."
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    val preview = when {
+                        hangulPreview != null && hangulPreview != input -> "Hangul: $hangulPreview"
+                        kanaPreview != null -> "Kana: $kanaPreview"
+                        else -> null
+                    }
+                    preview?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = GuideGreen,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
                 if (result == null) {
-                    TextButton(onClick = { showAnswer() }) { Text("Show answer") }
+                    if (revealOnly) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "What is the reading?",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = InkSoft,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        com.bassmd.bihua.ui.components.PrimaryAction(
+                            text = "Show answer",
+                            onClick = { showAnswer() },
+                            icon = Icons.Rounded.Visibility,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Say it in your head first. Then grade honestly.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        TextButton(onClick = { showAnswer() }) { Text("Show answer") }
+                    }
                 } else {
                     Spacer(Modifier.height(12.dp))
                     Box(Modifier.fillMaxWidth()) {
@@ -1973,6 +2625,7 @@ private fun PronunciationReview(
                             input = input,
                             revealed = revealed,
                             speechEnabled = speechEnabled,
+                            revealOnly = revealOnly,
                             onSpeak = { onSpeak(spokenText(item, mode)) },
                             onTryAgain = {
                                 input = ""
@@ -2025,8 +2678,10 @@ private fun PronunciationReview(
                 Text(
                     if (shownSuggestion != null) {
                         "Suggested: ${shownSuggestion.grade.label}. You still choose."
-                    } else {
+                    } else if (onlyAgainAndGood) {
                         "Choose Again or Good. You still choose."
+                    } else {
+                        "Choose the grade that fits. You still choose."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
@@ -2035,7 +2690,11 @@ private fun PronunciationReview(
             }
         } else {
             Text(
-                "Check your reading to unlock the grade.",
+                if (revealOnly) {
+                    "Show the answer, then choose a grade."
+                } else {
+                    "Check your reading to unlock the grade."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
                 modifier = Modifier.fillMaxWidth(),
@@ -2052,6 +2711,7 @@ private fun ReadingFeedback(
     speechEnabled: Boolean,
     onSpeak: () -> Unit,
     onTryAgain: () -> Unit,
+    revealOnly: Boolean = false,
 ) {
     val accent = when {
         revealed -> Butter
@@ -2066,7 +2726,7 @@ private fun ReadingFeedback(
         else -> "Not quite"
     }
     val detail = when {
-        revealed -> "This character reads $result.expected."
+        revealed -> "This character reads ${result.expected}."
         result.correct -> "You read it correctly."
         result.toneOnly -> "The letters are right, but the tone is different."
         else -> "That reading does not match yet."
@@ -2109,7 +2769,9 @@ private fun ReadingFeedback(
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AnswerChip("You typed", input.trim().ifBlank { "—" }, Modifier.weight(1f))
+                if (!revealOnly) {
+                    AnswerChip("You typed", input.trim().ifBlank { "—" }, Modifier.weight(1f))
+                }
                 AnswerChip("Accepted", result.expected, Modifier.weight(1f))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2125,14 +2787,16 @@ private fun ReadingFeedback(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onTryAgain) {
-                    Icon(
-                        Icons.Rounded.Undo,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text("Try again")
+                if (!revealOnly) {
+                    TextButton(onClick = onTryAgain) {
+                        Icon(
+                            Icons.Rounded.Undo,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Try again")
+                    }
                 }
             }
         }
@@ -2186,11 +2850,23 @@ private fun DonePanel(
         Text("Session complete", style = MaterialTheme.typography.headlineLarge, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
-            "$total characters in this session. Their next reviews are scheduled; extra passes were practice only.",
+            if (total == 1) {
+                "One character, written from memory. Its next review is planned."
+            } else {
+                "$total characters, written from memory. Their next reviews are planned."
+            },
             style = MaterialTheme.typography.bodyLarge,
             color = InkSoft,
             textAlign = TextAlign.Center,
         )
+        if (total > 1) {
+            Text(
+                "Extra passes were just for you.",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkSoft,
+                textAlign = TextAlign.Center,
+            )
+        }
         if (xpEarned > 0) {
             Spacer(Modifier.height(12.dp))
             val animatedXp by androidx.compose.animation.core.animateIntAsState(
@@ -2338,7 +3014,7 @@ private fun StickyGradeBar(
     orderCheck: com.bassmd.bihua.ink.OrderAssessment?,
     practiceOnly: Boolean,
     onGrade: (Grade) -> Unit,
-    onDrawAgain: () -> Unit,
+    onDrawAgain: (() -> Unit)? = null,
     onlyAgainAndGood: Boolean = false,
     intervalLabels: Map<Grade, String> = emptyMap(),
 ) {
@@ -2397,12 +3073,14 @@ private fun StickyGradeBar(
                         color = InkSoft,
                     )
                 }
-                TextButton(
-                    onClick = onDrawAgain,
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                        contentColor = PinkFor(mode),
-                    ),
-                ) { Text("Draw again") }
+                if (onDrawAgain != null) {
+                    TextButton(
+                        onClick = onDrawAgain,
+                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                            contentColor = PinkFor(mode),
+                        ),
+                    ) { Text("Draw again") }
+                }
             }
             Spacer(Modifier.height(4.dp))
             val shownSuggestion = suggestion?.takeIf { it.grade.available(onlyAgainAndGood) }

@@ -177,15 +177,47 @@ fun BihuaApp(
     }
     val speech = remember { Speech(context.applicationContext) }
     val handwriting = remember { InkRecognitionService() }
+    val noVoice = {
+        Toast.makeText(
+            context,
+            "This script has no voice yet. You can add one in Android Settings.",
+            Toast.LENGTH_LONG,
+        ).show()
+    }
+    LaunchedEffect(speech) {
+        // The first tap can be queued while the engine starts. If that voice is
+        // missing, say so instead of leaving the tap silent.
+        speech.onUnavailable = { noVoice() }
+    }
+    val addMeaningSynonym: (String, String) -> Unit = { characterId, text ->
+        scope.launch {
+            store.updateSettings { current ->
+                current.copy(
+                    meaningSynonyms = com.bassmd.bihua.settings.MeaningSanitizer.add(
+                        current.meaningSynonyms,
+                        characterId,
+                        text,
+                    ),
+                )
+            }
+        }
+    }
+    val removeMeaningSynonym: (String, String) -> Unit = { characterId, text ->
+        scope.launch {
+            store.updateSettings { current ->
+                current.copy(
+                    meaningSynonyms = com.bassmd.bihua.settings.MeaningSanitizer.remove(
+                        current.meaningSynonyms,
+                        characterId,
+                        text,
+                    ),
+                )
+            }
+        }
+    }
     val speak: (String) -> Unit = { text ->
         if (settings.readAloud && text.isNotBlank()) {
-            if (!speech.speak(text, mode)) {
-                Toast.makeText(
-                    context,
-                    "No voice is installed for this script. Add one in Android Settings.",
-                    Toast.LENGTH_LONG,
-                ).show()
-            }
+            if (!speech.speak(text, mode)) noVoice()
         }
     }
     LaunchedEffect(preloadMode, settings.readAloud) {
@@ -194,6 +226,9 @@ fun BihuaApp(
         kotlinx.coroutines.delay(350)
         withContext(Dispatchers.IO) { handwriting.prepare(target, settings.wifiOnlyModels) }
         if (settings.readAloud) speech.prepare(target)
+    }
+    LaunchedEffect(settings.readAloud) {
+        if (!settings.readAloud) speech.stop()
     }
     androidx.compose.runtime.DisposableEffect(Unit) {
         onDispose {
@@ -330,6 +365,8 @@ fun BihuaApp(
 
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
     val changeMode: (StudyMode) -> Unit = { next ->
+        // Do not let a reading in the old script continue over the new course.
+        speech.stop()
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
     }
     var inSession by remember { mutableStateOf(false) }
@@ -554,9 +591,9 @@ fun BihuaApp(
                         android.widget.Toast.makeText(
                             context,
                             if (onlyIds != null) {
-                                "That list has nothing available right now. Check skipped characters."
+                                "Nothing in this list is ready right now. Skipped or suspended characters may be hiding."
                             } else {
-                                "Nothing is due right now. Learning steps return shortly."
+                                "Nothing is due right now. Learning steps come back shortly."
                             },
                             android.widget.Toast.LENGTH_SHORT,
                         ).show()
@@ -581,7 +618,7 @@ fun BihuaApp(
                 } catch (error: Exception) {
                     android.widget.Toast.makeText(
                         context,
-                        "Could not prepare the session. Try again.",
+                        "The session did not start. Tap once more.",
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 } finally {
@@ -633,7 +670,7 @@ fun BihuaApp(
                 } catch (error: Exception) {
                     android.widget.Toast.makeText(
                         context,
-                        "Could not resume the saved lesson. Try again.",
+                        "That saved lesson did not reopen. Try once more.",
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 } finally {
@@ -853,14 +890,42 @@ fun BihuaApp(
     }
 
     androidx.activity.compose.BackHandler(
-        enabled = wordPractice != null || paperEntries.isNotEmpty() ||
+        enabled = wordQueue != null || wordPractice != null || paperEntries.isNotEmpty() ||
             compareEntries.isNotEmpty() || drillOpen ||
             (inSession && !showLeaveSession) || tab != Tab.HOME,
     ) {
         when {
-            wordPractice != null -> wordPractice = null
-            paperEntries.isNotEmpty() -> paperEntries = emptyList()
-            compareEntries.isNotEmpty() -> compareEntries = emptyList()
+            wordQueue != null -> {
+                // Returning from a queue opened on a character should land on
+                // that character, not drop the learner back to the grid.
+                wordQueue?.getOrNull(wordQueueIndex)?.word
+                    ?.firstOrNull()
+                    ?.let { glyph ->
+                        characters?.firstOrNull { it.character == glyph.toString() }?.let {
+                            characterId = it.id
+                        }
+                    }
+                wordQueue = null
+                wordQueueIndex = 0
+            }
+            wordPractice != null -> {
+                wordPractice?.word
+                    ?.firstOrNull()
+                    ?.let { glyph ->
+                        characters?.firstOrNull { it.character == glyph.toString() }?.let {
+                            characterId = it.id
+                        }
+                    }
+                wordPractice = null
+            }
+            paperEntries.isNotEmpty() -> {
+                paperEntries.firstOrNull()?.let { characterId = it.id }
+                paperEntries = emptyList()
+            }
+            compareEntries.isNotEmpty() -> {
+                compareEntries.firstOrNull()?.let { characterId = it.id }
+                compareEntries = emptyList()
+            }
             drillOpen -> drillOpen = false
             inSession -> {
                 if (sessionComplete) {
@@ -1014,6 +1079,11 @@ fun BihuaApp(
                                 runCatching { progressStore.recordWordPractice(mode, word) }
                             }
                         },
+                        onBackToCharacter = { entry ->
+                            wordPractice = null
+                            characterId = entry.id
+                            tab = Tab.CHARACTERS
+                        },
                         onClose = { wordPractice = null },
                     )
                 }
@@ -1124,6 +1194,13 @@ fun BihuaApp(
                     showCounters = settings.showCounters,
                     reduceMotion = settings.reduceMotion,
                     pronunciationPractice = settings.pronunciationPractice,
+                    meaningPractice = settings.meaningPractice,
+                    ankiWriting = settings.ankiWriting,
+                    ankiPronunciation = settings.ankiPronunciation,
+                    ankiMeaning = settings.ankiMeaning,
+                    meaningSynonyms = settings.meaningSynonyms,
+                    onAddMeaningSynonym = addMeaningSynonym,
+                    onRemoveMeaningSynonym = removeMeaningSynonym,
                     onlyAgainAndGood = settings.onlyAgainAndGood,
                     wifiOnlyModels = settings.wifiOnlyModels,
                     pinyinNumbers = settings.pinyinNumbers,
@@ -1187,7 +1264,7 @@ fun BihuaApp(
                                 }
                                 val outcome = reviewed.getOrElse {
                                     sessionSnackbar.showSnackbar(
-                                        "Could not save that grade. Your progress file may be full.",
+                                        "That grade did not save. Your progress file may be full.",
                                     )
                                     return@launch
                                 }
@@ -1200,7 +1277,7 @@ fun BihuaApp(
                                     message = "Grade saved",
                                     actionLabel = "Undo",
                                     withDismissAction = false,
-                                    duration = SnackbarDuration.Long,
+                                    duration = SnackbarDuration.Short,
                                 )
                                 if (action == SnackbarResult.ActionPerformed) {
                                     val token = lastReviewUndo?.takeIf {
@@ -1634,7 +1711,7 @@ private fun AppContent(
                     )
                 } else {
                     Text(
-                        "Content could not be loaded.",
+                        "The characters did not load.",
                         style = MaterialTheme.typography.titleMedium,
                         color = InkDark,
                     )
@@ -1705,6 +1782,7 @@ private fun AppContent(
             onPaperCharacter = onPaperCharacter,
             includeMatureContent = settings.includeMatureContent,
             brush = settings.brush,
+            allowFinger = allowFinger,
             priorityIds = priorityIds,
             skippedIds = skippedIds,
             suspendedIds = suspendedIds,

@@ -145,6 +145,19 @@ wrong), do not create a new FSRS card, and use it only to choose better cues and
 confusions. If it proves useful, give it its own small schedule later. Keep the
 writing review first; meaning should not become a second full deck.
 
+### 1.1.0 implementation note
+
+The first pass chose option 3, but made it **self-graded instead of
+multiple-choice**. English senses have too many fair paraphrases for a reliable
+auto-check. The meaning review asks the learner to type a wording if they want,
+then reveals a sanitized gloss, one or two real example words, and the learner's
+own synonyms. It is optional, off by default, and never appears on a new card.
+Writing stays the default and at least half of the reviews when meaning and
+pronunciation are both on. Synonyms are stored per character in settings, capped,
+deduplicated, and cleaned again on restore. Dictionary redirects and blank
+glosses are filtered before they can become a review.
+
+
 - **A shelf beside the schedule.** Study lists let a learner collect characters
   and words without creating review debt. Presets make a shelf in one tap, a
   streamed import respects an existing list, and a word queue turns a list into

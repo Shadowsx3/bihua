@@ -236,6 +236,16 @@ data class AppSettings(
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = false,
     val pronunciationPractice: Boolean = false,
+    /** Optional meaning checks: character to meaning, with example words. */
+    val meaningPractice: Boolean = false,
+    /** Anki-style writing: show the answer and grade, with no canvas. */
+    val ankiWriting: Boolean = false,
+    /** Anki-style pronunciation: show the reading and grade, with no typing. */
+    val ankiPronunciation: Boolean = false,
+    /** Anki-style meaning: show the meaning and grade, with no choices. */
+    val ankiMeaning: Boolean = false,
+    /** User wordings accepted for a meaning, keyed by character id. */
+    val meaningSynonyms: Map<String, List<String>> = emptyMap(),
     /** Japanese kana can be excluded so the queue is kanji only. */
     val includeHiragana: Boolean = true,
     val includeKatakana: Boolean = true,
@@ -411,7 +421,9 @@ data class AppSettings(
         }.toMap()
         val hasShared = shared.isNotEmpty()
         val validReminderDays = reminderDays.filter { it in 1..7 }.toSet()
-        return copy(
+        // 1.0.7 stored one flat study list. Convert it here so every load path
+        // (including a fresh install of this version) sees a named list.
+        return StudyLists.ensureMigrated(copy(
             dailyNewGoal = dailyNewGoal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL),
             dayStartHour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR),
             reminderHour = reminderHour.coerceIn(0, 23),
@@ -429,10 +441,11 @@ data class AppSettings(
             brush = if (brushWidthMigrated) brush.sanitized() else BrushConfig.preset(brush.tool),
             brushWidthMigrated = true,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
+            meaningSynonyms = MeaningSanitizer.mergeSynonyms(meaningSynonyms),
             sbdWeights = sbd,
             sbdWeightsSource = if (sbd.isNotEmpty()) sbdWeightsSource else "",
             sbdWeightsUpdatedAtMs = if (sbd.isNotEmpty()) sbdWeightsUpdatedAtMs.coerceAtLeast(0L) else 0L,
-        )
+        ))
     }
 
     companion object {

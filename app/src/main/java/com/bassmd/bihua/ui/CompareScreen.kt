@@ -5,6 +5,7 @@ package com.bassmd.bihua.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -66,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -145,7 +149,7 @@ fun CompareScreen(
             .appNavigationBarsPadding(),
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.Top) {
                 IconButton(onClick = { entries.firstOrNull()?.let(onBackToCharacter) }) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
@@ -162,21 +166,30 @@ fun CompareScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
-                }
-                if (entries.size >= 2) {
-                    TextButton(onClick = { showWriteDrill = true }) {
-                        Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Write both")
+                    // Actions sit under the title so large text cannot squeeze
+                    // it into a vertical strip.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        if (entries.size >= 2) {
+                            TextButton(onClick = { showWriteDrill = true }) {
+                                Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Write both")
+                            }
+                        }
+                        if (entries.size < 4) {
+                            TextButton(onClick = { showPicker = true }) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Add")
+                            }
+                        }
                     }
                 }
-                TextButton(onClick = { showPicker = true }) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Add")
-                }
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                 val columns = when {
                     entries.size <= 1 -> 1
@@ -415,9 +428,19 @@ private fun ComparePicker(
 ) {
     var query by remember { mutableStateOf("") }
     val ids = chosen.map { it.id }.toSet()
+    val matches = pool.filter { entry ->
+        query.isBlank() ||
+            entry.character.contains(query) ||
+            com.bassmd.bihua.content.Pinyin.matches(entry.reading, query) ||
+            entry.meaning.contains(query, ignoreCase = true)
+    }
     Dialog(onDismissRequest = onDismiss) {
         Surface(color = PaperWarm, shape = RoundedCornerShape(24.dp)) {
-            Column(Modifier.padding(16.dp)) {
+            Column(
+                Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "Add a character",
@@ -435,22 +458,32 @@ private fun ComparePicker(
                     placeholder = { Text("Character, meaning, or pinyin (bai3)") },
                     shape = RoundedCornerShape(16.dp),
                 )
+                if (matches.isEmpty()) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(380.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No characters match. Try a character, meaning, or pinyin.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                } else {
                 LazyColumn(Modifier.height(380.dp)) {
-                    items(
-                        pool.filter {
-                            query.isBlank() ||
-                                it.character.contains(query) ||
-                                com.bassmd.bihua.content.Pinyin.matches(it.reading, query) ||
-                                it.meaning.contains(query, ignoreCase = true)
-                        }.take(300),
-                        key = { it.id },
-                    ) { entry ->
+                    items(matches.take(300), key = { it.id }) { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    if (entry.id in ids) onRemove(entry) else onPick(entry)
-                                }
+                                .toggleable(
+                                    value = entry.id in ids,
+                                    role = Role.Checkbox,
+                                    onValueChange = { checked ->
+                                        if (checked) onPick(entry) else onRemove(entry)
+                                    },
+                                )
                                 .padding(horizontal = 6.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -470,12 +503,11 @@ private fun ComparePicker(
                             }
                             Checkbox(
                                 checked = entry.id in ids,
-                                onCheckedChange = { checked ->
-                                    if (checked) onPick(entry) else onRemove(entry)
-                                },
+                                onCheckedChange = null,
                             )
                         }
                     }
+                }
                 }
                 Text(
                     "Tap to add or remove, up to four. Compare similar shapes or a pair you mix up.",

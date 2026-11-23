@@ -219,6 +219,9 @@ fun PracticeScreen(
         recognition = null
         orderCheck = null
         evidence = null
+        // A new target starts with a clean sheet, even when it was chosen from
+        // another screen rather than the picker.
+        ink.clear()
         if (selected != null) selectedGlyph = selected.character
     }
     LaunchedEffect(mode, characters) {

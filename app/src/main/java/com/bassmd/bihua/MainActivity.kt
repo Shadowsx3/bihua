@@ -42,6 +42,12 @@ class MainActivity : ComponentActivity() {
         WidgetUpdater.updateAll(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+        // Leave the launcher showing today's real counts after a study session.
+        WidgetUpdater.updateAll(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

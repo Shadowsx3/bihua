@@ -79,7 +79,7 @@ fun PaperDrillScreen(
             .appNavigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.Top) {
             IconButton(onClick = { onBackToCharacter(entry) }) {
                 Icon(
                     Icons.AutoMirrored.Rounded.ArrowBack,
@@ -100,25 +100,28 @@ fun PaperDrillScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
+                // Keep the order control under the title so large text cannot
+                // squeeze the heading into a narrow vertical strip.
+                Spacer(Modifier.height(4.dp))
+                FilterChip(
+                    selected = shuffled,
+                    onClick = {
+                        shuffled = !shuffled
+                        order = if (shuffled) entries.shuffled(Random(System.nanoTime())) else entries
+                        index = 0
+                        revealed = false
+                    },
+                    label = { Text(if (shuffled) "Shuffled" else "List order") },
+                    shape = CircleShape,
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.Shuffle,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
+                )
             }
-            FilterChip(
-                selected = shuffled,
-                onClick = {
-                    shuffled = !shuffled
-                    order = if (shuffled) entries.shuffled(Random(System.nanoTime())) else entries
-                    index = 0
-                    revealed = false
-                },
-                label = { Text(if (shuffled) "Shuffled" else "List order") },
-                shape = CircleShape,
-                leadingIcon = {
-                    Icon(
-                        Icons.Rounded.Shuffle,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-            )
         }
         Spacer(Modifier.height(12.dp))
         SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {

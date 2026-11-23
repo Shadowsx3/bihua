@@ -301,7 +301,7 @@ fun WorksheetScreen(
             message = if (result.isSuccess) {
                 "Worksheet saved · ${chosenPage.label} · ${characterCount(chosen.size)}."
             } else {
-                "Could not save the worksheet."
+                "The worksheet did not save. Try another folder."
             }
         }
     }

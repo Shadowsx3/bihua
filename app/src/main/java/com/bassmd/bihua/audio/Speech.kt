@@ -20,6 +20,9 @@ class Speech(private val context: Context) : AutoCloseable {
     private var pendingMode: StudyMode? = null
     private var pendingSpeak: Pair<String, StudyMode>? = null
 
+    /** Called when a queued first tap cannot play because the script has no voice. */
+    var onUnavailable: (() -> Unit)? = null
+
     init {
         engine = TextToSpeech(context.applicationContext) { status ->
             ready = status == TextToSpeech.SUCCESS
@@ -35,6 +38,8 @@ class Speech(private val context: Context) : AutoCloseable {
                         null,
                         "bihua-${pendingText.hashCode()}",
                     )
+                } else {
+                    onUnavailable?.invoke()
                 }
             }
             engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {

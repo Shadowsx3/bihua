@@ -164,7 +164,15 @@ object StudyLists {
         val base = wanted.trim().take(MAX_NAME).ifBlank { DEFAULT_NAME }
         if (settings.studyLists.none { it.name.equals(base, ignoreCase = true) }) return base
         var index = 2
-        while (settings.studyLists.any { it.name.equals("$base ($index)", ignoreCase = true) }) index++
-        return "$base ($index)".take(MAX_NAME)
+        while (true) {
+            val suffix = " ($index)"
+            // Keep the suffix intact. Truncating the combined name at MAX_NAME
+            // would collapse long names back to the same string.
+            val candidate = base.take(MAX_NAME - suffix.length).trimEnd() + suffix
+            if (settings.studyLists.none { it.name.equals(candidate, ignoreCase = true) }) {
+                return candidate
+            }
+            index++
+        }
     }
 }

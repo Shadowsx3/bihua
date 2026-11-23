@@ -164,6 +164,11 @@ class Journey:
         self.d.swipe(width // 2, int(height * 0.76), width // 2, int(height * 0.32), 0.2)
         time.sleep(0.2)
 
+    def scroll_up(self) -> None:
+        width, height = self.d.window_size()
+        self.d.swipe(width // 2, int(height * 0.28), width // 2, int(height * 0.82), 0.2)
+        time.sleep(0.2)
+
     def ensure_visible(self, label: str, max_scrolls: int = 5):
         selector = self.find(label, timeout=0.5)
         for _ in range(max_scrolls):

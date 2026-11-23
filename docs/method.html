@@ -141,7 +141,7 @@
       <p>The first layer is a downloaded local model. The second is deterministic code. Neither one is allowed to press the grade button.</p>
       <figure class="figure">
         <div class="frame">
-          <div class="split">
+          <div class="split three">
             <div class="side"><b>Evidence</b><span>candidates · stroke count · shape score · order · reversals · start error</span></div>
             <div class="side"><b>Decision</b><span>Again · Hard · Good · Easy, chosen by the learner</span></div>
           </div>
@@ -173,18 +173,24 @@
       </figure>
       <p>The fade is tied to review count, not to a timer. A character you have written once does not need the same scaffold as one you have written ten times.</p>
 
-      <h2 id="tasks">Two tasks</h2>
-      <p>Writing and pronunciation are tested separately. A review asks for one skill, not a blended score. If you can write 愛 but cannot say it, the app should show that gap rather than average it away.</p>
+      <h2 id="tasks">Three optional skills</h2>
+      <p>Writing, pronunciation, and meaning are tested separately. A review asks for one skill, not a blended score. If you can write 愛 but cannot say it, the app should show that gap rather than average it away.</p>
       <figure class="figure">
         <div class="frame">
           <div class="split">
             <div class="side"><b>Writing</b><span>cue → canvas → ink evidence → grade</span></div>
             <div class="side"><b>Pronunciation</b><span>character → typed reading → grade</span></div>
+            <div class="side"><b>Meaning</b><span>character → your words → gloss and example → grade</span></div>
           </div>
         </div>
-        <figcaption>Pronunciation is optional. Writing is always part of a review.</figcaption>
+        <figcaption>Writing is the default. Pronunciation and meaning are optional.</figcaption>
       </figure>
       <p>The pronunciation task accepts pinyin, romaji or kana, and Hangul or romaja. A small live preview composes Hangul from Latin input so a learner without a Korean keyboard can still see the word take shape. It checks the reading the learner typed and shows a suggestion. The learner still grades. Neither task schedules the other.</p>
+      <p>The meaning task is deliberately not auto-graded. English senses have too many fair paraphrases, so the learner types a wording, taps Show answer, compares it with a clean gloss, and grades. The reveal adds one or two real words that use the character, which turns a bare translation into a little context. The learner can save their own wording as a synonym; synonyms are trimmed, deduplicated, and capped. Dictionary redirects such as “variant of …” or “surname” are filtered out before they can become a quiz answer, and phonetic kana or Hangul descriptions stay in pronunciation rather than pretending to be a meaning. Meaning is off by default.</p>
+
+      <h2 id="anki">A lighter option</h2>
+      <p>Some learners want the review and the dates without the canvas or the keyboard. Settings → Practice has optional switches for <b>Writing</b>, <b>Pronunciation</b>, and <b>Meaning</b>. The cue appears, you tap Show answer, then grade honestly. The schedule and XP work exactly the same.</p>
+      <p>A new card still gets its Meet page, then goes straight to the reveal instead of Trace and Write. Meaning checks never appear on a new card; writing comes first. That is the trade: you lose the motor evidence, but you keep the recall and the spacing. Writing remains the default, and the two switches are independent, so you can type readings but not draw, or draw but not type.</p>
 
       <h2 id="content">Content choices</h2>
       <p>The character list is not a word list. Simplified and Traditional are separate courses, and shared glyphs stay in both. Traditional words come from CEDICT word-level pairs, because a character-by-character substitution produces forms like 頭發 instead of 頭髮.</p>
@@ -194,7 +200,7 @@
       <h2 id="tradeoffs">Tradeoffs</h2>
       <p>There are no streaks, coins, leaderboards, or loss-framed reminders. Those mechanics can bring people back, but they also make a missed day feel like a failure. Bihua uses a due count and a calendar. If you stop, the schedule is still there when you return.</p>
       <p>There is no server. Backups are files you choose to create. Sync is local Wi-Fi between two devices.</p>
-      <p>The biggest limitation is verification. The phone path is tested; a current tablet and S Pen pass is still pending. The content gate catches missing readings and dictionary artifacts, not every wrong nuance. The app is not a clinical intervention, and it does not promise literacy.</p>
+      <p>The biggest limitation is verification. The phone path is tested; a current tablet and physical stylus pass is still pending. The content gate catches missing readings and dictionary artifacts, not every wrong nuance. The app is not a clinical intervention, and it does not promise literacy.</p>
 
       <h2 id="use">Using it</h2>
       <ul>
@@ -232,7 +238,10 @@
 
 <footer class="site">
   <div class="wrap row">
-    <div><strong>Bihua 筆畫</strong> · open-source handwriting study</div>
+    <div>
+      <strong>Bihua 筆畫</strong> · open-source handwriting study
+      <div class="made">Made with <span aria-label="love">❤️</span> from <span aria-hidden="true">🇺🇾</span> Uruguay</div>
+    </div>
     <div class="footer-links">
       <a href="index.html">Home</a>
       <a href="https://github.com/Shadowsx3/bihua">Source</a>

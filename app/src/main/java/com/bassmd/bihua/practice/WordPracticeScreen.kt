@@ -118,8 +118,9 @@ fun WordPracticeScreen(
     var guideMode by remember(word.word) { mutableStateOf(WordGuideMode.OFF) }
     var showOrder by remember(word.word) { mutableStateOf(showStrokeNumbers) }
     var finished by remember(word.word) { mutableStateOf(false) }
+    var round by remember(word.word) { mutableIntStateOf(0) }
     val entry = characters.getOrNull(index) ?: characters.first()
-    val ink = remember(word.word, index) { InkState() }
+    val ink = remember(word.word, index, round) { InkState() }
     val player = rememberStrokeOrderPlayer(entry.id)
 
     Column(
@@ -212,6 +213,7 @@ fun WordPracticeScreen(
                                 finished = false
                                 revealed = false
                                 guideMode = WordGuideMode.OFF
+                                round++
                             },
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -223,6 +225,7 @@ fun WordPracticeScreen(
                                 finished = false
                                 revealed = false
                                 guideMode = WordGuideMode.OFF
+                                round++
                             },
                             modifier = Modifier.fillMaxWidth(),
                         )

@@ -30,6 +30,14 @@ class StudyListsTest {
     }
 
     @Test
+    fun settingsSanitizeRunsTheLegacyStudyListMigration() {
+        val migrated = settings().copy(studyList = listOf("a", "b")).sanitized()
+        assertEquals(1, migrated.studyLists.size)
+        assertEquals(listOf("a", "b"), migrated.studyLists.first().characterIds)
+        assertEquals(StudyLists.LEGACY_ID, migrated.activeStudyListId)
+    }
+
+    @Test
     fun activateMirrorsCharactersWithoutTouchingOtherLists() {
         val list = StudyList(id = "one", name = "One", characterIds = listOf("a", "b"))
         val next = StudyLists.add(settings(), list, activate = true)
@@ -97,6 +105,18 @@ class StudyListsTest {
 
         val long = StudyLists.rename(renamed, "b", "x".repeat(120))
         assertEquals(StudyLists.MAX_NAME, long.studyLists.last().name.length)
+    }
+
+    @Test
+    fun longDuplicateNamesStayUnique() {
+        val longName = "x".repeat(StudyLists.MAX_NAME)
+        val first = StudyLists.add(settings(), StudyList(id = "a", name = longName))
+        val second = StudyLists.add(first, StudyList(id = "b", name = longName))
+        val names = second.studyLists.map { it.name }
+        assertEquals(2, names.distinct().size)
+        assertEquals(longName, names.first())
+        assertTrue(names.last().endsWith("(2)"))
+        assertTrue(names.last().length <= StudyLists.MAX_NAME)
     }
 
     @Test

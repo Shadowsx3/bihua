@@ -8,6 +8,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import com.bassmd.bihua.settings.MeaningSanitizer
 import org.robolectric.annotation.Config
 import java.io.File
 
@@ -26,6 +27,17 @@ class ContentDatabaseTest {
                 "OR trim(reading)='' OR trim(meaning)='' OR trim(level_label)=''",
         )
         assertEquals(0, bad)
+    }
+
+    @Test
+    fun characterMeaningsAreMostlySafeForChecks() {
+        val meanings = query("SELECT character, meaning FROM character")
+            .filter { (character, _) -> isHan(character.codePointAt(0)) }
+        val unusable = meanings.count { (_, meaning) -> !MeaningSanitizer.isTeachableView(meaning) }
+        assertTrue(
+            "too many structural or blank Han meanings: $unusable of ${meanings.size}",
+            unusable < meanings.size / 50,
+        )
     }
 
     @Test

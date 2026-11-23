@@ -106,12 +106,12 @@ class SettingsStore(private val context: Context) {
     private fun decodeOr(text: String?, default: AppSettings): AppSettings =
         text?.let {
             runCatching { json.decodeFromString(AppSettings.serializer(), it).sanitized() }.getOrNull()
-        } ?: default
+        } ?: default.sanitized()
 
     private fun decodeOr(text: String?, default: UserProfile): UserProfile =
         text?.let {
             runCatching {
                 json.decodeFromString(UserProfile.serializer(), it).sanitized()
             }.getOrNull()
-        } ?: default
+        } ?: default.sanitized()
 }

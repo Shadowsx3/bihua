@@ -304,7 +304,7 @@ private fun StrokeRepairDialog(
                     Text(
                         when (currentMode) {
                             RepairMode.WATCH -> "Watch the path, then trace it when you are ready."
-                            RepairMode.TRACE -> hint ?: "Follow the pale path with your pen."
+                            RepairMode.TRACE -> hint ?: "Follow the pale path with your finger or stylus."
                             RepairMode.ALONE -> "The guide is hidden. Start at the dot and write the stroke from memory."
                         },
                         style = MaterialTheme.typography.bodySmall,

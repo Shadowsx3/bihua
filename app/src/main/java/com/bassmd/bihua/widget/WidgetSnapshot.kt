@@ -28,13 +28,16 @@ data class WidgetSnapshot(
                 val progress = ProgressStore(context)
                 try {
                     val characters = repository.characters(settings.studyMode)
-                    val due = progress.dueCount(characters, settings)
+                    // Match Home: skipped and suspended characters are hidden,
+                    // so the widget never promises reviews the app will not show.
+                    val visible = characters.filterNot { settings.isSkipped(it.id) }
+                    val due = progress.dueCount(visible, settings)
                     val learned = progress.newLearnedToday(
                         mode = settings.studyMode,
                         dayStartHour = settings.dayStartHour,
                         includeSharedGlyphs = settings.shareIdenticalGlyphs,
                     )
-                    val remainingNew = characters.count { it.status == StudyStatus.NEW }
+                    val remainingNew = visible.count { it.status == StudyStatus.NEW }
                     val newLeft = (settings.dailyNewGoal - learned)
                         .coerceAtLeast(0)
                         .coerceAtMost(remainingNew)

@@ -78,7 +78,9 @@ object StudyListImport {
     private fun readLines(reader: Reader, delimiter: Char, collector: Collector) {
         reader.buffered().useLines { lines ->
             lines.forEach { raw ->
-                val line = raw.trim()
+                // Windows editors often add a byte-order mark. Without this, the
+                // first character of the file would be skipped.
+                val line = raw.removePrefix("\uFEFF").trim()
                 if (line.isEmpty() || line.startsWith("#") || line.startsWith("//")) return@forEach
                 collector.add(firstField(line, delimiter))
             }
@@ -158,7 +160,9 @@ object StudyListImport {
                                 if (key == null || key in itemKeys) {
                                     collector.add(text)
                                 }
-                                if (key in nameKeys && !finishedName) {
+                                // Only the root object names the list. Word
+                                // objects often have their own "name" field.
+                                if (key in nameKeys && !finishedName && stack.size <= 1) {
                                     name = text
                                     finishedName = true
                                 }

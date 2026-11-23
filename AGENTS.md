@@ -6,8 +6,8 @@ This file is the shared context for a new chat. Read it before changing code.
 
 Bihua is an offline-first Android app for learning to write Simplified Chinese,
 Traditional Chinese, Japanese, and Korean. Characters are the study items;
-readings and meanings are cues. Writing is always practised. Pronunciation is an
-optional, separate review task. FSRS-7 schedules each script, with optional
+readings and meanings are cues. Writing is the default recall task, with an
+optional Anki-style reveal. Pronunciation is an optional, separate review task. FSRS-7 schedules each script, with optional
 sharing between identical glyphs. No streaks, no account, no ads, no
 developer-run analytics.
 
@@ -22,10 +22,14 @@ Keep this in mind for every screen:
   gentle motion, and satisfying feedback.
 - The learner should feel ownership: their pace, their course, their finish
   date, their words, their progress.
+- This is a small personal project made with care in Uruguay. Aim for warm,
+  specific copy and quiet delight, not a faceless product or a generated demo.
 - Keep the writing surface calm and paper like. No decorative color or shapes
   under the ink. The guide lines stay clear in light and dark themes.
 - One clear next action per screen. Put explanations in dialogs, not paragraphs.
-- No AI sounding copy, no em dashes, no cringe slogans.
+- No AI sounding copy, no em dashes in user-facing strings, no cringe slogans.
+- Prefer short sentences and real verbs. Error copy says what happened and what
+  to try next. It does not blame the learner.
 
 ## Home and review feel
 
@@ -54,23 +58,24 @@ Keep this in mind for every screen:
   and must stay current; a target-recall change affects future intervals only.
 - Target recall is a 70–97% setting with 90% as the recommendation. Do not
   hard-code 0.90 in review, interval-preview, or load-estimate paths.
-- RWKV-Instant is an optional, user-supplied research model. Do not advertise it
-  in onboarding, the landing page, store copy, or Home. It lives only in
-  Settings as a package import. Never bundle, download, or redistribute its
-  weights; the published notice is research/personal-use only.
-- A package is validated before use: zip paths, size, manifest, SHA-256, tensor
-  names, and shapes. If it is removed while selected, fall back to FSRS-7.
-- Credits for FSRS, SBD, and RWKV research belong in the README and Settings →
-  About. Keep the licensing wording precise.
+- FSRS-7 and SBD are the only schedulers. RWKV, ONNX, Piper, and neural voice
+  support were removed before 1.0.8. Do not add a research model back as a side
+  effect of another feature; a return needs a full port, a reviewed package
+  plan, and landing/store wording.
+- Credits for FSRS and SBD research belong in the README and Settings → About.
+  Keep the licensing wording precise.
 
 ## Study lists
 
-- A study list is a collection, not a filter. Studying a list starts a session
-  from its characters; it must never change the daily queue or add review debt.
+- A study list is a collection, not a filter. Studying a list limits the session
+  to its characters. Grades still count in the schedule; the rest of the daily
+  queue is unchanged. Word practice stays free and never creates cards.
 - Lists hold characters and words together. Words stay as text, resolve their
   meaning from the dictionary, and fall back to writing-only practice.
 - Imports stream line by line (TXT/CSV/TSV) or through the streaming JSON string
   scanner. Do not read a whole file into memory or cap the number of items.
+  Strip a UTF-8 byte-order mark before the first line. Only the root JSON object
+  may name the list; nested item `name` fields must not rename it.
 - Keep copy plain and professional. Name lists for what they hold, not for a
   mood.
 
@@ -125,8 +130,10 @@ Keep this in mind for every screen:
   names, archaic/rare/dialect words, and abbreviations. Curated words lead each
   cycle, then a deterministic hash of the common pool. Never let mature content
   leak into the daily word, even when the dictionary mature setting is on.
-- `WidgetUpdater.updateAll` refreshes on app resume; the widgets also ask the
-  launcher every 30 minutes. Keep the update cheap.
+- `WidgetUpdater.updateAll` refreshes on app resume and on stop; the widgets
+  also ask the launcher every 30 minutes. Keep the update cheap.
+- Widget counts must use the same hidden-character filter as Home: skipped and
+  suspended cards never appear in the widget's due or new counts.
 - The default profile avatar and the small top icon use the launcher pet:
   `InkMascot` with the brush, plus the sparkle on the profile avatar. Do not fork
   a second pet.
@@ -145,7 +152,10 @@ some etymology quality.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
-- 1.0.8 work tracker and next additions: `docs/1.0.8-roadmap.md`.
+- Current release plan: `docs/1.1.0-roadmap.md`.
+- Screen, flow, and feature inventories: `docs/screen-inventory.md`,
+  `docs/flow-inventory.md`, `docs/feature-inventory.md`.
+- Test coverage: `docs/test-matrix.md`; risk audit: `docs/user-journey-risk-audit.md`.
 
 ## Answer privacy
 
@@ -157,6 +167,63 @@ some etymology quality.
   meanings ("hiragana for a", "syllable ga"). Keep this covered by tests.
 - Recognition results and grade buttons appear only after the learner commits to
   an answer and asks to check.
+
+## Anki-style answering
+
+- Settings → Practice has two independent switches: **Writing: tap to reveal**
+  and **Pronunciation: tap to reveal**. Both default off.
+- Writing reveal-only: the cue appears first, then **Show answer** shows the
+  character, reading, meaning, and grades. There is no canvas. New cards go
+  Meet → Reveal, skipping Trace.
+- Pronunciation reveal-only: the character appears, then **Show answer** shows
+  the reading and grades. There is no text field. Hide the "You typed" chip and
+  do not suggest a grade.
+- The answer reveal is still a real review. Grades schedule normally, XP counts,
+  and the session order is unchanged. Do not mark these as practice-only.
+- Keep the switch between writing and pronunciation tasks independent. A learner
+  may want to type readings but not draw, or draw but not type.
+- `ReviewTask.revealsAnswer` is the single mapping; do not duplicate it in the UI.
+
+## Meaning checks and synonyms
+
+- Meaning is an optional review task, off by default. Writing stays the default
+  and keeps at least half of the reviews when meaning and pronunciation are on.
+- New cards never start with meaning. Meet introduces the meaning first; reviews
+  can ask for it.
+- The meaning task is self-graded. Do not auto-grade English synonyms. The
+  learner types a wording if they want, taps **Show answer**, compares it with
+  the clean gloss and a real example word, then grades.
+- Sanitize before teaching: `settings/MeaningSanitizer.kt` rejects blank,
+  placeholder, overlong, and structural glosses such as "variant of", "surname",
+  "see ...", "used in ...", "radical", or "component". Example words with those
+  glosses are skipped. Phonetic self-descriptions such as "hiragana for a" or
+  "syllable ga" are not meaning checks; those cards fall back to writing and
+  pronunciation. A character with no teachable gloss also falls back to writing.
+- Synonyms are user wordings keyed by character id in
+  `AppSettings.meaningSynonyms`. They are trimmed, deduplicated ignoring case,
+  capped at 12 per character and 60 characters each, cleaned on restore, and
+  removed when the learner taps the chip's x. They travel in settings backups.
+- The reveal shows the official gloss, the learner's words if typed, accepted
+  synonyms, and one or two non-mature example words. Highlight the target
+  character inside the word. Keep the tone warm: "Your words", "Also accepted",
+  "In a word", "How did that feel?".
+- Record the task as `MEANING` in the review log. Show it in task stats and
+  character history. Do not count it as writing pace or strokes.
+
+## Navigation and loading
+
+- `qa/scenarios.py:navigation-deep` is the back-stack regression: every Settings
+  section, Compare, Paper, Practice picker, study lists, and the study tools
+  sheet. Run it on phone and tablet after changing headers or overlays.
+- System back must close overlays one layer at a time: Settings section, then
+  Settings; paper/Compare, then the character; word queue, then the character or
+  Home. Never leave a screen that exits the app while an overlay is open.
+- Loading must end in success, an empty state, or a readable error. Handwriting
+  model downloads and recognition have timeouts. Content loading has Retry.
+  The first read-aloud tap is queued while the voice engine starts.
+- Large text is a layout target, not an afterthought. Check 1.5x on Home Study
+  tools, Compare, Paper, Settings, and session. Titles should wrap, not become a
+  vertical strip; action rows may move below the title.
 
 ## Dependency updates
 
@@ -174,6 +241,9 @@ make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
 make run                       # check, install, launch on selected device
+make journey                   # quick phone journeys
+make journey-standard          # phone, fold, tablet core journeys
+make journey-full              # every profile and daily state
 make release                   # signed minified release APK
 make smoke                     # on-device launch/navigation smoke test
 ```
@@ -219,8 +289,9 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 3. **Prefer `device.sh draw`.** `input swipe` works for touch on most devices but
    can be unreliable for stylus input. `device.sh draw` sends motionevents.
 4. **Emulators and desktop input.** `hasStylus` treats emulator/goldfish/ranchu as
-   touch, and `InkCanvas` accepts mouse pointers. Real stylus devices default to
-   pen-only; finger drawing is a setting.
+   touch, and `InkCanvas` accepts mouse pointers. Finger drawing is on by default
+   everywhere, including stylus phones; onboarding and Settings offer a
+   stylus-only choice. A pressed stylus wins over a palm or finger.
 5. **System animation scale 0 kills Compose animations.** Essential playback uses
    `withFrameNanos` (`ink/StrokeGuide.kt`, `ui/CompareScreen.kt`). Do not build
    essential behaviour on `Animatable`.
@@ -233,10 +304,12 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 
 ## Lesson and review flow
 
-- A lesson is **Meet → Trace → Write**.
-- Trace needs at least one stroke.
-- A reviewed card starts directly at Write; do not show Meet or Trace first.
-- Write cue is reading, meaning, or a word. The character is never shown.
+- A lesson is **Meet → Trace → Write** by default.
+- With Anki writing on, a lesson is **Meet → Reveal**; Trace is skipped.
+- Trace needs at least one stroke when it is present.
+- A reviewed card starts directly at Recall. Do not show Meet or Trace first.
+- Write cue is reading, meaning, or a word. The character is never shown before
+  the learner reveals it.
 - After writing, tap **Check & grade**. A fixed grade bar shows the answer,
   reading, meaning, four grades, the app suggestion, and Draw again.
 - Pronunciation shows the character, asks for the reading, then shows a large
@@ -244,8 +317,12 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - One review asks for one skill:
   - `WRITE`: draw from a cue.
   - `PRONOUNCE`: show the character, type the reading.
-- New cards always write. Reviewed cards alternate writing and pronunciation
-  from a deterministic phase; pronunciation is opt-in.
+  - `MEANING`: show the character, type a wording if desired, reveal the gloss.
+- New cards write, unless Anki writing is on. Reviewed cards alternate writing
+  and pronunciation from a deterministic phase; pronunciation is opt-in.
+- With Anki pronunciation on, a pronunciation card shows the character, then
+  Show answer, then grades. No text field. Do not suggest Again just because
+  the answer was revealed.
 - A pronunciation cue must never include the reading before the check. Writing
   cues must never include the character.
 - Only the first grade is scheduled. Later repeats are practice.

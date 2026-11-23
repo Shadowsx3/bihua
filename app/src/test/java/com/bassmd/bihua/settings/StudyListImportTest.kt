@@ -47,6 +47,17 @@ class StudyListImportTest {
     }
 
     @Test
+    fun aByteOrderMarkDoesNotDropTheFirstCharacter() {
+        val result = StudyListImport.parse(
+            "\uFEFF你好\n学习\n",
+            "bom.txt",
+            characters,
+        )
+        assertEquals(listOf("U+4F60", "U+597D", "U+5B66", "U+4E60"), result.characterIds)
+        assertEquals(listOf("你好", "学习"), result.words)
+    }
+
+    @Test
     fun csvUsesTheFirstColumnAndHandlesQuotes() {
         val result = StudyListImport.parse(
             "character,meaning\n\"你\",you\n好,good\n學,learn\n",
@@ -77,6 +88,18 @@ class StudyListImportTest {
             characters,
         )
         assertEquals(listOf("U+4F60", "U+5B66", "U+4E60", "U+611B"), result.characterIds)
+        assertEquals(listOf("学习"), result.words)
+    }
+
+    @Test
+    fun nestedNameFieldsDoNotRenameTheList() {
+        val result = StudyListImport.parse(
+            """{"characters":[{"character":"你","name":"ni"}],"words":["学习"]}""",
+            "nested.json",
+            characters,
+        )
+        assertEquals("Nested", result.name)
+        assertEquals(listOf("U+4F60", "U+5B66", "U+4E60"), result.characterIds)
         assertEquals(listOf("学习"), result.words)
     }
 

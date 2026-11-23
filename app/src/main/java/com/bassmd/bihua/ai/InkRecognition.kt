@@ -76,7 +76,11 @@ class InkRecognitionService {
         val tag = targetLanguageTag(mode, target) ?: return RecognitionResult(emptyList(), false)
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return RecognitionResult(emptyList(), false)
         val model = DigitalInkRecognitionModel.builder(identifier).build()
-        val ready = prepareTag(tag, wifiOnly)
+        // A missing model can wait forever for Wi-Fi. Give the download a
+        // reasonable window, then fail visibly instead of spinning forever.
+        val ready = kotlinx.coroutines.withTimeoutOrNull(MODEL_WAIT_MS) {
+            prepareTag(tag, wifiOnly)
+        } ?: false
         if (!ready) return RecognitionResult(emptyList(), false)
 
         val recognizer = recognizers.getOrPut(tag) {
@@ -92,7 +96,10 @@ class InkRecognitionService {
             }
         }.build()
         return runCatching {
-            val result = recognizer.recognize(ink).await()
+            // A wedged Play Services call must not leave the check spinning.
+            val result = kotlinx.coroutines.withTimeoutOrNull(RECOGNIZE_WAIT_MS) {
+                recognizer.recognize(ink).await()
+            } ?: return RecognitionResult(emptyList(), false)
             if (BuildConfig.DEBUG) {
                 result.candidates.forEach {
                     Log.d("InkRecognition", "raw='${it.text}' score=${it.score}")
@@ -162,4 +169,12 @@ class InkRecognitionService {
             codePoint in 0x30A0..0x30FF ||
             codePoint in 0x31F0..0x31FF ||
             codePoint in 0xFF66..0xFF9D
+
+    private companion object {
+        /** Longest wait for a first-use model download before reporting it unavailable. */
+        const val MODEL_WAIT_MS = 20_000L
+
+        /** Longest wait for the recognizer itself once the model is ready. */
+        const val RECOGNIZE_WAIT_MS = 10_000L
+    }
 }

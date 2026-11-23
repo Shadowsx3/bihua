@@ -153,7 +153,7 @@ fun StudyListsScreen(
         activate: Boolean,
     ) {
         if (ids.isEmpty() && words.isEmpty()) {
-            message = "That list had nothing for this script."
+            message = "No characters from this script were in that file."
             return
         }
         val list = StudyList(
@@ -196,7 +196,7 @@ fun StudyListsScreen(
             }
             importing = false
             when {
-                parsed == null -> importProblem = "This file could not be read. Try .txt, .csv, .tsv, or .json."
+                parsed == null -> importProblem = "That file could not be read. Try .txt, .csv, .tsv, or .json."
                 parsed.found.isEmpty() && parsed.words.isEmpty() ->
                     importProblem = "No characters or words from $scriptLabel were found in that file."
                 else -> importPreview = parsed
@@ -208,14 +208,21 @@ fun StudyListsScreen(
         val list = exportTarget
         if (uri == null || list == null) return@rememberLauncherForActivityResult
         scope.launch {
-            val body = withContext(Dispatchers.IO) {
-                val glyphs = list.characterIds.mapNotNull { byId[it]?.character }
-                (glyphs + list.words.filterNot { it in glyphs }).joinToString("\n")
+            val saved = withContext(Dispatchers.IO) {
+                runCatching {
+                    val body = list.characterIds.mapNotNull { byId[it]?.character }.let { glyphs ->
+                        (glyphs + list.words.filterNot { it in glyphs }).joinToString("\n")
+                    }
+                    val stream = context.contentResolver.openOutputStream(uri)
+                        ?: error("Could not open the selected file.")
+                    stream.bufferedWriter().use { it.write(body) }
+                }.isSuccess
             }
-            withContext(Dispatchers.IO) {
-                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(body) }
+            message = if (saved) {
+                "${list.name} exported."
+            } else {
+                "${list.name} did not save. Try another folder."
             }
-            message = "${list.name} exported."
         }
     }
 
@@ -257,7 +264,7 @@ fun StudyListsScreen(
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Lists collect characters and words for practice outside the schedule. Starting one never adds reviews or changes your queue.",
+                    "Lists collect characters and words for extra practice. Studying a list keeps the session to its characters; their grades still count in the schedule. Word practice stays free.",
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )

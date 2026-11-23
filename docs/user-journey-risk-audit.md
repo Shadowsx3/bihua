@@ -11,6 +11,32 @@ Status:
 - **Watch** — known limitation, acceptable for 1.0.4.
 - **Open** — still needs work before it can be called complete.
 
+## 1.1.0 navigation, loading, and large-text pass
+
+| Risk | Status | Action |
+|---|---|---|
+| Large text squeezes the Home Study tools title away and stretches the card into a tall empty block. | Fixed | The title keeps its own row; glyph preview, full-width Study, and Draw/Paper actions sit below. |
+| Large text turns the Compare title into a vertical strip and pushes the subtitle off-screen. | Fixed | The title and actions share a column; actions wrap under the subtitle. |
+| Large text squeezes the Paper check title beside the order chip. | Fixed | The chip sits under the title. |
+| A system back from the word-practice queue leaves the app. | Fixed | Back now closes the queue and keeps the learner in the app. |
+| The single-word back arrow does nothing. | Fixed | It returns to the character detail. |
+| Practise again keeps the old ink. | Fixed | The canvas gets a new round. |
+| A new Practice target keeps the previous character's ink. | Fixed | A selection change clears the canvas. |
+| A skipped or suspended card still counts in the widget. | Fixed | The widget uses the same hidden-character filter as Home. |
+| A missing handwriting model or wedged recognizer spins forever. | Fixed | Both have timeouts and a readable unavailable state. |
+| A Wi-Fi-only model download blocks Settings indefinitely. | Fixed | Each download has a 30-second limit. |
+| The first read-aloud tap is dropped while the voice starts. | Fixed | The tap is queued; a missing voice is reported. |
+| A Windows BOM drops the first character of an imported list. | Fixed | The line reader strips it. |
+| A nested JSON `name` renames the list. | Fixed | Only the root object can name the list. |
+| Long duplicate list names collapse to the same string. | Fixed | The suffix is preserved within the 40-character limit. |
+| A failed list export throws instead of reporting. | Fixed | Save errors are caught and shown. |
+| A backup restore can finish onboarding while still running. | Fixed | Continue and Skip are disabled during restore. |
+| Settings subpages, Compare, Paper, Practice picker, study lists, and the study tools sheet have no back-stack regression. | Fixed | `navigation-deep` walks all of them on every standard run. |
+| Writing or reading review without a canvas or keyboard is impossible. | Fixed | Optional independent Anki-style switches for writing, pronunciation, and meaning, off by default. |
+| Meaning prompts can show blank, placeholder, or structural dictionary redirects. | Fixed | `MeaningSanitizer` filters them; a character with no teachable gloss falls back to writing. Phonetic kana/Hangul stay in pronunciation. |
+| A learner's own wording for a meaning is lost. | Fixed | Synonyms are stored per character, cleaned, deduplicated, capped, removable, and included in backups. |
+| Anki meaning still shows a typing field. | Fixed | `meaning-anki` journey asserts no field; `Show answer` reveals the gloss and example word. |
+
 ## Startup and content
 
 | Risk | Status | Action |

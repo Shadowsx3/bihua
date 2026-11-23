@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -89,6 +90,7 @@ import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.ProfileAvatar
 import com.bassmd.bihua.ui.components.StudyCalendarCard
 import com.bassmd.bihua.ui.components.SoftCard
+import com.bassmd.bihua.ui.components.TonalAction
 import androidx.compose.ui.res.stringResource
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.Gem
@@ -179,7 +181,12 @@ fun HomeScreen(
             ).take(8)
         }
     val studySummary = buildList {
-        if (studyList.isNotEmpty()) add("${studyList.size} in ${activeListName.ifBlank { "the list" }}")
+        if (studyList.isNotEmpty()) {
+            add(
+                "${studyList.size} ${if (studyList.size == 1) "character" else "characters"} in " +
+                    activeListName.ifBlank { "the list" },
+            )
+        }
         if (pinnedCount > 0) add("$pinnedCount pinned")
         if (skippedCount > 0) add("$skippedCount skipped")
         if (suspendedCount > 0) add("$suspendedCount suspended")
@@ -323,73 +330,14 @@ fun HomeScreen(
                 }
             }
             item {
-                val summary = buildList {
-                    if (studyList.isNotEmpty()) add("${studyList.size} in ${activeListName.ifBlank { "the list" }}")
-                    if (pinnedCount > 0) add("$pinnedCount pinned")
-                    if (skippedCount > 0) add("$skippedCount skipped")
-                    if (suspendedCount > 0) add("$suspendedCount suspended")
-                }
-                SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.PlaylistPlay, contentDescription = null, tint = InkDark)
-                            Spacer(Modifier.width(8.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    "Study tools",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = InkDark,
-                                )
-                                Text(
-                                    if (summary.isEmpty()) {
-                                        "Pin, skip, or add characters."
-                                    } else {
-                                        summary.joinToString(" · ")
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkSoft,
-                                )
-                            }
-                            TextButton(
-                                onClick = onOpenStudyTools,
-                                modifier = Modifier.clearAndSetSemantics {
-                                    contentDescription = "Manage study tools"
-                                    role = Role.Button
-                                    onClick(label = "Manage study tools") {
-                                        onOpenStudyTools()
-                                        true
-                                    }
-                                },
-                            ) { Text("Manage") }
-                            if (studyList.isNotEmpty()) {
-                                Spacer(Modifier.width(2.dp))
-                                TextButton(onClick = onDrill) { Text("Draw") }
-                                TextButton(onClick = onPaper) { Text("Paper") }
-                                Button(onClick = onStudyList, shape = CircleShape) {
-                                    Text("Study")
-                                }
-                            }
-                        }
-                        if (studyList.isNotEmpty()) {
-                            Spacer(Modifier.height(10.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                studyList.take(8).forEach { entry ->
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = PaperWarm,
-                                    ) {
-                                        Text(
-                                            entry.character,
-                                            fontSize = 24.sp,
-                                            color = InkDark,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                StudyToolsCard(
+                    summary = studySummary,
+                    entries = studyList,
+                    onOpenStudyTools = onOpenStudyTools,
+                    onDrill = onDrill,
+                    onPaper = onPaper,
+                    onStudyList = onStudyList,
+                )
             }
             item {
                 SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
@@ -575,67 +523,14 @@ fun HomeScreen(
                         )
                     }
                     item {
-                        SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.PlaylistPlay, contentDescription = null, tint = InkDark)
-                                    Spacer(Modifier.width(8.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(
-                                            "Study tools",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = InkDark,
-                                        )
-                                        Text(
-                                            if (studySummary.isEmpty()) {
-                                                "Pin, skip, or add characters."
-                                            } else {
-                                                studySummary.joinToString(" · ")
-                                            },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = InkSoft,
-                                        )
-                                    }
-                                    TextButton(
-                                onClick = onOpenStudyTools,
-                                modifier = Modifier.clearAndSetSemantics {
-                                    contentDescription = "Manage study tools"
-                                    role = Role.Button
-                                    onClick(label = "Manage study tools") {
-                                        onOpenStudyTools()
-                                        true
-                                    }
-                                },
-                            ) { Text("Manage") }
-                                    if (studyList.isNotEmpty()) {
-                                        Spacer(Modifier.width(2.dp))
-                                        TextButton(onClick = onDrill) { Text("Draw") }
-                                        TextButton(onClick = onPaper) { Text("Paper") }
-                                        Button(onClick = onStudyList, shape = CircleShape) {
-                                            Text("Study")
-                                        }
-                                    }
-                                }
-                                if (studyList.isNotEmpty()) {
-                                    Spacer(Modifier.height(10.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        studyList.take(8).forEach { entry ->
-                                            Surface(
-                                                shape = RoundedCornerShape(10.dp),
-                                                color = PaperWarm,
-                                            ) {
-                                                Text(
-                                                    entry.character,
-                                                    fontSize = 24.sp,
-                                                    color = InkDark,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        StudyToolsCard(
+                            summary = studySummary,
+                            entries = studyList,
+                            onOpenStudyTools = onOpenStudyTools,
+                            onDrill = onDrill,
+                            onPaper = onPaper,
+                            onStudyList = onStudyList,
+                        )
                     }
                     item {
                         SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
@@ -1266,6 +1161,95 @@ private fun BrowseCard(onBrowse: () -> Unit) {
                 )
             }
             Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkDark)
+        }
+    }
+}
+
+@Composable
+private fun StudyToolsCard(
+    summary: List<String>,
+    entries: List<CharacterEntry>,
+    onOpenStudyTools: () -> Unit,
+    onDrill: () -> Unit,
+    onPaper: () -> Unit,
+    onStudyList: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SoftCard(modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.PlaylistPlay, contentDescription = null, tint = InkDark)
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Study tools",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                    )
+                    Text(
+                        if (summary.isEmpty()) {
+                            "Pin, skip, or add characters."
+                        } else {
+                            summary.joinToString(" · ")
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+                TextButton(
+                    onClick = onOpenStudyTools,
+                    modifier = Modifier.clearAndSetSemantics {
+                        contentDescription = "Manage study tools"
+                        role = Role.Button
+                        onClick(label = "Manage study tools") {
+                            onOpenStudyTools()
+                            true
+                        }
+                    },
+                ) { Text("Manage") }
+            }
+            if (entries.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    entries.take(8).forEach { entry ->
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = PaperWarm,
+                        ) {
+                            Text(
+                                entry.character,
+                                fontSize = 24.sp,
+                                color = InkDark,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                }
+                PrimaryAction(
+                    text = "Study",
+                    onClick = onStudyList,
+                    icon = Icons.Rounded.PlayArrow,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TonalAction(
+                        text = "Draw",
+                        onClick = onDrill,
+                        accent = PaperWarm,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TonalAction(
+                        text = "Paper",
+                        onClick = onPaper,
+                        accent = PaperWarm,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }

@@ -86,10 +86,14 @@ fun InkCanvas(
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Main)
                         if (!enabled) continue
-                        // A stylus always wins over a finger or palm. If a palm
-                        // started a touch stroke just before the pen, drop it.
-                        val stylus = event.changes.firstOrNull { it.type == PointerType.Stylus || it.type == PointerType.Eraser }
-                        if (stylus != null && live != null && liveIsTouch) {
+                        // A pressed stylus wins over a finger or palm. Hover
+                        // events are ignored here too, so holding a pen near
+                        // the screen does not cancel a finger stroke.
+                        val stylus = event.changes.firstOrNull {
+                            (it.type == PointerType.Stylus || it.type == PointerType.Eraser) &&
+                                (it.pressed || it.changedToUp() || it.id == activePointerId)
+                        }
+                        if (stylus != null && stylus.pressed && live != null && liveIsTouch) {
                             live = null
                             liveIsTouch = false
                             activePointerId = null

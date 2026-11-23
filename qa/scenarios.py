@@ -26,6 +26,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("daily20", level="quick", all_profiles=True, state={"reviews": 20, "new": 5, "days": 7, "known": 8}, runner="daily_sample"),
     ScenarioSpec("daily80", level="quick", all_profiles=True, state={"reviews": 80, "new": 5, "days": 30, "known": 40}, runner="daily_sample"),
     ScenarioSpec("navigation", level="quick", all_profiles=True, state={"reviews": 20, "new": 5, "days": 10}, runner="navigation"),
+    ScenarioSpec("navigation-deep", level="standard", state={"reviews": 20, "new": 5, "days": 10}, runner="navigation_deep"),
     ScenarioSpec("resume", level="quick", all_profiles=True, state={"reviews": 20, "new": 5, "days": 7}, runner="resume"),
     ScenarioSpec("caught-up", level="standard", state={"reviews": 0, "new": 0, "known": 20, "goal": 0, "days": 30}, runner="learning_state"),
     ScenarioSpec("completion", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "pronunciation": True, "task_mode": "PRONOUNCE", "review_order": "OLDEST_FIRST"}, runner="completion"),
@@ -53,6 +54,13 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("draw-recognition", level="quick", state={"guides_only": True, "reviews": 8, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="draw_recognition"),
     ScenarioSpec("draw-recognition-ja", level="full", state={"guides_only": True, "reviews": 4, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "JAPANESE"}, runner="draw_recognition"),
     ScenarioSpec("draw-recognition-ko", level="full", state={"guides_only": True, "reviews": 4, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "KOREAN"}, runner="draw_recognition"),
+    ScenarioSpec("paper-compare", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="paper_compare"),
+    ScenarioSpec("study-lists", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="study_lists"),
+    ScenarioSpec("appearance", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="appearance"),
+    ScenarioSpec("word-audio", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="word_audio"),
+    ScenarioSpec("anki", level="standard", state={"reviews": 8, "new": 2, "days": 7, "pronunciation": True, "anki_writing": True, "anki_pronunciation": True}, runner="anki"),
+    ScenarioSpec("meaning", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True}, runner="meaning"),
+    ScenarioSpec("meaning-anki", level="standard", state={"reviews": 8, "new": 0, "days": 7, "meaning_practice": True, "anki_writing": True, "anki_meaning": True}, runner="meaning_anki"),
 ]
 
 
@@ -877,6 +885,382 @@ def pronounce_kana(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def _settings_section(journey: Journey, label: str) -> None:
+    journey.open_tab("Settings")
+    journey.wait("Make Bihua yours", timeout=8, exact=False)
+    # Settings rows use text; the bottom navigation uses content descriptions.
+    # "Practice" exists in both, so tap the text row explicitly.
+    row = journey.d(text=label)
+    for _ in range(6):
+        if row.exists:
+            break
+        journey.scroll_down()
+    if not row.exists:
+        raise JourneyFailure(f"settings row missing: {label}")
+    row.click()
+    time.sleep(0.5)
+
+
+def _search_character(journey: Journey, glyph: str) -> None:
+    field = journey.d(className="android.widget.EditText")
+    if not field.exists:
+        raise JourneyFailure("character search field missing")
+    for _ in range(3):
+        field.click()
+        time.sleep(0.2)
+        field.set_text(glyph)
+        time.sleep(0.7)
+        if field.get_text() == glyph:
+            break
+    else:
+        raise JourneyFailure(f"character search did not accept {glyph}")
+    tile = journey.d(descriptionContains=f"{glyph},")
+    if not tile.exists:
+        tile = journey.d(descriptionContains=glyph)
+    if not tile.exists:
+        raise JourneyFailure(f"no character tile for {glyph}")
+    tile.click()
+    time.sleep(0.8)
+
+
+def paper_compare(journey: Journey, state: ScenarioState) -> None:
+    """Paper check and Compare, including guide modes and both back arrows."""
+    with journey.step("open a character"):
+        journey.open_tab("Characters")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+        _search_character(journey, "日")
+        journey.wait("Write on paper", timeout=8)
+    with journey.step("paper check reveal and strokes"):
+        journey.tap("Write on paper")
+        journey.wait("Paper check", timeout=8)
+        journey.wait("Write it on paper", timeout=6, exact=False)
+        journey.tap("Show answer")
+        journey.wait("Hide answer", timeout=6)
+        journey.tap("Strokes")
+        journey.wait("Play stroke order", timeout=6)
+        journey.screenshot("paper-check")
+        journey.tap("Back to character details")
+        journey.wait("Write on paper", timeout=8)
+    with journey.step("compare two characters and write both"):
+        journey.tap("Compare")
+        journey.wait("Add a character to compare", timeout=8)
+        journey.tap("Add a character to compare")
+        journey.wait("Add a character", timeout=6, exact=False)
+        picker = journey.d(className="android.widget.EditText")
+        if picker.exists:
+            picker.set_text("一")
+            time.sleep(0.8)
+            # The search field also contains the typed glyph. The row's
+            # character is a TextView; the field is an EditText.
+            row = journey.d(className="android.widget.TextView", text="一")
+            if row.exists:
+                row.click()
+            else:
+                box = journey.d(className="android.widget.CheckBox")
+                if not box.exists:
+                    raise JourneyFailure("compare picker row missing")
+                box.click()
+            # The dialog can shift while the IME hides. Wait for it to settle,
+            # then retry once if the first tap lands mid-animation.
+            time.sleep(2.0)
+        for _ in range(2):
+            journey.tap("Done")
+            if not journey.exists("Add a character", timeout=2.0):
+                break
+        else:
+            journey.d.press("back")
+        journey.wait("Write both", timeout=8)
+        journey.tap("Write both")
+        journey.wait("Character 1 of 2", timeout=8, exact=False)
+        for guide in ("Faint", "Strokes", "Off"):
+            journey.tap(guide)
+        journey.screenshot("compare-write")
+        journey.tap("Next character")
+        journey.wait("Character 2 of 2", timeout=6, exact=False)
+        journey.tap("Back to character details")
+        journey.wait("Write on paper", timeout=8)
+    with journey.step("return home"):
+        journey.open_tab("Home")
+        journey.assert_home()
+
+
+def study_lists(journey: Journey, state: ScenarioState) -> None:
+    """Create a list, apply a preset, and study it without touching Home first."""
+    with journey.step("create a named list"):
+        _settings_section(journey, "Study")
+        journey.tap("Open study lists")
+        journey.wait("Study lists", timeout=8)
+        journey.tap("New list")
+        journey.wait("New study list", timeout=6, exact=False)
+        field = journey.d(className="android.widget.EditText")
+        if not field.exists:
+            raise JourneyFailure("list name field missing")
+        field.set_text("QA list")
+        journey.tap("Create")
+        journey.wait("Quick add goes to", timeout=6, exact=False)
+        journey.assert_text("QA list")
+    with journey.step("apply a preset and study it"):
+        journey.tap_visible("Starter")
+        journey.wait("Starter", timeout=6)
+        journey.tap("Study")
+        deadline = time.time() + 12
+        while time.time() < deadline:
+            if journey.exists("Review ", timeout=0.1, exact=False):
+                break
+            if journey.exists("Lesson ", timeout=0.1, exact=False):
+                break
+            time.sleep(0.2)
+        else:
+            raise JourneyFailure("list study did not start a session")
+        journey.screenshot("study-list-session")
+        journey.leave_session("End session")
+    with journey.step("list survived the session"):
+        _settings_section(journey, "Study")
+        journey.tap("Open study lists")
+        journey.wait("Study lists", timeout=8)
+        journey.assert_text("QA list")
+        journey.assert_text("Starter")
+        journey.tap("Close study lists")
+        journey.open_tab("Home")
+        journey.assert_home()
+
+
+def appearance(journey: Journey, state: ScenarioState) -> None:
+    """Switch dark and light and verify every tab still renders."""
+    with journey.step("switch to dark"):
+        _settings_section(journey, "Display")
+        journey.tap("Dark")
+        time.sleep(0.8)
+        journey.screenshot("theme-dark-settings")
+    with journey.step("visit every tab in dark"):
+        for tab in ("Home", "Characters", "Progress", "Practice"):
+            journey.open_tab(tab)
+            time.sleep(0.5)
+            journey.screenshot(f"theme-dark-{tab.lower()}")
+    with journey.step("switch back to light"):
+        journey.open_tab("Settings")
+        journey.tap_visible("Display")
+        journey.tap("Light")
+        time.sleep(0.5)
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.screenshot("theme-light-home")
+
+
+def word_audio(journey: Journey, state: ScenarioState) -> None:
+    """The Word of the Day speaker is present, tappable, and does not crash."""
+    with journey.step("word of the day is on Home"):
+        journey.assert_home()
+        journey.wait("Word of the day", timeout=8)
+    with journey.step("tap the speaker"):
+        journey.tap("Hear the word")
+        time.sleep(1.5)
+        journey.assert_home()
+        journey.assert_no_crash()
+
+
+SETTINGS_MARKERS = [
+    ("Profile", "Your name"),
+    ("Practice", "Practice modes"),
+    ("Study", "Day starts at"),
+    ("Reminders", "Study reminders"),
+    ("Schedule", "Memory model"),
+    ("Writing", "Brush"),
+    ("Display", "Orientation"),
+    ("Data", "Backups stay with you"),
+    ("Sync", "Move settings and progress"),
+    ("About", "Made by Shadowsx3"),
+]
+
+
+def navigation_deep(journey: Journey, state: ScenarioState) -> None:
+    """Walk every settings section and leave overlays with the system back key."""
+    with journey.step("settings sections keep their back stack"):
+        for label, marker in SETTINGS_MARKERS:
+            _settings_section(journey, label)
+            journey.wait(marker, timeout=8, exact=False)
+            journey.d.press("back")
+            journey.wait("Make Bihua yours", timeout=8, exact=False)
+    with journey.step("character detail and its overlays"):
+        journey.open_tab("Characters")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+        # Search is covered by paper-compare and dictionary. Here open the
+        # first visible tile so the test stays about back-stack behaviour.
+        tile = journey.d(descriptionContains="爱, ai4")
+        if not tile.exists:
+            tile = journey.d(descriptionContains=", HSK 1")
+        if not tile.exists:
+            raise JourneyFailure("no character tile to open")
+        time.sleep(0.8)
+        for _ in range(2):
+            tile.click()
+            time.sleep(0.9)
+            if journey.exists("Write on paper", timeout=2):
+                break
+        else:
+            raise JourneyFailure("character tile did not open its detail")
+        journey.tap("Write on paper")
+        journey.wait("Paper check", timeout=8)
+        journey.d.press("back")
+        journey.wait("Write on paper", timeout=8)
+        journey.tap("Compare")
+        journey.wait("Compare", timeout=8)
+        journey.d.press("back")
+        journey.wait("Write on paper", timeout=8)
+        journey.d.press("back")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+    with journey.step("practice picker closes"):
+        journey.open_tab("Practice")
+        journey.wait("Draw freely", timeout=8, exact=False)
+        journey.tap("Change")
+        journey.wait("Choose a character", timeout=8, exact=False)
+        journey.d.press("back")
+        journey.wait("Draw freely", timeout=8, exact=False)
+    with journey.step("study lists close back to settings"):
+        _settings_section(journey, "Study")
+        journey.tap("Open study lists")
+        journey.wait("Study lists", timeout=8)
+        journey.d.press("back")
+        journey.wait("Day starts at", timeout=8, exact=False)
+        journey.d.press("back")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+    with journey.step("study tools sheet closes"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.tap_visible("Manage study tools")
+        journey.wait("Pinned", timeout=8)
+        journey.d.press("back")
+        for _ in range(3):
+            journey.scroll_up()
+        journey.assert_home()
+    journey.assert_no_crash()
+
+
+def anki(journey: Journey, state: ScenarioState) -> None:
+    """Reveal-only reviews never show the canvas or the reading field."""
+    with journey.step("settings explain the option"):
+        _settings_section(journey, "Practice")
+        if journey.ensure_visible("Anki-style review") is None:
+            raise JourneyFailure("Anki-style settings card missing")
+        journey.assert_text("Writing: tap to reveal")
+        journey.assert_text("Pronunciation: tap to reveal")
+        journey.screenshot("anki-settings")
+        journey.d.press("back")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+    with journey.step("reviews stay reveal-only"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.start_session()
+        graded = 0
+        for _ in range(8):
+            if journey.exists("Session complete", timeout=0.4):
+                break
+            if journey.exists("Check & grade", timeout=0.2):
+                raise JourneyFailure("Anki writing showed the canvas action")
+            if journey.exists("Type the reading", timeout=0.2):
+                raise JourneyFailure("Anki pronunciation showed the typing field")
+            if journey.exists("Next: trace", timeout=0.2):
+                raise JourneyFailure("Anki writing still asked for a trace")
+            if journey.exists("Next: show answer", timeout=0.2):
+                journey.tap("Next: show answer")
+            if journey.exists("Show answer", timeout=3):
+                journey.tap("Show answer")
+                journey.screenshot(f"anki-answer-{graded}")
+            journey.tap_any(["Good", "Easy", "Hard", "Again"], timeout=6)
+            graded += 1
+            time.sleep(0.4)
+        if graded == 0:
+            raise JourneyFailure("no Anki review was graded")
+    with journey.step("leave"):
+        if journey.exists("Session complete", timeout=1):
+            journey.tap("Back to home")
+            journey.assert_home()
+        else:
+            journey.leave_session("End session")
+    journey.assert_no_crash()
+
+
+def meaning(journey: Journey, state: ScenarioState) -> None:
+    """Type a meaning, reveal it, add a synonym, and grade."""
+    with journey.step("settings expose the meaning check"):
+        _settings_section(journey, "Practice")
+        if journey.ensure_visible("Meaning") is None:
+            raise JourneyFailure("Meaning setting missing")
+        journey.assert_text("Meaning: tap to reveal")
+        journey.d.press("back")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+    with journey.step("type and add a synonym"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.start_session()
+        seen = False
+        for _ in range(8):
+            if journey.exists("Session complete", timeout=0.4):
+                break
+            if journey.exists("What does it mean?", timeout=0.3):
+                seen = True
+                field = journey.d(className="android.widget.EditText")
+                if not field.exists:
+                    raise JourneyFailure("meaning answer field missing")
+                field.click()
+                field.set_text("a personal wording")
+                journey.tap("Show answer")
+                journey.wait("Add a synonym", timeout=6)
+                journey.tap_visible("Add a synonym")
+                time.sleep(0.4)
+                draft = journey.d(className="android.widget.EditText")
+                if draft.exists:
+                    draft.set_text("a personal wording")
+                journey.tap("Add")
+                journey.wait("Also accepted", timeout=6)
+                journey.wait("a personal wording", timeout=4)
+                journey.screenshot("meaning-answer")
+            else:
+                if journey.exists("Show answer", timeout=1):
+                    journey.tap("Show answer")
+            journey.tap_visible("Good")
+            time.sleep(0.4)
+        if not seen:
+            raise JourneyFailure("no meaning review appeared")
+    with journey.step("leave"):
+        if journey.exists("Session complete", timeout=1):
+            journey.tap("Back to home")
+            journey.assert_home()
+        else:
+            journey.leave_session("End session")
+
+
+def meaning_anki(journey: Journey, state: ScenarioState) -> None:
+    """Anki meaning has no typing field and still offers synonyms after reveal."""
+    with journey.step("meaning reveal-only"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.start_session()
+        seen = False
+        for _ in range(8):
+            if journey.exists("Session complete", timeout=0.4):
+                break
+            if journey.exists("What does it mean?", timeout=0.3):
+                seen = True
+                if journey.exists("In your own words", timeout=0.2):
+                    raise JourneyFailure("Anki meaning showed a typing field")
+                journey.tap("Show answer")
+                journey.wait("Add a synonym", timeout=6)
+                journey.screenshot("meaning-anki-answer")
+            elif journey.exists("Show answer", timeout=1):
+                journey.tap("Show answer")
+            journey.tap_visible("Good")
+            time.sleep(0.4)
+        if not seen:
+            raise JourneyFailure("no meaning review appeared")
+    with journey.step("leave"):
+        if journey.exists("Session complete", timeout=1):
+            journey.tap("Back to home")
+            journey.assert_home()
+        else:
+            journey.leave_session("End session")
+
+
 def accessibility(journey: Journey, state: ScenarioState) -> None:
     issues: list[str] = []
     for screen in ("Home", "Characters", "Progress", "Practice", "Settings"):
@@ -894,6 +1278,7 @@ RUNNERS = {
     "fresh": fresh,
     "daily_sample": daily_sample,
     "navigation": navigation,
+    "navigation_deep": navigation_deep,
     "resume": resume,
     "process_death": process_death,
     "completion": completion,
@@ -912,4 +1297,11 @@ RUNNERS = {
     "review_modes": review_modes,
     "pronounce_kana": pronounce_kana,
     "draw_recognition": draw_recognition,
+    "paper_compare": paper_compare,
+    "study_lists": study_lists,
+    "appearance": appearance,
+    "word_audio": word_audio,
+    "anki": anki,
+    "meaning": meaning,
+    "meaning_anki": meaning_anki,
 }

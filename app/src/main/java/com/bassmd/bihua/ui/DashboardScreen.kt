@@ -326,7 +326,8 @@ private fun ReviewQualityCard(
                 )
                 val writing = taskStats["WRITE"]
                 val speaking = taskStats["PRONOUNCE"]
-                if (writing != null || speaking != null) {
+                val meaning = taskStats["MEANING"]
+                if (writing != null || speaking != null || meaning != null) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         buildString {
@@ -336,6 +337,10 @@ private fun ReviewQualityCard(
                             if (writing != null && speaking != null) append(" · ")
                             speaking?.let {
                                 append("Pronunciation ${(it.passRate * 100).toInt()}% of ${it.reviews}")
+                            }
+                            if (meaning != null) {
+                                if (writing != null || speaking != null) append(" · ")
+                                append("Meaning ${(meaning.passRate * 100).toInt()}% of ${meaning.reviews}")
                             }
                         },
                         style = MaterialTheme.typography.labelSmall,
