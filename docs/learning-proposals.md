@@ -339,6 +339,10 @@ that respect the learner:
 
 ## 8. Launch-asset refresh (do this last)
 
+Status (2026-11-23): 1.0.7 and the refreshed Play listing were submitted for
+review with the final build. The landing page now uses cache-busted 1.0.7
+captures.
+
 Do not finalise the public landing page or Play Store images until the 1.0.7 UI
 is frozen and the release candidate is built. The current icon, mascot, and
 splash are the source of truth; any screen change after the final capture means

@@ -199,6 +199,7 @@ Status:
 | A worksheet can only use a fixed slice of the course. | Fixed | Course order has a start number, an All option, a picked set, and .txt/.csv import. |
 | Worksheet templates are a wall of chips. | Fixed | Seven named templates set a full pattern, with a plain-language description and fine-tune controls below. |
 | A single-character worksheet says “1 characters.” | Fixed | Counts are pluralised in the builder, preview, export message, and PDF labels. |
+| The landing page can keep showing an old screenshot after a UI change. | Fixed | The practice capture was rebuilt from the final build and every content image URL now carries `?v=1.0.7` so a cached copy is not reused. |
 
 ## Local journey harness
 
