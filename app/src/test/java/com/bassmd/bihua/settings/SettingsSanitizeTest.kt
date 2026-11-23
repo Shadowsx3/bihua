@@ -25,6 +25,7 @@ class SettingsSanitizeTest {
     fun clampsRestoredTimersAndBrushValues() {        val settings = AppSettings(
             vacationStartedAtMs = -5L,
             easeBackUntilMs = -1L,
+            brushWidthMigrated = true,
             brush = BrushConfig(
                 minWidthDp = -30f,
                 maxWidthDp = 900f,
@@ -39,7 +40,7 @@ class SettingsSanitizeTest {
         assertEquals(0L, settings.easeBackUntilMs)
         assertEquals(0.2f, settings.brush.minWidthDp, 0.001f)
         assertEquals(14f, settings.brush.maxWidthDp, 0.001f)
-        assertEquals(0.55f, settings.brush.pressureCurve, 0.001f)
+        assertEquals(0.45f, settings.brush.pressureCurve, 0.001f)
         assertEquals(0.6f, settings.brush.speedThinning, 0.001f)
         assertEquals(0f, settings.brush.taper, 0.001f)
         assertEquals(1f, settings.brush.taperStrength, 0.001f)
