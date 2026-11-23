@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bihua changelog</title>
+<meta name="description" content="Every Bihua release, from the first closed test to 1.0.8: worksheets, the dictionary, brush guides, widgets, and the daily word.">
+<meta name="theme-color" content="#f7f2e6">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Bihua changelog">
+<meta property="og:description" content="What changed in each Bihua release, in the order it changed.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="assets/practice-light.png?v=1.0.7">
+<link rel="icon" href="assets/icon-256.png?v=1.0.8">
+<link rel="apple-touch-icon" href="assets/icon-256.png?v=1.0.8">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+  try {
+    const saved = localStorage.getItem("bihua-theme");
+    document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
+  } catch (_) {}
+</script>
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/icon-256.png?v=1.0.8" alt="">
+      <div><strong>Bihua 筆畫</strong><span>Write it. Keep it.</span></div>
+    </a>
+    <nav class="links" aria-label="Primary">
+      <a href="method.html">How it works</a>
+      <a href="index.html#philosophy">Why</a>
+      <a href="index.html#print">Print</a>
+      <a href="index.html#screens">Screens</a>
+      <a href="index.html#download">Download</a>
+      <a href="changelog.html" aria-current="page">Changelog</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">☰</button>
+      <a class="icon-button" href="https://github.com/Shadowsx3/bihua" aria-label="Source on GitHub" title="Source on GitHub">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.59 0 8.02c0 3.55 2.29 6.56 5.47 7.62.4.08.55-.17.55-.39 0-.19-.01-.83-.01-1.5-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .22.15.47.55.39A8.02 8.02 0 0 0 16 8.02C16 3.59 12.42 0 8 0Z"/></svg>
+      </a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">Light</span>
+      </button>
+      <a class="button small" href="index.html#download">Download</a>
+    </div>
+  </div>
+</header>
+<div class="mobile-menu" id="mobile-menu" data-menu hidden>
+  <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
+  <a href="method.html">How it works</a>
+  <a href="index.html#philosophy">Why characters</a>
+  <a href="index.html#print">Print</a>
+  <a href="index.html#screens">Screens</a>
+  <a href="index.html#download">Download</a>
+  <a href="changelog.html">Changelog</a>
+  <a href="https://github.com/Shadowsx3/bihua">Source on GitHub</a>
+</div>
+
+<main id="main">
+  <div class="wrap article-hero">
+    <div class="kicker">Changelog</div>
+    <h1>Small releases, kept honest.</h1>
+    <p class="lead">What changed in each Bihua release, in the order it changed. No marketing fog: the work, the fixes, and the next thing.</p>
+    <div class="article-meta">
+      <span>Current release 1.0.7</span>
+      <span>1.0.8 in progress</span>
+      <span>Android 10+ · offline</span>
+    </div>
+  </div>
+
+  <div class="wrap" style="max-width: 980px; margin: 0 auto 72px;">
+
+    <div class="release-list">
+      <article class="release current reveal">
+        <div class="release-meta">
+          <div class="release-version">1.0.8</div>
+          <div class="release-date">In progress · 2026-11-23</div>
+          <span class="release-tag">next</span>
+        </div>
+        <ul>
+          <li><b>Stroke coaching.</b> The exact repair stroke is highlighted, with Show me, Trace it, and Write alone. A clean repair closes with the stroke in mint.</li>
+          <li><b>Kana that reads like kana.</b> Hiragana and katakana use a rounder, lighter guide; Han characters keep the filled brush.</li>
+          <li><b>Collapsible character sections.</b> The 3,100-entry grid groups by level, with counts and search that flattens the list.</li>
+          <li><b>Widgets and a curated daily word.</b> Today and Word of the Day widgets change with the hour; the daily word is always non-mature and drawn from a large quality pool.</li>
+          <li><b>Pinyin choice.</b> Tone marks are the default; numbers are optional. Typing accepts ni3, nǐ, or plain letters either way.</li>
+          <li><b>Full feedback in practice.</b> The handwriting check, exact repair stroke, repair modes, shape evidence, and mint closure now appear in free practice too.</li>
+          <li><b>Calmer colour.</b> A waiting stroke is butter and a recognition difference is sky blue; red is no longer used for practice evidence.</li>
+        </ul>
+      </article>
+      <article class="release reveal">
+        <div class="release-meta">
+          <div class="release-version">1.0.7</div>
+          <div class="release-date">Current release · 2026-11-23</div>
+          <span class="release-tag">live</span>
+        </div>
+        <ul>
+          <li><b>Worksheet studio.</b> A4 or Letter PDF from the course, picked characters, imported lists, mistakes, or confusions, with seven templates.</li>
+          <li><b>A full dictionary.</b> Search by word, reading, or meaning; open any word into free writing practice.</li>
+          <li><b>Filled brush guides.</b> Real tapered outlines, numbered starts, a paper halo, and a calmer stroke check.</li>
+          <li><b>The paper-ink pet.</b> A new launcher icon, cold-start welcome, and the warm hand-off into Home.</li>
+        </ul>
+      </article>
+      <article class="release reveal">
+        <div class="release-meta">
+          <div class="release-version">1.0.6</div>
+          <div class="release-date">2026-11-22</div>
+        </div>
+        <ul>
+          <li>New learners start with five characters a day, and reviews lead into the next lesson.</li>
+          <li>Reminders respect the script, skips, and suspensions; progress and restored settings are more reliable.</li>
+        </ul>
+      </article>
+      <article class="release reveal">
+        <div class="release-meta">
+          <div class="release-version">1.0.5</div>
+          <div class="release-date">2026-11-22</div>
+        </div>
+        <ul>
+          <li>Encrypted device-to-device sync on your own Wi-Fi, with a pairing code.</li>
+          <li>Off-by-default study reminders and foldable book layouts for every main screen.</li>
+        </ul>
+      </article>
+      <article class="release reveal">
+        <div class="release-meta">
+          <div class="release-version">1.0.4</div>
+          <div class="release-date">2026-11-22</div>
+        </div>
+        <ul>
+          <li>Korean word examples with Hanja, Hangul, and safer glosses.</li>
+          <li>The Word of the Day card, a guided Compare drill, and optional FSRS interval labels.</li>
+        </ul>
+      </article>
+    </div>
+    <p class="small note reveal"><a href="https://github.com/Shadowsx3/bihua/blob/main/CHANGELOG.md">Read the full changelog →</a></p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap row">
+    <div>
+      <strong>Bihua 筆畫</strong> · open-source handwriting study
+      <div class="made">Made with love in Uruguay
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.6-9.5-8.3C.6 9.8 2 6.5 5.2 6.1c2-.3 3.6.8 4.8 2.5 1.2-1.7 2.8-2.8 4.8-2.5 3.2.4 4.6 3.7 2.7 6.6C19 16.4 12 21 12 21z"/></svg>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="method.html">How it works</a>
+      <a href="https://github.com/Shadowsx3/bihua">Source</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/Shadowsx3/bihua/blob/main/LICENSE">MIT licence</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

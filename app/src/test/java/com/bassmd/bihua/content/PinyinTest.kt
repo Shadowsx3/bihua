@@ -1,5 +1,6 @@
 package com.bassmd.bihua.content
 
+import com.bassmd.bihua.settings.AppSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,5 +79,12 @@ class PinyinTest {
     @Test
     fun emptyQueryMatchesEverything() {
         assertTrue(Pinyin.matches("bǎi", "   "))
+    }
+
+    @Test
+    fun toneMarksAreTheDefaultDisplay() {
+        assertEquals("nǐhǎo", Pinyin.display("nǐhǎo", StudyMode.SIMPLIFIED, false))
+        assertEquals("ni3hao3", Pinyin.display("nǐhǎo", StudyMode.SIMPLIFIED, true))
+        assertFalse(AppSettings().pinyinNumbers)
     }
 }

@@ -119,7 +119,7 @@ private enum class WorksheetSource(val label: String) {
 fun WorksheetScreen(
     mode: StudyMode,
     studyList: List<String>,
-    pinyinNumbers: Boolean = true,
+    pinyinNumbers: Boolean = false,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current

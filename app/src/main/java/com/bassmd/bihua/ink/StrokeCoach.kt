@@ -23,6 +23,20 @@ data class StrokeCoach(
 ) {
     val isClean: Boolean get() = cleanCount == statuses.size && extra == 0 && statuses.isNotEmpty()
 
+    /** The single sentence the repair card should lead with. */
+    fun repairHint(): String? {
+        val stroke = repairStroke ?: return null
+        return when (statuses.getOrNull(stroke - 1)) {
+            StrokeCoachStatus.REVERSED ->
+                "Stroke $stroke goes the other way. Start from the other end."
+            StrokeCoachStatus.OUT_OF_ORDER ->
+                "Stroke $stroke belongs earlier in the order."
+            StrokeCoachStatus.MISSING ->
+                "Stroke $stroke was missing. Write just this one."
+            else -> null
+        }
+    }
+
     companion object {
         fun from(check: OrderAssessment): StrokeCoach {
             val statuses = (1..check.expected.coerceAtLeast(0)).map { stroke ->

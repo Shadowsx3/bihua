@@ -227,7 +227,7 @@ data class AppSettings(
     val reduceMotion: Boolean = false,
     val soundEffects: Boolean = true,
     val readAloud: Boolean = true,
-    val pinyinNumbers: Boolean = true,
+    val pinyinNumbers: Boolean = false,
     val pronunciationPractice: Boolean = false,
     /** Japanese kana can be excluded so the queue is kanji only. */
     val includeHiragana: Boolean = true,

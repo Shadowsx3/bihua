@@ -34,11 +34,13 @@
     <nav class="links" aria-label="Primary">
       <a href="method.html">How it works</a>
       <a href="#draw">Try it</a>
+      <a href="#philosophy">Why</a>
       <a href="#stylus">Stylus</a>
       <a href="#engines">Engines</a>
       <a href="#print">Print</a>
       <a href="#screens">Screens</a>
       <a href="#scripts">Scripts</a>
+      <a href="changelog.html">Changelog</a>
       <a href="#download">Download</a>
     </nav>
     <div class="nav-actions">
@@ -57,11 +59,13 @@
   <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
   <a href="method.html">How it works</a>
   <a href="index.html#draw">Try it</a>
+  <a href="index.html#philosophy">Why characters</a>
   <a href="index.html#stylus">Stylus</a>
   <a href="index.html#engines">Engines</a>
   <a href="index.html#print">Print</a>
   <a href="index.html#screens">Screens</a>
   <a href="index.html#scripts">Scripts</a>
+  <a href="changelog.html">Changelog</a>
   <a href="index.html#download">Download</a>
   <a href="https://github.com/Shadowsx3/bihua">Source on GitHub</a>
 </div>
@@ -85,7 +89,10 @@
         <span>No account</span>
         <span>Android 10+ · arm64</span>
       </div>
-      <a class="hero-text-link" href="method.html">How the scheduling and ink check work <span aria-hidden="true">→</span></a>
+      <div class="hero-text-links">
+        <a class="hero-text-link" href="method.html">How the scheduling and ink check work <span aria-hidden="true">→</span></a>
+        <a class="hero-text-link" href="#philosophy">Why characters, not words <span aria-hidden="true">→</span></a>
+      </div>
     </div>
     <div class="hero-art reveal">
       <div class="phone-stage">
@@ -125,6 +132,32 @@
           <button type="button" class="pad-button" id="pad-guide" aria-pressed="true">Guide on</button>
         </div>
         <p class="pad-status" id="pad-status" aria-live="polite">0 of 5 strokes · count only · nothing leaves this page</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="philosophy" class="wrap">
+    <div class="philosophy-panel reveal">
+      <div class="philosophy-copy">
+        <div class="kicker">Why characters, not words</div>
+        <h2>The character is the unit. The word is the reward.</h2>
+        <p class="lead">A word can be recognised from context, guessed from a familiar shape, or finished by autocomplete. That hides the real question: can you write this character from memory? Bihua schedules the character because that is the smallest thing your hand can produce on its own.</p>
+        <div class="philosophy-points">
+          <div class="point"><b>One form at a time.</b><span>A writing recall tests the shape you can produce, not whether a word looks familiar.</span></div>
+          <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter FSRS or create review debt.</span></div>
+          <div class="point"><b>Sound is separate.</b><span>Pronunciation is its own task, so a word can be read without pretending it was written.</span></div>
+          <div class="point"><b>No hidden shortcut.</b><span>If you can write 愛 from memory, 愛情 is a reward, not a guess.</span></div>
+        </div>
+        <div class="philosophy-chips">
+          <span class="chip">FSRS cards are characters</span>
+          <span class="chip">Words never enter the queue</span>
+          <span class="chip">Free word practice</span>
+        </div>
+      </div>
+      <div class="pet-stage">
+        <img src="assets/pet.png?v=1.0.8" alt="Bihua's ink pet holding a brush">
+        <div class="pet-bubble">One character at a time.</div>
+        <div class="pet-name">Mo · the ink pet</div>
       </div>
     </div>
   </section>
@@ -459,10 +492,16 @@
 
 <footer class="site">
   <div class="wrap row">
-    <div><strong>Bihua 筆畫</strong> · open-source handwriting study</div>
+    <div>
+      <strong>Bihua 筆畫</strong> · open-source handwriting study
+      <div class="made">Made with love in Uruguay
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.6-9.5-8.3C.6 9.8 2 6.5 5.2 6.1c2-.3 3.6.8 4.8 2.5 1.2-1.7 2.8-2.8 4.8-2.5 3.2.4 4.6 3.7 2.7 6.6C19 16.4 12 21 12 21z"/></svg>
+      </div>
+    </div>
     <div class="footer-links">
       <a href="method.html">How it works</a>
       <a href="https://github.com/Shadowsx3/bihua">Source</a>
+      <a href="changelog.html">Changelog</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Notices</a>
       <a href="https://github.com/Shadowsx3/bihua/blob/main/LICENSE">MIT licence</a>

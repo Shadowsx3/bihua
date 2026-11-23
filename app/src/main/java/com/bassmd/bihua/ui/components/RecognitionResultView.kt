@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CompareArrows
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -44,7 +45,6 @@ import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
-import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
 
 /**
@@ -114,7 +114,7 @@ fun RecognitionResultView(
 
         else -> {
             // Prefer a target reading inside the top three, otherwise a correct
-            // 山 drawn with one stray stroke can show as "different" even though
+            // 山 drawn with one stray stroke can show as "another reading" even though
             // the app did read 山.
             val targetRead = target?.let { wanted ->
                 result.candidates.take(3).firstOrNull { it == wanted || it in variants }
@@ -127,7 +127,7 @@ fun RecognitionResultView(
                 color = when {
                     matched -> Mint.copy(alpha = 0.18f)
                     variantMatch -> Mint.copy(alpha = 0.10f)
-                    else -> Rose.copy(alpha = 0.10f)
+                    else -> Sky.copy(alpha = 0.10f)
                 },
             ) {
                 Column {
@@ -172,13 +172,13 @@ fun RecognitionResultView(
                                 modifier = Modifier
                                     .size(if (compact) 28.dp else 34.dp)
                                     .background(
-                                        if (matched || variantMatch) Mint.copy(alpha = 0.5f) else Rose.copy(alpha = 0.4f),
+                                        if (matched || variantMatch) Mint.copy(alpha = 0.5f) else Sky.copy(alpha = 0.38f),
                                         RoundedCornerShape(50),
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
-                                    if (matched || variantMatch) Icons.Rounded.Check else Icons.Rounded.Close,
+                                    if (matched || variantMatch) Icons.Rounded.Check else Icons.Rounded.CompareArrows,
                                     contentDescription = null,
                                     tint = InkDark,
                                     modifier = Modifier.size(16.dp),
@@ -189,7 +189,7 @@ fun RecognitionResultView(
                                 when {
                                     matched -> "same"
                                     variantMatch -> "variant"
-                                    else -> "different"
+                                    else -> "another reading"
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = InkSoft,
@@ -200,7 +200,7 @@ fun RecognitionResultView(
                             caption = "Reads as",
                             size = if (compact) 84.dp else 104.dp,
                             glyphSize = if (compact) 44.sp else 54.sp,
-                            border = if (matched || variantMatch) GuideGreen else MaterialTheme.colorScheme.error,
+                            border = if (matched || variantMatch) GuideGreen else Sky,
                             emphasized = false,
                         )
                     }
@@ -332,7 +332,7 @@ private fun RecognitionSummary(
     val accent = when {
         matched -> Mint
         variantMatch -> Mint
-        else -> Rose
+        else -> Sky
     }
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -349,7 +349,7 @@ private fun RecognitionSummary(
             MiniGlyph(target ?: "?")
             Spacer(Modifier.width(4.dp))
             Icon(
-                if (matched || variantMatch) Icons.Rounded.Check else Icons.Rounded.Close,
+                if (matched || variantMatch) Icons.Rounded.Check else Icons.Rounded.CompareArrows,
                 contentDescription = null,
                 tint = accent,
                 modifier = Modifier.size(16.dp),
@@ -361,7 +361,7 @@ private fun RecognitionSummary(
                 when {
                     matched -> "same"
                     variantMatch -> "variant"
-                    else -> "different"
+                    else -> "another reading"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,

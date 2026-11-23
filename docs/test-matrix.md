@@ -29,6 +29,9 @@ device pass below.
 | Character categories | Level headers with counts, collapse/expand, flat search results | manual tablet and fold review |
 | Stroke coaching | Exact-stroke highlight, Show me/Trace it/Write alone, mint fixed-stroke closure | manual review plus `stroke-clean` journey |
 | Word practice flow | One-character reveal, previous characters stay visible, fixed play slot, compact history | manual review plus `word-guide` journey |
+| Practice feedback | Handwriting check, coach, repair modes, shape evidence, mint closure | manual phone/tablet review |
+| Pinyin display | Tone marks default, numbers optional, numeric input still accepted | `PinyinTest` and `ReadingCheckTest` plus manual Settings review |
+| Feedback colour | No punitive red for a missing stroke or a recognition difference | manual light/dark review |
 | Home-screen widgets | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
 | Word of the Day quality | At least 365 non-mature quality candidates per course; curated + pool | `ContentDatabaseTest` |
 | Cold start | Minimum hold, reduce-motion, tap-to-skip | manual launch on phone and tablet |

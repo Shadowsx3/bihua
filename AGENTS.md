@@ -48,6 +48,19 @@ Keep this in mind for every screen:
 - Settings stays compact. Explanations belong in dialogs. Mature words are off
   by default and require a confirmation when enabled.
 
+## Feedback and readings
+
+- Feedback colours are semantic, not decorative. Mint means clean, peach means
+  turn the stroke around, sky means order or a different reading, and butter
+  means a stroke is waiting. Do not use red for a missing stroke or a
+  recognition difference; red reads as failure.
+- Free practice shows the same handwriting check, coach card, repair modes, and
+  shape evidence as a review. The shared component is
+  `ui/components/StrokeCoachFeedback.kt`; do not fork it.
+- Pinyin display defaults to tone marks (`nǐhǎo`). Numbers (`ni3hao3`) are an
+  opt-in Settings choice. Pronunciation input accepts numbered pinyin, tone
+  marks, or plain letters regardless of the display setting.
+
 ## Reminders and foldable
 
 - Study reminders are off by default. Settings → Reminders has a switch, an hour,

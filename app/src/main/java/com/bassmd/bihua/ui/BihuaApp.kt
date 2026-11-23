@@ -970,7 +970,7 @@ fun BihuaApp(
         return
     }
 
-    BihuaBackground(decorated = !(inSession || tab == Tab.PRACTICE)) {
+    BihuaBackground(decorated = !inSession) {
         CompositionLocalProvider(LocalContentRepository provides repository) {
         CompositionLocalProvider(
             LocalPinyinNumbers provides settings.pinyinNumbers,
@@ -1337,7 +1337,7 @@ fun BihuaApp(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .appNavigationBarsPadding()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
                     )
                     if (showStudyTools) {
                         StudyToolsSheet(
@@ -1738,7 +1738,7 @@ private fun NavigationRail(
             modifier = Modifier
                 .fillMaxHeight()
                 .appNavigationBarsPadding()
-                .padding(vertical = 16.dp),
+                .padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         ) {

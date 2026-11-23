@@ -57,6 +57,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +74,13 @@ import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.InkStroke
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.ink.StrokeGuideLayer
+import com.bassmd.bihua.ink.OrderAssessment
+import com.bassmd.bihua.ink.StrokeCoach
+import com.bassmd.bihua.ink.StrokeEvidence
+import com.bassmd.bihua.ink.StrokeGrade
+import com.bassmd.bihua.ink.StrokeOrderGrader
 import com.bassmd.bihua.ink.StrokeOrderPlayer
+import com.bassmd.bihua.ink.centerlines
 import com.bassmd.bihua.ink.StrokePlayback
 import com.bassmd.bihua.ui.FoldState
 import com.bassmd.bihua.ui.LocalFoldState
@@ -87,6 +94,7 @@ import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.RecognitionResultView
+import com.bassmd.bihua.ui.components.StrokeCoachFeedback
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.InkDark
@@ -115,7 +123,7 @@ fun PracticeScreen(
     drawingTool: DrawingTool,
     brush: com.bassmd.bihua.settings.BrushConfig,
     allowFinger: Boolean,
-    pinyinNumbers: Boolean = true,
+    pinyinNumbers: Boolean = false,
     guideMode: com.bassmd.bihua.settings.GuideMode = com.bassmd.bihua.settings.GuideMode.FADE,
     wifiOnlyModels: Boolean = true,
     initialCharacter: CharacterEntry? = null,
@@ -136,6 +144,8 @@ fun PracticeScreen(
     val scope = rememberCoroutineScope()
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
     var recognizing by remember { mutableStateOf(false) }
+    var orderCheck by remember { mutableStateOf<OrderAssessment?>(null) }
+    var evidence by remember { mutableStateOf<StrokeEvidence?>(null) }
 
     fun visibleInk(): List<InkStroke> {
         if (!playback.isManualCursor && !playback.isPlaying) return ink.strokes.toList()
@@ -177,7 +187,11 @@ fun PracticeScreen(
         onDispose { recognitionService.close() }
     }
     LaunchedEffect(ink.strokes.size) {
-        if (!recognizing) recognition = null
+        if (!recognizing) {
+            recognition = null
+            orderCheck = null
+            evidence = null
+        }
     }
 
     val curriculumFirst = remember(mode, characters) {
@@ -191,7 +205,20 @@ fun PracticeScreen(
         ?: characters.firstOrNull()
     val player = rememberStrokeOrderPlayer(selected?.id)
 
+    fun checkAll() {
+        val strokes = visibleInk()
+        if (strokes.isEmpty()) return
+        val guide = player.guide?.centerlines().orEmpty()
+        val drawn = strokes.map { stroke -> stroke.points.map { Offset(it.x, it.y) } }
+        orderCheck = if (guide.isEmpty()) null else StrokeOrderGrader.assess(drawn, guide)
+        evidence = if (guide.isEmpty()) null else StrokeGrade.assess(drawn, guide)
+        checkWriting(selected, strokes)
+    }
+
     LaunchedEffect(selected?.id) {
+        recognition = null
+        orderCheck = null
+        evidence = null
         if (selected != null) selectedGlyph = selected.character
     }
     LaunchedEffect(mode, characters) {
@@ -276,7 +303,7 @@ fun PracticeScreen(
                             checking = recognizing,
                             onCheck = {
                                 com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
-                                checkWriting(selected, visibleInk())
+                                checkAll()
                             },
                         )
                     }
@@ -314,6 +341,8 @@ fun PracticeScreen(
                     revealProgress = reveal,
                     onStrokeStart = {
                         recognition = null
+                        orderCheck = null
+                        evidence = null
                         trimReplay()
                     },
                     modifier = Modifier
@@ -333,36 +362,75 @@ fun PracticeScreen(
                     checking = recognizing,
                     onCheck = {
                         com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
-                        checkWriting(selected, visibleInk())
+                        checkAll()
                     },
                 )
             }
         }
     }
 
-    if (recognition != null && !recognizing) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { recognition = null }) {
+    val coach = orderCheck?.let { remember(it) { StrokeCoach.from(it) } }
+    val closeFeedback = {
+        recognition = null
+        orderCheck = null
+        evidence = null
+    }
+    if (recognition != null || coach != null) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = closeFeedback) {
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = PaperWarm,
                 tonalElevation = 6.dp,
-                modifier = Modifier.widthIn(max = 400.dp),
+                modifier = Modifier.widthIn(max = 460.dp),
             ) {
                 Column(
                     Modifier
-                        .heightIn(max = 560.dp)
+                        .heightIn(max = 620.dp)
                         .verticalScroll(rememberScrollState())
                         .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    RecognitionResultView(
-                        result = recognition,
-                        target = selected?.character,
-                        recognizing = false,
-                        practiceOnly = true,
-                        compact = true,
-                    )
+                    if (recognition != null) {
+                        RecognitionResultView(
+                            result = recognition,
+                            target = selected?.character,
+                            recognizing = false,
+                            practiceOnly = true,
+                            compact = true,
+                        )
+                    }
+                    coach?.let {
+                        StrokeCoachFeedback(
+                            coach = it,
+                            player = player,
+                            hint = it.repairHint(),
+                            drawingTool = drawingTool,
+                            brush = brush,
+                            widthScale = widthScale,
+                            allowFinger = allowFinger,
+                            gridStyle = gridStyle,
+                            onRewrite = {
+                                ink.clear()
+                                closeFeedback()
+                            },
+                        )
+                    }
+                    evidence?.let {
+                        Text(
+                            "Shape: ${it.shapeLabel} · ${it.drawnStrokes} of ${it.expectedStrokes} ${if (it.expectedStrokes == 1) "stroke" else "strokes"}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    if (recognizing) {
+                        Text(
+                            "Reading the ink…",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
                     TextButton(
-                        onClick = { recognition = null },
+                        onClick = closeFeedback,
                         modifier = Modifier.align(Alignment.End),
                     ) { Text("Close") }
                 }

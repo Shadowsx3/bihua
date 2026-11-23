@@ -115,6 +115,10 @@ slogans.
 - **A desk on the home screen.** The Today and Word of the Day widgets use the
   pet and change with the hour, due count, new lessons, vacation, and all-clear
   state. They are reminders, not debts.
+- **Practice that teaches, not just counts.** Free practice now gets the same
+  handwriting check and per-stroke coach as a review, with a warm palette:
+  butter for a waiting stroke, sky blue for a different reading, mint for a clean
+  repair.
 - **Kana that reads like kana.** Hiragana and katakana use a round, even pen
   instead of the Han brush polygon, so long curves no longer pinch.
 - **Collapsible character sections.** The 3,100-entry grid groups by level with

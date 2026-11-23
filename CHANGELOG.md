@@ -33,6 +33,14 @@
   the brush and sparkle.
 - The cold-start welcome holds for a fixed beat so a fast phone cannot flash it.
   Filled-guide paths are parsed once per guide, not on every animation frame.
+- Free practice now shows the same full feedback as a review: the handwriting
+  check, the exact repair stroke, Show me / Trace it / Write alone, shape and
+  order evidence, and the mint closure.
+- Pinyin readings use tone marks by default. Settings offers a clear Tone marks /
+  Numbers choice, and typing still accepts ni3, nǐ, or plain letters either way.
+- Kinder colour semantics: a missing stroke is butter, a recognition difference
+  is sky blue with a compare mark, and red is no longer used for a practice
+  mismatch or a waiting stroke.
 
 ## 1.0.7
 

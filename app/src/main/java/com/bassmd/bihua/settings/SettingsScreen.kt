@@ -2049,12 +2049,34 @@ fun SettingsScreen(
                             }
                         }
                         Spacer(Modifier.height(12.dp))
-                        SwitchRow(
-                            title = "Pinyin with tone numbers",
-                            subtitle = "Show readings as ni3hao3 instead of nǐhǎo.",
-                            checked = settings.pinyinNumbers,
-                            onCheckedChange = { update(settings.copy(pinyinNumbers = it)) },
+                        Text(
+                            "Pinyin readings",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
                         )
+                        Text(
+                            "Choose how readings look. Typing accepts ni3, nǐ, or plain letters either way.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            SegmentedButton(
+                                shape = SegmentedButtonDefaults.itemShape(0, 2),
+                                onClick = { update(settings.copy(pinyinNumbers = false)) },
+                                selected = !settings.pinyinNumbers,
+                            ) {
+                                Text("Tone marks")
+                            }
+                            SegmentedButton(
+                                shape = SegmentedButtonDefaults.itemShape(1, 2),
+                                onClick = { update(settings.copy(pinyinNumbers = true)) },
+                                selected = settings.pinyinNumbers,
+                            ) {
+                                Text("Numbers")
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
                         SwitchRow(
                             title = "Read characters aloud",
                             subtitle = "Uses the best installed voice for the script. Off hides the speaker buttons.",

@@ -214,6 +214,8 @@ Status:
 | A fast phone could flash the cold-start welcome. | Fixed | Hold the finished welcome for at least 1,050 ms (520 ms reduce-motion); tap still skips. |
 | The profile pet looked different from the launcher icon. | Fixed | Both use `InkMascot` with the brush; the profile avatar adds the sparkle. |
 | Filled-guide playback parsed the outline path every frame. | Fixed | Parse once per guide and only transform per frame. |
+| Free practice only showed a recognition dialog, not the full coach. | Fixed | Practice now shows the handwriting check, exact repair stroke, repair modes, shape evidence, and mint closure. |
+| A missing stroke or a recognition difference was shown in red, which reads as failure. | Fixed | Waiting strokes are butter, recognition differences are sky blue with a compare mark; red is not used for practice evidence. |
 
 ## Local journey harness
 
