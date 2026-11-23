@@ -22,6 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -64,6 +66,7 @@ import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
 import com.bassmd.bihua.ui.components.PrimaryAction
+import com.bassmd.bihua.ui.components.TonalAction
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.displayReading
 import com.bassmd.bihua.ui.theme.InkDark
@@ -98,6 +101,12 @@ fun WordPracticeScreen(
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
     onCompleted: () -> Unit = {},
+    /** Queue label such as "2 of 6". Null for a single word. */
+    position: String? = null,
+    onNext: (() -> Unit)? = null,
+    nextLabel: String = "Next word",
+    onAddToList: (() -> Unit)? = null,
+    addedToList: Boolean = false,
     onClose: () -> Unit,
 ) {
     if (characters.isEmpty()) return
@@ -126,12 +135,28 @@ fun WordPracticeScreen(
                 Text(
                     when {
                         finished -> "Done"
-                        characters.size == 1 -> "Practice only · ${displayReading(word.reading, mode)}"
-                        else -> "Character ${index + 1} of ${characters.size} · ${displayReading(word.reading, mode)} · practice only"
+                        else -> buildList {
+                            position?.let { add(it) }
+                            if (characters.size > 1) {
+                                add("Character ${index + 1} of ${characters.size}")
+                            } else {
+                                add("Practice only")
+                            }
+                            displayReading(word.reading, mode).takeIf { it.isNotBlank() }?.let { add(it) }
+                        }.joinToString(" · ")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = InkSoft,
                 )
+            }
+            if (onAddToList != null) {
+                IconButton(onClick = onAddToList) {
+                    Icon(
+                        if (addedToList) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                        contentDescription = if (addedToList) "Remove from list" else "Add word to list",
+                        tint = if (addedToList) Sky else InkSoft,
+                    )
+                }
             }
         }
 
@@ -150,22 +175,49 @@ fun WordPracticeScreen(
                         color = InkDark,
                     )
                     Text(
-                        "${displayReading(word.reading, mode)} · ${word.meaning}",
+                        listOf(displayReading(word.reading, mode), word.meaning)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(12.dp))
-                    PrimaryAction(
-                        text = "Practise again",
-                        onClick = {
-                            index = 0
-                            finished = false
-                            revealed = false
-                            guideMode = WordGuideMode.OFF
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (onNext != null) {
+                        PrimaryAction(
+                            text = nextLabel,
+                            onClick = {
+                                index = 0
+                                finished = false
+                                revealed = false
+                                guideMode = WordGuideMode.OFF
+                                onNext()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        TonalAction(
+                            text = "Practise this word again",
+                            onClick = {
+                                index = 0
+                                finished = false
+                                revealed = false
+                                guideMode = WordGuideMode.OFF
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        PrimaryAction(
+                            text = "Practise again",
+                            onClick = {
+                                index = 0
+                                finished = false
+                                revealed = false
+                                guideMode = WordGuideMode.OFF
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
             return@Column

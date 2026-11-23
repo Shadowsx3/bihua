@@ -100,6 +100,7 @@ dependencies {
     implementation(libs.androidx.work.ktx)
     implementation(libs.androidx.window)
     implementation(libs.mlkit.digital.ink)
+    implementation(libs.onnxruntime.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -114,4 +115,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.onnxruntime.jvm)
 }

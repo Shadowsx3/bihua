@@ -318,7 +318,7 @@ fun CharactersScreen(
                                     onToggleStudyList(selected)
                                     scope.launch {
                                         snackbar.showSnackbar(
-                                            if (selected.id in studyList) "Removed from the study list." else "Added to the study list."
+                                            if (selected.id in studyList) "Removed from the active list." else "Added to the active list."
                                         )
                                     }
                                 },
@@ -401,7 +401,7 @@ fun CharactersScreen(
                                 onToggleStudyList(selected)
                                 scope.launch {
                                     snackbar.showSnackbar(
-                                        if (selected.id in studyList) "Removed from the study list." else "Added to the study list."
+                                        if (selected.id in studyList) "Removed from the active list." else "Added to the active list."
                                     )
                                 }
                             },

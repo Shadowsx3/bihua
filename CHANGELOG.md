@@ -10,6 +10,18 @@
 - Characters can be collapsed by level section. Each header carries its count,
   search returns a flat list, and tiles switch from level labels to status
   labels while grouped.
+- SBD is available as a second memory model: seven parameters, three state
+  values, published defaults, and a local fit from the learner's own reviews.
+  FSRS-7 and SBD keep state on every card, so switching does not reset progress.
+- Target recall is now a 70–97% setting, recommended at 90%, applied to FSRS-7
+  and SBD. The onboarding asks three quick questions and recommends a model.
+- An optional, user-supplied RWKV-Instant step model can be imported in Settings
+  with ONNX Runtime. Bihua does not bundle or advertise the weights; the package
+  is validated, run on-device, and kept in app-private storage.
+- Study lists are named collections of characters and words. They support
+  presets, streaming TXT/CSV/TSV/JSON import, `.txt` export, and a quick-add
+  list that never changes the review queue. Word lists run free word practice
+  with a queue position and a **Next word** button.
 
 ### Improved
 

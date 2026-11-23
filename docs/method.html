@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How Bihua works: FSRS-7 and on-device ink</title>
-<meta name="description" content="A close look at Bihua's two engines: an FSRS-7 scheduler that chooses the next date, and on-device ink analysis that reports what the hand actually drew.">
+<title>How Bihua works: FSRS-7, SBD, and on-device ink</title>
+<meta name="description" content="A close look at Bihua's two engines: a memory scheduler that chooses the next date, and on-device ink analysis that reports what the hand actually drew.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="How Bihua works">
-<meta property="og:description" content="FSRS-7 scheduling, on-device handwriting evidence, and the choices behind the loop.">
+<meta property="og:description" content="FSRS-7 and SBD scheduling, a target-recall choice, and on-device handwriting evidence.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="assets/practice-light.png?v=1.0.7">
 <link rel="icon" href="assets/icon-256.png">
@@ -65,10 +65,10 @@
   <div class="wrap article-hero">
     <div class="kicker">Under the hood</div>
     <h1>How Bihua reads your hand.</h1>
-    <p class="lead">And when it brings the character back. Two engines do the real work: FSRS-7 chooses the date, the ink checker reports what your hand produced. The rest of the app serves those jobs, including the places where it refuses to decide for you.</p>
+    <p class="lead">And when it brings the character back. Two engines do the real work: a memory model chooses the date, the ink checker reports what your hand produced. The rest of the app serves those jobs, including the places where it refuses to decide for you.</p>
     <div class="article-meta">
       <span>14 min read</span>
-      <span>FSRS-7 · ML Kit Digital Ink · custom stroke comparison</span>
+      <span>FSRS-7 · SBD · ML Kit Digital Ink · custom stroke comparison</span>
       <span>Android 10+ · offline</span>
     </div>
   </div>
@@ -77,7 +77,7 @@
     <aside class="toc" aria-label="On this page">
       <strong>On this page</strong>
       <a href="#loop">The loop</a>
-      <a href="#fsrs">FSRS-7</a>
+      <a href="#fsrs">Scheduling</a>
       <a href="#ink">The ink checker</a>
       <a href="#write-first">Why write first</a>
       <a href="#guides">Fading guides</a>
@@ -112,7 +112,7 @@
       </figure>
       <p>The app does not keep you in the lesson after the recall. It records the grade you choose, schedules the next date, and moves on. Sessions stay short because short sessions are easier to repeat.</p>
 
-      <h2 id="fsrs">FSRS-7: the date</h2>
+      <h2 id="fsrs">Choosing the date: FSRS-7 or SBD</h2>
       <p>Bihua runs its own FSRS-7 implementation, following the open-spaced-repetition formulas. There are no fixed intervals such as “1 day, 3 days, 7 days.”</p>
       <p>Each card keeps three numbers:</p>
       <ul>
@@ -120,8 +120,10 @@
         <li><strong>Short-term stability</strong>: the same idea for same-day and next-day reviews.</li>
         <li><strong>Difficulty</strong>: how hard this item tends to be for this learner.</li>
       </ul>
-      <p>On every review the app estimates retrievability from those numbers and the elapsed time. It then solves for the interval at a 90% target retention, capped at 365 days. The solver is numerical because the combined forgetting curve does not have a clean inverse.</p>
+      <p>On every review the app estimates retrievability from those numbers and the elapsed time. It then solves for the interval at your target recall, 90% by default and adjustable from 70% to 97%, capped at 365 days. The solver is numerical because the combined forgetting curve does not have a clean inverse.</p>
       <p>FSRS-6 used one stability value and rounded elapsed time to whole days. FSRS-7 keeps a second, faster trace and works in fractional days, so a retry ten minutes later is not treated like a retry tomorrow. The cost is complexity: 34 weights instead of 21, and a numerical interval solver.</p>
+      <p><b>SBD</b> is a newer, smaller model from A. Schill’s 2026 paper <i>Interpretable Memory Models for Spaced Repetition</i>. It keeps three numbers per card and seven weights in total: a stability ladder, a grade index, and a count of successful reviews. The published defaults work immediately, and the weights can be refitted from your own reviews on the device. In the public benchmark it lands close to FSRS-7: slightly higher log loss, slightly lower RMSE, with a fraction of the parameters.</p>
+      <p>Both models keep a current memory state on every card. Choosing one does not erase your history, and switching in Settings takes effect on the next review. The target-recall slider applies to both. Lower targets mean longer gaps and fewer reviews; higher targets mean stronger recall and more work. Bihua recommends 90% for daily study.</p>
       <p>Bihua ships the published default weights. It does not fit a personal model from your review history yet.</p>
       <div class="callout">
         <strong>The grade is the input</strong>
@@ -212,6 +214,7 @@
         <li>Longcamp, M., Zerbato-Poudou, M. T., &amp; Velay, J. L. (2005). Writing practice and letter recognition. <a href="https://doi.org/10.1016/j.actpsy.2004.10.019">doi:10.1016/j.actpsy.2004.10.019</a></li>
         <li>James, K. H., &amp; Engelhardt, L. (2012). Handwriting experience and functional brain development. <a href="https://doi.org/10.1016/j.tine.2012.08.001">doi:10.1016/j.tine.2012.08.001</a></li>
         <li>Open Spaced Repetition. FSRS implementations and algorithm notes. <a href="https://github.com/open-spaced-repetition">github.com/open-spaced-repetition</a></li>
+        <li>A. Schill. 2026. <i>Interpretable Memory Models for Spaced Repetition</i>. <a href="https://doi.org/10.5281/zenodo.22727105">doi:10.5281/zenodo.22727105</a></li>
       </ul>
       <p class="small">These papers and projects inform the design. They are not evidence that Bihua itself has been tested in a controlled trial.</p>
 

@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -34,6 +38,7 @@ import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
+import com.bassmd.bihua.ui.theme.Sky
 
 /**
  * One place to see and undo the study tools: study list, pins, one-day skips,
@@ -57,6 +62,7 @@ fun StudyToolsSheet(
     onResumeSuspended: (CharacterEntry) -> Unit,
     onResumeAllSuspended: () -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
+    onOpenStudyLists: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -78,6 +84,31 @@ fun StudyToolsSheet(
                 color = InkSoft,
                 modifier = Modifier.padding(top = 2.dp),
             )
+
+            Spacer(Modifier.height(14.dp))
+            Surface(
+                onClick = onOpenStudyLists,
+                shape = RoundedCornerShape(16.dp),
+                color = Sky.copy(alpha = 0.14f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.FormatListBulleted, contentDescription = null, tint = InkDark)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Named study lists", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                        Text(
+                            "Characters and words · presets, import, export",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                }
+            }
 
             StudyToolSection(
                 title = "Study list",

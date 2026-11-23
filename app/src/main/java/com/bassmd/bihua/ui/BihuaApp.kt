@@ -108,6 +108,7 @@ import com.bassmd.bihua.settings.OrientationLock
 import com.bassmd.bihua.settings.SettingsScreen
 import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.includesInStudy
+import com.bassmd.bihua.settings.StudyLists
 import com.bassmd.bihua.settings.StudyTools
 import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.ui.components.BihuaBackground
@@ -146,6 +147,9 @@ fun BihuaApp(
 ) {
     val settings by store.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
     val profile by store.profile.collectAsStateWithLifecycle(initialValue = UserProfile())
+    LaunchedEffect(Unit) {
+        store.updateSettings { current -> StudyLists.ensureMigrated(current) }
+    }
     val context = LocalContext.current
     val activity = context as? Activity
     val repository = remember { SqliteContentRepository(context.applicationContext) }
@@ -294,7 +298,7 @@ fun BihuaApp(
                     }
                 }
             },
-            onFinish = { chosenMode, goal, brush, share, cue, pronunciation ->
+            onFinish = { chosenMode, goal, brush, share, cue, pronunciation, method, retention ->
                 scope.launch {
                     store.updateSettings { current ->
                         current.copy(
@@ -305,6 +309,8 @@ fun BihuaApp(
                             shareIdenticalGlyphs = share,
                             recallCue = cue,
                             pronunciationPractice = pronunciation,
+                            memoryModel = method,
+                            desiredRetention = retention,
                             sessionOrder = com.bassmd.bihua.settings.SessionOrder.MIXED,
                             mixInterval = 5,
                             sessionProgress = com.bassmd.bihua.settings.SessionProgress.NEXT_LESSON,
@@ -400,7 +406,14 @@ fun BihuaApp(
                 val weights = entry?.let {
                     settings.parametersFor(it.mode, it.glyphGroupId)
                 } ?: Fsrs7.DEFAULT_W
-                gradeIntervalLabels(card, weights, now, settings.onlyAgainAndGood)
+                gradeIntervalLabels(
+                    card = card,
+                    weights = weights,
+                    nowMs = now,
+                    onlyAgainAndGood = settings.onlyAgainAndGood,
+                    model = settings.memoryModel,
+                    sbdWeights = settings.sbdParameters(),
+                )
             }
         }
     }
@@ -665,6 +678,8 @@ fun BihuaApp(
         }
     }
     var wordPractice by remember { mutableStateOf<com.bassmd.bihua.content.WordContext?>(null) }
+    var wordQueue by remember { mutableStateOf<List<com.bassmd.bihua.content.WordContext>?>(null) }
+    var wordQueueIndex by remember { mutableIntStateOf(0) }
     val startWordPractice: (com.bassmd.bihua.content.WordContext) -> Unit = { word ->
         val chars = word.word.mapNotNull { char ->
             sessionPool.firstOrNull { it.character == char.toString() }
@@ -679,14 +694,46 @@ fun BihuaApp(
             ).show()
         }
     }
+    val startWordList: (List<String>) -> Unit = { words ->
+        scope.launch {
+            val all = characters.orEmpty()
+            val resolved = withContext(Dispatchers.IO) {
+                words.distinct().mapNotNull { text ->
+                    val chars = text.mapNotNull { char ->
+                        all.firstOrNull { it.character == char.toString() }
+                    }
+                    if (chars.size != text.length || chars.isEmpty()) return@mapNotNull null
+                    runCatching { repository.word(mode, text) }.getOrNull()
+                        ?: com.bassmd.bihua.content.WordContext(
+                            word = text,
+                            reading = "",
+                            meaning = "",
+                        )
+                }
+            }
+            if (resolved.isEmpty()) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Those words are not fully available in this script.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            } else {
+                wordQueue = resolved
+                wordQueueIndex = 0
+            }
+        }
+    }
+    val addWordToList: (String) -> Unit = { text ->
+        scope.launch {
+            store.updateSettings { current -> StudyLists.toggleWord(current, text) }
+        }
+    }
     val compareFamily: (List<CharacterEntry>) -> Unit = { entries ->
         if (entries.isNotEmpty()) compareEntries = entries.take(4)
     }
     val toggleStudyList: (CharacterEntry) -> Unit = { entry ->
         scope.launch {
-            store.updateSettings { current ->
-                current.copy(studyList = StudyTools.toggleStudyList(current.studyList, entry.id))
-            }
+            store.updateSettings { current -> StudyLists.toggleCharacter(current, entry.id) }
         }
     }
     val endVacation: () -> Unit = {
@@ -709,6 +756,7 @@ fun BihuaApp(
         }
     }
     var showStudyTools by remember { mutableStateOf(false) }
+    var showStudyLists by remember { mutableStateOf(false) }
     val gradeMix by produceState(com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0), progressVersion) {
         value = withContext(Dispatchers.IO) { progressStore.gradeMix(30) }
     }
@@ -751,7 +799,13 @@ fun BihuaApp(
             ProgressStore.levelFor(card) == level
         }
         val recalls = entries.mapNotNull { entry ->
-            ProgressStore.cardFor(entry, settings, cards)?.recall(now, settings.parametersFor(entry.mode, entry.glyphGroupId) ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W)
+            ProgressStore.cardFor(entry, settings, cards)?.recall(
+                nowMs = now,
+                model = settings.memoryModel,
+                fsrsWeights = settings.parametersFor(entry.mode, entry.glyphGroupId)
+                    ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W,
+                sbdWeights = settings.sbdParameters(),
+            )
         }
         com.bassmd.bihua.progress.MemoryBucket(
             level = level,
@@ -876,6 +930,56 @@ fun BihuaApp(
         }
     }
 
+    wordQueue?.let { queue ->
+        val current = queue.getOrNull(wordQueueIndex) ?: queue.first()
+        val chars = current.word.mapNotNull { char ->
+            characters.orEmpty().firstOrNull { it.character == char.toString() }
+        }
+        if (chars.size == current.word.length && chars.isNotEmpty()) {
+            BihuaBackground(decorated = false) {
+                BihuaLocals(repository, progressStore, settings) {
+                    androidx.compose.runtime.key(current.word, wordQueueIndex) {
+                        com.bassmd.bihua.practice.WordPracticeScreen(
+                            word = current,
+                            characters = chars,
+                            mode = mode,
+                            brush = settings.brush,
+                            widthScale = settings.inkWidth.scale,
+                            gridStyle = settings.gridStyle,
+                            showStrokeNumbers = settings.showStrokeNumbers,
+                            writingSize = settings.writingSize,
+                            allowFinger = allowFinger,
+                            position = "${wordQueueIndex + 1} of ${queue.size}",
+                            nextLabel = if (wordQueueIndex == queue.lastIndex) "Done" else "Next word",
+                            addedToList = StudyLists.containsWord(settings, current.word),
+                            onAddToList = { addWordToList(current.word) },
+                            onSpeak = speak,
+                            speechEnabled = settings.readAloud,
+                            onCompleted = {
+                                scope.launch {
+                                    runCatching { progressStore.recordWordPractice(mode, current) }
+                                }
+                            },
+                            onNext = {
+                                if (wordQueueIndex < queue.lastIndex) {
+                                    wordQueueIndex++
+                                } else {
+                                    wordQueue = null
+                                    wordQueueIndex = 0
+                                }
+                            },
+                            onClose = {
+                                wordQueue = null
+                                wordQueueIndex = 0
+                            },
+                        )
+                    }
+                }
+            }
+            return
+        }
+    }
+
     wordPractice?.let { word ->
         val chars = word.word.mapNotNull { char ->
             sessionPool.firstOrNull { it.character == char.toString() }
@@ -895,6 +999,8 @@ fun BihuaApp(
                         allowFinger = allowFinger,
                         onSpeak = speak,
                         speechEnabled = settings.readAloud,
+                        addedToList = StudyLists.containsWord(settings, word.word),
+                        onAddToList = { addWordToList(word.word) },
                         onCompleted = {
                             scope.launch {
                                 runCatching { progressStore.recordWordPractice(mode, word) }
@@ -1152,6 +1258,7 @@ fun BihuaApp(
                                     tab = Tab.CHARACTERS
                                 },
                                 onStore = store,
+                                onOpenStudyLists = { showStudyLists = true },
                                 progressStore = progressStore,
                                 today = today,
                                 onProgressChanged = { progressVersion++ },
@@ -1188,6 +1295,7 @@ fun BihuaApp(
                                 suspendedIds = suspendedToday,
                                 studyList = settings.studyList,
                                 studyEntries = studyEntries,
+                                activeStudyListName = StudyLists.active(settings)?.name.orEmpty(),
                                 pinnedCount = pinnedEntries.size,
                                 skippedCount = skippedEntries.size,
                                 suspendedCount = suspendedEntries.size,
@@ -1236,7 +1344,7 @@ fun BihuaApp(
                             Modifier
                                 .weight(1f)
                                 .appNavigationBarsPadding()
-                                .padding(bottom = 96.dp),
+                                .padding(bottom = 86.dp),
                         ) {
                             AppContent(
                                 tab = tab,
@@ -1260,6 +1368,7 @@ fun BihuaApp(
                                     tab = Tab.CHARACTERS
                                 },
                                 onStore = store,
+                                onOpenStudyLists = { showStudyLists = true },
                                 progressStore = progressStore,
                                 today = today,
                                 onProgressChanged = { progressVersion++ },
@@ -1296,6 +1405,7 @@ fun BihuaApp(
                                 suspendedIds = suspendedToday,
                                 studyList = settings.studyList,
                                 studyEntries = studyEntries,
+                                activeStudyListName = StudyLists.active(settings)?.name.orEmpty(),
                                 pinnedCount = pinnedEntries.size,
                                 skippedCount = skippedEntries.size,
                                 suspendedCount = suspendedEntries.size,
@@ -1336,60 +1446,10 @@ fun BihuaApp(
                         onSelect = { tab = it },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .appNavigationBarsPadding()
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                            .appNavigationBarsPadding(trim = 10.dp)
+                            .padding(horizontal = 12.dp, vertical = 2.dp),
                     )
-                    if (showStudyTools) {
-                        StudyToolsSheet(
-                            mode = mode,
-                            studyList = studyEntries,
-                            pinned = pinnedEntries,
-                            skipped = skippedEntries,
-                            suspended = suspendedEntries,
-                            onStudyList = {
-                                showStudyTools = false
-                                startSession(studyEntries.map { it.id }.toSet())
-                            },
-                            onRemoveFromStudyList = toggleStudyList,
-                            onClearStudyList = {
-                                val ids = studyEntries.map { it.id }
-                                scope.launch {
-                                    store.updateSettings { current ->
-                                        current.copy(
-                                            studyList = StudyTools.clearList(current.studyList, ids),
-                                        )
-                                    }
-                                }
-                            },
-                            onUnpin = { entry -> prioritizeCharacter(entry, false) },
-                            onResume = { entry -> skipCharacter(entry, false) },
-                            onResumeAll = {
-                                val ids = skippedEntries.map { it.id }
-                                scope.launch {
-                                    store.updateSettings { current ->
-                                        current.copy(
-                                            skippedUntil = StudyTools.resumeAll(current.skippedUntil, ids),
-                                        )
-                                    }
-                                }
-                            },
-                            onResumeSuspended = { entry -> suspendCharacter(entry, false) },
-                            onResumeAllSuspended = {
-                                val ids = suspendedEntries.map { it.id }.toSet()
-                                scope.launch {
-                                    store.updateSettings { current ->
-                                        current.copy(suspendedIds = current.suspendedIds - ids)
-                                    }
-                                }
-                            },
-                            onOpenCharacter = { entry ->
-                                showStudyTools = false
-                                characterId = entry.id
-                                tab = Tab.CHARACTERS
-                            },
-                            onDismiss = { showStudyTools = false },
-                        )
-                    }
+
                 }
             }
         }
@@ -1397,6 +1457,71 @@ fun BihuaApp(
         }
         }
         }
+    }
+    if (showStudyTools) {
+        StudyToolsSheet(
+            mode = mode,
+            studyList = studyEntries,
+            pinned = pinnedEntries,
+            skipped = skippedEntries,
+            suspended = suspendedEntries,
+            onStudyList = {
+                showStudyTools = false
+                startSession(studyEntries.map { it.id }.toSet())
+            },
+            onRemoveFromStudyList = toggleStudyList,
+            onClearStudyList = {
+                scope.launch {
+                    store.updateSettings { current ->
+                        StudyLists.active(current)?.let { list ->
+                            StudyLists.clear(current, list.id)
+                        } ?: current
+                    }
+                }
+            },
+            onUnpin = { entry -> prioritizeCharacter(entry, false) },
+            onResume = { entry -> skipCharacter(entry, false) },
+            onResumeAll = {
+                val ids = skippedEntries.map { it.id }
+                scope.launch {
+                    store.updateSettings { current ->
+                        current.copy(
+                            skippedUntil = StudyTools.resumeAll(current.skippedUntil, ids),
+                        )
+                    }
+                }
+            },
+            onResumeSuspended = { entry -> suspendCharacter(entry, false) },
+            onResumeAllSuspended = {
+                val ids = suspendedEntries.map { it.id }.toSet()
+                scope.launch {
+                    store.updateSettings { current ->
+                        current.copy(suspendedIds = current.suspendedIds - ids)
+                    }
+                }
+            },
+            onOpenCharacter = { entry ->
+                showStudyTools = false
+                characterId = entry.id
+                tab = Tab.CHARACTERS
+            },
+            onOpenStudyLists = {
+                showStudyTools = false
+                showStudyLists = true
+            },
+            onDismiss = { showStudyTools = false },
+        )
+    }
+    if (showStudyLists) {
+        StudyListsScreen(
+            mode = mode,
+            characters = characters.orEmpty(),
+            settings = settings,
+            store = store,
+            onStudy = { ids -> startSession(ids) },
+            onPracticeWords = startWordList,
+            onClose = { showStudyLists = false },
+        )
     }
     if (startingSession) BusyDialog("Preparing your session…")
 }
@@ -1418,6 +1543,7 @@ private fun AppContent(
     onPractice: (CharacterEntry?) -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
     onStore: SettingsStore,
+    onOpenStudyLists: () -> Unit = {},
     progressStore: ProgressStore? = null,
     onProgressChanged: () -> Unit = {},
     playerStats: PlayerStats = PlayerStats.forXp(0),
@@ -1450,6 +1576,7 @@ private fun AppContent(
     suspendedIds: Set<String> = emptySet(),
     studyList: List<String> = emptyList(),
     studyEntries: List<CharacterEntry> = emptyList(),
+    activeStudyListName: String = "",
     pinnedCount: Int = 0,
     skippedCount: Int = 0,
     suspendedCount: Int = 0,
@@ -1515,6 +1642,7 @@ private fun AppContent(
             onDiscardSession = onDiscardSession,
             characters = characters,
             studyList = studyEntries,
+            activeListName = activeStudyListName,
             onStudyList = onStudyList,
             pinnedCount = pinnedCount,
             skippedCount = skippedCount,
@@ -1610,6 +1738,7 @@ private fun AppContent(
             store = onStore,
             progress = progressStore,
             onProgressChanged = { onProgressChanged() },
+            onOpenStudyLists = onOpenStudyLists,
         )
     }
 }
@@ -1802,7 +1931,7 @@ private fun BihuaBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 5.dp),
+                .padding(horizontal = 6.dp, vertical = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Tab.entries.forEach { item ->
@@ -1826,14 +1955,14 @@ private fun BihuaBottomBar(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(
                             item.icon,
                             contentDescription = item.label,
                             tint = if (active) InkDark else InkSoft,
-                            modifier = Modifier.size(21.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(

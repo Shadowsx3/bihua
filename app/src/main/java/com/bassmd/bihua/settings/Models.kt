@@ -20,6 +20,14 @@ enum class UiLanguage(val tag: String, val nativeName: String) {
 }
 
 /** Light, dark, or follow the device. */
+/** Which memory model decides the next due date. */
+@Serializable
+enum class MemoryModel(val label: String, val short: String) {
+    FSRS7("FSRS-7", "Proven, precise intervals"),
+    SBD("SBD", "Simple, interpretable, fitted to you"),
+    RWKV("RWKV-Instant", "Optional imported model"),
+}
+
 @Serializable
 enum class ThemeMode(val label: String) {
     SYSTEM("System"),
@@ -296,14 +304,25 @@ data class AppSettings(
     val skippedUntil: Map<String, String> = emptyMap(),
     /** Characters the learner never wants to see until they resume them. */
     val suspendedIds: Set<String> = emptySet(),
-    /** A manual study list, in the order the learner added characters. */
+    /** The active study list, mirrored for session code that already uses it. */
     val studyList: List<String> = emptyList(),
+    /** Named lists, newest last. */
+    val studyLists: List<StudyList> = emptyList(),
+    val activeStudyListId: String? = null,
     /** Empty means the published FSRS-7 defaults. Exactly 34 floats means custom. */
     val fsrsWeights: List<Float> = emptyList(),
     val fsrsWeightsSource: String = "",
     val fsrsWeightsUpdatedAtMs: Long = 0L,
     /** Per-script overrides. The shared profile is the fallback. */
     val fsrsProfiles: Map<String, FsrsProfile> = emptyMap(),
+    /** The memory model that decides due dates. Both keep a current state. */
+    val memoryModel: MemoryModel = MemoryModel.FSRS7,
+    /** Target recall at the next review. Lower means fewer, longer reviews. */
+    val desiredRetention: Float = 0.90f,
+    /** Empty means the published SBD defaults. Exactly 7 floats means custom. */
+    val sbdWeights: List<Float> = emptyList(),
+    val sbdWeightsSource: String = "",
+    val sbdWeightsUpdatedAtMs: Long = 0L,
 ) {
     fun fsrsParameters(): FloatArray? =
         fsrsWeights.takeIf { it.size == FsrsWeights.SIZE }?.toFloatArray()
@@ -316,6 +335,15 @@ data class AppSettings(
         if (profile == SHARED_WEIGHTS) fsrsParameters() else fsrsProfiles[profile]?.parameters()
 
     fun hasCustomWeights(profile: String): Boolean = fsrsParameters(profile) != null
+
+    fun sbdParameters(): FloatArray =
+        sbdWeights.takeIf { it.size == com.bassmd.bihua.fsrs.Sbd7.SIZE }
+            ?.toFloatArray()
+            ?.let { com.bassmd.bihua.fsrs.Sbd7.clip(it) }
+            ?: com.bassmd.bihua.fsrs.Sbd7.DEFAULT_W
+
+    fun hasCustomSbdWeights(): Boolean =
+        sbdWeights.size == com.bassmd.bihua.fsrs.Sbd7.SIZE
 
     /**
      * A shared glyph uses the shared profile, because its memory card is shared.
@@ -368,6 +396,11 @@ data class AppSettings(
             .takeIf { it.size == FsrsWeights.SIZE }
             ?.let { FsrsWeights.clip(it.toFloatArray()).toList() }
             .orEmpty()
+        val sbd = sbdWeights.takeIf { it.size == com.bassmd.bihua.fsrs.Sbd7.SIZE }
+            ?.takeIf { list -> list.all { it.isFinite() } }
+            ?.toFloatArray()
+            ?.let { com.bassmd.bihua.fsrs.Sbd7.clip(it).toList() }
+            .orEmpty()
         val profiles = fsrsProfiles.mapNotNull { (key, profile) ->
             val weights = profile.weights.takeIf { it.size == FsrsWeights.SIZE }
                 ?: return@mapNotNull null
@@ -389,6 +422,10 @@ data class AppSettings(
             fsrsWeightsSource = if (hasShared) fsrsWeightsSource else "",
             fsrsWeightsUpdatedAtMs = if (hasShared) fsrsWeightsUpdatedAtMs.coerceAtLeast(0L) else 0L,
             fsrsProfiles = profiles,
+            desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
+            sbdWeights = sbd,
+            sbdWeightsSource = if (sbd.isNotEmpty()) sbdWeightsSource else "",
+            sbdWeightsUpdatedAtMs = if (sbd.isNotEmpty()) sbdWeightsUpdatedAtMs.coerceAtLeast(0L) else 0L,
         )
     }
 

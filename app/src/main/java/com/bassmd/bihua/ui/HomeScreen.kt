@@ -117,6 +117,7 @@ fun HomeScreen(
     onDiscardSession: () -> Unit = {},
     characters: List<CharacterEntry>,
     studyList: List<CharacterEntry> = emptyList(),
+    activeListName: String = "",
     onStudyList: () -> Unit = {},
     onDrill: () -> Unit = {},
     onPaper: () -> Unit = {},
@@ -178,7 +179,7 @@ fun HomeScreen(
             ).take(8)
         }
     val studySummary = buildList {
-        if (studyList.isNotEmpty()) add("${studyList.size} in the list")
+        if (studyList.isNotEmpty()) add("${studyList.size} in ${activeListName.ifBlank { "the list" }}")
         if (pinnedCount > 0) add("$pinnedCount pinned")
         if (skippedCount > 0) add("$skippedCount skipped")
         if (suspendedCount > 0) add("$suspendedCount suspended")
@@ -323,7 +324,7 @@ fun HomeScreen(
             }
             item {
                 val summary = buildList {
-                    if (studyList.isNotEmpty()) add("${studyList.size} in the list")
+                    if (studyList.isNotEmpty()) add("${studyList.size} in ${activeListName.ifBlank { "the list" }}")
                     if (pinnedCount > 0) add("$pinnedCount pinned")
                     if (skippedCount > 0) add("$skippedCount skipped")
                     if (suspendedCount > 0) add("$suspendedCount suspended")

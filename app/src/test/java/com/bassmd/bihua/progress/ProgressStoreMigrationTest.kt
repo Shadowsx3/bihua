@@ -30,14 +30,14 @@ class ProgressStoreMigrationTest {
     }
 
     @Test
-    fun everyOldVersionUpgradesToTenWithoutLosingCards() {
+    fun everyOldVersionUpgradesToCurrentWithoutLosingCards() {
         for (version in 1..9) {
             context.deleteDatabase(DB_NAME)
             createDatabaseAt(version)
             val store = ProgressStore(context)
             try {
                 val db = store.writableDatabase
-                assertEquals(10, db.version)
+                assertEquals(ProgressStore.SCHEMA_VERSION, db.version)
                 assertTrue(hasTable(db, "xp_log"))
                 assertTrue(hasTable(db, "note"))
                 assertTrue(hasTable(db, "confusion"))
@@ -46,6 +46,8 @@ class ProgressStoreMigrationTest {
                 assertTrue(hasColumn(db, "review_log", "task"))
                 assertTrue(hasColumn(db, "review_log", "strokes"))
                 assertTrue(hasColumn(db, "word_practice", "mature"))
+                assertTrue(hasColumn(db, "card", "sbd_log_s"))
+                assertTrue(hasColumn(db, "review_log", "sbd_n"))
                 val cards = runBlocking { store.allCards() }
                 val card = cards[CARD_ID]
                 assertTrue("card lost upgrading v$version", card != null)

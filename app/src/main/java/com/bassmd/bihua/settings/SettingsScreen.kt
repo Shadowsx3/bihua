@@ -8,6 +8,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import com.bassmd.bihua.rwkv.RwkvModelStore
+import com.bassmd.bihua.rwkv.RwkvOnnxEngine
+import com.bassmd.bihua.rwkv.RwkvPackage
+import com.bassmd.bihua.rwkv.RwkvPackageState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -32,10 +36,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.produceState
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -48,6 +55,7 @@ import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.FlightTakeoff
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridOn
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
@@ -56,6 +64,7 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Person
@@ -126,6 +135,7 @@ import com.bassmd.bihua.backup.TransferScope
 import com.bassmd.bihua.content.CharacterOrder
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.fsrs.FsrsOptimizer
+import com.bassmd.bihua.fsrs.SbdOptimizer
 import com.bassmd.bihua.fsrs.FsrsWeights
 import com.bassmd.bihua.fsrs.ReviewLoad
 import com.bassmd.bihua.reminder.ReminderMessage
@@ -138,6 +148,7 @@ import com.bassmd.bihua.sync.SyncServer
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.ProfileAvatar
+import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.components.saveProfilePhoto
 import com.bassmd.bihua.ui.theme.GuideGreen
@@ -145,6 +156,7 @@ import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.AccentInk
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
+import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
@@ -166,6 +178,7 @@ fun SettingsScreen(
     store: SettingsStore,
     progress: com.bassmd.bihua.progress.ProgressStore? = null,
     onProgressChanged: () -> Unit = {},
+    onOpenStudyLists: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -211,7 +224,13 @@ fun SettingsScreen(
     var showWeightsImport by remember { mutableStateOf(false) }
     var weightDraft by remember { mutableStateOf("") }
     var optimizingWeights by remember { mutableStateOf(false) }
+    var optimizingSbd by remember { mutableStateOf(false) }
     var weightReviewCount by remember { mutableStateOf(0) }
+    var sbdReviewCount by remember { mutableStateOf(0) }
+    val rwkvStore = remember { RwkvModelStore(context) }
+    var rwkvState by remember { mutableStateOf<RwkvPackageState>(RwkvPackageState.Missing) }
+    var rwkvImporting by remember { mutableStateOf(false) }
+    var rwkvProblem by remember { mutableStateOf<String?>(null) }
     var weightProfile by rememberSaveable { mutableStateOf(AppSettings.SHARED_WEIGHTS) }
     var weightProfileMenu by remember { mutableStateOf(false) }
     var weightMoreMenu by remember { mutableStateOf(false) }
@@ -296,7 +315,56 @@ fun SettingsScreen(
                 maxCharacters = total,
                 weights = settings.parametersFor(settings.studyMode, "")
                     ?: com.bassmd.bihua.fsrs.Fsrs7.DEFAULT_W,
+                model = settings.memoryModel,
+                sbdWeights = settings.sbdParameters(),
+                desiredRetention = settings.desiredRetention,
             )
+        }
+    }
+    val rwkvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        rwkvImporting = true
+        rwkvProblem = null
+        scope.launch {
+            val imported = withContext(Dispatchers.IO) { rwkvStore.import(uri) }
+            val checked = if (imported is RwkvPackageState.Installed) {
+                val file = rwkvStore.installedFile()
+                val manifest = imported.manifest
+                val problem = if (file == null) {
+                    "The package could not be stored."
+                } else {
+                    withContext(Dispatchers.Default) { RwkvOnnxEngine.inspect(file, manifest) }
+                }
+                if (problem != null) {
+                    withContext(Dispatchers.IO) { rwkvStore.remove() }
+                    RwkvPackageState.Invalid(problem)
+                } else {
+                    imported
+                }
+            } else {
+                imported
+            }
+            rwkvState = checked
+            rwkvImporting = false
+            when (checked) {
+                is RwkvPackageState.Installed -> message = "Model package validated on this device."
+                is RwkvPackageState.Invalid -> rwkvProblem = checked.reason
+                RwkvPackageState.Missing -> Unit
+            }
+        }
+    }
+    LaunchedEffect(settingsSection) {
+        if (settingsSection == "Schedule") {
+            rwkvState = withContext(Dispatchers.IO) { rwkvStore.state() }
+        }
+    }
+    LaunchedEffect(rwkvState) {
+        if (settings.memoryModel == MemoryModel.RWKV && rwkvState !is RwkvPackageState.Installed) {
+            scope.launch {
+                store.updateSettings { it.copy(memoryModel = MemoryModel.FSRS7) }
+            }
         }
     }
     LaunchedEffect(settings.shareIdenticalGlyphs) {
@@ -313,12 +381,9 @@ fun SettingsScreen(
     }
     LaunchedEffect(settingsSection, progress, settings.fsrsProfiles, settings.fsrsWeights, weightProfile, settings.shareIdenticalGlyphs) {
         if (settingsSection == "Schedule") {
-            weightReviewCount = if (progress == null) {
-                0
-            } else {
-                progress.trainingRows(settings.shareIdenticalGlyphs)
-                    .count { it.profile == weightProfile }
-            }
+            val rows = progress?.trainingRows(settings.shareIdenticalGlyphs).orEmpty()
+            weightReviewCount = rows.count { it.profile == weightProfile }
+            sbdReviewCount = rows.size
         }
     }
     LaunchedEffect(message) {
@@ -342,6 +407,8 @@ fun SettingsScreen(
                     skippedUntil = current.skippedUntil,
                     suspendedIds = current.suspendedIds,
                     studyList = current.studyList,
+                    studyLists = current.studyLists,
+                    activeStudyListId = current.activeStudyListId,
                     fsrsWeights = current.fsrsWeights,
                     fsrsWeightsSource = current.fsrsWeightsSource,
                     fsrsWeightsUpdatedAtMs = current.fsrsWeightsUpdatedAtMs,
@@ -411,6 +478,46 @@ fun SettingsScreen(
                 }
             }
             message = note
+        }
+    }
+
+    fun fitSbd() {
+        val storeRef = progress ?: return
+        if (optimizingSbd) return
+        optimizingSbd = true
+        scope.launch {
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    val current = store.currentSettings()
+                    val rows = storeRef.trainingRows(current.shareIdenticalGlyphs)
+                    val cards = FsrsOptimizer.buildCards(rows)
+                    SbdOptimizer.optimize(cards, start = current.sbdParameters())
+                }
+                if (result == null) {
+                    message = "An SBD fit needs at least 400 reviews and 30 recent reviews to check."
+                    return@launch
+                }
+                if (result.accepted) {
+                    update(
+                        settings.copy(
+                            sbdWeights = result.weights.toList(),
+                            sbdWeightsSource = "Local fit, ${result.reviews} reviews",
+                            sbdWeightsUpdatedAtMs = System.currentTimeMillis(),
+                        ),
+                    )
+                    message = "SBD weights fitted. Held-out log loss " +
+                        "${"%.3f".format(result.baselineValidationLoss)} to " +
+                        "${"%.3f".format(result.fittedValidationLoss)}."
+                } else {
+                    message = result.reason
+                }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                message = "The SBD fit failed. The published defaults are unchanged."
+            } finally {
+                optimizingSbd = false
+            }
         }
     }
 
@@ -910,6 +1017,172 @@ fun SettingsScreen(
             }
             if (settingsSection == "Schedule") {
             item {
+                SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.10f)) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.Tune,
+                            title = "Memory model",
+                            subtitle = "How Bihua decides when a character comes back.",
+                        )
+                        val availableModels = buildList {
+                            add(MemoryModel.FSRS7)
+                            add(MemoryModel.SBD)
+                            if (rwkvState is RwkvPackageState.Installed) add(MemoryModel.RWKV)
+                        }
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            availableModels.forEachIndexed { index, model ->
+                                SegmentedButton(
+                                    shape = SegmentedButtonDefaults.itemShape(index, availableModels.size),
+                                    onClick = { update(settings.copy(memoryModel = model)) },
+                                    selected = settings.memoryModel == model,
+                                ) { Text(if (model == MemoryModel.RWKV) "RWKV" else model.label) }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            when (settings.memoryModel) {
+                                MemoryModel.FSRS7 ->
+                                    "FSRS-7 is the proven default: 34 weights, fitted per script, with precise intervals. Best when you want the most tested schedule."
+                                MemoryModel.SBD ->
+                                    "SBD is a newer, simpler model: 7 weights fitted to your whole history. It is easier to inspect and close to FSRS-7 in the public benchmark. Published defaults work before your first fit."
+                                MemoryModel.RWKV ->
+                                    "RWKV-Instant is an optional research model. Bihua does not ship its weights. Import a compatible package below; it runs on the device and is never uploaded."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Each model keeps its own state on every card, so switching never resets FSRS-7 or SBD progress.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.14f)) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SettingTitle(
+                                icon = Icons.Rounded.EventRepeat,
+                                title = "Target recall",
+                                subtitle = "How likely you want to remember a character at its next review.",
+                                modifier = Modifier.weight(1f),
+                            )
+                            Pill("90% recommended", Mint.copy(alpha = 0.45f))
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Slider(
+                                value = settings.desiredRetention,
+                                onValueChange = {
+                                    update(settings.copy(desiredRetention = (it * 100f).roundToInt() / 100f))
+                                },
+                                valueRange = 0.70f..0.97f,
+                                steps = 0,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Surface(shape = RoundedCornerShape(12.dp), color = Butter.copy(alpha = 0.55f)) {
+                                Text(
+                                    "${(settings.desiredRetention * 100f).roundToInt()}%",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = InkDark,
+                                )
+                            }
+                        }
+                        Text(
+                            when {
+                                settings.desiredRetention < 0.84f ->
+                                    "Fewer reviews and longer gaps, but more forgetting. Useful when a backlog is building."
+                                settings.desiredRetention > 0.93f ->
+                                    "Stronger recall, with clearly more reviews. Useful before an exam or for a hard script."
+                                else ->
+                                    "The recommended balance for daily study. 90% keeps the workload steady without long gaps."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Applies to the active memory model. Existing cards keep their history; new intervals use the new target.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                if (settings.memoryModel == MemoryModel.SBD) {
+                    SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
+                        Column {
+                            SettingTitle(
+                                icon = Icons.Rounded.Tune,
+                                title = "SBD weights",
+                                subtitle = "Seven values. Published defaults are a strong start.",
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (settings.hasCustomSbdWeights()) Mint.copy(alpha = 0.4f) else PaperWarm,
+                                ) {
+                                    Text(
+                                        if (settings.hasCustomSbdWeights()) "Custom" else "Defaults",
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = InkDark,
+                                    )
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "$sbdReviewCount reviews",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Button(
+                                onClick = { fitSbd() },
+                                enabled = !optimizingSbd && sbdReviewCount >= SbdOptimizer.MIN_REVIEWS,
+                                shape = CircleShape,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                if (optimizingSbd) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                Text(
+                                    when {
+                                        optimizingSbd -> "Fitting…"
+                                        sbdReviewCount < SbdOptimizer.MIN_REVIEWS -> "Need 400 reviews"
+                                        else -> "Fit to my reviews"
+                                    },
+                                )
+                            }
+                            if (optimizingSbd) {
+                                Spacer(Modifier.height(8.dp))
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                Text(
+                                    "Fitting $sbdReviewCount reviews. Keep the app open.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "SBD is described in A. Schill, Interpretable Memory Models for Spaced Repetition (2026). The fit stays on this device.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                    }
+                } else {
                 SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1093,8 +1366,113 @@ fun SettingsScreen(
                 }
             }
             }
+            }
+
+            if (settingsSection == "Schedule") {
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Paper) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.UploadFile,
+                            title = "Research model package",
+                            subtitle = "Optional. Bihua does not include RWKV weights.",
+                        )
+                        when (val state = rwkvState) {
+                            RwkvPackageState.Missing -> {
+                                Text(
+                                    "No package installed. Import a compatible ONNX step model that you obtained and are allowed to use.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                            is RwkvPackageState.Installed -> {
+                                Text(
+                                    state.manifest.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = InkDark,
+                                )
+                                Text(
+                                    "${state.manifest.architecture} · ${state.manifest.stateSize} state values · ${formatBytes(state.sizeBytes)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                )
+                                Text(
+                                    "SHA-256 ${state.manifest.sha256.take(12)}… · runs on this device",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = InkSoft,
+                                )
+                            }
+                            is RwkvPackageState.Invalid -> {
+                                Text(
+                                    state.reason,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                        }
+                        rwkvProblem?.let {
+                            Text(it, style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { rwkvLauncher.launch(arrayOf("application/zip", "*/*")) },
+                                enabled = !rwkvImporting,
+                                shape = CircleShape,
+                            ) {
+                                if (rwkvImporting) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                Text(if (rwkvImporting) "Checking…" else "Import package")
+                            }
+                            if (rwkvState is RwkvPackageState.Installed) {
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            withContext(Dispatchers.IO) { rwkvStore.remove() }
+                                            rwkvState = RwkvPackageState.Missing
+                                            if (settings.memoryModel == MemoryModel.RWKV) {
+                                                update(settings.copy(memoryModel = MemoryModel.FSRS7))
+                                            }
+                                            message = "Model package removed."
+                                        }
+                                    },
+                                ) { Text("Remove") }
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "The package is validated on this device and never uploaded. Check its licence before use; the published RWKV weights are research-only. This option is not advertised elsewhere in the app.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            }
 
             if (settingsSection == "Study") {
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.22f)) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.FormatListBulleted,
+                            title = "Study lists",
+                            subtitle = "Named shelves of characters and words, with presets and file import.",
+                        )
+                        TextButton(onClick = onOpenStudyLists) {
+                            Text("Open study lists")
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
             item {
                 SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
                     Column {
@@ -2213,7 +2591,7 @@ fun SettingsScreen(
                         Text("Start over", style = MaterialTheme.typography.titleMedium, color = InkDark)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Clears every card, review, XP level and confusion record for all scripts. Your notes, study list and settings stay. This cannot be undone.",
+                            "Clears every card, review, XP level and confusion record for all scripts. Your notes, study lists and settings stay. This cannot be undone.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -2469,6 +2847,12 @@ fun SettingsScreen(
                             color = InkSoft,
                         )
                         Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Scheduling uses FSRS-7 and SBD. Thanks to Jarrett Ye and the open-spaced-repetition contributors, and to A. Schill for SBD. RWKV-Instant is an optional imported research model; its weights are not included.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(6.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             TextButton(onClick = { showLicences = true }) {
                                 Text("Licences and sources")
@@ -2553,7 +2937,7 @@ fun SettingsScreen(
             title = { Text("Reset all progress?") },
             text = {
                 Text(
-                    "Every card, review, XP level, word practice entry and confusion record is deleted for all four scripts. Notes, your study list and settings are kept. This cannot be undone."
+                    "Every card, review, XP level, word practice entry and confusion record is deleted for all four scripts. Notes, your study lists and settings are kept. This cannot be undone."
                 )
             },
             confirmButton = {
@@ -2929,7 +3313,7 @@ private val SETTINGS_ENTRIES = listOf(
         "reminder notification notifications daily time days study review lesson nudge",
     ),
     SettingsEntry(
-        "Schedule", "Schedule", "FSRS-7 weights and personal fit",
+        "Schedule", "Schedule", "Memory model, target recall, weights",
         Icons.Rounded.Tune, Mint, "LEARNING",
         "fsrs weights optimize fit tune schedule retention personal",
     ),
@@ -3269,6 +3653,15 @@ private fun InkWidth.label(): String = when (this) {
     InkWidth.BRUSH -> "Brush"
 }
 
+private fun formatBytes(bytes: Long): String {
+    val mb = bytes / (1024.0 * 1024.0)
+    return when {
+        mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f MB", mb)
+        bytes >= 1024 -> "${bytes / 1024} KB"
+        else -> "$bytes B"
+    }
+}
+
 private fun OrientationLock.label(): String = when (this) {
     OrientationLock.AUTO -> "Auto"
     OrientationLock.LANDSCAPE -> "Landscape"
@@ -3363,6 +3756,30 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
             "Compilation; CC BY-SA 4.0 for CC BY-SA portions",
             "Derived from the sources above. Arphic and LGPL terms remain for their data.",
             "https://github.com/Shadowsx3/bihua",
+        ),
+        LicenceEntry(
+            "FSRS-7",
+            "MIT; algorithm by Jarrett Ye",
+            "open-spaced-repetition contributors",
+            "https://github.com/open-spaced-repetition",
+        ),
+        LicenceEntry(
+            "SBD memory model",
+            "Published research; implementation original",
+            "A. Schill, Interpretable Memory Models for Spaced Repetition (2026)",
+            "https://doi.org/10.5281/zenodo.22727105",
+        ),
+        LicenceEntry(
+            "ONNX Runtime",
+            "MIT License",
+            "Microsoft",
+            "https://github.com/microsoft/onnxruntime",
+        ),
+        LicenceEntry(
+            "RWKV-Instant research (optional import)",
+            "Weights not included; research/personal use",
+            "JSchoreels, Expertium, BlinkDL, and open-spaced-repetition. See the weights notice before importing.",
+            "https://github.com/JSchoreels/anki-rwkv/blob/main/WEIGHTS-NOTICE.md",
         ),
         LicenceEntry(
             "ML Kit Digital Ink Recognition",

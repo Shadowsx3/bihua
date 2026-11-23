@@ -1,5 +1,7 @@
 package com.bassmd.bihua.fsrs
 
+import com.bassmd.bihua.settings.MemoryModel
+
 /**
  * An honest load estimate for a daily new-character goal.
  *
@@ -23,6 +25,7 @@ object ReviewLoad {
 
     private class SimCard(
         var memory: FsrsMemory,
+        var sbd: SbdMemory,
         var dueMs: Long,
         var lastMs: Long,
     )
@@ -40,6 +43,8 @@ object ReviewLoad {
         maxCharacters: Int = 3180,
         desiredRetention: Float = 0.90f,
         weights: FloatArray = Fsrs7.DEFAULT_W,
+        model: MemoryModel = MemoryModel.FSRS7,
+        sbdWeights: FloatArray = Sbd7.DEFAULT_W,
     ): Estimate {
         if (newPerDay <= 0 || maxCharacters <= 0) {
             return Estimate(newPerDay.coerceAtLeast(0), 0, 0, 0, 0)
@@ -56,7 +61,15 @@ object ReviewLoad {
             repeat(newPerDay) {
                 if (cards.size < maxCharacters) {
                     val first = Fsrs7.firstReview(FsrsGrade.GOOD, now, desiredRetention, w = weights)
-                    cards += SimCard(first.memory, first.dueAtMs, now)
+                    val firstSbd = Sbd7.firstReview(
+                        FsrsGrade.GOOD.value,
+                        now,
+                        desiredRetention,
+                        maxIntervalDays = 365,
+                        w = sbdWeights,
+                    )
+                    val due = if (model == MemoryModel.SBD) firstSbd.dueAtMs else first.dueAtMs
+                    cards += SimCard(first.memory, firstSbd.memory, due, now)
                     if (cards.size == maxCharacters && finishDay < 0) finishDay = day
                 }
             }
@@ -67,8 +80,18 @@ object ReviewLoad {
                     val elapsed = (now - card.lastMs).coerceAtLeast(0L) / dayMs.toFloat()
                     val grade = GRADE_MIX[gradeIndex++ % GRADE_MIX.size]
                     val next = Fsrs7.review(card.memory, grade, elapsed, now, desiredRetention, w = weights)
+                    val nextSbd = Sbd7.review(
+                        card.sbd,
+                        grade.value,
+                        elapsed,
+                        now,
+                        desiredRetention,
+                        maxIntervalDays = 365,
+                        w = sbdWeights,
+                    )
                     card.memory = next.memory
-                    card.dueMs = next.dueAtMs
+                    card.sbd = nextSbd.memory
+                    card.dueMs = if (model == MemoryModel.SBD) nextSbd.dueAtMs else next.dueAtMs
                     card.lastMs = now
                     reviewsToday++
                     if (grade == FsrsGrade.AGAIN) reviewsToday++

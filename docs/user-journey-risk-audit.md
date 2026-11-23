@@ -216,6 +216,14 @@ Status:
 | Filled-guide playback parsed the outline path every frame. | Fixed | Parse once per guide and only transform per frame. |
 | Free practice only showed a recognition dialog, not the full coach. | Fixed | Practice now shows the handwriting check, exact repair stroke, repair modes, shape evidence, and mint closure. |
 | A missing stroke or a recognition difference was shown in red, which reads as failure. | Fixed | Waiting strokes are butter, recognition differences are sky blue with a compare mark; red is not used for practice evidence. |
+| A named list could silently filter the review queue and create debt. | Avoided | Lists are collections. Study starts a session from the list; the daily queue is unchanged. |
+| Large imports could load the whole file into memory or truncate it. | Fixed | TXT/CSV/TSV stream line by line; JSON uses a streaming string scanner. No item cap is applied. |
+| Word lists drift from their characters or lose their meaning. | Mitigated | Words are stored as text, characters are stored in the same list, and practice resolves meanings from the dictionary with a writing-only fallback. |
+| SBD and FSRS states diverge or get reset on switch. | Fixed | Both states are written on every review; SBD is replayed from the card log when a pre-upgrade card first needs it. |
+| A target-recall change silently rewrites history. | Avoided | Only future intervals use the new target; stored reviews and states are kept. |
+| RWKV weights are redistributed without permission. | Avoided | No weights are shipped or fetched. Settings only validates a package the user obtained; the licence and source are required in the manifest. |
+| A malformed ONNX package crashes or runs with the wrong tensors. | Guarded | Zip paths, size, checksum, tensor names, and shapes are validated before the package is accepted. |
+| A meaning check adds another review debt. | Open | Design proposal keeps the meaning check optional and outside the main schedule until tested. |
 
 ## Local journey harness
 

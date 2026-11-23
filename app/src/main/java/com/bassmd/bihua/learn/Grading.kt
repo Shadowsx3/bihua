@@ -5,6 +5,8 @@ import com.bassmd.bihua.R
 import com.bassmd.bihua.content.LearnItem
 import com.bassmd.bihua.fsrs.Fsrs7
 import com.bassmd.bihua.fsrs.FsrsGrade
+import com.bassmd.bihua.fsrs.Sbd7
+import com.bassmd.bihua.settings.MemoryModel
 import com.bassmd.bihua.ink.InkState
 import kotlin.math.roundToInt
 
@@ -72,6 +74,9 @@ fun gradeIntervalLabels(
     weights: FloatArray,
     nowMs: Long,
     onlyAgainAndGood: Boolean = false,
+    model: MemoryModel = MemoryModel.FSRS7,
+    sbdWeights: FloatArray = Sbd7.DEFAULT_W,
+    desiredRetention: Float = 0.90f,
 ): Map<Grade, String> {
     val elapsed = if (card == null) {
         0f
@@ -81,16 +86,46 @@ fun gradeIntervalLabels(
     return Grade.entries
         .filter { it.available(onlyAgainAndGood) }
         .associateWith { grade ->
-            val review = if (card == null) {
-                Fsrs7.firstReview(grade.toFsrs(), nowMs, w = weights)
+            val days = if (model == MemoryModel.SBD) {
+                if (card == null) {
+                    Sbd7.firstReview(
+                        grade.toFsrs().value,
+                        nowMs,
+                        desiredRetention = desiredRetention,
+                        w = sbdWeights,
+                    ).intervalDays
+                } else {
+                    Sbd7.review(
+                        card.sbd ?: Sbd7.fromFsrs(card.memory),
+                        grade.toFsrs().value,
+                        elapsed,
+                        nowMs,
+                        desiredRetention = desiredRetention,
+                        w = sbdWeights,
+                    ).intervalDays
+                }
             } else {
-                Fsrs7.review(card.memory, grade.toFsrs(), elapsed, nowMs, w = weights)
-            }
-            val days = if (grade == Grade.AGAIN) {
-                review.intervalDays.coerceAtLeast(1f / 1_440f)
-            } else {
+                val review = if (card == null) {
+                    Fsrs7.firstReview(
+                        grade.toFsrs(),
+                        nowMs,
+                        desiredRetention = desiredRetention,
+                        w = weights,
+                    )
+                } else {
+                    Fsrs7.review(
+                        card.memory,
+                        grade.toFsrs(),
+                        elapsed,
+                        nowMs,
+                        desiredRetention = desiredRetention,
+                        w = weights,
+                    )
+                }
                 review.intervalDays
             }
-            formatGradeInterval(days)
+            formatGradeInterval(
+                if (grade == Grade.AGAIN) days.coerceAtLeast(1f / 1_440f) else days,
+            )
         }
 }

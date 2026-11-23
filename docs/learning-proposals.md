@@ -119,6 +119,37 @@ slogans.
   handwriting check and per-stroke coach as a review, with a warm palette:
   butter for a waiting stroke, sky blue for a different reading, mint for a clean
   repair.
+## Meaning, without a second debt
+
+Writing from a meaning cue proves that the meaning can drive production. It does
+not prove the reverse: seeing 愛 and producing "love". That direction is worth
+teaching, but a second scheduled card for every character would double the debt
+and weaken the writing-first loop.
+
+Options considered:
+
+1. **A separate meaning card per character.** Honest measurement, too much debt,
+   and it competes with writing for the same daily minutes.
+2. **Reverse review (character to meaning).** Useful, but it is a different task
+   and should not silently replace a writing review.
+3. **One meaning check after some writings.** Show the character and three
+   meanings, or a short word context with a gap. One tap, no typing. It can run
+   every third review, after a lapse, or on a new character.
+4. **Meaning in word practice.** Use the example words already in the dictionary:
+   choose the word that matches a meaning, or choose the meaning of a word in a
+   sentence. Free practice, no schedule.
+
+Recommendation: start with option 3 as an **optional, low-frequency check** and
+option 4 in word practice. Record the result separately (correct / unsure /
+wrong), do not create a new FSRS card, and use it only to choose better cues and
+confusions. If it proves useful, give it its own small schedule later. Keep the
+writing review first; meaning should not become a second full deck.
+
+- **A shelf beside the schedule.** Study lists let a learner collect characters
+  and words without creating review debt. Presets make a shelf in one tap, a
+  streamed import respects an existing list, and a word queue turns a list into
+  a short free-practice session. The schedule stays the schedule; the shelf is
+  for what the learner wants to revisit on their own terms.
 - **Kana that reads like kana.** Hiragana and katakana use a round, even pen
   instead of the Han brush polygon, so long curves no longer pinch.
 - **Collapsible character sections.** The 3,100-entry grid groups by level with

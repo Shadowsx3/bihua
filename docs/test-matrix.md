@@ -33,6 +33,13 @@ device pass below.
 | Pinyin display | Tone marks default, numbers optional, numeric input still accepted | `PinyinTest` and `ReadingCheckTest` plus manual Settings review |
 | Feedback colour | No punitive red for a missing stroke or a recognition difference | manual light/dark review |
 | Home-screen widgets | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
+| Study lists | Named character and word lists, migration, presets, quick add, word bookmark and queue | `StudyListsTest`, `StudyListImportTest`, manual phone review |
+| List import | TXT, CSV, TSV, JSON streaming; words kept; no item cap | `StudyListImportTest` plus manual file-picker import |
+| List export | `.txt` round-trips characters and words | manual file-picker export |
+| SBD scheduler | Reference recurrence, pass/fail, interval inversion, per-user fit | `Sbd7Test`, `SbdOptimizerTest`, `ProgressStoreSbdTest` |
+| Target recall | 70–97% changes intervals for SBD/FSRS | `Sbd7Test`, `ProgressStoreSbdTest`, manual Settings review |
+| RWKV package | Manifest, checksum, tensor shapes, ONNX inference, state BLOB | `RwkvOnnxEngineTest`, manual package import |
+| Onboarding method | Three answers, recommendation, model choice, target recall | manual phone/tablet review |
 | Word of the Day quality | At least 365 non-mature quality candidates per course; curated + pool | `ContentDatabaseTest` |
 | Cold start | Minimum hold, reduce-motion, tap-to-skip | manual launch on phone and tablet |
 | Pet identity | Launcher icon, profile avatar, top icon use the same pet | manual light/dark review |

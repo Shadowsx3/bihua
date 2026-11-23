@@ -28,6 +28,7 @@ interface ContentRepository {
     ): WordContext?
 
     suspend fun words(characterId: String, includeMature: Boolean = false): List<WordContext>
+    suspend fun word(mode: StudyMode, word: String): WordContext?
     suspend fun guide(characterId: String): CharacterGuide?
     suspend fun sharedModes(characterId: String): List<StudyMode>
     suspend fun meta(character: String): CharacterMeta?
@@ -166,6 +167,30 @@ class SqliteContentRepository(
             read(cursor)
         }
     }
+
+    override suspend fun word(mode: StudyMode, word: String): WordContext? =
+        withContext(Dispatchers.IO) {
+            database.rawQuery(
+                """
+                SELECT w.word, w.reading, w.meaning, w.level, w.common, w.mature
+                FROM word_context w
+                WHERE w.mode=? AND w.word=?
+                ORDER BY w.common DESC, w.frequency IS NULL, w.frequency, w.id
+                LIMIT 1
+                """.trimIndent(),
+                arrayOf(mode.name, word),
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) return@withContext null
+                WordContext(
+                    word = cursor.getString(0),
+                    reading = cursor.getString(1),
+                    meaning = cursor.getString(2),
+                    level = if (cursor.isNull(3)) null else cursor.getInt(3),
+                    common = !cursor.isNull(4) && cursor.getInt(4) != 0,
+                    mature = !cursor.isNull(5) && cursor.getInt(5) != 0,
+                )
+            }
+        }
 
     override suspend fun words(
         characterId: String,

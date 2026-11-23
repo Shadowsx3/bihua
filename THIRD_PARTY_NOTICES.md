@@ -81,6 +81,18 @@ dictionary remains under LGPL-3.0-or-later. Full licence texts are in the
 
 - AndroidX, Jetpack Compose, Material Components — Apache License 2.0.
 - Google ML Kit Digital Ink Recognition — Google ML Kit Terms of Service.
+- ONNX Runtime — MIT License, Microsoft. Used only for an optional,
+  user-supplied model package.
+- FSRS / FSRS-7 — MIT, Jarrett Ye and the open-spaced-repetition contributors.
+- SBD memory model — A. Schill, *Interpretable Memory Models for Spaced
+  Repetition* (2026), <https://doi.org/10.5281/zenodo.22727105>. The app's
+  implementation is original; the paper describes the model.
+- RWKV-Instant research — JSchoreels, Expertium, BlinkDL, and the
+  open-spaced-repetition contributors. **Weights are not bundled or
+  redistributed.** The upstream notice marks them research/personal-use only:
+  <https://github.com/JSchoreels/anki-rwkv/blob/main/WEIGHTS-NOTICE.md>.
+- Android TextToSpeech — the device's installed voices. No cloud speech service
+  is used.
 - Kotlin and kotlinx libraries — Apache License 2.0.
 
 ## Full licence texts

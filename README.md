@@ -39,7 +39,7 @@ The design follows from that:
 - **The character is the study item.** Words are context, not the scheduled unit.
 - **Write from memory first.** The answer is not shown before the attempt.
 - **The guide fades.** Full strokes, then outline, then nothing.
-- **FSRS-7 decides the date.** The learner decides the grade.
+- **A memory model decides the date.** FSRS-7 or SBD. The learner decides the grade.
 - **Two skills, two tasks.** Writing and pronunciation can be tested separately.
 - **Local data.** Progress, notes, and history stay on the device.
 
@@ -50,7 +50,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | Area | What it does |
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
-| **Scheduling** | FSRS-7 per script, shared profile for shared glyphs, local weight fitting or import, 4 AM default day boundary, vacation mode, seven-day ease-back. |
+| **Scheduling** | FSRS-7 or SBD, shared profile for shared glyphs, local weight fitting, a 70–97% target recall, 4 AM default day boundary, vacation mode, seven-day ease-back. |
 | **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
@@ -58,6 +58,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
+| **Optional research model** | A validated, user-supplied ONNX step model can be imported in Settings only. No RWKV weights are shipped or advertised. |
 | **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
 | **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
 | **Foldables** | Book-style inner layout with two pages; the outer display keeps the phone layout. |
@@ -134,6 +135,26 @@ scripts/             build, device, release, smoke helpers
 qa/                  local full-app journey harness
 .github/             CI, issue templates, Dependabot
 ```
+
+## Credits and scheduling research
+
+Bihua stands on open research and open content. Thank you to:
+
+- **Jarrett Ye** and the **open-spaced-repetition** contributors for FSRS and the
+  public scheduler benchmark.
+- **A. Schill** for SBD (Stability, Brittleness, Difficulty), *Interpretable
+  Memory Models for Spaced Repetition* (2026),
+  <https://doi.org/10.5281/zenodo.22727105>.
+- **JSchoreels**, **Expertium**, **BlinkDL**, and the **open-spaced-repetition**
+  contributors for the RWKV-Instant research. Bihua does **not** bundle those
+  weights: their notice marks them research/personal-use only and asks for the
+  dataset owners' permission before distribution. The optional import path is a
+  compatibility slot for a model the user obtained themselves.
+- The character, dictionary, stroke, and frequency sources credited in
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and in Settings → About.
+
+Android TextToSpeech reads aloud with an installed on-device voice. There is no
+cloud speech service. Any future Piper voice support will also run locally.
 
 ## Privacy
 

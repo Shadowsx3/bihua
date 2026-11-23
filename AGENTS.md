@@ -48,6 +48,32 @@ Keep this in mind for every screen:
 - Settings stays compact. Explanations belong in dialogs. Mature words are off
   by default and require a confirmation when enabled.
 
+## Scheduling and research models
+
+- FSRS-7 and SBD are the advertised schedulers. Both keep a state on every card
+  and must stay current; a target-recall change affects future intervals only.
+- Target recall is a 70–97% setting with 90% as the recommendation. Do not
+  hard-code 0.90 in review, interval-preview, or load-estimate paths.
+- RWKV-Instant is an optional, user-supplied research model. Do not advertise it
+  in onboarding, the landing page, store copy, or Home. It lives only in
+  Settings as a package import. Never bundle, download, or redistribute its
+  weights; the published notice is research/personal-use only.
+- A package is validated before use: zip paths, size, manifest, SHA-256, tensor
+  names, and shapes. If it is removed while selected, fall back to FSRS-7.
+- Credits for FSRS, SBD, and RWKV research belong in the README and Settings →
+  About. Keep the licensing wording precise.
+
+## Study lists
+
+- A study list is a collection, not a filter. Studying a list starts a session
+  from its characters; it must never change the daily queue or add review debt.
+- Lists hold characters and words together. Words stay as text, resolve their
+  meaning from the dictionary, and fall back to writing-only practice.
+- Imports stream line by line (TXT/CSV/TSV) or through the streaming JSON string
+  scanner. Do not read a whole file into memory or cap the number of items.
+- Keep copy plain and professional. Name lists for what they hold, not for a
+  mood.
+
 ## Feedback and readings
 
 - Feedback colours are semantic, not decorative. Mint means clean, peach means
