@@ -58,10 +58,10 @@ enum class DrawingTool(val label: String) {
 @Serializable
 data class BrushConfig(
     val tool: DrawingTool = DrawingTool.INK,
-    val minWidthDp: Float = 0.9f,
-    val maxWidthDp: Float = 7.2f,
+    val minWidthDp: Float = 2.4f,
+    val maxWidthDp: Float = 8.5f,
     /** Exponent for pressure: lower lifts light touches, higher needs a firm press. */
-    val pressureCurve: Float = 0.55f,
+    val pressureCurve: Float = 0.45f,
     /** 0..0.6: how much faster movement thins the line. */
     val speedThinning: Float = 0.20f,
     /** Fraction of the stroke at each end that tapers. */
@@ -71,12 +71,12 @@ data class BrushConfig(
 ) {
     /** Keeps a restored or hand-edited brush inside the ranges the canvas expects. */
     fun sanitized(): BrushConfig {
-        val min = minWidthDp.finiteOr(0.9f).coerceIn(0.2f, 12f)
-        val max = maxWidthDp.finiteOr(7.2f).coerceIn(min + 0.2f, 14f)
+        val min = minWidthDp.finiteOr(2.4f).coerceIn(0.2f, 12f)
+        val max = maxWidthDp.finiteOr(8.5f).coerceIn(min + 0.2f, 14f)
         return copy(
             minWidthDp = min,
             maxWidthDp = max,
-            pressureCurve = pressureCurve.finiteOr(0.55f).coerceIn(0.1f, 2f),
+            pressureCurve = pressureCurve.finiteOr(0.45f).coerceIn(0.1f, 2f),
             speedThinning = speedThinning.finiteOr(0.20f).coerceIn(0f, 0.6f),
             taper = taper.finiteOr(0.12f).coerceIn(0f, 0.4f),
             taperStrength = taperStrength.finiteOr(0.40f).coerceIn(0f, 1f),
@@ -89,27 +89,27 @@ data class BrushConfig(
         fun preset(tool: DrawingTool): BrushConfig = when (tool) {
             DrawingTool.PEN -> BrushConfig(
                 tool = tool,
-                minWidthDp = 1.1f,
-                maxWidthDp = 2.8f,
-                pressureCurve = 0.85f,
+                minWidthDp = 1.8f,
+                maxWidthDp = 3.6f,
+                pressureCurve = 0.65f,
                 speedThinning = 0.04f,
                 taper = 0.03f,
                 taperStrength = 0.85f,
             )
             DrawingTool.PENCIL -> BrushConfig(
                 tool = tool,
-                minWidthDp = 0.8f,
-                maxWidthDp = 3.0f,
-                pressureCurve = 0.70f,
+                minWidthDp = 1.4f,
+                maxWidthDp = 3.8f,
+                pressureCurve = 0.60f,
                 speedThinning = 0.28f,
                 taper = 0.05f,
                 taperStrength = 0.65f,
             )
             DrawingTool.INK -> BrushConfig(
                 tool = tool,
-                minWidthDp = 0.9f,
-                maxWidthDp = 7.2f,
-                pressureCurve = 0.55f,
+                minWidthDp = 2.4f,
+                maxWidthDp = 8.5f,
+                pressureCurve = 0.45f,
                 speedThinning = 0.20f,
                 taper = 0.12f,
                 taperStrength = 0.40f,
@@ -276,6 +276,8 @@ data class AppSettings(
     val allowFingerDrawing: Boolean = true,
     /** One-time migration: 1.0.7 shipped finger drawing off even on stylus phones. */
     val fingerDrawingMigrated: Boolean = false,
+    /** One-time migration: 1.0.7 shipped ink thin enough to look like a hairline. */
+    val brushWidthMigrated: Boolean = false,
     val orientation: OrientationLock = OrientationLock.AUTO,
     val dailyNewGoal: Int = 5,
     /** Hour when the study day ends. 0 is midnight, 4 is the default. */
@@ -416,7 +418,6 @@ data class AppSettings(
             reminderDays = validReminderDays,
             remindersEnabled = remindersEnabled && validReminderDays.isNotEmpty(),
             mixInterval = mixInterval.coerceIn(1, 10),
-            brush = brush.sanitized(),
             vacationStartedAtMs = vacationStartedAtMs.coerceAtLeast(0L),
             easeBackUntilMs = easeBackUntilMs.coerceAtLeast(0L),
             fsrsWeights = shared,
@@ -425,6 +426,8 @@ data class AppSettings(
             fsrsProfiles = profiles,
             allowFingerDrawing = if (fingerDrawingMigrated) allowFingerDrawing else true,
             fingerDrawingMigrated = true,
+            brush = if (brushWidthMigrated) brush.sanitized() else BrushConfig.preset(brush.tool),
+            brushWidthMigrated = true,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
             sbdWeights = sbd,
             sbdWeightsSource = if (sbd.isNotEmpty()) sbdWeightsSource else "",

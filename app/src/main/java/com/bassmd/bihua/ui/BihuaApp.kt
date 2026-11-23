@@ -298,7 +298,7 @@ fun BihuaApp(
                     }
                 }
             },
-            onFinish = { chosenMode, goal, brush, share, cue, pronunciation, method, retention ->
+            onFinish = { chosenMode, goal, brush, share, cue, pronunciation, method, retention, allowFinger ->
                 scope.launch {
                     store.updateSettings { current ->
                         current.copy(
@@ -311,6 +311,8 @@ fun BihuaApp(
                             pronunciationPractice = pronunciation,
                             memoryModel = method,
                             desiredRetention = retention,
+                            allowFingerDrawing = allowFinger,
+                            fingerDrawingMigrated = true,
                             sessionOrder = com.bassmd.bihua.settings.SessionOrder.MIXED,
                             mixInterval = 5,
                             sessionProgress = com.bassmd.bihua.settings.SessionProgress.NEXT_LESSON,

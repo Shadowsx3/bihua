@@ -68,6 +68,9 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -124,7 +127,7 @@ private const val RECOMMENDED_NEW_PER_DAY = 5
 
 @Composable
 fun OnboardingScreen(
-    onFinish: (StudyMode, Int, BrushConfig, Boolean, RecallCue, Boolean, MemoryModel, Float) -> Unit,
+    onFinish: (StudyMode, Int, BrushConfig, Boolean, RecallCue, Boolean, MemoryModel, Float, Boolean) -> Unit,
     onModePreview: (StudyMode) -> Unit = {},
     restoring: Boolean = false,
     restoreMessage: String? = null,
@@ -142,6 +145,7 @@ fun OnboardingScreen(
     var shareProgress by rememberSaveable { mutableStateOf(false) }
     var cue by rememberSaveable { mutableStateOf(RecallCue.MEANING_READING) }
     var pronunciation by rememberSaveable { mutableStateOf(false) }
+    var allowFinger by rememberSaveable { mutableStateOf(true) }
     val brush = BrushConfig.preset(tool)
 
     BackHandler(enabled = step > 0) { step-- }
@@ -184,7 +188,12 @@ fun OnboardingScreen(
                         onShareChange = { shareProgress = it },
                     )
                         2 -> PacePage(mode = mode, goal = goal, onPick = { goal = it })
-                        3 -> BrushPage(tool = tool, onPick = { tool = it })
+                        3 -> BrushPage(
+                            tool = tool,
+                            onPick = { tool = it },
+                            allowFinger = allowFinger,
+                            onAllowFinger = { allowFinger = it },
+                        )
                         else -> RecallPage(
                             mode = mode,
                             cue = cue,
@@ -229,6 +238,7 @@ fun OnboardingScreen(
                                 pronunciation,
                                 MemoryModel.FSRS7,
                                 0.90f,
+                                allowFinger,
                             )
                         } else {
                             step++
@@ -251,6 +261,7 @@ fun OnboardingScreen(
                             true,
                             MemoryModel.FSRS7,
                             0.90f,
+                            true,
                         )
                     },
                 )
@@ -308,7 +319,7 @@ private fun WelcomePage() {
             "1" to ("Meet the character" to "See its shape, reading, and meaning."),
             "2" to (
                 "Trace it once" to if (hasPen) {
-                    "Follow the green guide with your S Pen or finger."
+                    "Follow the green guide with your stylus or finger."
                 } else {
                     "Follow the green guide with your pen or finger."
                 }
@@ -1196,7 +1207,12 @@ private fun cueExamples(mode: StudyMode): CueExamples = when (mode) {
 }
 
 @Composable
-private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
+private fun BrushPage(
+    tool: DrawingTool,
+    onPick: (DrawingTool) -> Unit,
+    allowFinger: Boolean,
+    onAllowFinger: (Boolean) -> Unit,
+) {
     val context = LocalContext.current
     val hasPen = remember(context) { hasStylus(context) }
     val previews = remember {
@@ -1209,7 +1225,7 @@ private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
         Spacer(Modifier.height(6.dp))
         Text(
             if (hasPen) {
-                "S Pen detected. The line follows pressure, and finger drawing is on by default. You can turn the finger off later in Settings → Writing."
+                "Stylus detected. The line follows pressure, and finger drawing is on by default. You can turn the finger off later in Settings → Writing."
             } else {
                 "Use a pen for pressure, or a finger. Finger drawing is on by default; tune the line later in Settings."
             },
@@ -1217,6 +1233,38 @@ private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
             color = InkSoft,
             textAlign = TextAlign.Center,
         )
+        if (hasPen) {
+            Spacer(Modifier.height(12.dp))
+            SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.12f)) {
+                Column {
+                    Text(
+                        "How do you want to draw?",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = InkDark,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(0, 2),
+                            onClick = { onAllowFinger(true) },
+                            selected = allowFinger,
+                        ) { Text("Stylus + finger") }
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(1, 2),
+                            onClick = { onAllowFinger(false) },
+                            selected = !allowFinger,
+                        ) { Text("Stylus only") }
+                    }
+                    Text(
+                        if (allowFinger) "Both work. Turn the finger off any time in Settings → Writing."
+                        else "Only stylus input is accepted.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(16.dp))
         listOf(
             Triple(DrawingTool.INK, "A brush: light hairs, heavy press.", Mint),
