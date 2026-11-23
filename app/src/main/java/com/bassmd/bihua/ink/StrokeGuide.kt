@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ import com.bassmd.bihua.content.CharacterGuide
 import com.bassmd.bihua.content.GuideStroke
 import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.ui.theme.GuideGreen
+import com.bassmd.bihua.ui.theme.LocalBihuaPalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -143,13 +145,33 @@ fun StrokeGuideLayer(
     showNumbers: Boolean = true,
     /** 0..1 of the full guide, used when several guides share one clock. */
     progressOverride: Float? = null,
+    /** A very faint font silhouette behind the strokes, to anchor the shape. */
+    ghostCharacter: String? = null,
 ) {
     val guide = player.guide ?: return
     if (guide.strokes.isEmpty()) return
     val rendered = remember(guide) { guide.strokes.map { toRenderStroke(it, guide.source) } }
     val textMeasurer = rememberTextMeasurer()
     val guideColor = GuideGreen
+    val palette = LocalBihuaPalette.current
     Canvas(modifier) {
+        if (!ghostCharacter.isNullOrBlank()) {
+            val ghost = textMeasurer.measure(
+                text = ghostCharacter,
+                style = TextStyle(
+                    fontSize = (size.minDimension * 0.72f).toSp(),
+                    color = guideColor.copy(alpha = 0.016f),
+                    textAlign = TextAlign.Center,
+                ),
+            )
+            drawText(
+                textLayoutResult = ghost,
+                topLeft = Offset(
+                    (size.width - ghost.size.width) / 2f,
+                    (size.height - ghost.size.height) / 2f,
+                ),
+            )
+        }
         val progress = (progressOverride?.times(rendered.size) ?: player.progress)
             .coerceIn(0f, rendered.size.toFloat())
         val completed = progress.toInt()
@@ -160,9 +182,24 @@ fun StrokeGuideLayer(
                 else -> 0f
             }
             if (fraction > 0f) {
-                drawGuideStroke(stroke, fraction, guideColor)
-                if (showNumbers) {
-                    drawStrokeNumber(textMeasurer, stroke.start, index + 1, guideColor)
+                drawGuideStroke(stroke, fraction, guideColor, palette.paperWarm)
+            }
+        }
+        if (showNumbers) {
+            rendered.forEachIndexed { index, stroke ->
+                val fraction = when {
+                    index < completed -> 1f
+                    index == completed && progress > completed -> progress - completed
+                    else -> 0f
+                }
+                if (fraction > 0f) {
+                    drawStrokeNumber(
+                        textMeasurer = textMeasurer,
+                        start = stroke.start,
+                        number = index + 1,
+                        guideColor = guideColor,
+                        badgeColor = palette.paperWarm,
+                    )
                 }
             }
         }
@@ -183,26 +220,35 @@ fun SingleStrokeGuideLayer(
     val guide = player.guide ?: return
     val stroke = guide.strokes.getOrNull(strokeIndex) ?: return
     val guideColor = GuideGreen
+    val palette = LocalBihuaPalette.current
     val rendered = remember(guide, strokeIndex) { toRenderStroke(stroke, guide.source) }
     Canvas(modifier) {
-        drawGuideStroke(rendered, progress.coerceIn(0f, 1f), guideColor)
+        drawGuideStroke(rendered, progress.coerceIn(0f, 1f), guideColor, palette.paperWarm)
     }
 }
 
 /**
- * Reference centerlines in 0..1 space, used for stroke evidence. Path-only
- * guides (KanjiVG) are sampled from the 109 x 109 view box.
+ * Reference centerlines in 0..1 space, used for stroke evidence. These use the
+ * same 0.88 inset and 6% offset as the visible guide, so feedback compares the
+ * learner's ink with the path they were actually tracing.
  */
 fun CharacterGuide.centerlines(): List<List<Offset>> = strokes.mapNotNull { stroke ->
     if (stroke.points.isNotEmpty()) {
-        stroke.points.map { Offset(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f)) }
+        stroke.points.map {
+            Offset(
+                0.5f + (it.x.coerceIn(0f, 1f) - 0.5f) * 0.84f,
+                0.5f + (it.y.coerceIn(0f, 1f) - 0.5f) * 0.84f,
+            )
+        }
     } else if (stroke.pathData != null) {
         val raw = runCatching { PathParser().parsePathString(stroke.pathData).toPath() }.getOrNull()
         if (raw == null) return@mapNotNull null
         val normalized = Path().apply { addPath(raw) }.apply {
             val matrix = androidx.compose.ui.graphics.Matrix()
-            matrix.values[0] = 1f / 109f
-            matrix.values[5] = 1f / 109f
+            matrix.values[0] = 0.84f / 109f
+            matrix.values[5] = 0.84f / 109f
+            matrix.values[12] = 0.08f
+            matrix.values[13] = 0.08f
             transform(matrix)
         }
         val measure = PathMeasure().apply { setPath(normalized, false) }
@@ -219,14 +265,21 @@ private data class RenderStroke(
     val points: List<Offset>?,
     val path: Path?,
     val start: Offset,
+    /** Make Me a Hanzi filled stroke outline, in its 1024 x 900 y-up space. */
+    val outlinePath: String? = null,
 )
 
 private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
     if (stroke.points.isNotEmpty()) {
         val shrunk = stroke.points.map {
-            Offset(0.5f + (it.x - 0.5f) * 0.88f, 0.5f + (it.y - 0.5f) * 0.88f)
+            Offset(0.5f + (it.x - 0.5f) * 0.84f, 0.5f + (it.y - 0.5f) * 0.84f)
         }
-        return RenderStroke(points = shrunk, path = null, start = shrunk.first())
+        return RenderStroke(
+            points = shrunk,
+            path = null,
+            start = shrunk.first(),
+            outlinePath = stroke.pathData.takeIf { source == "makemeahanzi" },
+        )
     }
     if (stroke.pathData != null) {
         val raw = runCatching { PathParser().parsePathString(stroke.pathData).toPath() }.getOrNull()
@@ -236,11 +289,11 @@ private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
             // path so it shares the point renderer (width, caps, partial play).
             val normalized = Path().apply { addPath(raw) }.apply {
                 val matrix = androidx.compose.ui.graphics.Matrix()
-                val scale = 0.88f / 109f
+                val scale = 0.84f / 109f
                 matrix.values[0] = scale
                 matrix.values[5] = scale
-                matrix.values[12] = 0.06f
-                matrix.values[13] = 0.06f
+                matrix.values[12] = 0.08f
+                matrix.values[13] = 0.08f
                 transform(matrix)
             }
             val measure = PathMeasure().apply { setPath(normalized, false) }
@@ -250,36 +303,128 @@ private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
                 val points = (0..samples).map { index ->
                     measure.getPosition(length * index / samples)
                 }
-                return RenderStroke(points = points, path = null, start = points.first())
+                return RenderStroke(
+                    points = points,
+                    path = null,
+                    start = points.first(),
+                    outlinePath = stroke.pathData.takeIf { source == "makemeahanzi" },
+                )
             }
         }
     }
     return RenderStroke(points = null, path = null, start = Offset(0.5f, 0.5f))
 }
 
-private fun DrawScope.drawGuideStroke(stroke: RenderStroke, fraction: Float, guideColor: Color) {
-    if (stroke.points != null) {
-        val visible = partialPolyline(stroke.points, fraction)
-        if (visible.size == 1) {
-            drawCircle(guideColor.copy(alpha = 0.55f), radius = 3.5.dp.toPx(), center = visible[0].scaleTo(size))
+private fun DrawScope.drawGuideStroke(
+    stroke: RenderStroke,
+    fraction: Float,
+    guideColor: Color,
+    paperColor: Color,
+) {
+    val outline = stroke.outlinePath
+    if (fraction >= 0.999f && outline != null) {
+        val raw = runCatching { PathParser().parsePathString(outline).toPath() }.getOrNull()
+        if (raw != null) {
+            val matrix = androidx.compose.ui.graphics.Matrix()
+            matrix.values[0] = size.width * 0.84f / 1024f
+            matrix.values[5] = -size.height * 0.84f / 900f
+            matrix.values[12] = size.width * 0.08f
+            matrix.values[13] = size.height * 0.92f
+            val path = Path().apply {
+                addPath(raw)
+                transform(matrix)
+            }
+            // The real stroke outline, with a paper gap so overlapping strokes
+            // stay legible. This is the same shape a brush would leave.
+            drawPath(
+                path = path,
+                color = paperColor.copy(alpha = 0.96f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = 2.2.dp.toPx(),
+                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                ),
+            )
+            drawPath(path, guideColor.copy(alpha = 0.90f))
             return
         }
-        val smoothed = chaikin(visible)
-        val path = smoothPath(smoothed.map { it.scaleTo(size) })
+    }
+    if (stroke.points != null) {
+        val visible = partialPolyline(stroke.points, fraction)
+        if (visible.isEmpty()) return
+        val points = chaikin(visible, 1).map { it.scaleTo(size) }
+        val total = points.zipWithNext().sumOf { (a, b) -> (b - a).getDistance().toDouble() }.toFloat()
+        val base = size.minDimension * 0.040f
+        if (total < size.minDimension * 0.085f) {
+            // Dots and very short marks are round, like a brush touching down.
+            val center = points.first()
+            val radius = base * 0.46f
+            drawCircle(paperColor.copy(alpha = 0.95f), radius = radius + 1.6.dp.toPx(), center = center)
+            drawCircle(guideColor.copy(alpha = 0.90f), radius = radius, center = center)
+            return
+        }
+        // A paper halo separates overlapping strokes; the tapered polygon makes
+        // the mark read as a brush instead of a constant-width marker.
+        val startRadius = base * brushProfile(0f) * 0.5f
+        val endRadius = base * brushProfile(1f) * 0.5f
+        val torch = 2.0.dp.toPx()
+        // Halo first, then colour. Drawing a halo cap over the coloured stroke
+        // would cut it into a bead, so both halo layers must stay underneath.
         drawPath(
-            path = path,
-            color = guideColor.copy(alpha = 0.62f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                width = 4.5.dp.toPx(),
-                cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                join = androidx.compose.ui.graphics.StrokeJoin.Round,
-            ),
+            path = brushPath(points, base, torch = torch, halo = true),
+            color = paperColor.copy(alpha = 0.95f),
         )
+        drawCircle(paperColor.copy(alpha = 0.95f), startRadius + torch, points.first())
+        drawCircle(paperColor.copy(alpha = 0.95f), endRadius + torch, points.last())
+        drawPath(
+            path = brushPath(points, base, torch = torch, halo = false),
+            color = guideColor.copy(alpha = 0.90f),
+        )
+        drawCircle(guideColor.copy(alpha = 0.90f), startRadius, points.first())
+        drawCircle(guideColor.copy(alpha = 0.90f), endRadius, points.last())
     } else if (stroke.path != null && fraction > 0f) {
         scale(size.width, size.height, pivot = Offset.Zero) {
-            drawPath(stroke.path, guideColor.copy(alpha = 0.55f))
+            drawPath(stroke.path, guideColor.copy(alpha = 0.80f))
         }
     }
+}
+
+/** Width along a stroke: softer at the ends, fuller in the middle. */
+private fun brushProfile(t: Float): Float =
+    0.36f + 0.64f * kotlin.math.sin(Math.PI.toFloat() * t.coerceIn(0f, 1f)).let {
+        it * it * (3f - 2f * it)
+    }
+
+private fun brushPath(
+    points: List<Offset>,
+    base: Float,
+    torch: Float,
+    halo: Boolean,
+): Path {
+    val left = ArrayList<Offset>(points.size)
+    val right = ArrayList<Offset>(points.size)
+    val total = points.zipWithNext().sumOf { (a, b) -> (b - a).getDistance().toDouble() }.toFloat()
+    var travelled = 0f
+    points.forEachIndexed { index, point ->
+        if (index > 0) travelled += (point - points[index - 1]).getDistance()
+        val previous = points[(index - 1).coerceAtLeast(0)]
+        val next = points[(index + 1).coerceAtMost(points.lastIndex)]
+        val tx = next.x - previous.x
+        val ty = next.y - previous.y
+        val length = kotlin.math.sqrt(tx * tx + ty * ty).coerceAtLeast(0.0001f)
+        val nx = -ty / length
+        val ny = tx / length
+        val t = if (total <= 0f) 0.5f else (travelled / total).coerceIn(0f, 1f)
+        val half = (base * brushProfile(t) + if (halo) torch * 2f else 0f) * 0.5f
+        left += Offset(point.x + nx * half, point.y + ny * half)
+        right += Offset(point.x - nx * half, point.y - ny * half)
+    }
+    val path = Path()
+    if (left.isEmpty()) return path
+    path.moveTo(left.first().x, left.first().y)
+    for (index in 1 until left.size) path.lineTo(left[index].x, left[index].y)
+    for (index in right.indices.reversed()) path.lineTo(right[index].x, right[index].y)
+    path.close()
+    return path
 }
 
 private fun DrawScope.drawStrokeNumber(
@@ -287,17 +432,34 @@ private fun DrawScope.drawStrokeNumber(
     start: Offset,
     number: Int,
     guideColor: Color,
+    badgeColor: Color,
 ) {
     val position = start.scaleTo(size)
+    val radius = (size.minDimension * 0.017f).coerceIn(4.8.dp.toPx(), 7.6.dp.toPx())
+    val center = Offset(
+        x = (position.x + radius * 1.1f).coerceIn(radius, size.width - radius),
+        y = (position.y - radius * 1.1f).coerceIn(radius, size.height - radius),
+    )
+    drawCircle(badgeColor.copy(alpha = 0.94f), radius, center)
+    drawCircle(
+        color = guideColor.copy(alpha = 0.55f),
+        radius = radius,
+        center = center,
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.1.dp.toPx()),
+    )
     val layout = textMeasurer.measure(
         text = number.toString(),
-        style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = guideColor),
+        style = TextStyle(
+            fontSize = (radius * 1.18f).toSp(),
+            fontWeight = FontWeight.Bold,
+            color = guideColor.copy(alpha = 0.95f),
+        ),
     )
     drawText(
         textLayoutResult = layout,
         topLeft = Offset(
-            x = (position.x + 5.dp.toPx()).coerceAtMost(size.width - layout.size.width),
-            y = (position.y - layout.size.height - 3.dp.toPx()).coerceAtLeast(0f),
+            center.x - layout.size.width / 2f,
+            center.y - layout.size.height / 2f,
         ),
     )
 }
@@ -326,23 +488,8 @@ private fun partialPolyline(points: List<Offset>, fraction: Float): List<Offset>
     return result
 }
 
-/** Clean vector path through the guide points. */
-private fun smoothPath(points: List<Offset>): Path {
-    val path = Path()
-    if (points.isEmpty()) return path
-    path.moveTo(points[0].x, points[0].y)
-    if (points.size == 1) return path
-    for (index in 1 until points.size - 1) {
-        val current = points[index]
-        val next = points[index + 1]
-        path.quadraticTo(current.x, current.y, (current.x + next.x) / 2f, (current.y + next.y) / 2f)
-    }
-    path.lineTo(points.last().x, points.last().y)
-    return path
-}
-
-/** Chaikin corner cutting keeps the guide smooth without overshooting. */
-private fun chaikin(points: List<Offset>, iterations: Int = 2): List<Offset> {
+/** Chaikin corner cutting stays inside the source shape and never overshoots. */
+private fun chaikin(points: List<Offset>, iterations: Int = 1): List<Offset> {
     var current = points
     repeat(iterations) {
         if (current.size < 3) return@repeat
@@ -358,6 +505,16 @@ private fun chaikin(points: List<Offset>, iterations: Int = 2): List<Offset> {
         current = next
     }
     return current
+}
+
+private fun polylinePath(points: List<Offset>): Path {
+    val path = Path()
+    if (points.isEmpty()) return path
+    path.moveTo(points[0].x, points[0].y)
+    for (index in 1 until points.size) {
+        path.lineTo(points[index].x, points[index].y)
+    }
+    return path
 }
 
 private fun Offset.scaleTo(size: Size): Offset = Offset(x * size.width, y * size.height)

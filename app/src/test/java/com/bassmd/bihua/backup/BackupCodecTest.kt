@@ -7,7 +7,9 @@ import com.bassmd.bihua.settings.OrientationLock
 import com.bassmd.bihua.settings.UiLanguage
 import com.bassmd.bihua.settings.UserProfile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BackupCodecTest {
@@ -23,6 +25,9 @@ class BackupCodecTest {
             inkWidth = InkWidth.BOLD,
             orientation = OrientationLock.LANDSCAPE,
             dailyNewGoal = 12,
+            remindersEnabled = true,
+            reminderHour = 7,
+            reminderDays = setOf(1, 3, 5),
         ),
     )
 
@@ -65,5 +70,23 @@ class BackupCodecTest {
         val goal = AppSettings().withDailyNewGoal(99).dailyNewGoal
         assertEquals(AppSettings.MAX_DAILY_GOAL, goal)
         assertEquals(AppSettings.MIN_DAILY_GOAL, AppSettings().withDailyNewGoal(-4).dailyNewGoal)
+    }
+
+    @Test
+    fun reminderSettingsAreClamped() {
+        val clean = AppSettings(
+            remindersEnabled = true,
+            reminderHour = 99,
+            reminderDays = setOf(0, 1, 8),
+        ).sanitized()
+        assertEquals(23, clean.reminderHour)
+        assertEquals(setOf(1), clean.reminderDays)
+        assertTrue(clean.remindersEnabled)
+
+        val off = AppSettings(
+            remindersEnabled = true,
+            reminderDays = emptySet(),
+        ).sanitized()
+        assertFalse(off.remindersEnabled)
     }
 }

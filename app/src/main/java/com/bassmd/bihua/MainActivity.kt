@@ -4,12 +4,22 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -19,6 +29,9 @@ import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.ThemeMode
 import com.bassmd.bihua.ui.BihuaApp
 import com.bassmd.bihua.ui.LocalEdgeToEdge
+import com.bassmd.bihua.ui.components.OpeningInk
+import com.bassmd.bihua.ui.LocalFoldState
+import com.bassmd.bihua.ui.rememberFoldState
 import com.bassmd.bihua.ui.theme.BihuaTheme
 import com.bassmd.bihua.ui.theme.Paper
 
@@ -45,12 +58,31 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            val foldState = rememberFoldState()
             BihuaTheme(themeMode = settings.themeMode) {
                 CompositionLocalProvider(
                     LocalEdgeToEdge provides (Build.VERSION.SDK_INT >= 35),
+                    LocalFoldState provides foldState,
                 ) {
                     Surface(color = Paper) {
-                        BihuaApp(store = store)
+                        var opening by rememberSaveable { mutableStateOf(true) }
+                        var contentReady by remember { mutableStateOf(false) }
+                        Box(Modifier.fillMaxSize()) {
+                            BihuaApp(
+                                store = store,
+                                onContentReady = { contentReady = true },
+                            )
+                            AnimatedVisibility(
+                                visible = opening,
+                                exit = fadeOut(tween(280)) + scaleOut(targetScale = 1.015f, animationSpec = tween(280)),
+                            ) {
+                                OpeningInk(
+                                    reduceMotion = settings.reduceMotion,
+                                    ready = contentReady,
+                                    onDone = { opening = false },
+                                )
+                            }
+                        }
                     }
                 }
             }

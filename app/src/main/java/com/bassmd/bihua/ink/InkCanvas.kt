@@ -66,6 +66,8 @@ fun InkCanvas(
     onStrokeStart: (() -> Unit)? = null,
     /** When false the drawing stays visible but input is locked. */
     enabled: Boolean = true,
+    /** False when the caller draws [WritingGrid] behind a stroke guide. */
+    drawGrid: Boolean = true,
 ) {
     val palette = LocalBihuaPalette.current
     var live by remember { mutableStateOf<InkStroke?>(null) }
@@ -130,7 +132,7 @@ fun InkCanvas(
                 }
             }
     ) {
-        drawWritingGrid(gridStyle, palette.writingGrid)
+        if (drawGrid) drawWritingGrid(gridStyle, palette.writingGrid)
         val cacheKey = InkCacheKey(
             width = size.width,
             height = size.height,
@@ -201,6 +203,18 @@ fun InkCanvas(
  * The border is inset by half its stroke so none of it is clipped by the
  * canvas edge.
  */
+/** The paper grid, as its own layer so a stroke guide can sit above it. */
+@Composable
+fun WritingGrid(
+    gridStyle: GridStyle,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalBihuaPalette.current
+    Canvas(modifier) {
+        drawWritingGrid(gridStyle, palette.writingGrid)
+    }
+}
+
 private fun DrawScope.drawWritingGrid(style: GridStyle, gridLine: Color) {
     if (style == GridStyle.NONE) return
     val w = size.width

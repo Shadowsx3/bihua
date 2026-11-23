@@ -65,6 +65,7 @@ import androidx.compose.ui.window.Dialog
 import com.bassmd.bihua.content.CharacterEntry
 import kotlinx.coroutines.launch
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberSharedGuidePlayer
@@ -374,6 +375,7 @@ private fun ComparePane(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(10.dp),
+                            ghostCharacter = entry.character,
                         )
                     } else {
                         Text(

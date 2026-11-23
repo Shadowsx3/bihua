@@ -1,5 +1,152 @@
 # Changelog
 
+## 1.0.7
+
+### Added
+
+- A full worksheet studio: print-ready A4 or Letter PDF export from course
+  order, picked characters, an imported .txt/.csv list, study list, recently
+  learned, recent mistakes, or confusion groups. The export button is the first
+  action and stays visible while the options scroll.
+- Templates for trace and write, two traces, model and copy, memory, trace
+  only, alternate, and a one-character poster. Fine-tune grid, boxes per
+  character, characters per page, paper size, reading/meaning, stroke count,
+  level, stroke numbers, cover, and reverse order.
+- Pick characters from a searchable grid, import one character per line or the
+  first CSV column, start the course at any character number, or choose all.
+- The sheet builder uses filled source and option pills, a clearer start-at
+  field, warm pick/import tiles, and a larger character preview. The panel is
+  inset from the screen edge so the options no longer feel cramped.
+- A full-screen dictionary with debounced live search, recent words, a detail
+  page with per-character reading, meaning and stroke count, audio, and a direct
+  path into word practice.
+- Word practice guide modes: off, faint outline, and real numbered strokes with
+  playback, stroke count, reading, and meaning.
+- A new round paper-ink mascot, coral launcher icon, matching system splash, and
+  a short cold-start brush animation that settles into the app.
+- Stroke coach polish: a one-repair-at-a-time card, a focused repair pad, and
+  clearer per-stroke evidence.
+- Tapered brush guides with a paper halo and numbered start badges. The paper
+  grid now sits behind the guide, so it no longer cuts through the strokes.
+- A smoother cold-start hand-off: the system splash icon settles into the
+  in-app welcome, waits for the first real screen, then fades into Home.
+
+### Changed
+
+- Stroke matching is order- and shape-aware. A correct stroke is no longer
+  paired with a neighbouring guide stroke and mislabelled as reversed.
+- Reversal feedback requires swapped ends, an opposing direction, and a path
+  that actually travels backwards. Short and U-shaped strokes are never guessed.
+- Out-of-order feedback now says the stroke belongs earlier, which is the true
+  repair direction.
+- Ink is compared with the guide the learner sees, including the visible 6%
+  inset.
+- Shape evidence measures coverage as well as precision, so ink stacked on one
+  stroke cannot look like a complete character.
+- Pronunciation reviews mask kana and Hangul meanings that spell their own
+  reading ("hiragana for a", "syllable ga").
+- The journey harness fails if a writing recall renders its target character.
+- Full-screen word practice and drill routes now provide content, progress,
+  pinyin, and Hangul locals, so their guides load reliably.
+- Single-character dictionary entries show compact stroke and level pills instead
+  of repeating a one-row character table.
+
+### Fixed
+
+- The repair pad no longer accepts extra or reversed strokes as correct.
+- A correct full trace is covered by a regression journey and must report a
+  clean stroke order.
+- The dictionary search field no longer leaves the keyboard covering results
+  after a word is opened.
+- The cold-start welcome waits for the real first screen instead of flashing a
+  bare loading state.
+- Worksheet grid boxes were filled with the grid color; they now print as clean
+  paper cells with a stroked border.
+- The practice page now centres short character groups and gives the model and
+  trace cells distinct, printable tints.
+- The worksheet preview uses the character with the most strokes, not always the
+  first one.
+
+
+## 1.0.6
+
+### Changed
+
+- Version 1.0.6, versionCode 16.
+- New learners start with five new characters a day, in a mixed queue where
+  reviews lead to the next new lesson.
+- The session progress bar measures the review block and fills until the next
+  new lesson, then starts again.
+- Onboarding and Settings say that five a day is the recommended start.
+
+### Fixed
+
+- The mixed-session bar now fills as reviews pass instead of sitting at zero
+  because the pending queue shrank.
+- "Skip setup" uses the recommended five new characters, not ten.
+- Turning off shared glyphs no longer keeps history only for the first script;
+  old shared cards remain readable until each script earns its own card.
+- The first settings frame can no longer trigger a destructive shared-glyph
+  migration before the saved settings load.
+- Free practice follows the Outline guide setting on phones as well as tablets.
+- Progress export uses a consistent database snapshot without closing the live
+  store.
+- Archive import caps the file and entry size, and temporary fallback files are
+  cleaned after a successful restore.
+- Restored mixed-session intervals are clamped to the settings range.
+- Reminder scheduling waits for the first real settings read.
+- Reminders no longer count kana or Hangul hidden by the script filters, or
+  characters that are skipped or suspended.
+- A reminder enabled seconds before its hour now fires that day instead of
+  moving to the next selected day.
+- The reminder worker closes its content database when it finishes.
+- Recently learned resolves shared-glyph cards, so the row fills when identical
+  glyphs share one memory.
+- Progress totals and the due forecast use the same card lookup as the queue.
+- The forecast hides suspended characters and characters skipped for the due
+  day.
+- Shared glyphs count toward every script's daily new limit while sharing is on.
+- A camera-sized profile photo is bounded and rotated before it becomes an
+  avatar.
+- Restored brush values, timers, and profile fields are clamped to valid ranges.
+- A corrupt settings blob in an archive no longer leaves a partial import
+  dialog behind.
+- The local sync certificate lives for 24 hours instead of one hour, so a setup
+  screen can stay open without the pin expiring.
+- The sync pairing field uses a letter-capable keyboard; the code is base32, not
+  only digits.
+- IPv6 link-local sync addresses escape the zone id, so the HTTPS URL is valid
+  on networks where mDNS resolves an IPv6 address first.
+- A lesson step bar now reaches full at the last step instead of stopping at
+  two thirds.
+- "Back to home" and system back after a finished session return straight Home
+  instead of asking to resume or discard an empty queue.
+- The completion screen no longer says part of a finished queue was left over
+  when the learner passed after an initial miss.
+- Progress files with schema version 0 are rejected before SQLite tries an
+  invalid upgrade.
+- Home's five main controls expose spoken labels to TalkBack.
+
+## 1.0.5
+
+### Added
+
+- Encrypted device-to-device sync on the same Wi-Fi, using a per-session
+  certificate pinned by a 10-character pairing code.
+- Off-by-default study reminders with a chosen hour and days, plus a test
+  notification.
+- Foldable book layouts for Home, Learn, Practice, and Characters.
+
+### Changed
+
+- Version 1.0.5, versionCode 15.
+- Local sync is TLS only; cleartext traffic is removed.
+
+### Fixed
+
+- The accessibility crash caused by reading `contentDescription` inside
+  `clearAndSetSemantics` in the mode switch, character tile, and character peek.
+
 ## 1.0.4 (2026-11-22)
 
 ### Added
@@ -172,13 +319,9 @@
   stylus-only devices.
 - The bottom navigation keeps fixed positions and shows every tab label, so
   the icons no longer move when the selected tab changes.
-- Play screenshots were regenerated from the real 1.0.2 app in light mode, with
-  a grade-sheet shot and a Progress shot added.
 - Tablet screenshots were recaptured from a 2560 × 1600 Pixel Tablet emulator
   for both the 7-inch and 10-inch slots.
 - Duplicate variant rows in character details are hidden.
-- The store copy now says “Korean: Hangul and Hanja” and discloses Google ML Kit
-  diagnostics, matching the Data Safety declaration.
 - CI runs unit tests, content audit, and lint only. It no longer assembles or
   uploads an APK; the APK size check is portable across macOS and Linux.
 - The Makefile now uses `/bin/bash` for its recipes. `scripts/env.sh` uses bash
@@ -214,7 +357,7 @@
 
 ### Changed
 
-- The optional local AI assistant and LiteRT-LM runtime were removed. The APK is now 38 MB instead of 61 MB; the AAB is 20 MB.
+- The optional local AI assistant and LiteRT-LM runtime were removed. The APK is now 38 MB instead of 61 MB.
 - The app code is now MIT-licensed; content keeps its upstream terms.
 - Korean Hanja now comes from Unihan.
 - Korean word examples come from the Korean Wiktionary extract, ranked by

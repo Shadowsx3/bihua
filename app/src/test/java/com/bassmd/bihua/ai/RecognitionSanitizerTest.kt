@@ -188,3 +188,102 @@ class RecognitionSanitizerTest {
         )
     }
 }
+
+class RecognitionSanitizerDrawingMatrixTest {
+    private fun c(text: String, score: Float?) = InkCandidate(text, score)
+
+    @Test
+    fun equalScoresKeepRecognizerOrder() {
+        assertEquals(
+            listOf("口", "日", "目"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("口", 0.5f), c("日", 0.5f), c("目", 0.5f)),
+                target = null,
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+
+    @Test
+    fun maxCandidatesStillAppliesWhenScoresArePresent() {
+        val raw = listOf("一", "二", "三", "四", "五", "六", "七")
+            .mapIndexed { index, text -> c(text, index.toFloat()) }
+        assertEquals(
+            listOf("七", "六", "五", "四", "三"),
+            RecognitionSanitizer.sanitize(raw, target = null, mode = StudyMode.SIMPLIFIED),
+        )
+    }
+
+    @Test
+    fun supplementaryTargetOnlyAcceptsTheSameScript() {
+        val target = "\uD840\uDC00"
+        assertEquals(
+            listOf(target, "山"),
+            RecognitionSanitizer.sanitize(
+                listOf(c(target, null), c("a", null), c("山", null)),
+                target = target,
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+
+    @Test
+    fun punctuationAndSpacesAreRejected() {
+        assertEquals(
+            listOf("山"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("山", null), c("山 ", null), c("山，", null), c("、", null)),
+                target = "山",
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+
+    @Test
+    fun koreanTargetDrivesTheScriptEvenOutsideKoreanMode() {
+        assertEquals(
+            listOf("가"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("山", null), c("가", null), c("さ", null)),
+                target = "가",
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+
+    @Test
+    fun kanaTargetDrivesTheScriptInJapaneseMode() {
+        assertEquals(
+            listOf("き", "キ"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("山", null), c("き", null), c("キ", null), c("a", null)),
+                target = "き",
+                mode = StudyMode.JAPANESE,
+            ),
+        )
+    }
+
+    @Test
+    fun aTwoCodePointCandidateIsRejected() {
+        assertEquals(
+            listOf("山"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("山水", null), c("山", null)),
+                target = null,
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+
+    @Test
+    fun onlyNegativeScoresStillKeepStableOrder() {
+        assertEquals(
+            listOf("出", "山"),
+            RecognitionSanitizer.sanitize(
+                listOf(c("山", -2f), c("出", -1f)),
+                target = null,
+                mode = StudyMode.SIMPLIFIED,
+            ),
+        )
+    }
+}

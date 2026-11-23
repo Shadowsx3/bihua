@@ -35,5 +35,11 @@ docs/download/*.apk
 # Local device screenshots and scratch captures
 screenshots/
 
-# Local-only Play upload assets and release copy. Never publish these.
+# Local-only release assets and listing copy. Never publish these.
 store/
+
+# Local journey harness artifacts and virtual environment
+.qa/
+
+# Python bytecode from the local journey harness
+__pycache__/

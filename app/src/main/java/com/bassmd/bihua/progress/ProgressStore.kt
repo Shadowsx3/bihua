@@ -227,9 +227,12 @@ class ProgressStore(private val context: Context) :
 
     /** Closes the database and copies the current file for a sync package. */
     suspend fun exportTo(target: java.io.File) = withContext(Dispatchers.IO) {
-        close()
-        val source = context.getDatabasePath("bihua_progress.db")
-        source.copyTo(target, overwrite = true)
+        // VACUUM INTO creates a consistent snapshot without closing the live
+        // helper. Copying after close() could race a query from the Home state.
+        if (target.exists()) target.delete()
+        target.parentFile?.mkdirs()
+        val path = target.absolutePath.replace("'", "''")
+        writableDatabase.execSQL("VACUUM INTO '$path'")
     }
 
     /** Replaces the local database with a verified sync package. */
@@ -381,8 +384,12 @@ class ProgressStore(private val context: Context) :
         val key = cardKey(character, settings)
         val weights = settings.parametersFor(character.mode, character.glyphGroupId) ?: Fsrs7.DEFAULT_W
         // Seed a shared card from the character's own card when sharing was
-        // switched on after the character had already been studied.
-        val existing = readCard(key) ?: readCard("char:${character.id}")
+        // switched on after the character had already been studied. After
+        // sharing is switched off, seed from the old shared card so the first
+        // independent review keeps its history.
+        val existing = readCard(key)
+            ?: readCard("char:${character.id}")
+            ?: readCard("glyph:${character.glyphGroupId}")
         val result = if (existing == null) {
             Fsrs7.firstReview(grade, nowMs, w = weights)
         } else {
@@ -547,7 +554,10 @@ class ProgressStore(private val context: Context) :
     }
 
     suspend fun reset(character: CharacterEntry, settings: AppSettings) = withContext(Dispatchers.IO) {
-        val key = cardKey(character, settings)
+        // Delete the card the learner actually sees, which may be a legacy
+        // shared-glyph card while sharing is off.
+        val key = cardFor(character, settings, allCards())?.id
+            ?: cardKey(character, settings)
         writableDatabase.inTransaction {
             delete("card", "id=?", arrayOf(key))
             delete("review_log", "card_id=?", arrayOf(key))
@@ -558,12 +568,15 @@ class ProgressStore(private val context: Context) :
         nowMs: Long = System.currentTimeMillis(),
         mode: com.bassmd.bihua.content.StudyMode? = null,
         dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        includeSharedGlyphs: Boolean = false,
     ): Int = withContext(Dispatchers.IO) {
         val start = DayBoundary.startMs(DayBoundary.date(nowMs, dayStartHour), dayStartHour)
-        val query = if (mode == null) {
-            "SELECT COUNT(*) FROM card WHERE introduced_at>=?"
-        } else {
-            "SELECT COUNT(*) FROM card WHERE introduced_at>=? AND mode=?"
+        val query = when {
+            mode == null -> "SELECT COUNT(*) FROM card WHERE introduced_at>=?"
+            includeSharedGlyphs ->
+                "SELECT COUNT(*) FROM card WHERE introduced_at>=? AND " +
+                    "(mode=? OR id LIKE 'glyph:%')"
+            else -> "SELECT COUNT(*) FROM card WHERE introduced_at>=? AND mode=?"
         }
         val args = if (mode == null) {
             arrayOf(start.toString())
@@ -606,7 +619,12 @@ class ProgressStore(private val context: Context) :
         }
         val allowedNew = (
             settings.dailyNewGoal -
-                newLearnedToday(nowMs, eligible.firstOrNull()?.mode, settings.dayStartHour)
+                newLearnedToday(
+                    nowMs,
+                    eligible.firstOrNull()?.mode,
+                    settings.dayStartHour,
+                    settings.shareIdenticalGlyphs,
+                )
             ).coerceAtLeast(0)
         val fresh = eligible
             .filter { character -> cardFor(character, settings, cards) == null }
@@ -708,6 +726,9 @@ class ProgressStore(private val context: Context) :
             throw IllegalArgumentException("This progress file is damaged.", error)
         }
         try {
+            require(db.version >= 1) {
+                "This file is not a Bihua progress database."
+            }
             require(db.version <= SCHEMA_VERSION) {
                 "This progress file is from a newer version of Bihua."
             }
@@ -772,6 +793,9 @@ class ProgressStore(private val context: Context) :
             cards: Map<String, CardSnapshot>,
         ): CardSnapshot? = cards[cardKey(character, settings)]
             ?: cards["char:${character.id}"]
+            // A card created while sharing was on stays readable after sharing
+            // is turned off, until this script earns its own independent card.
+            ?: cards["glyph:${character.glyphGroupId}"]
 
         /** Buckets a card's stability into the manual level shown in the UI. */
         fun levelFor(card: CardSnapshot?): MemoryLevel? {
@@ -787,38 +811,8 @@ class ProgressStore(private val context: Context) :
     }
 
     /**
-     * When scripts no longer share scheduling, a card created under a glyph key
-     * is moved to the character key of the script it was learned in. This keeps
-     * the history that script already earned instead of showing it as new.
+     * Grade counts for the last [days] days.
      */
-    suspend fun migrateGlyphCards(settings: AppSettings) = withContext(Dispatchers.IO) {
-        if (settings.shareIdenticalGlyphs) return@withContext
-        val glyphCards = ArrayList<CardSnapshot>()
-        readableDatabase.rawQuery("SELECT * FROM card WHERE id LIKE 'glyph:%'", null).use { cursor ->
-            while (cursor.moveToNext()) glyphCards.add(cursor.toSnapshot())
-        }
-        if (glyphCards.isEmpty()) return@withContext
-        writableDatabase.inTransaction {
-            glyphCards.forEach { card ->
-                val targetId = "char:${card.characterId}"
-                val exists = readableDatabase.rawQuery(
-                    "SELECT 1 FROM card WHERE id=?",
-                    arrayOf(targetId),
-                ).use { it.moveToFirst() }
-                if (!exists) {
-                    insertWithOnConflict(
-                        "card",
-                        null,
-                        card.copy(id = targetId).toValues(),
-                        SQLiteDatabase.CONFLICT_REPLACE,
-                    )
-                }
-                delete("card", "id=?", arrayOf(card.id))
-            }
-        }
-    }
-
-    /** Grade counts for the last [days] days. */
     suspend fun gradeMix(days: Int = 30): GradeMix = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis() - days * 86_400_000L
         val counts = IntArray(5)
@@ -842,7 +836,7 @@ class ProgressStore(private val context: Context) :
             var cardsSeen = 0
             val cards = allCards()
             characters.forEach { character ->
-                val card = cards[cardKey(character, settings)] ?: return@forEach
+                val card = cardFor(character, settings, cards) ?: return@forEach
                 reviews += card.reps
                 intervalSum += card.memory.sLong
                 cardsSeen++
@@ -1119,14 +1113,21 @@ class ProgressStore(private val context: Context) :
     /** Newest introductions, for the recently learned row. */
     suspend fun recentlyLearned(characters: List<CharacterEntry>, limit: Int = 12): List<CharacterEntry> =
         withContext(Dispatchers.IO) {
-            val ids = ArrayList<String>()
+            // A shared-glyph card is stored under "glyph:...", not a character id.
+            // Keep both keys so the row still fills when identical glyphs share
+            // one memory, and so a legacy character card still resolves.
+            val cards = ArrayList<Pair<String, String>>()
             readableDatabase.rawQuery(
-                "SELECT character_id FROM card ORDER BY introduced_at DESC LIMIT ?",
+                "SELECT character_id, glyph_group_id FROM card ORDER BY introduced_at DESC LIMIT ?",
                 arrayOf(limit.toString()),
             ).use { cursor ->
-                while (cursor.moveToNext()) ids.add(cursor.getString(0))
+                while (cursor.moveToNext()) cards.add(cursor.getString(0) to cursor.getString(1))
             }
-            ids.mapNotNull { id -> characters.firstOrNull { it.id == id } }
+            val byCharacter = characters.associateBy { it.id }
+            val byGlyph = characters.associateBy { it.glyphGroupId }
+            cards.mapNotNull { (characterId, glyphGroupId) ->
+                byCharacter[characterId] ?: byGlyph[glyphGroupId]
+            }.distinctBy { it.id }
         }
 
     /** Real due counts for the next [days] local dates. */
@@ -1143,6 +1144,9 @@ class ProgressStore(private val context: Context) :
         characters.forEach { character ->
             val due = cardFor(character, settings, cardsById)?.dueAtMs ?: return@forEach
             val date = DayBoundary.date(due, dayStartHour, zone)
+            // Suspended characters stay out entirely; a skip only hides the day
+            // it covers, so a later due date still appears in the forecast.
+            if (settings.isSkipped(character.id, date)) return@forEach
             if (!date.isBefore(today) && date < today.plusDays(days.toLong())) {
                 counts[date] = (counts[date] ?: 0) + 1
             }

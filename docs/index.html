@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bihua: learn characters by writing them</title>
-<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did.">
+<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did. Print-ready sheets when you want paper.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Bihua: learn characters by writing them">
-<meta property="og:description" content="FSRS-7 scheduling, on-device ink analysis, and a grade that stays with the learner. Open-source Android app for characters.">
+<meta property="og:description" content="Write characters from memory with tapered brush guides, a local dictionary, and print-ready A4 or Letter sheets. FSRS-7, offline, no account.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="assets/home-light.png">
+<meta property="og:image" content="assets/practice-light.png">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -34,7 +34,9 @@
     <nav class="links" aria-label="Primary">
       <a href="method.html">How it works</a>
       <a href="#draw">Try it</a>
+      <a href="#stylus">Stylus</a>
       <a href="#engines">Engines</a>
+      <a href="#print">Print</a>
       <a href="#screens">Screens</a>
       <a href="#scripts">Scripts</a>
       <a href="#download">Download</a>
@@ -55,7 +57,9 @@
   <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
   <a href="method.html">How it works</a>
   <a href="index.html#draw">Try it</a>
+  <a href="index.html#stylus">Stylus</a>
   <a href="index.html#engines">Engines</a>
+  <a href="index.html#print">Print</a>
   <a href="index.html#screens">Screens</a>
   <a href="index.html#scripts">Scripts</a>
   <a href="index.html#download">Download</a>
@@ -65,17 +69,19 @@
 <main id="main">
   <div class="wrap hero">
     <div class="hero-copy reveal">
-      <div class="kicker">Android · offline · MIT</div>
-      <h1>Learn characters by <em>writing</em> them.</h1>
-      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. FSRS-7 picks the next review date. The app checks the ink you drew on the device. You choose the grade.</p>
+      <div class="kicker">Android · S Pen · stylus-first · offline</div>
+      <h1>Learn characters with a pen that <em>feels like a pen.</em></h1>
+      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. Write with an S Pen or pressure-sensitive stylus, see the ink respond to your hand, and let FSRS-7 choose the next review date.</p>
       <div class="hero-actions">
-        <a class="button" href="#download">Download 1.0.4 <span aria-hidden="true">↓</span></a>
+        <a class="button" href="#download">Download latest <span aria-hidden="true">↓</span></a>
         <a class="button secondary" href="#draw">Try the ink pad <span aria-hidden="true">↓</span></a>
       </div>
       <div class="hero-meta">
         <span>FSRS-7 · 90% retention</span>
+        <span>S Pen pressure</span>
+        <span>Pen-first canvas</span>
         <span>On-device ink</span>
-        <span>Stylus pressure</span>
+        <span>A4 &amp; Letter print</span>
         <span>No account</span>
         <span>Android 10+ · arm64</span>
       </div>
@@ -85,7 +91,7 @@
       <div class="phone-stage">
         <div class="seal" aria-hidden="true">筆</div>
         <div class="phone-frame">
-          <img src="assets/practice-light.png" width="1080" height="2400" alt="Bihua practice screen with the character 愛, a numbered stroke guide, and the learner's ink">
+          <img src="assets/practice-light.png" width="1080" height="2400" alt="Bihua practice screen with the character 谢, a tapered brush guide, and numbered stroke starts">
         </div>
         <div class="tag tag-a"><b>FSRS-7</b><span>stability · difficulty · interval</span></div>
         <div class="tag tag-b"><b>Ink check</b><span>count · order · shape · starts</span></div>
@@ -121,6 +127,39 @@
         <p class="pad-status" id="pad-status" aria-live="polite">0 of 5 strokes · count only · nothing leaves this page</p>
       </div>
     </div>
+  </section>
+
+  <section id="stylus" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Built for the pen</div>
+      <h2>A stylus should feel like a stylus.</h2>
+      <p class="lead">Bihua is designed around pen input, not around tapping buttons with a finger. The writing surface stays central, the canvas is wrist-sized, and the ink responds when your device reports pressure.</p>
+    </div>
+    <div class="grid three">
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">✒</div>
+        <h3>Pressure changes the line</h3>
+        <p>With an S Pen or compatible stylus, light touches make a fine line and firmer strokes make a heavier one. Speed thinning and brush presets keep the mark natural. A finger or mouse still works when you want it.</p>
+      </article>
+      <article class="card pillar accent-mint reveal">
+        <div class="icon">〰</div>
+        <h3>Pen-first, palm-friendly</h3>
+        <p>On a device with a stylus, Bihua defaults to pen input so a resting hand does not become a stray stroke. You can allow finger drawing in Settings when you want both.</p>
+      </article>
+      <article class="card pillar accent-red reveal">
+        <div class="icon">永</div>
+        <h3>The canvas gets the room</h3>
+        <p>The writing square is capped to a wrist-sized area instead of stretching across a tablet. Guides fade with progress, stroke playback shows the motion, and a paper check tests transfer to real paper.</p>
+      </article>
+    </div>
+    <div class="spec-strip reveal">
+      <div><b>S Pen</b><span>pressure and speed</span></div>
+      <div><b>4</b><span>brush presets</span></div>
+      <div><b>0</b><span>strokes uploaded</span></div>
+      <div><b>4</b><span>writing systems</span></div>
+      <div><b>1</b><span>focused writing surface</span></div>
+    </div>
+    <p class="small note reveal">Designed for Samsung S Pen and compatible Android styluses. Emulator pen events, phone, tablet, and foldable layouts are covered; physical pen testing continues. Apple Pencil is not supported because Bihua is an Android app.</p>
   </section>
 
   <section id="engines" class="wrap">
@@ -286,44 +325,79 @@
 
   <section class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">New in 1.0.4</div>
-      <h2>A clearer review loop.</h2>
-      <p class="lead">The writing grid gets more room, the cue is easier to read, and the hint stays out of the way. New characters show common words that use them, including Korean Hanja words. Japanese word cues show ruby and hide the character you need to write. Korean Hanja shows Hangul, with romanization when you want it. Explicit dictionary examples stay off until you turn on Mature words.</p>
+      <div class="kicker">New in 1.0.7</div>
+      <h2>A calmer way to practise, on screen and on paper.</h2>
+      <p class="lead">Brush guides now read like a character, not a tangle of lines. The dictionary opens any word into writing practice. The worksheet studio prints A4 or Letter sheets from the course, a hand-picked set, or an imported list, with seven templates and fine controls. Pronunciation reviews no longer spell their own answer in the meaning.</p>
     </div>
     <div class="license-chips reveal">
-      <span class="chip">Meaning + reading cue</span>
-      <span class="chip">Common words on every meet</span>
-      <span class="chip">Skip kana or Hangul</span>
-      <span class="chip">Japanese ruby</span>
-      <span class="chip">Korean romanization</span>
-      <span class="chip">Korean word examples</span>
-      <span class="chip">Mature words off</span>
-      <span class="chip">A warmer palette</span>
+      <span class="chip">Tapered brush guides</span>
+      <span class="chip">A4 &amp; Letter studio</span>
+      <span class="chip">Word dictionary</span>
+      <span class="chip">Word practice guide</span>
+      <span class="chip">Answer privacy</span>
+      <span class="chip">Gentle stroke feedback</span>
+      <span class="chip">Paper ink mascot</span>
+      <span class="chip">Still offline</span>
+    </div>
+  </section>
+
+  <section id="print" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">05 · Made for paper</div>
+      <h2>One tap. A print-ready sheet.</h2>
+      <p class="lead">Build a worksheet from your course, starting at any character, or from a picked set, an imported .txt/.csv, your study list, recently learned characters, recent mistakes, or the characters you keep confusing. Choose A4 or Letter and one of seven templates, then set the grid, boxes per character, characters per page, labels, and order. The sheet gets real numbered models, pale tracing cells, a name line, and a cover that lists every character.</p>
+    </div>
+    <div class="grid two gap-top">
+      <div class="figure reveal">
+        <div class="frame">
+          <img src="assets/worksheet-page.png" width="1240" height="1754" loading="lazy" decoding="async" alt="A printed practice page with dark models, pale trace cells, numbered stroke starts, and blank Mi zi ge boxes">
+        </div>
+        <figcaption>Model, trace, then write. The PDF is generated on the phone and saved through the system file picker.</figcaption>
+      </div>
+      <div class="reveal">
+        <h3>Practice that leaves the screen.</h3>
+        <p>Handwriting on paper is where the lesson travels. The sheet keeps the same numbered starts and grid as the app, with a model box and a pale trace before the blank squares.</p>
+        <div class="license-chips">
+          <span class="chip">A4 or Letter</span>
+          <span class="chip">Trace + write</span>
+          <span class="chip">Two traces</span>
+          <span class="chip">Model + copy</span>
+          <span class="chip">Memory</span>
+          <span class="chip">Trace only</span>
+          <span class="chip">Poster</span>
+          <span class="chip">Mi zi ge</span>
+          <span class="chip">Tian zi ge</span>
+          <span class="chip">Plain boxes</span>
+          <span class="chip">Picked or imported</span>
+          <span class="chip">Cover and name line</span>
+        </div>
+      </div>
     </div>
   </section>
 
   <section id="screens" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">05 · On a phone</div>
+      <div class="kicker">06 · On a phone</div>
       <h2>How a session looks.</h2>
-      <p class="lead">Real 1.0.4 screens in the light theme. The canvas, the schedule, and the ink evidence sit where you need them.</p>
+      <p class="lead">Real screens in the light theme. The canvas, the dictionary, and the printed sheet sit where you need them.</p>
     </div>
     <div class="screens">
       <figure class="shot reveal"><img src="assets/home-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Home screen with today's plan, word of the day, stat cards, and practice calendar"><figcaption><b>01</b> Your day, ready</figcaption></figure>
       <figure class="shot reveal"><img src="assets/characters-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Character browser with search and script filters"><figcaption><b>02</b> Find a character or a word</figcaption></figure>
       <figure class="shot reveal"><img src="assets/detail-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Character detail with reading, meaning, a real word card, and structure"><figcaption><b>03</b> Reading, meaning, a real word</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/review-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>04</b> Write from memory</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/schedule-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="FSRS-7 schedule settings with fitting and import controls"><figcaption><b>05</b> Fit the schedule to your reviews</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/dictionary-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Dictionary entry for 爱 with stroke count, level, example words, and a direct practice link"><figcaption><b>04</b> A dictionary that teaches</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/review-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>05</b> Write from memory</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/schedule-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="FSRS-7 schedule settings with fitting and import controls"><figcaption><b>06</b> Fit the schedule to your reviews</figcaption></figure>
     </div>
     <div class="grid two gap-top">
-      <figure class="shot shot-wide reveal"><img src="assets/practice-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a numbered stroke guide"><figcaption><b>06</b> Guide, order, and your own ink</figcaption></figure>
-      <figure class="shot shot-wide reveal"><img src="assets/grade-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and four grade buttons with next intervals"><figcaption><b>07</b> The answer stays. You grade.</figcaption></figure>
+      <figure class="shot shot-wide reveal"><img src="assets/practice-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a tapered brush guide and numbered starts for the character 谢"><figcaption><b>07</b> Guide, order, and your own ink</figcaption></figure>
+      <figure class="shot shot-wide reveal"><img src="assets/grade-light.png" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and four grade buttons with next intervals"><figcaption><b>08</b> The answer stays. You grade.</figcaption></figure>
     </div>
   </section>
 
   <section id="scripts" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">06 · Four courses</div>
+      <div class="kicker">07 · Four courses</div>
       <h2>Four courses, kept separate.</h2>
       <p class="lead">Simplified and Traditional are separate courses. Shared glyphs stay shared. Traditional words come from CEDICT word pairs, not a character-by-character converter. Korean starts with Hangul, then Hanja.</p>
     </div>
@@ -344,7 +418,7 @@
 
   <section class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">07 · Sources</div>
+      <div class="kicker">08 · Sources</div>
       <h2>Where the data comes from.</h2>
       <p class="lead">The content database is generated from open sources and shipped with checksums. The app code is MIT. The data keeps its own licences.</p>
     </div>
@@ -365,14 +439,14 @@
   <section id="download" class="wrap">
     <div class="download-card reveal">
       <div>
-        <div class="kicker">Signed release · 1.0.4</div>
-        <h2>Install 1.0.4.</h2>
+        <div class="kicker">Signed release</div>
+        <h2>Install Bihua.</h2>
         <p>Install Bihua on an Android 10+ arm64 phone. Write one character a day, or ten. The schedule will still be there when you come back.</p>
         <div class="hero-actions">
           <a class="button" href="https://github.com/Shadowsx3/bihua/releases/latest">Download APK</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">Read the source</a>
         </div>
-        <p class="small">APK · signed release · 42 MB · version 1.0.4 (14) · content version 34 · no account</p>
+        <p class="small">APK · signed release · Android 10+ · content version 34 · no account</p>
       </div>
       <div class="download-side">
         <p class="small">SHA-256</p>

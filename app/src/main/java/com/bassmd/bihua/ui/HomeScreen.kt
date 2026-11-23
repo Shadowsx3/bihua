@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -175,9 +177,17 @@ fun HomeScreen(
                 CharacterOrder.CURRICULUM,
             ).take(8)
         }
+    val studySummary = buildList {
+        if (studyList.isNotEmpty()) add("${studyList.size} in the list")
+        if (pinnedCount > 0) add("$pinnedCount pinned")
+        if (skippedCount > 0) add("$skippedCount skipped")
+        if (suspendedCount > 0) add("$suspendedCount suspended")
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
+        val book = LocalFoldState.current == FoldState.BOOK && maxWidth >= 700.dp
         val wide = maxWidth >= 720.dp
+        if (!book) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -339,7 +349,17 @@ fun HomeScreen(
                                     color = InkSoft,
                                 )
                             }
-                            TextButton(onClick = onOpenStudyTools) { Text("Manage") }
+                            TextButton(
+                                onClick = onOpenStudyTools,
+                                modifier = Modifier.clearAndSetSemantics {
+                                    contentDescription = "Manage study tools"
+                                    role = Role.Button
+                                    onClick(label = "Manage study tools") {
+                                        onOpenStudyTools()
+                                        true
+                                    }
+                                },
+                            ) { Text("Manage") }
                             if (studyList.isNotEmpty()) {
                                 Spacer(Modifier.width(2.dp))
                                 TextButton(onClick = onDrill) { Text("Draw") }
@@ -376,6 +396,14 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showMore = !showMore }
+                            .clearAndSetSemantics {
+                                    contentDescription = "More on this course. Level, recent characters, browse. " + (if (showMore) "Hide details" else "Show details")
+                                    role = Role.Button
+                                    onClick(label = "More on this course") {
+                                        showMore = !showMore
+                                        true
+                                    }
+                                }
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -425,6 +453,246 @@ fun HomeScreen(
                 }
                 item {
                     BrowseCard(onBrowse = onBrowse)
+                }
+            }
+        }
+        }
+        if (book) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 28.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(28.dp),
+            ) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp),
+                ) {
+                    item {
+                        Header(
+                            greeting = greeting,
+                            mode = mode,
+                            profile = profile,
+                        )
+                    }
+                    if (resumeSession != null && !vacation) {
+                        item {
+                            SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.18f)) {
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "Continue your lesson",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = InkDark,
+                                            )
+                                            Text(
+                                                "${stringResource(resumeSession.mode.labelRes)} · " +
+                                                    "${resumeSession.remaining} of ${resumeSession.total} left",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = InkSoft,
+                                            )
+                                        }
+                                        TextButton(onClick = { confirmDiscard = true }) { Text("Discard") }
+                                    }
+                                    val done = if (resumeSession.total <= 0) {
+                                        0f
+                                    } else {
+                                        ((resumeSession.total - resumeSession.remaining).toFloat() / resumeSession.total)
+                                            .coerceIn(0f, 1f)
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(6.dp)
+                                            .background(Sky.copy(alpha = 0.22f), CircleShape),
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth(done)
+                                                .height(6.dp)
+                                                .background(Sky, CircleShape),
+                                        )
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    PrimaryAction(
+                                        text = "Resume",
+                                        onClick = onResumeSession,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        if (resumeSession == null || vacation) {
+                            StudyHero(
+                                mode = mode,
+                                due = due,
+                                fresh = fresh,
+                                learning = learning,
+                                vacation = vacation,
+                                easeBack = easeBack,
+                                onStudy = onStudy,
+                                onPractice = onPractice,
+                                onEndVacation = { showEndVacation = true },
+                            )
+                        }
+                    }
+                    featuredWord?.let { word ->
+                        item {
+                            WordSparkCard(
+                                word = word,
+                                mode = mode,
+                                speechEnabled = speechEnabled,
+                                onSpeak = onSpeak,
+                                onPracticeWord = onPracticeWord,
+                            )
+                        }
+                    }
+                }
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp),
+                ) {
+                    item {
+                        StatRow(
+                            known = known,
+                            total = characters.size,
+                            newToday = newToday,
+                            studyDays = studyDays,
+                        )
+                    }
+                    item {
+                        StudyCalendarCard(
+                            days = activity,
+                            today = today,
+                            onDayClick = { selectedDay = it },
+                        )
+                    }
+                    item {
+                        SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.PlaylistPlay, contentDescription = null, tint = InkDark)
+                                    Spacer(Modifier.width(8.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            "Study tools",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = InkDark,
+                                        )
+                                        Text(
+                                            if (studySummary.isEmpty()) {
+                                                "Pin, skip, or add characters."
+                                            } else {
+                                                studySummary.joinToString(" · ")
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = InkSoft,
+                                        )
+                                    }
+                                    TextButton(
+                                onClick = onOpenStudyTools,
+                                modifier = Modifier.clearAndSetSemantics {
+                                    contentDescription = "Manage study tools"
+                                    role = Role.Button
+                                    onClick(label = "Manage study tools") {
+                                        onOpenStudyTools()
+                                        true
+                                    }
+                                },
+                            ) { Text("Manage") }
+                                    if (studyList.isNotEmpty()) {
+                                        Spacer(Modifier.width(2.dp))
+                                        TextButton(onClick = onDrill) { Text("Draw") }
+                                        TextButton(onClick = onPaper) { Text("Paper") }
+                                        Button(onClick = onStudyList, shape = CircleShape) {
+                                            Text("Study")
+                                        }
+                                    }
+                                }
+                                if (studyList.isNotEmpty()) {
+                                    Spacer(Modifier.height(10.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        studyList.take(8).forEach { entry ->
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = PaperWarm,
+                                            ) {
+                                                Text(
+                                                    entry.character,
+                                                    fontSize = 24.sp,
+                                                    color = InkDark,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showMore = !showMore }
+                                    .clearAndSetSemantics {
+                                    contentDescription = "More on this course. Level, recent characters, browse. " + (if (showMore) "Hide details" else "Show details")
+                                    role = Role.Button
+                                    onClick(label = "More on this course") {
+                                        showMore = !showMore
+                                        true
+                                    }
+                                }
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(Icons.Rounded.Insights, contentDescription = null, tint = InkDark)
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "More on this course",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = InkDark,
+                                    )
+                                    Text(
+                                        "Level, recent characters, browse",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                    )
+                                }
+                                Icon(
+                                    if (showMore) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                    contentDescription = if (showMore) "Hide details" else "Show details",
+                                    tint = InkSoft,
+                                )
+                            }
+                        }
+                    }
+                    if (showMore) {
+                        item { LevelCard(playerStats) }
+                        item {
+                            SectionTitle(
+                                title = if (known + due > 0) "Pick up where you left off" else "Start with these",
+                                action = "See all",
+                                onAction = onBrowse,
+                            )
+                        }
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                items(recentPeek) { entry ->
+                                    CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
+                                }
+                            }
+                        }
+                        item { BrowseCard(onBrowse = onBrowse) }
+                    }
                 }
             }
         }
@@ -554,15 +822,31 @@ private fun WordSparkCard(
                 )
             }
             if (speechEnabled) {
-                IconButton(onClick = { onSpeak(spoken) }) {
+                IconButton(
+                    onClick = { onSpeak(spoken) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Hear the word"
+                        role = Role.Button
+                    },
+                ) {
                     Icon(
                         Icons.Rounded.VolumeUp,
-                        contentDescription = "Hear the word",
+                        contentDescription = null,
                         tint = InkSoft,
                     )
                 }
             }
-            TextButton(onClick = { onPracticeWord(word) }) {
+            TextButton(
+                onClick = { onPracticeWord(word) },
+                modifier = Modifier.clearAndSetSemantics {
+                    contentDescription = "Write"
+                    role = Role.Button
+                    onClick(label = "Write") {
+                        onPracticeWord(word)
+                        true
+                    }
+                },
+            ) {
                 Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("Write")
@@ -640,12 +924,19 @@ private fun StudyHero(
                 color = InkDark.copy(alpha = 0.76f),
             )
             Spacer(Modifier.height(20.dp))
+            val action = when {
+                vacation -> onEndVacation
+                due + fresh == 0 -> onPractice
+                else -> onStudy
+            }
+            val label = when {
+                vacation -> "End vacation"
+                due + fresh == 0 -> "Practice instead"
+                due == 0 -> "Learn ${formatCount(fresh)} new"
+                else -> "Start studying"
+            }
             Button(
-                onClick = when {
-                    vacation -> onEndVacation
-                    due + fresh == 0 -> onPractice
-                    else -> onStudy
-                },
+                onClick = action,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = InkDark,
                     contentColor = Paper,
@@ -653,17 +944,19 @@ private fun StudyHero(
                     disabledContentColor = Paper.copy(alpha = 0.7f),
                 ),
                 shape = CircleShape,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().clearAndSetSemantics {
+                    contentDescription = label
+                    role = Role.Button
+                    onClick(label = label) {
+                        action()
+                        true
+                    }
+                },
             ) {
                 Icon(Icons.Rounded.School, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    when {
-                        vacation -> "End vacation"
-                        due + fresh == 0 -> "Practice instead"
-                        due == 0 -> "Learn ${formatCount(fresh)} new"
-                        else -> "Start studying"
-                    },
+                    label,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Spacer(Modifier.weight(1f))
@@ -911,6 +1204,7 @@ private fun LevelCard(stats: com.bassmd.bihua.progress.PlayerStats) {
 @Composable
 private fun CharacterPeek(entry: CharacterEntry, onClick: () -> Unit) {
     val reading = displayReading(entry.reading, entry.mode)
+    val label = "${entry.character}, $reading, ${entry.meaning}, ${entry.status.label}"
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = PaperWarm,
@@ -918,9 +1212,9 @@ private fun CharacterPeek(entry: CharacterEntry, onClick: () -> Unit) {
             .width(104.dp)
             .clickable(onClick = onClick)
             .clearAndSetSemantics {
-                contentDescription = "${entry.character}, $reading, ${entry.meaning}, ${entry.status.label}"
+                contentDescription = label
                 role = androidx.compose.ui.semantics.Role.Button
-                onClick(label = contentDescription) {
+                onClick(label = label) {
                     onClick()
                     true
                 }

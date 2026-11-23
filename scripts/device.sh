@@ -256,7 +256,10 @@ case "$cmd" in
       *.png) target="$BIHUA_ROOT/screenshots/$name"; mkdir -p "$(dirname "$target")" ;;
       *) target="$BIHUA_ROOT/screenshots/$name.png"; mkdir -p "$(dirname "$target")" ;;
     esac
-    adb -s "$DEVICE" exec-out screencap -p > "$target"
+    remote="/data/local/tmp/bihua-shot-$$.png"
+    adb -s "$DEVICE" shell screencap -p "$remote" >/dev/null
+    adb -s "$DEVICE" pull "$remote" "$target" >/dev/null
+    adb -s "$DEVICE" shell rm -f "$remote" >/dev/null
     echo "$target"
     ;;
   a11y)
@@ -310,11 +313,18 @@ PY
 import re, sys
 s = open(sys.argv[1], encoding="utf-8").read()
 rows = []
-for m in re.finditer(r'(?:text|content-desc)="([^"]*)"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', s):
-    label = m.group(1)
-    if label:
-        rows.append(f"{label}  [{(int(m.group(2))+int(m.group(4)))//2},{(int(m.group(3))+int(m.group(5)))//2}]")
-print("\n".join(rows[:120]))
+for tag in re.finditer(r"<node\b[^>]*>", s):
+    body = tag.group(0)
+    text = re.search(r'text="([^"]*)"', body)
+    desc = re.search(r'content-desc="([^"]*)"', body)
+    bounds = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', body)
+    label = (desc.group(1) if desc else "") or (text.group(1) if text else "")
+    if not label or not bounds:
+        continue
+    rows.append(
+        f"{label}  [{(int(bounds.group(1))+int(bounds.group(3)))//2},{(int(bounds.group(2))+int(bounds.group(4)))//2}]"
+    )
+print("\n".join(rows[:400]))
 PY
     ;;
 

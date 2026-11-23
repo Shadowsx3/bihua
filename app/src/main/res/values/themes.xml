@@ -1,3 +1,5 @@
 <resources>
-    <style name="Theme.Bihua" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.Bihua" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splash_paper</item>
+    </style>
 </resources>

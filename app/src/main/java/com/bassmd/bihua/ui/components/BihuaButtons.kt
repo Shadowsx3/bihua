@@ -20,12 +20,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.ui.theme.AccentInk
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.TouchTarget
+
+/** One spoken node for the whole action; the visual label stays a child. */
+private fun Modifier.actionLabel(label: String, activate: () -> Unit): Modifier =
+    clearAndSetSemantics {
+        contentDescription = label
+        role = Role.Button
+        onClick(label = label) {
+            activate()
+            true
+        }
+    }
 
 /**
  * One primary action per screen area, filled with the mode accent and dark text.
@@ -51,7 +67,7 @@ fun PrimaryAction(
             disabledContainerColor = accent.copy(alpha = 0.35f),
             disabledContentColor = InkSoft,
         ),
-        modifier = modifier.heightIn(min = if (compact) 40.dp else TouchTarget),
+        modifier = modifier.heightIn(min = if (compact) 40.dp else TouchTarget).actionLabel(text, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -79,7 +95,7 @@ fun TonalAction(
             containerColor = accent,
             contentColor = InkDark,
         ),
-        modifier = modifier.heightIn(min = TouchTarget),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -101,7 +117,7 @@ fun QuietAction(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.heightIn(min = TouchTarget),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -123,7 +139,7 @@ fun OutlineAction(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.heightIn(min = TouchTarget),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))

@@ -13,39 +13,21 @@ make check
 ```
 
 If `git status` is not clean, identify whether the files are user work before
-editing or deleting. Do not commit `store/`, `screenshots/`, APKs, AABs, or
-keystores.
+editing or deleting. Do not commit `screenshots/`, APKs, or keystores.
 
-While a Play release is under review:
-
-- freeze the submitted versionCode;
-- do not merge app dependency PRs;
-- do not rebuild the submitted AAB;
-- keep the release tag and hashes recorded.
-
-## 2. Release build workflow
+## 2. Release APK build
 
 ```bash
 make check
 make lint
 make audit
 source scripts/env.sh
-./gradlew :app:assembleRelease :app:bundleRelease --console=plain -q
-shasum -a 256 app/build/outputs/apk/release/app-release.apk \
-  app/build/outputs/bundle/release/app-release.aab
+./gradlew :app:assembleRelease --console=plain -q
+shasum -a 256 app/build/outputs/apk/release/app-release.apk
 ```
 
-Then:
-
-1. copy the APK to `docs/download/bihua-<version>.apk`;
-2. update `docs/download/SHA256SUMS.txt`;
-3. update the hash and size in `docs/index.html`;
-4. verify the APK signature and the edge-to-edge API strings;
-5. run `make release-check` to compare the APK, AAB, docs hash, content version,
-   and release-note length;
-6. tag the submitted commit.
-
-The release build is invalid if a source file changed after it was assembled.
+Verify the APK signature before installing it. The release build is invalid if a
+source file changed after it was assembled.
 
 ## 3. Content database workflow
 
@@ -174,33 +156,9 @@ Tricks:
   attached. Use the keyboard command in `device.sh` when testing IME layout.
 - If the app is on a saved session, seeding a new due card will not show on Home.
   Discard the saved session or test in a script without a session.
-- `store/` and `screenshots/` are not committed. Copy raw screenshots into
-  `store/app-shots/` before rendering marketing assets.
+- `screenshots/` is local-only and not committed.
 
-## 7. Store and landing assets
-
-Phone store images are rendered from SVG frames with headless Chrome:
-
-```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless=new --disable-gpu --hide-scrollbars \
-  --window-size=1080,1920 \
-  --screenshot=store/phone-1.png \
-  "file://$PWD/store/phone-1-light.svg"
-```
-
-Use `scripts/render-store-assets.sh` or `make store-images` for the whole set.
-Raw captures must be
-1080 × 2400. Tablet frames use 1920 × 1080 and 2560 × 1440.
-
-Landing screenshots live in `docs/assets/*-light.png` and are NOT the framed
-store images. Update the home/detail/characters/grade assets when the UI changes,
-then update the download hash and size in `docs/index.html`.
-
-Do not publish `store/` to GitHub. It contains local-only listing copy and
-screenshots.
-
-## 8. Accessibility and large text
+## 7. Accessibility and large text
 
 - Test the phone bottom bar and tablet rail at 1.3× first; that is where labels
   wrap.
@@ -211,7 +169,7 @@ screenshots.
 - TalkBack is improved but not fully certified. A full sweep is still required
   before claiming accessibility complete.
 
-## 9. Dependency updates
+## 8. Dependency updates
 
 See `docs/dependency-updates.md`.
 
@@ -221,7 +179,7 @@ See `docs/dependency-updates.md`.
 - Never merge one toolchain major on its own.
 - Do not rebuild a submitted versionCode with dependency changes.
 
-## 10. Definition of done for a UI change
+## 9. Definition of done for a UI change
 
 - Phone and tablet at normal and 1.3× text.
 - Light and dark.
@@ -229,5 +187,3 @@ See `docs/dependency-updates.md`.
 - Back navigation, keyboard, and session restore.
 - No content under the bottom bar or IME.
 - `make check`, `make lint`, and `make audit` green.
-- Store/landing assets updated if the visible UI changed.
-- Release AAB rebuilt and hashes updated if the change ships.

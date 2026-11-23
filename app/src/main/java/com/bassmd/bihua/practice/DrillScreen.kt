@@ -53,6 +53,7 @@ import com.bassmd.bihua.ai.RecognitionResult
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
@@ -162,12 +163,14 @@ fun DrillScreen(
                 writingSize.sideDp.dp,
             )
             Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
+                WritingGrid(gridStyle, Modifier.fillMaxSize())
                 if (showReference) {
                     if (player.strokeCount > 0) {
                         StrokeGuideLayer(
                             player = player,
                             showNumbers = showOrder,
                             modifier = Modifier.fillMaxSize(),
+                            ghostCharacter = entry.character,
                         )
                     } else {
                         OutlineGuide(character = entry.character, side = side)
@@ -180,6 +183,7 @@ fun DrillScreen(
                     brush = brush,
                     gridStyle = gridStyle,
                     allowFinger = allowFinger,
+                    drawGrid = false,
                     contentDescription = "Handwriting canvas for ${entry.character}.",
                 )
             }

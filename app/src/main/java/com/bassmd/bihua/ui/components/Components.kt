@@ -35,12 +35,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.Coral
 import com.bassmd.bihua.ui.theme.Gem
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.LocalBihuaPalette
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.Mint
+import com.bassmd.bihua.ui.theme.MintDeep
 import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
@@ -189,7 +191,7 @@ fun EmptyState(
             .padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        InkMascot(size = 88.dp)
+        InkMascot(size = 88.dp, withBrush = true)
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleLarge, color = InkDark)
         Spacer(Modifier.height(6.dp))
@@ -207,46 +209,136 @@ fun EmptyState(
 }
 
 /**
- * A small ink-drop mascot. It is drawn rather than shipped as an asset so it
- * scales cleanly and picks up the palette.
+ * Mò, the paper-ink mascot. The cream body, coral badge, and little brush match
+ * the launcher icon, so the character is recognisable before the app opens.
  */
 @Composable
-fun InkMascot(size: Dp = 72.dp, happy: Boolean = true) {
+fun InkMascot(
+    size: Dp = 72.dp,
+    happy: Boolean = true,
+    sparkle: Boolean = true,
+    withBrush: Boolean = false,
+) {
     val palette = LocalBihuaPalette.current
     Canvas(Modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
+        val detailed = w > 40.dp.toPx()
+
+        // Coral badge and sticker halo.
+        drawCircle(Coral, radius = w * 0.44f, center = Offset(w * 0.50f, h * 0.50f))
+        drawCircle(
+            palette.paperWarm,
+            radius = w * 0.375f,
+            center = Offset(w * 0.50f, h * 0.50f),
+        )
+
         val body = Path().apply {
-            moveTo(w * 0.50f, h * 0.08f)
-            cubicTo(w * 0.82f, h * 0.20f, w * 0.92f, h * 0.52f, w * 0.78f, h * 0.76f)
-            cubicTo(w * 0.64f, h * 0.98f, w * 0.36f, h * 0.98f, w * 0.22f, h * 0.76f)
-            cubicTo(w * 0.08f, h * 0.52f, w * 0.18f, h * 0.20f, w * 0.50f, h * 0.08f)
+            moveTo(w * 0.50f, h * 0.25f)
+            cubicTo(w * 0.68f, h * 0.28f, w * 0.80f, h * 0.44f, w * 0.80f, h * 0.58f)
+            cubicTo(w * 0.80f, h * 0.76f, w * 0.66f, h * 0.86f, w * 0.50f, h * 0.86f)
+            cubicTo(w * 0.34f, h * 0.86f, w * 0.20f, h * 0.76f, w * 0.20f, h * 0.58f)
+            cubicTo(w * 0.20f, h * 0.44f, w * 0.32f, h * 0.28f, w * 0.50f, h * 0.25f)
             close()
         }
-        drawPath(body, color = Mint.copy(alpha = 0.92f))
-        drawCircle(color = palette.paperWarm.copy(alpha = 0.55f), radius = w * 0.10f, center = Offset(w * 0.36f, h * 0.34f))
-        drawCircle(palette.inkDark, radius = w * 0.035f, center = Offset(w * 0.40f, h * 0.52f))
-        drawCircle(palette.inkDark, radius = w * 0.035f, center = Offset(w * 0.60f, h * 0.52f))
-        drawCircle(Rose.copy(alpha = 0.50f), radius = w * 0.06f, center = Offset(w * 0.30f, h * 0.64f))
-        drawCircle(Rose.copy(alpha = 0.50f), radius = w * 0.06f, center = Offset(w * 0.70f, h * 0.64f))
+        drawPath(body, color = palette.paperWarm)
+        drawPath(
+            body,
+            color = palette.inkDark,
+            style = Stroke(width = w * 0.028f),
+        )
+
+        // Sprout.
+        drawLine(
+            color = MintDeep,
+            start = Offset(w * 0.50f, h * 0.25f),
+            end = Offset(w * 0.54f, h * 0.17f),
+            strokeWidth = w * 0.022f,
+            cap = StrokeCap.Round,
+        )
+        val leaf = Path().apply {
+            moveTo(w * 0.53f, h * 0.20f)
+            cubicTo(w * 0.56f, h * 0.12f, w * 0.68f, h * 0.11f, w * 0.73f, h * 0.16f)
+            cubicTo(w * 0.68f, h * 0.22f, w * 0.58f, h * 0.24f, w * 0.53f, h * 0.20f)
+            close()
+        }
+        drawPath(leaf, color = Mint)
+        drawPath(leaf, color = palette.inkDark, style = Stroke(width = w * 0.018f))
+
+        // Face.
+        val eyeY = h * 0.55f
+        drawCircle(palette.inkDark, radius = w * 0.034f, center = Offset(w * 0.41f, eyeY))
+        drawCircle(palette.inkDark, radius = w * 0.034f, center = Offset(w * 0.59f, eyeY))
+        drawCircle(palette.paper, radius = w * 0.011f, center = Offset(w * 0.40f, eyeY - h * 0.012f))
+        drawCircle(palette.paper, radius = w * 0.011f, center = Offset(w * 0.58f, eyeY - h * 0.012f))
+        drawCircle(Rose.copy(alpha = 0.42f), radius = w * 0.060f, center = Offset(w * 0.33f, h * 0.65f))
+        drawCircle(Rose.copy(alpha = 0.42f), radius = w * 0.060f, center = Offset(w * 0.67f, h * 0.65f))
         if (happy) {
             drawArc(
                 color = palette.inkDark,
                 startAngle = 12f,
                 sweepAngle = 156f,
                 useCenter = false,
-                topLeft = Offset(w * 0.40f, h * 0.60f),
-                size = Size(w * 0.20f, h * 0.16f),
-                style = Stroke(width = w * 0.035f, cap = StrokeCap.Round),
+                topLeft = Offset(w * 0.435f, h * 0.63f),
+                size = Size(w * 0.13f, h * 0.11f),
+                style = Stroke(width = w * 0.025f, cap = StrokeCap.Round),
             )
         } else {
             drawLine(
                 palette.inkDark,
-                Offset(w * 0.44f, h * 0.70f),
-                Offset(w * 0.56f, h * 0.70f),
-                strokeWidth = w * 0.035f,
+                Offset(w * 0.45f, h * 0.69f),
+                Offset(w * 0.55f, h * 0.69f),
+                strokeWidth = w * 0.025f,
                 cap = StrokeCap.Round,
             )
+        }
+
+        if (withBrush && detailed) {
+            // A smaller version of the launcher brush, leaning at the right.
+            drawLine(
+                palette.inkDark,
+                Offset(w * 0.70f, h * 0.88f),
+                Offset(w * 0.83f, h * 0.60f),
+                strokeWidth = w * 0.060f,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color(0xFFE9B96E),
+                Offset(w * 0.70f, h * 0.88f),
+                Offset(w * 0.83f, h * 0.60f),
+                strokeWidth = w * 0.036f,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color(0xFFF7E5C4),
+                Offset(w * 0.81f, h * 0.63f),
+                Offset(w * 0.84f, h * 0.57f),
+                strokeWidth = w * 0.060f,
+                cap = StrokeCap.Round,
+            )
+            val bristles = Path().apply {
+                moveTo(w * 0.83f, h * 0.59f)
+                cubicTo(w * 0.87f, h * 0.54f, w * 0.90f, h * 0.48f, w * 0.91f, h * 0.44f)
+                cubicTo(w * 0.93f, h * 0.40f, w * 0.88f, h * 0.38f, w * 0.86f, h * 0.43f)
+                cubicTo(w * 0.83f, h * 0.48f, w * 0.81f, h * 0.54f, w * 0.80f, h * 0.57f)
+                close()
+            }
+            drawPath(bristles, color = palette.inkDark)
+        }
+
+        if (sparkle) {
+            val s = w * 0.08f
+            val cx = w * 0.86f
+            val cy = h * 0.24f
+            val star = Path().apply {
+                moveTo(cx, cy - s)
+                quadraticBezierTo(cx + s * 0.24f, cy - s * 0.24f, cx + s, cy)
+                quadraticBezierTo(cx + s * 0.24f, cy + s * 0.24f, cx, cy + s)
+                quadraticBezierTo(cx - s * 0.24f, cy + s * 0.24f, cx - s, cy)
+                quadraticBezierTo(cx - s * 0.24f, cy - s * 0.24f, cx, cy - s)
+                close()
+            }
+            drawPath(star, color = Butter)
         }
     }
 }

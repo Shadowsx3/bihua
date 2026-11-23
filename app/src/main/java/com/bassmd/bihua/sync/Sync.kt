@@ -16,10 +16,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
-import java.net.HttpURLConnection
 import java.net.ServerSocket
+import java.net.SocketException
 import java.net.URL
-import kotlin.random.Random
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLException
+import javax.net.ssl.SSLServerSocket
+import javax.net.ssl.SSLSocket
 
 data class SyncHost(val host: String, val port: Int)
 
@@ -27,7 +30,7 @@ data class SyncSession(val code: String, val port: Int)
 
 data class SyncPackage(val backup: BackupBundle?, val progressDb: ByteArray?)
 
-/** Local HTTP sync with a six-digit pairing code. No cloud service is involved. */
+/** Local TLS sync with a certificate pin. No cloud service is involved. */
 class SyncServer(
     private val context: Context,
     private val store: SettingsStore,
@@ -47,13 +50,21 @@ class SyncServer(
     ) {
         stop()
         this.transfer = transfer
-        val server = runCatching { ServerSocket(0) }.getOrElse {
-            onError("Could not open a sync port. Check Wi-Fi and try again.")
+        val certificate = runCatching { SyncTls.newCertificate() }.getOrElse {
+            onError("Could not create a secure sync session. Try again.")
+            return
+        }
+        val server = runCatching {
+            SyncTls.serverSocketFactory(certificate).createServerSocket(0) as SSLServerSocket
+        }.getOrElse {
+            onError("Could not open a secure sync port. Check Wi-Fi and try again.")
             return
         }
         socket = server
         running = true
-        val code = "%06d".format(Random.nextInt(0, 1_000_000))
+        // The code is the first 50 bits of the certificate fingerprint. The
+        // receiver pins the certificate with it before any data is sent.
+        val code = SyncCode.fingerprint(certificate.certificate)
         val session = SyncSession(code, server.localPort)
 
         val manager = runCatching {
@@ -101,23 +112,36 @@ class SyncServer(
                 runCatching {
                     server.accept().use { client ->
                         client.soTimeout = 15_000
+                        (client as SSLSocket).startHandshake()
                         val request = client.getInputStream().bufferedReader().readLine().orEmpty()
                         val path = request.split(" ").getOrNull(1).orEmpty()
-                        val supplied = path.substringAfter("code=", "").substringBefore("&")
+                        val supplied = SyncCode.normalize(
+                            path.substringAfter("code=", "").substringBefore("&"),
+                        )
                         if (supplied != code) {
                             client.getOutputStream().write(
                                 "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray()
                             )
                             return@use
                         }
-                        val body = buildPackage()
+                        val body = runCatching { buildPackage() }.getOrElse {
+                            onError(it.message ?: "Could not build the sync package.")
+                            client.getOutputStream().write(
+                                "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray()
+                            )
+                            return@use
+                        }
                         val header = "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\n" +
                             "Content-Length: ${body.size}\r\nConnection: close\r\n\r\n"
                         client.getOutputStream().write(header.toByteArray())
                         client.getOutputStream().write(body)
                     }
                 }.onFailure {
-                    if (running) onError("Sync server stopped: ${it.message}")
+                    // A wrong pin or a device that walks away is a normal
+                    // failed attempt, not a server failure. Keep listening.
+                    if (running && it !is SSLException && it !is SocketException) {
+                        onError("Sync server stopped: ${it.message ?: "network error"}")
+                    }
                 }
             }
         }
@@ -132,8 +156,12 @@ class SyncServer(
         }
         val progressBytes = if (transfer.progress) {
             val temp = File(context.cacheDir, "sync-progress.db")
-            progress.exportTo(temp)
-            temp.readBytes().also { temp.delete() }
+            try {
+                progress.exportTo(temp)
+                temp.readBytes()
+            } finally {
+                temp.delete()
+            }
         } else {
             null
         }
@@ -196,18 +224,39 @@ class SyncClient(private val context: Context) {
     }
 
     suspend fun pull(host: SyncHost, code: String): SyncPackage = withContext(Dispatchers.IO) {
-        val connection = (URL("http://${host.host}:${host.port}/sync?code=$code").openConnection() as HttpURLConnection).apply {
-            connectTimeout = 5_000
-            readTimeout = 15_000
+        val normalized = SyncCode.normalize(code)
+        require(normalized.length == SyncCode.LENGTH) {
+            "Enter the ${SyncCode.LENGTH}-character pairing code."
         }
+        val context = SyncTls.clientContext(normalized)
+        val connection = (
+            URL("https://${hostForUrl(host.host)}:${host.port}/sync?code=$normalized")
+                .openConnection() as HttpsURLConnection
+            ).apply {
+                sslSocketFactory = context.socketFactory
+                hostnameVerifier = SyncTls.hostnameVerifier(normalized)
+                connectTimeout = 5_000
+                readTimeout = 15_000
+            }
         try {
-            if (connection.responseCode != 200) error("The other device rejected the pairing code.")
-            val bytes = connection.inputStream.use { it.readBytes() }
+            when (connection.responseCode) {
+                200 -> Unit
+                403 -> error("The other device rejected the pairing code.")
+                else -> error("The other device could not prepare the transfer.")
+            }
+            val bytes = connection.inputStream.use { BackupArchive.readAll(it) }
             readPackage(bytes)
+        } catch (failure: SSLException) {
+            throw IllegalStateException(
+                "The pairing code did not match the other device. Check the code and try again.",
+                failure,
+            )
         } finally {
             connection.disconnect()
         }
     }
+
+    private fun hostForUrl(host: String): String = syncHostForUrl(host)
 
     private fun readPackage(bytes: ByteArray): SyncPackage {
         val archive = BackupArchive.decode(bytes)
@@ -216,4 +265,15 @@ class SyncClient(private val context: Context) {
         if (backup == null && progress == null) error("The package has no settings or progress.")
         return SyncPackage(backup, progress)
     }
+}
+
+/**
+ * Brackets an IPv6 literal for a URL. A link-local address from mDNS can carry
+ * a zone id such as `%wlan0`; the percent sign must be escaped or the URL is
+ * invalid.
+ */
+internal fun syncHostForUrl(host: String): String {
+    if (host.startsWith("[")) return host
+    if (!host.contains(":")) return host
+    return "[${host.replace("%", "%25")}]"
 }

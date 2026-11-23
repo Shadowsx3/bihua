@@ -28,8 +28,8 @@ A toolchain migration needs:
 
 ## Release window rule
 
-While a Play release is under review, app dependency PRs stay unmerged. CI-only
-action updates may be prepared separately because they do not change the AAB.
+Keep app dependency PRs separate from behavior changes. CI-only action updates
+may be prepared separately.
 
 ## Pull request order
 

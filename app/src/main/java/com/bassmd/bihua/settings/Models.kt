@@ -62,6 +62,22 @@ data class BrushConfig(
     /** Width at the very end, relative to the body. */
     val taperStrength: Float = 0.40f,
 ) {
+    /** Keeps a restored or hand-edited brush inside the ranges the canvas expects. */
+    fun sanitized(): BrushConfig {
+        val min = minWidthDp.finiteOr(0.9f).coerceIn(0.2f, 12f)
+        val max = maxWidthDp.finiteOr(7.2f).coerceIn(min + 0.2f, 14f)
+        return copy(
+            minWidthDp = min,
+            maxWidthDp = max,
+            pressureCurve = pressureCurve.finiteOr(0.55f).coerceIn(0.1f, 2f),
+            speedThinning = speedThinning.finiteOr(0.20f).coerceIn(0f, 0.6f),
+            taper = taper.finiteOr(0.12f).coerceIn(0f, 0.4f),
+            taperStrength = taperStrength.finiteOr(0.40f).coerceIn(0f, 1f),
+        )
+    }
+
+    private fun Float.finiteOr(fallback: Float): Float = if (isFinite()) this else fallback
+
     companion object {
         fun preset(tool: DrawingTool): BrushConfig = when (tool) {
             DrawingTool.PEN -> BrushConfig(
@@ -238,6 +254,12 @@ data class AppSettings(
     val mnemonicMode: MnemonicMode = MnemonicMode.EARLY,
     val onboarded: Boolean = false,
     val showCounters: Boolean = true,
+    /** Daily study reminder. Off until the learner enables it. */
+    val remindersEnabled: Boolean = false,
+    /** Local hour 0..23 for the reminder. */
+    val reminderHour: Int = 20,
+    /** ISO day numbers, Monday=1 through Sunday=7. */
+    val reminderDays: Set<Int> = setOf(1, 2, 3, 4, 5, 6, 7),
     val gridStyle: GridStyle = GridStyle.MI_ZI,
     val showStrokeNumbers: Boolean = true,
     val writingSize: WritingSize = WritingSize.COMFORTABLE,
@@ -251,10 +273,11 @@ data class AppSettings(
     val dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
     val characterOrder: CharacterOrder = CharacterOrder.CURRICULUM,
     val reviewOrder: ReviewOrder = ReviewOrder.RANDOM,
-    val sessionOrder: SessionOrder = SessionOrder.REVIEWS_FIRST,
-    /** In a mixed session, reviews before one new lesson. */
+    /** Reviews and new lessons share one queue; a lesson appears every few reviews. */
+    val sessionOrder: SessionOrder = SessionOrder.MIXED,
     val mixInterval: Int = 5,
-    val sessionProgress: SessionProgress = SessionProgress.FULL,
+    /** The bar measures the review block before the next new lesson. */
+    val sessionProgress: SessionProgress = SessionProgress.NEXT_LESSON,
     /**
      * When true, the same glyph and stroke order share one memory across
      * Simplified, Traditional, and Japanese. Readings and meanings stay per
@@ -351,12 +374,20 @@ data class AppSettings(
             key to profile.copy(weights = FsrsWeights.clip(weights.toFloatArray()).toList())
         }.toMap()
         val hasShared = shared.isNotEmpty()
+        val validReminderDays = reminderDays.filter { it in 1..7 }.toSet()
         return copy(
             dailyNewGoal = dailyNewGoal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL),
             dayStartHour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR),
+            reminderHour = reminderHour.coerceIn(0, 23),
+            reminderDays = validReminderDays,
+            remindersEnabled = remindersEnabled && validReminderDays.isNotEmpty(),
+            mixInterval = mixInterval.coerceIn(1, 10),
+            brush = brush.sanitized(),
+            vacationStartedAtMs = vacationStartedAtMs.coerceAtLeast(0L),
+            easeBackUntilMs = easeBackUntilMs.coerceAtLeast(0L),
             fsrsWeights = shared,
             fsrsWeightsSource = if (hasShared) fsrsWeightsSource else "",
-            fsrsWeightsUpdatedAtMs = if (hasShared) fsrsWeightsUpdatedAtMs else 0L,
+            fsrsWeightsUpdatedAtMs = if (hasShared) fsrsWeightsUpdatedAtMs.coerceAtLeast(0L) else 0L,
             fsrsProfiles = profiles,
         )
     }
@@ -374,4 +405,12 @@ data class UserProfile(
     val displayName: String = "",
     val createdAtEpochMs: Long = 0L,
     val photoPath: String? = null,
-)
+) {
+    fun sanitized(): UserProfile = copy(
+        displayName = displayName
+            .filterNot { it == '\n' || it == '\r' || it == '\t' }
+            .trim()
+            .take(40),
+        createdAtEpochMs = createdAtEpochMs.coerceAtLeast(0L),
+    )
+}

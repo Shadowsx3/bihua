@@ -21,13 +21,14 @@ fun OutlineGuide(
     character: String,
     side: Dp,
     modifier: Modifier = Modifier,
+    alpha: Float = 0.13f,
 ) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             text = character,
             fontSize = (side.value * 0.72f).sp,
             fontWeight = FontWeight.Medium,
-            color = GuideGreen.copy(alpha = 0.13f),
+            color = GuideGreen.copy(alpha = alpha),
             textAlign = TextAlign.Center,
         )
     }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +50,7 @@ import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
@@ -67,6 +69,13 @@ import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
+
+/** How much of the reference is visible while writing a word. */
+private enum class WordGuideMode(val label: String) {
+    OFF("Off"),
+    OUTLINE("Faint"),
+    STROKES("Strokes"),
+}
 
 /**
  * Context writing: produce a whole word one character at a time. This is free
@@ -92,7 +101,7 @@ fun WordPracticeScreen(
     if (characters.isEmpty()) return
     var index by remember(word.word) { mutableIntStateOf(0) }
     var revealed by remember(word.word, index) { mutableStateOf(false) }
-    var showReference by remember(word.word, index) { mutableStateOf(false) }
+    var guideMode by remember(word.word) { mutableStateOf(WordGuideMode.OFF) }
     var showOrder by remember(word.word) { mutableStateOf(showStrokeNumbers) }
     var finished by remember(word.word) { mutableStateOf(false) }
     val entry = characters.getOrNull(index) ?: characters.first()
@@ -151,7 +160,7 @@ fun WordPracticeScreen(
                             index = 0
                             finished = false
                             revealed = false
-                            showReference = false
+                            guideMode = WordGuideMode.OFF
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -228,16 +237,24 @@ fun WordPracticeScreen(
                 writingSize.sideDp.dp,
             )
             Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
-                if (showReference || revealed) {
-                    if (player.strokeCount > 0) {
-                        StrokeGuideLayer(
-                            player = player,
-                            showNumbers = showOrder,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        OutlineGuide(character = entry.character, side = side)
-                    }
+                WritingGrid(gridStyle, Modifier.fillMaxSize())
+                val showStrokes = guideMode == WordGuideMode.STROKES && player.strokeCount > 0
+                val showOutline = guideMode == WordGuideMode.OUTLINE ||
+                    (guideMode == WordGuideMode.STROKES && player.strokeCount == 0) ||
+                    (revealed && guideMode == WordGuideMode.OFF)
+                if (showStrokes) {
+                    StrokeGuideLayer(
+                        player = player,
+                        showNumbers = showOrder,
+                        modifier = Modifier.fillMaxSize(),
+                        ghostCharacter = entry.character,
+                    )
+                } else if (showOutline) {
+                    OutlineGuide(
+                        character = entry.character,
+                        side = side,
+                        alpha = if (revealed) 0.24f else 0.13f,
+                    )
                 }
                 InkCanvas(
                     state = ink,
@@ -246,25 +263,43 @@ fun WordPracticeScreen(
                     brush = brush,
                     gridStyle = gridStyle,
                     allowFinger = allowFinger,
+                    drawGrid = false,
                     contentDescription = "Handwriting canvas for the current word character.",
                 )
             }
         }
-        if (revealed) {
+        if (revealed || guideMode != WordGuideMode.OFF) {
+            val reading = displayReading(entry.reading, mode)
             Text(
-                "Target: ${entry.character}",
-                style = MaterialTheme.typography.titleMedium,
-                color = InkDark,
+                buildString {
+                    append(entry.character)
+                    if (player.strokeCount > 0) append(" · ${player.strokeCount} strokes")
+                    if (reading.isNotBlank()) append(" · $reading")
+                    if (entry.meaning.isNotBlank()) append(" · ${entry.meaning}")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = InkSoft,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            WordGuideMode.entries.forEach { option ->
+                FilterChip(
+                    selected = guideMode == option,
+                    onClick = { guideMode = option },
+                    label = { Text(option.label) },
+                    shape = CircleShape,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TonalAction(
-                text = if (showReference) "Hide guide" else "Show guide",
-                onClick = { showReference = !showReference },
-                modifier = Modifier.weight(1f),
-                icon = if (showReference) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                accent = Mint.copy(alpha = 0.55f),
-            )
             TonalAction(
                 text = "Undo",
                 onClick = { ink.undo() },
@@ -272,25 +307,49 @@ fun WordPracticeScreen(
                 icon = Icons.AutoMirrored.Rounded.Undo,
                 modifier = Modifier.weight(1f),
             )
-        }
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TonalAction(
                 text = "Clear",
                 onClick = { ink.clear(); revealed = false },
                 enabled = ink.canUndo,
                 modifier = Modifier.weight(1f),
             )
-            TonalAction(
-                text = if (showOrder) "Numbers on" else "Numbers off",
+            FilterChip(
+                selected = showOrder,
                 onClick = { showOrder = !showOrder },
                 enabled = player.strokeCount > 0,
-                icon = Icons.Rounded.FormatListNumbered,
-                modifier = Modifier.weight(1f),
-                accent = com.bassmd.bihua.ui.theme.Lilac.copy(alpha = 0.35f),
+                label = { Text("Numbers") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.FormatListNumbered,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
+                shape = CircleShape,
+                modifier = Modifier.weight(1.2f),
             )
         }
-        Spacer(Modifier.height(6.dp))
+        if (guideMode == WordGuideMode.STROKES && player.strokeCount > 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Watch the stroke order",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    modifier = Modifier.weight(1f),
+                )
+                TonalAction(
+                    text = "Play",
+                    onClick = { player.play() },
+                    enabled = !player.isPlaying,
+                    icon = Icons.Rounded.PlayArrow,
+                    accent = Mint.copy(alpha = 0.55f),
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
         PrimaryAction(
             text = when {
                 !revealed -> "Show answer"
@@ -303,7 +362,6 @@ fun WordPracticeScreen(
                 } else if (index < characters.lastIndex) {
                     index++
                     revealed = false
-                    showReference = false
                 } else {
                     finished = true
                     onCompleted()

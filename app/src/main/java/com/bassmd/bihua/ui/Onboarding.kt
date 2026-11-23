@@ -112,6 +112,8 @@ import com.bassmd.bihua.ui.theme.SkyInk
  * First run. Four short pages: the promise, the script, the pace, the brush.
  * Everything it sets is editable later in Settings.
  */
+private const val RECOMMENDED_NEW_PER_DAY = 5
+
 @Composable
 fun OnboardingScreen(
     onFinish: (StudyMode, Int, BrushConfig, Boolean, RecallCue, Boolean) -> Unit,
@@ -127,7 +129,7 @@ fun OnboardingScreen(
     }
     var step by rememberSaveable { mutableIntStateOf(0) }
     var mode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
-    var goal by rememberSaveable { mutableIntStateOf(10) }
+    var goal by rememberSaveable { mutableIntStateOf(RECOMMENDED_NEW_PER_DAY) }
     var tool by rememberSaveable { mutableStateOf(DrawingTool.INK) }
     var shareProgress by rememberSaveable { mutableStateOf(false) }
     var cue by rememberSaveable { mutableStateOf(RecallCue.MEANING_READING) }
@@ -225,7 +227,7 @@ fun OnboardingScreen(
                     onClick = {
                         onFinish(
                             StudyMode.SIMPLIFIED,
-                            10,
+                            RECOMMENDED_NEW_PER_DAY,
                             BrushConfig.preset(DrawingTool.INK),
                             false,
                             RecallCue.MEANING_READING,
@@ -260,7 +262,7 @@ private fun WelcomePage() {
     val context = LocalContext.current
     val hasPen = remember(context) { hasStylus(context) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        InkMascot(size = 120.dp)
+        InkMascot(size = 120.dp, withBrush = true)
         Spacer(Modifier.height(18.dp))
         Text(
             "Write characters that stay",
@@ -289,7 +291,7 @@ private fun WelcomePage() {
                 "Trace it once" to if (hasPen) {
                     "Follow the green guide with your stylus."
                 } else {
-                    "Follow the green guide with your finger."
+                    "Follow the green guide with your pen or finger."
                 }
             ),
             "3" to ("Write and grade" to "Write from memory, then choose Again, Hard, Good, or Easy."),
@@ -452,7 +454,7 @@ private fun PacePage(mode: StudyMode, goal: Int, onPick: (Int) -> Unit) {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "A smaller pace means fewer reviews later. You can change it in Settings.",
+            "A smaller pace means fewer reviews later. Five a day is the recommended start: steady reviews, one new lesson at a time. You can change it in Settings.",
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,
             textAlign = TextAlign.Center,
@@ -1190,7 +1192,7 @@ private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
             if (hasPen) {
                 "Use your stylus; the line follows pressure. Finger drawing can be enabled later in Settings."
             } else {
-                "Use your finger. A stylus adds pressure if you have one. Tune it later in Settings."
+                "Use a pen for pressure, or a finger. Tune the line later in Settings."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,

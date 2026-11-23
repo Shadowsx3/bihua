@@ -45,6 +45,18 @@ class BackupArchiveTest {
     }
 
     @Test
+    fun rejectsAnOversizedEntryWithoutTrustingTheZipHeader() {
+        val bytes = BackupArchive.encode(null, ByteArray(4096) { 7 })
+        val e = org.junit.Assert.assertThrows(BackupException::class.java) {
+            java.util.zip.ZipInputStream(bytes.inputStream()).use { zip ->
+                zip.nextEntry
+                BackupArchive.readEntry(zip, maxBytes = 1024)
+            }
+        }
+        assertTrue(e.message.orEmpty().contains("too large"))
+    }
+
+    @Test
     fun plainJsonIsNotDetectedAsZip() {
         assertFalse(BackupArchive.isZip("""{"format":"bihua-backup"}""".toByteArray()))
     }

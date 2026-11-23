@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -101,6 +102,7 @@ import com.bassmd.bihua.learn.LearnSessionState
 import com.bassmd.bihua.learn.LearnSessionStore
 import com.bassmd.bihua.learn.NoRecommender
 import com.bassmd.bihua.practice.PracticeScreen
+import com.bassmd.bihua.reminder.ReminderScheduler
 import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.OrientationLock
 import com.bassmd.bihua.settings.SettingsScreen
@@ -138,7 +140,10 @@ private enum class Tab(val label: String, val icon: ImageVector) {
  * navigation chrome.
  */
 @Composable
-fun BihuaApp(store: SettingsStore) {
+fun BihuaApp(
+    store: SettingsStore,
+    onContentReady: () -> Unit = {},
+) {
     val settings by store.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
     val profile by store.profile.collectAsStateWithLifecycle(initialValue = UserProfile())
     val context = LocalContext.current
@@ -148,6 +153,16 @@ fun BihuaApp(store: SettingsStore) {
     val mode = settings.studyMode
     var showOnboarding by remember { mutableStateOf(false) }
     var bootChecked by remember { mutableStateOf(false) }
+    // Wait for the first real settings read. Scheduling with the initial default
+    // would cancel a reminder that is already pending.
+    LaunchedEffect(
+        bootChecked,
+        settings.remindersEnabled,
+        settings.reminderHour,
+        settings.reminderDays,
+    ) {
+        if (bootChecked) ReminderScheduler.schedule(context, settings)
+    }
     var onboardingRestoring by remember { mutableStateOf(false) }
     var onboardingRestoreMessage by remember { mutableStateOf<String?>(null) }
     var previewMode by remember { mutableStateOf<StudyMode?>(null) }
@@ -184,6 +199,12 @@ fun BihuaApp(store: SettingsStore) {
     }
     val progressStore = remember { ProgressStore(context.applicationContext) }
     val sessionStore = remember { LearnSessionStore(context.applicationContext) }
+    androidx.compose.runtime.DisposableEffect(repository, progressStore) {
+        onDispose {
+            repository.close()
+            progressStore.close()
+        }
+    }
     var progressVersion by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         val current = store.settings.first()
@@ -219,7 +240,7 @@ fun BihuaApp(store: SettingsStore) {
                         var fallback: java.io.File? = null
                         val restored = runCatching {
                             val bytes = context.contentResolver.openInputStream(uri)
-                                ?.use { it.readBytes() }
+                                ?.use { com.bassmd.bihua.backup.BackupArchive.readAll(it) }
                                 ?: error("Could not read that file.")
                             val archive = if (BackupArchive.isZip(bytes)) {
                                 BackupArchive.decode(bytes)
@@ -240,9 +261,12 @@ fun BihuaApp(store: SettingsStore) {
                                 fallback = backup
                                 progressStore.exportTo(backup)
                                 val incoming = java.io.File(context.cacheDir, "onboarding-progress.db")
-                                incoming.writeBytes(progressBytes)
-                                progressStore.importFrom(incoming)
-                                incoming.delete()
+                                try {
+                                    incoming.writeBytes(progressBytes)
+                                    progressStore.importFrom(incoming)
+                                } finally {
+                                    incoming.delete()
+                                }
                             }
                             if (bundle != null) store.restore(bundle)
                             store.updateSettings { it.copy(onboarded = true) }
@@ -250,12 +274,15 @@ fun BihuaApp(store: SettingsStore) {
                             progressVersion++
                         }
                         if (restored.isSuccess) {
+                            fallback?.delete()
                             showOnboarding = false
                             onboardingRestoreMessage = null
                         } else {
-                            fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
-                                runCatching { progressStore.importFrom(it) }
-                            }
+                            val rolledBack = fallback
+                                ?.takeIf { it.isFile && it.length() > 0 }
+                                ?.let { runCatching { progressStore.importFrom(it) }.isSuccess }
+                                ?: false
+                            if (rolledBack) fallback?.delete()
                             val error = restored.exceptionOrNull()
                             onboardingRestoreMessage = when (error) {
                                 is BackupException -> error.message
@@ -278,6 +305,9 @@ fun BihuaApp(store: SettingsStore) {
                             shareIdenticalGlyphs = share,
                             recallCue = cue,
                             pronunciationPractice = pronunciation,
+                            sessionOrder = com.bassmd.bihua.settings.SessionOrder.MIXED,
+                            mixInterval = 5,
+                            sessionProgress = com.bassmd.bihua.settings.SessionProgress.NEXT_LESSON,
                             onboarded = true,
                         )
                     }
@@ -295,6 +325,7 @@ fun BihuaApp(store: SettingsStore) {
         scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
     }
     var inSession by remember { mutableStateOf(false) }
+    var sessionComplete by remember { mutableStateOf(false) }
     var showLeaveSession by remember { mutableStateOf(false) }
     var startingSession by remember { mutableStateOf(false) }
     var undoSignal by remember { mutableIntStateOf(0) }
@@ -318,6 +349,8 @@ fun BihuaApp(store: SettingsStore) {
             withContext(Dispatchers.IO) {
                 repository.characters(mode).filter { settings.includesInStudy(it.character) }
             }
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
         } catch (error: Exception) {
             contentError = error.message
             null
@@ -335,6 +368,10 @@ fun BihuaApp(store: SettingsStore) {
             clockTick++
         }
     }
+    LaunchedEffect(characters) {
+        if (characters != null) onContentReady()
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -390,7 +427,11 @@ fun BihuaApp(store: SettingsStore) {
     }
     val newLearnedToday by produceState(0, progressVersion, mode, today, settings.dayStartHour) {
         value = withContext(Dispatchers.IO) {
-            progressStore.newLearnedToday(mode = mode, dayStartHour = settings.dayStartHour)
+            progressStore.newLearnedToday(
+                mode = mode,
+                dayStartHour = settings.dayStartHour,
+                includeSharedGlyphs = settings.shareIdenticalGlyphs,
+            )
         }
     }
     val activityDays by produceState<List<DayActivity>>(emptyList(), progressVersion, today, settings.dayStartHour) {
@@ -517,6 +558,7 @@ fun BihuaApp(store: SettingsStore) {
                         activeResume = null
                         sessionStore.clear(mode)
                         resumableSession = null
+                        sessionComplete = false
                         inSession = true
                     }
                 } catch (error: kotlinx.coroutines.CancellationException) {
@@ -539,7 +581,12 @@ fun BihuaApp(store: SettingsStore) {
             startingSession = true
             scope.launch {
                 try {
-                    val entries = withContext(Dispatchers.IO) { repository.characters(saved.mode) }
+                    val entries = withContext(Dispatchers.IO) {
+                        repository.characters(saved.mode).filter { entry ->
+                            settings.includesInStudy(entry.character) &&
+                                !settings.isSkipped(entry.id)
+                        }
+                    }
                     val byId = entries.associateBy { it.id }
                     val items = saved.itemIds.mapNotNull { id ->
                         byId[id]?.toLearnItem(
@@ -563,6 +610,7 @@ fun BihuaApp(store: SettingsStore) {
                         sessionLevelUp = saved.leveledUp
                         activeResume = saved
                         resumableSession = null
+                        sessionComplete = saved.pending.isEmpty()
                         inSession = true
                     }
                 } catch (error: kotlinx.coroutines.CancellationException) {
@@ -723,10 +771,6 @@ fun BihuaApp(store: SettingsStore) {
     LaunchedEffect(settings.soundEffects) {
         com.bassmd.bihua.audio.Sfx.enabled = settings.soundEffects
     }
-    LaunchedEffect(settings.shareIdenticalGlyphs) {
-        progressStore.migrateGlyphCards(settings)
-        progressVersion++
-    }
 
     // A skip is a one-day tool. Remove entries that no longer hide anything so
     // the stored settings stay honest after the date passes.
@@ -737,7 +781,8 @@ fun BihuaApp(store: SettingsStore) {
         }
     }
 
-    LaunchedEffect(settings.orientation) {
+    LaunchedEffect(bootChecked, settings.orientation) {
+        if (!bootChecked) return@LaunchedEffect
         activity?.requestedOrientation = when (settings.orientation) {
             OrientationLock.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             OrientationLock.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -762,7 +807,14 @@ fun BihuaApp(store: SettingsStore) {
             compareEntries.isNotEmpty() -> compareEntries = emptyList()
             drillOpen -> drillOpen = false
             inSession -> {
-                showLeaveSession = true
+                if (sessionComplete) {
+                    inSession = false
+                    sessionComplete = false
+                    tab = Tab.HOME
+                    activeResume = null
+                } else {
+                    showLeaveSession = true
+                }
             }
             else -> tab = Tab.HOME
         }
@@ -795,6 +847,7 @@ fun BihuaApp(store: SettingsStore) {
                     onClick = {
                         showLeaveSession = false
                         inSession = false
+                        sessionComplete = false
                         tab = Tab.HOME
                         resumableSession = sessionStore.load(sessionMode)
                     },
@@ -805,6 +858,7 @@ fun BihuaApp(store: SettingsStore) {
                     onClick = {
                         showLeaveSession = false
                         inSession = false
+                        sessionComplete = false
                         tab = Tab.HOME
                         sessionStore.clear(sessionMode)
                         resumableSession = null
@@ -828,25 +882,27 @@ fun BihuaApp(store: SettingsStore) {
         }
         if (chars.size == word.word.length) {
             BihuaBackground(decorated = false) {
-                com.bassmd.bihua.practice.WordPracticeScreen(
-                    word = word,
-                    characters = chars,
-                    mode = mode,
-                    brush = settings.brush,
-                    widthScale = settings.inkWidth.scale,
-                    gridStyle = settings.gridStyle,
-                    showStrokeNumbers = settings.showStrokeNumbers,
-                    writingSize = settings.writingSize,
-                    allowFinger = allowFinger,
-                    onSpeak = speak,
-                    speechEnabled = settings.readAloud,
-                    onCompleted = {
-                        scope.launch {
-                            progressStore.recordWordPractice(mode, word)
-                        }
-                    },
-                    onClose = { wordPractice = null },
-                )
+                BihuaLocals(repository, progressStore, settings) {
+                    com.bassmd.bihua.practice.WordPracticeScreen(
+                        word = word,
+                        characters = chars,
+                        mode = mode,
+                        brush = settings.brush,
+                        widthScale = settings.inkWidth.scale,
+                        gridStyle = settings.gridStyle,
+                        showStrokeNumbers = settings.showStrokeNumbers,
+                        writingSize = settings.writingSize,
+                        allowFinger = allowFinger,
+                        onSpeak = speak,
+                        speechEnabled = settings.readAloud,
+                        onCompleted = {
+                            scope.launch {
+                                runCatching { progressStore.recordWordPractice(mode, word) }
+                            }
+                        },
+                        onClose = { wordPractice = null },
+                    )
+                }
             }
             return
         }
@@ -854,18 +910,20 @@ fun BihuaApp(store: SettingsStore) {
 
     if (drillOpen) {
         BihuaBackground(decorated = false) {
-            com.bassmd.bihua.practice.DrillScreen(
-                entries = studyEntries,
-                mode = mode,
-                wifiOnlyModels = settings.wifiOnlyModels,
-                brush = settings.brush,
-                widthScale = settings.inkWidth.scale,
-                gridStyle = settings.gridStyle,
-                showStrokeNumbers = settings.showStrokeNumbers,
-                writingSize = settings.writingSize,
-                allowFinger = allowFinger,
-                onClose = { drillOpen = false },
-            )
+            BihuaLocals(repository, progressStore, settings) {
+                com.bassmd.bihua.practice.DrillScreen(
+                    entries = studyEntries,
+                    mode = mode,
+                    wifiOnlyModels = settings.wifiOnlyModels,
+                    brush = settings.brush,
+                    widthScale = settings.inkWidth.scale,
+                    gridStyle = settings.gridStyle,
+                    showStrokeNumbers = settings.showStrokeNumbers,
+                    writingSize = settings.writingSize,
+                    allowFinger = allowFinger,
+                    onClose = { drillOpen = false },
+                )
+            }
         }
         return
     }
@@ -955,6 +1013,7 @@ fun BihuaApp(store: SettingsStore) {
                     sessionProgress = settings.sessionProgress,
                     resume = activeResume,
                     onSessionChanged = { state ->
+                        sessionComplete = state.pending.isEmpty()
                         if (state.pending.isEmpty()) {
                             sessionStore.clear(state.mode)
                             resumableSession = null
@@ -964,10 +1023,21 @@ fun BihuaApp(store: SettingsStore) {
                         }
                     },
                     undoSignal = undoSignal,
-                    onClose = {
-                        // Ask first. Resume later keeps the queue; End session
-                        // clears it deliberately.
-                        showLeaveSession = true
+                    onClose = { complete ->
+                        if (complete) {
+                            // A finished session has nothing to resume. Skip the
+                            // leave-confirmation sheet and return Home.
+                            inSession = false
+                            sessionComplete = false
+                            tab = Tab.HOME
+                            activeResume = null
+                            resumableSession = null
+                            sessionStore.clear(sessionMode)
+                        } else {
+                            // Ask first. Resume later keeps the queue; End session
+                            // clears it deliberately.
+                            showLeaveSession = true
+                        }
                     },
                     xpEarned = sessionXp,
                     leveledUp = sessionLevelUp,
@@ -979,14 +1049,22 @@ fun BihuaApp(store: SettingsStore) {
                             ?: characters?.firstOrNull { it.id == item.id }
                         if (character != null) {
                             scope.launch {
-                                val outcome = progressStore.review(
-                                    character,
-                                    grade.toFsrs(),
-                                    settings,
-                                    elapsedMs = elapsedMs,
-                                    task = task.name,
-                                    strokes = strokes,
-                                )
+                                val reviewed = runCatching {
+                                    progressStore.review(
+                                        character,
+                                        grade.toFsrs(),
+                                        settings,
+                                        elapsedMs = elapsedMs,
+                                        task = task.name,
+                                        strokes = strokes,
+                                    )
+                                }
+                                val outcome = reviewed.getOrElse {
+                                    sessionSnackbar.showSnackbar(
+                                        "Could not save that grade. Your progress file may be full.",
+                                    )
+                                    return@launch
+                                }
                                 sessionXp += outcome.xpAwarded
                                 if (outcome.leveledUp) sessionLevelUp = true
                                 lastReviewUndo = outcome.undo
@@ -1032,7 +1110,9 @@ fun BihuaApp(store: SettingsStore) {
                 .fillMaxSize()
                 .appStatusBarsPadding()
         ) {
-            val wide = maxWidth >= 840.dp
+            val fold = LocalFoldState.current
+            val book = fold == FoldState.BOOK && maxWidth >= 700.dp
+            val wide = maxWidth >= 840.dp && !book
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(
@@ -1534,6 +1614,21 @@ private fun AppContent(
     }
 }
 
+/** The content and reading locals every full-screen practice route expects. */
+@Composable
+private fun BihuaLocals(
+    repository: SqliteContentRepository,
+    progressStore: ProgressStore,
+    settings: AppSettings,
+    content: @Composable () -> Unit,
+) = CompositionLocalProvider(
+    LocalContentRepository provides repository,
+    LocalProgressStore provides progressStore,
+    LocalPinyinNumbers provides settings.pinyinNumbers,
+    LocalHangulRomanization provides settings.showHangulRomanization,
+    content = content,
+)
+
 @Composable
 private fun GlobalHeader(
     mode: StudyMode,
@@ -1548,7 +1643,7 @@ private fun GlobalHeader(
                 .padding(horizontal = if (compact) 10.dp else 18.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            InkMascot(size = if (compact) 28.dp else 32.dp)
+            InkMascot(size = if (compact) 28.dp else 32.dp, sparkle = false)
             if (!compact) {
                 Spacer(Modifier.width(8.dp))
                 Text(
@@ -1568,20 +1663,21 @@ private fun ModeSwitch(mode: StudyMode, onModeChange: (StudyMode) -> Unit, compa
     Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)) {
         StudyMode.entries.forEach { item ->
             val active = item == mode
+            val label = when (item) {
+                StudyMode.SIMPLIFIED -> "Simplified"
+                StudyMode.TRADITIONAL -> "Traditional"
+                StudyMode.JAPANESE -> "Japanese"
+                StudyMode.KOREAN -> "Korean"
+            }
             Surface(
                 onClick = { onModeChange(item) },
                 shape = CircleShape,
                 color = if (active) modeColor(item.ordinal).copy(alpha = 0.95f) else PaperWarm,
                 modifier = Modifier.clearAndSetSemantics {
-                    contentDescription = when (item) {
-                        StudyMode.SIMPLIFIED -> "Simplified"
-                        StudyMode.TRADITIONAL -> "Traditional"
-                        StudyMode.JAPANESE -> "Japanese"
-                        StudyMode.KOREAN -> "Korean"
-                    }
+                    contentDescription = label
                     role = Role.Button
                     selected = active
-                    onClick(label = contentDescription) {
+                    onClick(label = label) {
                         onModeChange(item)
                         true
                     }
@@ -1694,7 +1790,7 @@ private fun BihuaBottomBar(
 ) {
     val fontScale = LocalDensity.current.fontScale
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.widthIn(max = 560.dp).fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         color = PaperWarm,
         shadowElevation = 10.dp,

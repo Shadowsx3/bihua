@@ -57,6 +57,26 @@ class ProgressStoreImportTest {
     }
 
     @Test
+    fun aVersionZeroDatabaseIsRejectedBeforeUpgrade() {
+        runBlocking {
+        val foreign = File(context.cacheDir, "version-zero.db")
+        val db = SQLiteDatabase.openOrCreateDatabase(foreign, null)
+        db.execSQL(
+            "CREATE TABLE card(id TEXT PRIMARY KEY, character_id TEXT, glyph_group_id TEXT, " +
+                "mode TEXT, s_long REAL, due_at INTEGER, known_dots INTEGER)"
+        )
+        db.execSQL("CREATE TABLE review_log(id INTEGER PRIMARY KEY)")
+        db.version = 0
+        db.close()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { store.importFrom(foreign) }
+        }
+        foreign.delete()
+        }
+    }
+
+    @Test
     fun aForeignKeyDatabaseIsRejected() {
         runBlocking {
         val foreign = File(context.cacheDir, "not-bihua.db")

@@ -19,6 +19,7 @@ object BackupArchive {
 
     private const val BACKUP_ENTRY = "backup.json"
     private const val PROGRESS_ENTRY = "progress.db"
+    private const val MAX_ENTRY_BYTES = 64 * 1024 * 1024
 
     fun isZip(bytes: ByteArray): Boolean =
         bytes.size >= 4 &&
@@ -54,13 +55,15 @@ object BackupArchive {
                 var entry = zip.nextEntry
                 while (entry != null) {
                     when (entry.name) {
-                        BACKUP_ENTRY -> backup = zip.readBytes().decodeToString()
-                        PROGRESS_ENTRY -> progress = zip.readBytes()
+                        BACKUP_ENTRY -> backup = readEntry(zip).decodeToString()
+                        PROGRESS_ENTRY -> progress = readEntry(zip)
                     }
                     zip.closeEntry()
                     entry = zip.nextEntry
                 }
             }
+        } catch (error: BackupException) {
+            throw error
         } catch (error: Exception) {
             throw BackupException("This backup file is damaged.")
         }
@@ -69,5 +72,34 @@ object BackupArchive {
             throw BackupException("This backup has an empty progress database.")
         }
         return BackupArchiveContents(backupJson = backup, progressDb = progress)
+    }
+
+    /**
+     * Reads one entry with a hard cap. ZipEntry.size can be missing or lie, so
+     * count the decompressed bytes instead of trusting the header.
+     */
+    internal fun readEntry(
+        zip: ZipInputStream,
+        maxBytes: Int = MAX_ENTRY_BYTES,
+    ): ByteArray = readAll(zip, maxBytes)
+
+    /** Reads a stream with a hard cap so a bad file cannot exhaust memory. */
+    fun readAll(
+        input: java.io.InputStream,
+        maxBytes: Int = 128 * 1024 * 1024,
+    ): ByteArray {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(8 * 1024)
+        var total = 0
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            total += read
+            if (total > maxBytes) {
+                throw BackupException("This backup is too large to import.")
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray()
     }
 }

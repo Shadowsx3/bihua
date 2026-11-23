@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.0.4-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.7-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -53,10 +53,13 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Scheduling** | FSRS-7 per script, shared profile for shared glyphs, local weight fitting or import, 4 AM default day boundary, vacation mode, seven-day ease-back. |
 | **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
-| **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. |
+| **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
+| **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
-| **Data** | Selective zip backup/import and local Wi-Fi sync (settings and/or progress), CSV export, no account. |
+| **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
+| **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
+| **Foldables** | Book-style inner layout with two pages; the outer display keeps the phone layout. |
 
 ## Requirements
 
@@ -73,16 +76,18 @@ The app is a private beta; read the release notes before installing.
 
 ```bash
 source scripts/env.sh
-make check      # compile, 214 unit tests, content audit, debug APK, verification
-make lint       # Android lint
-make run        # check, install, and launch on a connected device
-make smoke      # launch/navigation smoke test on a connected device
+make check       # compile, 310 unit tests, content audit, debug APK, verification
+make lint        # Android lint
+make run         # check, install, and launch on a connected device
+make smoke       # launch/navigation smoke test on a connected device
+make journey     # quick local full-app journeys on the phone AVD
+make journey-standard  # phone, fold, and tablet core journeys
+make journey-full      # every profile and daily-state journey
 make release    # signed minified APK when keystore.properties is present
 ```
 
-The release build is signed with a local upload key. Keystores and
-`keystore.properties` are ignored by git. See [PUBLISHING.md](PUBLISHING.md) for
-the release process.
+The release build is signed with a local key. Keystores and
+`keystore.properties` are ignored by git.
 
 GitHub Actions runs unit tests, the content audit, and lint. It does not assemble
 or upload an APK.
@@ -106,7 +111,11 @@ make audit
 ```
 
 The screen and user-journey risk list is
-[`docs/user-journey-risk-audit.md`](docs/user-journey-risk-audit.md).
+[`docs/user-journey-risk-audit.md`](docs/user-journey-risk-audit.md). The flow to
+test mapping, including the on-device smoke pass, is
+[`docs/test-matrix.md`](docs/test-matrix.md). The local daily-state harness is
+[`qa/README.md`](qa/README.md). The learning-science and joy proposals are in
+[`docs/learning-proposals.md`](docs/learning-proposals.md).
 
 `tools/data/manifest.json` records the URL, checksum, licence, and count for each
 source. Raw datasets are not committed. Korean Hanja comes from Unihan. Korean
@@ -121,6 +130,7 @@ licenses/            full third-party licence texts
 tools/import/        content importer and generator
 tools/data/          source manifest (raw data ignored)
 scripts/             build, device, release, smoke helpers
+qa/                  local full-app journey harness
 .github/             CI, issue templates, Dependabot
 ```
 
@@ -128,8 +138,10 @@ scripts/             build, device, release, smoke helpers
 
 No account, no developer-run analytics, no advertising SDK. Progress and notes
 live in a local SQLite database. Network access is used for handwriting-model
-downloads, Google ML Kit diagnostics, and optional local Wi-Fi sync. See
-[PRIVACY.md](PRIVACY.md) and the [public policy](https://shadowsx3.github.io/bihua/privacy.html).
+downloads, Google ML Kit diagnostics, and optional local Wi-Fi sync, which uses
+TLS. Study reminders are local and off by default. See
+[PRIVACY.md](PRIVACY.md) and the
+[privacy page](https://shadowsx3.github.io/bihua/privacy.html).
 
 ## Licensing
 
@@ -157,13 +169,12 @@ not a public issue.
 
 ## Status
 
-Bihua **1.0.4 (versionCode 14)** was submitted to Play closed testing on
-22 November 2026. The public APK stays at 1.0.3 until 1.0.4 is promoted. This
-build adds a clearer review flow, common words on new characters, Korean word
-examples, script filters, Japanese ruby, Korean romanization, cleaner readings,
-Japanese frequency ranking, mature-word opt-in, optional grade intervals, Home
-word of the day, the leave-session sheet, and the guided Compare writing drill.
+The current development version is **1.0.7 (versionCode 17)**. New learners
+start with five new characters a day, reviews are mixed with new lessons, and
+the session progress bar fills to the next lesson. It also adds encrypted local
+sync, off-by-default study reminders, foldable book layouts, and the regression
+fixes listed in the changelog.
 
-The phone and tablet paths are verified at 1.3x text. A full TalkBack pass at
-1.5x and 2x and a current physical S Pen pass remain on the roadmap. The app is
-not a clinical intervention or a guarantee of literacy.
+The phone, tablet, and foldable paths are verified at normal and 1.3x text. A
+full TalkBack pass at 1.5x and 2x and a current physical S Pen pass remain on
+the roadmap. The app is not a clinical intervention or a guarantee of literacy.

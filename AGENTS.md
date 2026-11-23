@@ -48,39 +48,28 @@ Keep this in mind for every screen:
 - Settings stays compact. Explanations belong in dialogs. Mature words are off
   by default and require a confirmation when enabled.
 
-## Current release state
+## Reminders and foldable
 
-- **1.0.4 (versionCode 14) was submitted to Play closed testing on
-  2026-11-22.** The submitted build is tagged `v1.0.4` at `0210e13`.
-- Submitted AAB SHA-256:
-  `4c78186c1459c4c7803ac2f274a12d06a2a55b50ca8cfd360198e843bd5b868b`.
-- Submitted APK SHA-256:
-  `e0bc22c0d25205ce8fb3d637b28c8d956f6e8187dac48aab648319c876a0ce0f`.
-- Do **not** rebuild or upload another versionCode 14 while review is active.
-  A fix goes to versionCode **15** and a new version name.
-- 1.0.4 adds the vivid palette, review cue setup, script filters, review polish,
-  handwriting sanitisation, cleaner readings, Japanese frequency ranking, Korean
-  word examples, mature-word opt-in, grade interval labels, Home word of the day,
-  leave-session sheet, and the guided Compare writing drill.
-- Progress schema **10**; contentVersion **34**.
-- 214 unit tests.
-- Public repo: <https://github.com/Shadowsx3/bihua>
-- Pages: <https://shadowsx3.github.io/bihua/>
-- Play package: `com.bassmd.bihua`
-- Play name: `Bihua: Character Writing`
-- The app is in closed testing with 12 testers. Do not pause or replace the
-  closed-test track. Upload updates to the same track.
-- Release APK: `app/build/outputs/apk/release/app-release.apk`
-- Play AAB: `app/build/outputs/bundle/release/app-release.aab`
-- Play upload assets and listing copy live in the local-only `store/` folder.
-  `store/` is ignored by git and must not be published. It contains the upload
-  checklist, listing copy, release notes, and store screenshots.
-- Play upload checklist: `store/PLAY-UPLOAD.md`
-- Listing copy: `store/listing.md`, `store/full-description.txt`
-- Release notes: `store/release-notes-1.0.3.txt` (previous closed test) and
-  `store/release-notes-1.0.4.txt` (submitted release)
-- Store screenshots: `store/phone-1..7.png`, `store/tablet-7-*`,
-  `store/tablet-10-*`
+- Study reminders are off by default. Settings → Reminders has a switch, an hour,
+  and day chips. Turning them on requests `POST_NOTIFICATIONS` on Android 13+.
+  The app never asks before the learner opts in.
+- `ReminderWorker` is a one-shot WorkManager job at the next selected hour and
+  day. It schedules the next one after it runs and checks for due reviews or an
+  allowed new lesson. If there is nothing to study, it stays quiet.
+- The worker reads settings and progress locally and sends no data. The
+  notification contains only counts, never a character, word, or meaning.
+- Fold state comes from `androidx.window` in `ui/FoldState.kt`. A flat vertical
+  fold is BOOK; a half-open horizontal fold is TABLETOP.
+- On BOOK, the rail is replaced by a centered dock. Home is a two-page spread
+  (action and word on the left, stats and calendar on the right). Learn and
+  Practice use the wide canvas/controls layouts, Characters uses grid/detail,
+  and filters wrap. The outer folded screen keeps the phone layout.
+- Do not let the Home hero span the fold. Do not stretch a phone layout across
+  the inner display.
+- Test foldables with `adb emu unfold` and `adb emu fold`. `scripts/device.sh
+  shot` captures to a device file and pulls it, which avoids the multi-display
+  warning on foldables.
+
 ## Content QA backlog
 
 Every character, word, reading, meaning, and story users see must be checked
@@ -89,30 +78,40 @@ before the next content release. The working checklist is
 `docs/user-journey-risk-audit.md`. Known gaps: Korean coverage for 115 rare
 Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
-- GitHub release tag: `v1.0.4`; the site uses `releases/latest`.
 - Dependency policy: `docs/dependency-updates.md`.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
+- Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
+- Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
+
+## Answer privacy
+
+- A writing recall must never show the target character, a word containing it,
+  or a stroke guide unless the learner explicitly asks for help. The journey
+  harness checks this.
+- A pronunciation review must never show the expected reading, including inside
+  a meaning string. `learn/ReadingPrivacy.kt` masks kana and Hangul self-describing
+  meanings ("hiragana for a", "syllable ga"). Keep this covered by tests.
+- Recognition results and grade buttons appear only after the learner commits to
+  an answer and asks to check.
 
 ## Dependency updates
 
 See `docs/dependency-updates.md`. GitHub Actions and Gradle minor/patch updates
 arrive as grouped PRs. Gradle, AGP, Kotlin, and Compose toolchain majors are
 manual migrations and must not be merged one at a time. Keep app dependency PRs
-unmerged while a Play release is under review.
+separate from behavior changes.
 
 ## Build, test, install
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 214 tests, content audit, debug APK, verify
+make check                     # compile, 310 tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
 make run                       # check, install, launch on selected device
 make release                   # signed minified release APK
 make smoke                     # on-device launch/navigation smoke test
-make release-check             # verify artifact, docs, hashes, content and notes
-make store-images              # render every Play frame from its SVG source
 ```
 
 GitHub Actions runs **unit tests, content audit, and lint only**. It does not
@@ -165,9 +164,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
    re-dump with `device.sh ui`.
 7. **Tablets use a navigation rail; phones use a labelled bottom bar.** Test
    both. The wide threshold for Characters is 780 dp; Practice uses 900 dp.
-8. **Screenshot rendering.** Phone/tablet SVGs are rendered with headless Chrome,
-   not `sips` (sips produces a missing-image placeholder). See `store/README.md`.
-9. **Tablet emulator:** `bihua_tablet`, Pixel Tablet, 2560 × 1600, 320 dpi.
+8. **Tablet emulator:** `bihua_tablet`, Pixel Tablet, 2560 × 1600, 320 dpi.
    Phone emulator: `voxbloom`.
 
 ## Lesson and review flow
@@ -318,66 +315,10 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Vacation mode: due count 0 and sessions refuse to start. Ending shifts
   `due_at`/`last_review_at`, never review-log timestamps. Ease-back caps
   sessions at 10 cards for seven days.
-- Local sync is opt-in, same Wi-Fi, six-digit pairing code, short-lived HTTP.
+- Local sync is opt-in, same Wi-Fi, a 10-character pairing code, and a short-lived
+  TLS server with a per-session certificate pinned by that code. Do not add
+  cleartext back.
 - Android cloud backup is disabled.
-
-## Data safety and privacy
-
-- ML Kit Digital Ink runs on-device. Strokes and candidates do not leave the
-  device.
-- ML Kit collects per-installation identifiers, device/app info, performance and
-  usage metrics, configured languages, API config, feature I/O size, event type,
-  and error codes; encrypted in transit; Google acts as a service provider and
-  does not transfer to third parties.
-- Play Data safety: **Device or other IDs + Diagnostics**, collected, not shared,
-  not ephemeral, required, purpose Analytics.
-- No advertising ID, account, location, camera, contacts, storage, or
-  developer-run analytics.
-- The privacy policy is linked in the app (Settings → About) and the store listing.
-  It must stay consistent with Data safety.
-- Do not add the generative assistant or LiteRT-LM without a separate policy,
-  data-safety, and privacy review.
-
-## Publishing and store
-
-- Play closed testing currently has 12 testers; the 14-day continuous opt-in
-  window must be preserved. Upload updates to the same track.
-- AAB is the Play artifact; never commit APKs, AABs, keystores,
-  `keystore.properties`, `screenshots/`, or build output.
-- Store listing is plain text; Google Play does not render Markdown/HTML.
-- Phone screenshots are 1080 × 1920, 9:16. Tablet assets are 1920 × 1080 and
-  2560 × 1440. All are real 1.0.4 captures.
-- The app UI is English-only. Do not publish AI listing translations without a
-  native review. `store/translations/listing-en-US.csv` is the source row.
-- The site `docs/` and GitHub release are separate from Play Console. Local files
-  do not upload themselves.
-- The landing page (`docs/index.html`, `docs/style.css`) uses a crisp ink-and-paper
-  style with current 1.0.4 light-theme screenshots. Do not reintroduce the old
-  blurred forest wash, drifting leaves, fireflies, glass cards, or translucent
-  gradients. Keep hard borders, solid shadows, and the vermillion accent.
-- `docs/assets/*-light.png` are the current screenshots. Do not point the site or
-  README back at the old dark 1.0.1 images.
-- The hero leads with “Learn characters by writing them.” Do not bring back the
-  old “the character has to come out of your hand” line or similar slogans. Keep
-  copy plain and specific; avoid em dashes, “not just X, but Y”, and other
-  marketing patterns.
-- The landing has a live ink pad (`#draw`, `docs/site.js`). It counts pointer
-  strokes against a guide and keeps nothing. It uses pointer pressure when the
-  device reports it, so a stylus changes the line; a finger or mouse still works.
-  It does not run ML Kit and must not claim to recognise what the visitor drew.
-- The ink-check flow (`#recognizer`) explains the real path: ML Kit candidates,
-  the stroke comparison, then the learner's grade. Keep the claim that recognition
-  is evidence and never presses the grade button.
-- The spacing section (`#spacing`) has an interval ladder and a retention
-  sawtooth. Its values come from the shipped default weights: after Good grades
-  the intervals are about 5, 26, 92, 293, then the 365-day cap. The load estimate
-  at 10 new a day is 88 average, 113 busy, 317 days. Do not invent new numbers.
-- FSRS-7 has two stability traces and 34 weights; FSRS-6 has one stability and 21
-  weights. FSRS-7 uses fractional days and a mixed curve, and its interval is
-  solved numerically. The app ships the published defaults, accepts imported
-  weights, and can fit a local profile from 400+ reviews with a time holdout.
-- GitHub Actions must not assemble/upload APKs. `scripts/verify-apk.sh` is
-  portable across macOS/Linux (`wc -c`, not macOS `stat -f%z`).
 
 ## Testing expectations
 
@@ -392,7 +333,6 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   script, push it back, then fit a profile from Settings → Schedule.
 - Test phone and tablet, light and dark, 1.3× text, emulator/mouse, and a real
   stylus device when available.
-- Check the pre-launch report and no-crash behavior on the exact Play build.
 
 ## Files worth knowing
 
@@ -401,18 +341,25 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 | Shell, tabs, sessions, TTS, bottom bar | `ui/BihuaApp.kt` |
 | Home / Characters / Progress | `ui/HomeScreen.kt`, `ui/CharactersScreen.kt`, `ui/DashboardScreen.kt` |
 | Lesson, tasks, cues, grading | `learn/LearnScreen.kt`, `learn/SessionProgression.kt`, `learn/ReviewTask.kt`, `learn/ReadingCheck.kt`, `learn/Grading.kt` |
-| Ink, guides, grading | `ink/InkCanvas.kt`, `ink/InkModel.kt`, `ink/StrokeGuide.kt`, `ink/StrokePlayback.kt`, `ink/StrokeOrderGrader.kt`, `ink/Stylus.kt` |
+| Ink, guides, grading | `ink/InkCanvas.kt`, `ink/InkModel.kt`, `ink/StrokeGuide.kt`, `ink/StrokePlayback.kt`, `ink/StrokeOrderGrader.kt`, `ink/StrokeGrade.kt`, `ink/StrokeCoach.kt`, `ink/Stylus.kt` |
 | Scheduling and progress | `fsrs/Fsrs7.kt`, `fsrs/FsrsWeights.kt`, `fsrs/FsrsOptimizer.kt`, `fsrs/ReviewLoad.kt`, `progress/ProgressStore.kt`, `progress/ReviewQueue.kt`, `settings/DayBoundary.kt` |
 | Content and search | `content/ContentRepository.kt`, `content/CharacterSearch.kt`, `content/Romanization.kt`, `content/Pinyin.kt` |
 | Backup and sync | `backup/BackupArchive.kt`, `backup/TransferScope.kt`, `sync/Sync.kt` |
 | Settings | `settings/SettingsScreen.kt`, `settings/Models.kt`, `settings/DayBoundary.kt` |
-| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
-| Store | `store/PLAY-UPLOAD.md`, `store/README.md`, `store/listing.md` |
+| Dictionary and print | `ui/DictionaryScreen.kt`, `settings/WorksheetScreen.kt`, `worksheet/WorksheetPdf.kt` |
+| Mascot and opening | `ui/components/Components.kt` (`InkMascot`), `ui/components/OpeningInk.kt`, `ui/theme/Color.kt` |
+| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `scripts/journey.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
+| Local journeys | `qa/journey.py`, `qa/state.py`, `qa/driver.py`, `qa/scenarios.py` |
+
+## Release assets
+
+Landing-page screenshots, the OG image, the Play feature graphic, and store
+screenshots are refreshed **after** the UI and versionCode are frozen. Keep the
+source captures and store files local in `store/`; the repo stays app-focused.
+See `docs/learning-proposals.md` for the final-asset checklist.
 
 ## Known gaps
 
-- Pre-launch report and Android vitals are only available in Play Console; run
-  them on the exact versionCode being reviewed.
 - The physical stylus pass was done on the SM-X520; recheck after any ink change.
 - Full backup/import through the system file picker should be retested on a
   release build before production.

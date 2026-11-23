@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 # Shortcuts for the build, check, and device loop. Run `make help` for the list.
 
-.PHONY: help check quick test lint audit smoke apk verify install run log crash shot status hooks clean clean-shots \
+.PHONY: help check quick test lint audit smoke journey journey-standard journey-full apk verify install run log crash shot status hooks clean clean-shots \
 	devices ui find tap type draw swipe key release install-release \
 	db-pull db-cards db-reviews db-reset seed-review seed-learning content content-bump
 
@@ -24,6 +24,9 @@ help:
 	@echo "make lint      Android lint"
 	@echo "make audit     content integrity and quality audit"
 	@echo "make smoke     on-device launch/navigation smoke test"
+	@echo "make journey   local full-app quick journey check"
+	@echo "make journey-standard  phone, fold, tablet core journeys"
+	@echo "make journey-full  local full-app journey matrix"
 	@echo "make apk       debug APK only"
 	@echo "make verify    verify the existing APK"
 	@echo "make run       check, then install and launch on the selected device"
@@ -67,6 +70,15 @@ audit:
 smoke:
 	@scripts/smoke.sh
 
+journey:
+	@scripts/journey.sh
+
+journey-standard:
+	@scripts/journey.sh --standard
+
+journey-full:
+	@scripts/journey.sh --full
+
 apk:
 	@. scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"
 
@@ -105,12 +117,6 @@ type:
 
 draw:
 	@scripts/device.sh draw $(PTS)
-
-release-check:
-	@python3 tools/check_release.py
-
-store-images:
-	@scripts/render-store-assets.sh
 
 release:
 	@scripts/device.sh release

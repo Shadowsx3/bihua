@@ -1,4 +1,8 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+)
 
 package com.bassmd.bihua.learn
 
@@ -25,6 +29,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -110,6 +115,7 @@ import com.bassmd.bihua.content.Romaji
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.visible
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.SingleStrokeGuideLayer
 import com.bassmd.bihua.ink.StrokeGuideLayer
@@ -124,6 +130,8 @@ import com.bassmd.bihua.settings.allowsHint
 import com.bassmd.bihua.settings.RecallCue
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
+import com.bassmd.bihua.ui.FoldState
+import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.HighlightedText
@@ -210,7 +218,7 @@ fun LearnScreen(
     onSessionChanged: (LearnSessionState) -> Unit = {},
     xpEarned: Int = 0,
     leveledUp: Boolean = false,
-    onClose: () -> Unit,
+    onClose: (Boolean) -> Unit,
     undoSignal: Int = 0,
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
@@ -444,48 +452,30 @@ fun LearnScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = maxWidth >= 860.dp
+        val book = LocalFoldState.current == FoldState.BOOK
+        val wide = maxWidth >= if (book) 700.dp else 860.dp
         val shortScreen = maxHeight < 760.dp
         val currentItem = items.getOrNull(index)
         val currentIsLesson = currentItem?.needsLesson == true
         val completed = items.size - pending.size
+        val stepFraction = step.ordinal / steps.lastIndex.coerceAtLeast(1).toFloat()
         val fullProgress = if (items.isEmpty()) {
             0f
         } else {
-            ((completed + if (currentIsLesson) step.ordinal / 3f else 0f) / items.size)
+            ((completed + if (currentIsLesson) stepFraction else 0f) / items.size)
                 .coerceIn(0f, 1f)
         }
         val blockMode = sessionOrder == com.bassmd.bihua.settings.SessionOrder.MIXED &&
             sessionProgress == com.bassmd.bihua.settings.SessionProgress.NEXT_LESSON
-        val blockProgress: Float
-        val blockHint: String?
-        if (!blockMode) {
-            blockProgress = fullProgress
-            blockHint = null
-        } else if (pending.isEmpty()) {
-            blockProgress = 1f
-            blockHint = null
+        val block = if (blockMode) {
+            SessionBlock.measure(
+                lessons = items.map { it.needsLesson },
+                pending = pending,
+                position = session.position,
+                stepFraction = stepFraction,
+            )
         } else {
-            val position = session.position.coerceIn(0, pending.lastIndex)
-            val positionLesson = items.getOrNull(pending[position])?.needsLesson == true
-            if (positionLesson) {
-                blockProgress = (step.ordinal / 3f).coerceIn(0f, 1f)
-                blockHint = "New lesson. The next block starts after it."
-            } else {
-                val previousLesson = pending.indices.lastOrNull { it < position &&
-                    items.getOrNull(pending[it])?.needsLesson == true }
-                val nextLesson = pending.indices.firstOrNull { it > position &&
-                    items.getOrNull(pending[it])?.needsLesson == true }
-                val start = (previousLesson?.plus(1) ?: 0)
-                val end = nextLesson ?: pending.size
-                val totalInBlock = (end - start).coerceAtLeast(1)
-                blockProgress = ((position - start).toFloat() / totalInBlock).coerceIn(0f, 1f)
-                blockHint = if (nextLesson == null) {
-                    "Final review block."
-                } else {
-                    "Next lesson in ${nextLesson - position} cards."
-                }
-            }
+            SessionBlockProgress(fullProgress, null)
         }
         val sessionAccent = PinkFor(mode)
         Column(
@@ -507,18 +497,18 @@ fun LearnScreen(
                 showCounters = showCounters,
                 isLesson = currentIsLesson,
                 task = task,
-                progress = blockProgress,
-                blockHint = blockHint,
-                onClose = onClose,
+                progress = block.fraction,
+                blockHint = block.hint,
+                reduceMotion = reduceMotion,
+                onClose = { onClose(pending.isEmpty()) },
             )
             if (index < 0 || index >= items.size) {
                 DonePanel(
-                    learned = learned,
                     total = items.size,
                     xpEarned = xpEarned,
                     leveledUp = leveledUp,
                     reduceMotion = reduceMotion,
-                    onClose = onClose,
+                    onClose = { onClose(true) },
                 )
                 return@Column
             }
@@ -988,6 +978,7 @@ private fun SessionTopBar(
     task: ReviewTask,
     progress: Float,
     blockHint: String?,
+    reduceMotion: Boolean,
     onClose: () -> Unit,
 ) {
     Column(
@@ -1036,7 +1027,11 @@ private fun SessionTopBar(
         val targetProgress = progress.coerceIn(0f, 1f)
         val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
             targetValue = targetProgress,
-            animationSpec = androidx.compose.animation.core.tween(durationMillis = 450),
+            animationSpec = if (reduceMotion) {
+                androidx.compose.animation.core.snap()
+            } else {
+                androidx.compose.animation.core.tween(durationMillis = 450)
+            },
             label = "session-progress",
         )
         Box(
@@ -1370,12 +1365,14 @@ private fun CanvasStage(
         )
         val side = maxSide?.let { minOf(available, it) } ?: available
         Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
+            WritingGrid(gridStyle, Modifier.fillMaxSize())
             if (showReference) {
                 if (!outlineOnly && player.strokeCount > 0) {
                     StrokeGuideLayer(
                         player = player,
                         showNumbers = showOrder,
                         modifier = Modifier.fillMaxSize(),
+                        ghostCharacter = item.character,
                     )
                 } else {
                     OutlineGuide(character = item.character, side = side)
@@ -1390,6 +1387,7 @@ private fun CanvasStage(
                 brush = brush,
                 allowFinger = allowFinger,
                 revealProgress = revealProgress,
+                drawGrid = false,
                 contentDescription = "Handwriting canvas. Write the character here.",
                 onStrokeStart = onStrokeStart,
                 enabled = enabled,
@@ -1688,33 +1686,15 @@ private fun RevealAnswer(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         orderCheck?.let { check ->
-            Text(
-                buildString {
-                    append("Stroke order: ${check.matched} of ${check.expected}")
-                    if (check.reversed.isNotEmpty()) append(" · ${check.reversed.size} reversed")
-                    if (check.misplaced.isNotEmpty()) append(" · ${check.misplaced.size} out of order")
-                    if (check.missing.isNotEmpty()) append(" · ${check.missing.size} missing")
-                    if (check.extra > 0) append(" · ${check.extra} extra")
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
-            )
-            check.hints.take(3).forEach { hint ->
-                Text(
-                    "· ${hint.text}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkSoft,
-                )
-            }
-            val repairStroke = (check.reversed.firstOrNull()
-                ?: check.misplaced.firstOrNull()
-                ?: check.missing.firstOrNull())?.takeIf { it > 0 }
+            val coach = remember(check) { com.bassmd.bihua.ink.StrokeCoach.from(check) }
+            StrokeCoachCard(coach)
+            val repairStroke = coach.repairStroke
             if (repairStroke != null && player.strokeCount > 0) {
                 val repairHint = when {
                     repairStroke in check.reversed ->
                         "Stroke $repairStroke goes the other way. Start from the other end."
                     repairStroke in check.misplaced ->
-                        "Stroke $repairStroke comes later in the order."
+                        "Stroke $repairStroke belongs earlier in the order."
                     else ->
                         "Stroke $repairStroke was missing. Write just this one."
                 }
@@ -1736,6 +1716,84 @@ private fun RevealAnswer(
             Text(
                 "Shape: ${check.shapeLabel} · ${check.drawnStrokes} of ${check.expectedStrokes} ${if (check.expectedStrokes == 1) "stroke" else "strokes"}",
                 style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StrokeCoachCard(coach: com.bassmd.bihua.ink.StrokeCoach) {
+    val accent = if (coach.isClean) Mint else Butter
+    SoftCard(Modifier.fillMaxWidth(), color = accent.copy(alpha = 0.28f)) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    coach.headline,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = InkDark,
+                    modifier = Modifier.weight(1f),
+                )
+                if (coach.statuses.isNotEmpty()) {
+                    Pill(
+                        "${coach.cleanCount}/${coach.statuses.size} in order",
+                        Mint.copy(alpha = 0.45f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                coach.statuses.forEachIndexed { index, status ->
+                    val color = when (status) {
+                        com.bassmd.bihua.ink.StrokeCoachStatus.CLEAN -> Mint
+                        com.bassmd.bihua.ink.StrokeCoachStatus.REVERSED -> Peach
+                        com.bassmd.bihua.ink.StrokeCoachStatus.OUT_OF_ORDER -> Sky
+                        com.bassmd.bihua.ink.StrokeCoachStatus.MISSING -> Rose
+                    }
+                    val spoken = when (status) {
+                        com.bassmd.bihua.ink.StrokeCoachStatus.CLEAN -> "clean"
+                        com.bassmd.bihua.ink.StrokeCoachStatus.REVERSED -> "turn it around"
+                        com.bassmd.bihua.ink.StrokeCoachStatus.OUT_OF_ORDER -> "belongs earlier"
+                        com.bassmd.bihua.ink.StrokeCoachStatus.MISSING -> "missing"
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = color.copy(alpha = 0.55f),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .semantics { contentDescription = "Stroke ${index + 1}, $spoken" },
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                "${index + 1}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkDark,
+                            )
+                        }
+                    }
+                }
+                if (coach.extra > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = InkSoft.copy(alpha = 0.18f),
+                    ) {
+                        Text(
+                            "+${coach.extra}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                coach.detail,
+                style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
         }
@@ -1839,6 +1897,7 @@ private fun StrokeRepairDialog(
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(Modifier.size(220.dp).writingSheet()) {
+                        WritingGrid(gridStyle, Modifier.fillMaxSize())
                         SingleStrokeGuideLayer(
                             player = player,
                             strokeIndex = strokeNumber - 1,
@@ -1853,6 +1912,7 @@ private fun StrokeRepairDialog(
                             gridStyle = gridStyle,
                             drawingTool = drawingTool,
                             allowFinger = allowFinger,
+                            drawGrid = false,
                             contentDescription = "Trace the single missed stroke here.",
                         )
                     }
@@ -1872,20 +1932,27 @@ private fun StrokeRepairDialog(
                         onClick = {
                             val line = player.guide?.centerlines().orEmpty()
                                 .getOrNull(strokeNumber - 1)
+                            val drawn = padInk.strokes.map { stroke ->
+                                stroke.points.map {
+                                    androidx.compose.ui.geometry.Offset(it.x, it.y)
+                                }
+                            }
                             outcome = if (line == null) {
-                                true
+                                false
                             } else {
-                                val check = com.bassmd.bihua.ink.StrokeOrderGrader.assess(
-                                    drawn = padInk.strokes.map { stroke ->
-                                        stroke.points.map {
-                                            androidx.compose.ui.geometry.Offset(it.x, it.y)
-                                        }
-                                    },
+                                val order = com.bassmd.bihua.ink.StrokeOrderGrader.assess(
+                                    drawn = drawn,
                                     guide = listOf(line),
                                 )
-                                check.matched >= 1 &&
-                                    check.reversed.isEmpty() &&
-                                    check.averageStartError < 0.18f
+                                val shape = com.bassmd.bihua.ink.StrokeGrade.assess(
+                                    drawn = drawn,
+                                    guide = listOf(line),
+                                )
+                                order.matched == 1 &&
+                                    order.extra == 0 &&
+                                    order.reversed.isEmpty() &&
+                                    shape.countMatches &&
+                                    shape.shapeScore >= 0.55f
                             }
                         },
                         enabled = padInk.strokes.isNotEmpty(),
@@ -1898,7 +1965,7 @@ private fun StrokeRepairDialog(
                         color = InkDark,
                     )
                     false -> Text(
-                        "Not quite. Watch it once more, clear, and try again.",
+                        "Almost. Watch it once more, then try that stroke again.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -2010,6 +2077,11 @@ private fun PronunciationReview(
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
     var revealed by remember(item.id, round) { mutableStateOf(false) }
     val expected = com.bassmd.bihua.content.Pinyin.display(item.reading, mode, pinyinNumbers)
+    // Kana and Hangul entries often describe themselves with their reading
+    // ("hiragana for a", "syllable ga"). Never display that answer here.
+    val safeMeaning = remember(item.meaning, expected) {
+        ReadingPrivacy.maskMeaning(item.meaning, expected)
+    }
     val hangulPreview = if (
         mode == StudyMode.KOREAN &&
         input.isNotBlank() &&
@@ -2092,12 +2164,14 @@ private fun PronunciationReview(
                     fontWeight = FontWeight.Medium,
                     color = InkDark,
                 )
-                Text(
-                    item.meaning,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkSoft,
-                    textAlign = TextAlign.Center,
-                )
+                if (safeMeaning.isNotBlank()) {
+                    Text(
+                        safeMeaning,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkSoft,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "Type the reading",
@@ -2268,7 +2342,7 @@ private fun ReadingFeedback(
     val title = when {
         revealed -> "Answer"
         result.correct -> "Correct!"
-        result.toneOnly -> "Almost — the tone"
+        result.toneOnly -> "Almost. Just the tone"
         else -> "Not quite"
     }
     val detail = when {
@@ -2361,7 +2435,6 @@ private fun AnswerChip(label: String, value: String, modifier: Modifier = Modifi
 
 @Composable
 private fun DonePanel(
-    learned: Int,
     total: Int,
     xpEarned: Int,
     leveledUp: Boolean,
@@ -2382,7 +2455,7 @@ private fun DonePanel(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        InkMascot(size = 110.dp)
+        InkMascot(size = 110.dp, withBrush = true)
         Spacer(Modifier.height(12.dp))
         InkSeal(
             text = "完",
@@ -2393,11 +2466,7 @@ private fun DonePanel(
         Text("Session complete", style = MaterialTheme.typography.headlineLarge, color = InkDark)
         Spacer(Modifier.height(6.dp))
         Text(
-            if (learned == total) {
-                "$total characters passed. Their next reviews are scheduled; extra passes in this session are practice only."
-            } else {
-                "$learned of $total passed before you stopped. The rest stay in your next session."
-            },
+            "$total characters in this session. Their next reviews are scheduled; extra passes were practice only.",
             style = MaterialTheme.typography.bodyLarge,
             color = InkSoft,
             textAlign = TextAlign.Center,
@@ -2406,7 +2475,11 @@ private fun DonePanel(
             Spacer(Modifier.height(12.dp))
             val animatedXp by androidx.compose.animation.core.animateIntAsState(
                 targetValue = xpEarned,
-                animationSpec = androidx.compose.animation.core.tween(durationMillis = 700),
+                animationSpec = if (reduceMotion) {
+                    androidx.compose.animation.core.snap()
+                } else {
+                    androidx.compose.animation.core.tween(durationMillis = 700)
+                },
                 label = "xp",
             )
             Surface(shape = CircleShape, color = Mint.copy(alpha = 0.40f)) {

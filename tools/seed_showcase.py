@@ -2,7 +2,7 @@
 """Seed a progress database with a realistic showcase save.
 
 This is a development tool, not shipped in the app. It is used to capture
-store screenshots and to exercise the Progress, Home, and word-history screens
+local screenshots and to exercise the Progress, Home, and word-history screens
 with enough data to look like a real learner.
 
 Usage:

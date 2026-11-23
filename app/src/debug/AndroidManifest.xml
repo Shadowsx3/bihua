@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug builds only. Never present in release. -->
+        <receiver
+            android:name=".qa.QaBridgeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.bassmd.bihua.qa.APPLY" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

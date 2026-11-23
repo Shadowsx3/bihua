@@ -50,6 +50,7 @@ fun StudyCalendarCard(
     onDayClick: (DayActivity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (days.isEmpty()) return
     val practiced = days.count { it.reviewed + it.learned > 0 }
     SoftCard(modifier.fillMaxWidth()) {
         Column {

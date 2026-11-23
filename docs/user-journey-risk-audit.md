@@ -1,7 +1,8 @@
 # User journey and screen risk audit
 
-Scope: 1.0.4 on phone, small phone, and tablet; light and dark theme; fresh
-install, returning learner, paused session, backup/import, and local sync.
+Scope: 1.0.4 through 1.0.7 on phone, small phone, and tablet; light and dark
+theme; fresh install, returning learner, paused session, backup/import, and
+local sync.
 
 Status:
 
@@ -145,4 +146,79 @@ Status:
 | Rare Korean Hanja with no compound. | Watch | 115 rare characters have no safe example; the character card still works. |
 | Japanese word ranking relies on JMdict priority rather than a corpus. | Fixed | FrequencyWords Japanese now ranks the candidates, with JMdict priority as the fallback. 学 leads with 学校. |
 | 587 structure rows had no story and 286 had no decomposition. | Fixed / Watch | The 587 now have a neutral shape note labelled “Shape”, never a made-up history. KanjiVG component groups filled 257 decompositions, leaving 29 rare variants; those stay hidden rather than guessed. |
-| Content version and test counts drift from the docs. | Fixed | 207 unit tests, contentVersion 28, 34,362 words are reflected in the README and AGENTS notes. |
+| Content version and test counts drift from the docs. | Fixed | 310 unit tests, contentVersion 34, 34,362 words are reflected in the README and AGENTS notes. |
+
+## 1.0.6 regression pass
+
+| Finding | Status | Fix |
+|---|---|---|
+| Reminders counted kana and Hangul that were hidden from the queue, plus skipped and suspended characters. | Fixed | `ReminderSelection` applies the same filter as the session. |
+| A reminder enabled less than 30 seconds before its hour was moved to the next selected day. | Fixed | The scheduler no longer applies a forward guard. |
+| Recently learned was empty when identical glyphs shared one card. | Fixed | Resolve cards by character id or glyph group id. |
+| Upcoming reviews counted suspended characters and characters skipped for the due day. | Fixed | The forecast filters by the due date, so a one-day skip still shows later work. |
+| Shared glyphs learned in one script did not count toward another script's daily new limit. | Fixed | Shared cards count toward every script while sharing is on. |
+| A camera-sized profile photo was decoded at full resolution for a 56 dp circle. | Fixed | Bound the decode, apply EXIF rotation, and save at 768 px. |
+| A restored brush could be negative or non-finite and restored timers could be negative. | Fixed | `BrushConfig.sanitized` and timestamp clamps in `AppSettings` and `UserProfile`. |
+| A corrupt settings blob in an archive could leave a progress-only import dialog after the error. | Fixed | Both halves decode before the dialog state changes. |
+| The daily reminder worker opened a content database and never closed it. | Fixed | Close the worker's repository when the message is built. |
+| The sync certificate lived for one hour, shorter than a setup session can take. | Fixed | Certificates live for 24 hours; the pin still bounds the session. |
+| `device.sh ui` omitted every node whose label is only a content description. | Fixed | Parse each node once and prefer `content-desc`. |
+| The mixed-session bar sat at zero because each pass shrank the pending queue. | Fixed | `SessionBlock` measures the stable original block, so the bar fills 0 to 1 between lessons. |
+| "Skip setup" still created ten new characters after the five-a-day recommendation. | Fixed | Onboarding uses one shared recommendation constant. |
+| The first settings frame could migrate shared glyph cards before the saved setting loaded. | Fixed | Removed the startup migration; old glyph cards now serve as a safe fallback. |
+| Turning off shared glyphs dropped history for every script except the first. | Fixed | A legacy shared card stays readable until each script earns its own card. |
+| Phone free practice ignored the Outline guide setting. | Fixed | Both layouts pass the guide mode through. |
+| Progress export closed the live database while Home could still query it. | Fixed | Export uses a `VACUUM INTO` snapshot and leaves the store open. |
+| A bad backup file could be read into memory without a cap. | Fixed | Raw file and zip entry reads are bounded. |
+| Restore fallback and temp files stayed in the cache. | Fixed | Delete them after success or a successful rollback. |
+| A finished session still asked whether to resume or discard its empty queue. | Fixed | Completion exits Home from the button and system back. |
+| The completion screen could claim part of a finished queue was left over. | Fixed | It reports the finished session without using the first-pass count. |
+| The sync pairing field opened a digits-only keyboard for a base32 code. | Fixed | Use the ASCII keyboard and keep normalisation. |
+| An IPv6 link-local sync address could produce an invalid HTTPS URL. | Fixed | Bracket it and escape the zone id. |
+| Reduce motion still animated the session progress and XP. | Fixed | Animations snap when the setting is on. |
+
+## 1.0.7 focus pass
+
+| Risk | Status | Action |
+|---|---|---|
+| A correct stroke is called reversed, or a wrong guide stroke is blamed. | Fixed | Matching is order- and shape-aware; reversal needs swapped ends, opposing direction, and a backwards path; short/U-shaped strokes are never guessed. Covered by `StrokeReversalRegressionTest` and the `stroke-clean` journey. |
+| Out-of-order feedback tells the learner the wrong repair direction. | Fixed | The flagged stroke is always one drawn after a later stroke, so the copy now says "belongs earlier". Tests assert "later" never appears. |
+| The order grader compares ink to an invisible guide. | Fixed | `centerlines()` applies the same 6% inset as the visible guide. |
+| Ink stacked on one stroke can look like the full character. | Fixed | `StrokeGrade` now measures coverage as well as precision. |
+| The repair pad accepts extra or reversed strokes. | Fixed | It requires one matched stroke, no extras, no reversal, and shape coverage. |
+| Word practice and drill screens silently miss stroke guides. | Fixed | Their full-screen routes now provide the content, progress, pinyin, and Hangul composition locals. |
+| Pronunciation reviews can show the answer in the meaning. | Fixed | `ReadingPrivacy` masks the expected reading in kana/Hangul self-descriptions. |
+| Recall could show the target character in a cue. | Verified | Cues are masked by design and the journey harness now fails if a CJK target is visible during "From memory". |
+| Printable sheets have a model but no traceable step. | Fixed | Trace and trace-twice templates now include pale glyph cells, and the cover lists the sheet contents. |
+| Worksheet grid boxes print as solid coral blocks. | Fixed | The border paint was filling the box; grid borders are stroked now, so the paper stays clean. The model and trace cells get light tints instead. |
+| The worksheet export action is buried below the fold. | Fixed | Export PDF is the first action, with a live page and character summary. The options scroll beneath it. |
+| Stroke guides read as weak, disconnected lines. | Fixed | Guides now use tapered brush polygons, a paper halo, a grid behind them, and numbered start badges. Checked on 一, 学, 谢, and 爱. |
+| The guide can invent a reversal or call a correct stroke out of order. | Fixed | Matching is order- and shape-aware; reversal needs swapped ends, opposing direction, and a backwards path. |
+| A dictionary result is a dead end. | Fixed | The detail view shows per-character reading, meaning, and stroke count, plus audio, open-character, and word practice. Example words open directly into writing practice. |
+| The dictionary opens its keyboard over the tablet landing. | Fixed | The search field no longer requests focus on open; the full landing is readable until the learner taps it. |
+| A worksheet can only use a fixed slice of the course. | Fixed | Course order has a start number, an All option, a picked set, and .txt/.csv import. |
+| Worksheet templates are a wall of chips. | Fixed | Seven named templates set a full pattern, with a plain-language description and fine-tune controls below. |
+| A single-character worksheet says “1 characters.” | Fixed | Counts are pluralised in the builder, preview, export message, and PDF labels. |
+
+## Local journey harness
+
+`scripts/journey.sh` is the full-app daily-state check. It seeds deterministic
+progress databases, applies settings through a debug-only bridge, and drives the
+real UI with `uiautomator2` on phone, compact phone, landscape phone, fold inner
+and outer, tablet, and 7-inch tablet profiles.
+
+- Quick: phone only, six daily journeys.
+- Standard: phone, fold, and tablet core journeys.
+- Full: all profiles plus 100-review drain, vacation, ease-back, study tools,
+  shared glyphs, fold transition, accessibility, typing pronunciation, and
+  guide-stroke drawing recognition.
+- Long drains use pronunciation tasks for speed. Writing and recognition stay in
+  `review-modes` and `draw-recognition`, where the harness draws the real guide
+  strokes from the content database and checks the recognition result.
+- `review-modes` checks both review tasks: drawing unlocks Check & grade and
+  shows recognition feedback; typing shows Not quite, Correct, and tone-only
+  messages; both tasks grade and return Home.
+- `draw-recognition` exercises Simplified, Japanese, and Korean guides, records
+  same, variant, different, no-clear, or unavailable, and includes a deliberate
+  wrong guide to exercise the mismatch path.
+- Runs are local only and stored under `.qa/runs/`; `.qa/` is ignored by git.

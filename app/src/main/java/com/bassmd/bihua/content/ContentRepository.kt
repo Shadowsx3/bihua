@@ -49,7 +49,13 @@ class SqliteContentRepository(
     private val context: Context,
 ) : ContentRepository {
 
-    private val database: SQLiteDatabase by lazy { open() }
+    private val databaseDelegate = lazy { open() }
+    private val database: SQLiteDatabase by databaseDelegate
+
+    /** Releases this instance's read-only connection. The app-wide repository stays open. */
+    fun close() {
+        if (databaseDelegate.isInitialized()) databaseDelegate.value.close()
+    }
 
     override suspend fun characters(mode: StudyMode): List<CharacterEntry> = withContext(Dispatchers.IO) {
         queryCharacters("SELECT * FROM character WHERE mode=? ORDER BY list_index", arrayOf(mode.name))

@@ -130,6 +130,8 @@ val Lilac = Color(0xFFA78BFA)
 val Butter = Color(0xFFFACC15)
 /** Berry. */
 val Rose = Color(0xFFFB7185)
+/** Warm coral, used by Mò and the launcher badge. */
+val Coral = Color(0xFFFFB39A)
 /** Canopy. */
 val Gem = Color(0xFF2DD4BF)
 

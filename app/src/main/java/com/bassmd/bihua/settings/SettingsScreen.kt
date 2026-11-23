@@ -2,9 +2,12 @@
 
 package com.bassmd.bihua.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -59,6 +62,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PlaylistAddCheck
+import androidx.compose.material.icons.rounded.Print
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Speed
@@ -112,6 +116,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.backup.BackupBundle
@@ -123,7 +128,11 @@ import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.fsrs.FsrsOptimizer
 import com.bassmd.bihua.fsrs.FsrsWeights
 import com.bassmd.bihua.fsrs.ReviewLoad
+import com.bassmd.bihua.reminder.ReminderMessage
+import com.bassmd.bihua.reminder.ReminderNotifications
+import com.bassmd.bihua.reminder.ReminderScheduler
 import com.bassmd.bihua.sync.SyncClient
+import com.bassmd.bihua.sync.SyncCode
 import com.bassmd.bihua.sync.SyncPackage
 import com.bassmd.bihua.sync.SyncServer
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
@@ -197,6 +206,7 @@ fun SettingsScreen(
     var showLicences by remember { mutableStateOf(false) }
     var showStrokeRules by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
+    var showWorksheet by remember { mutableStateOf(false) }
     var busyMessage by remember { mutableStateOf<String?>(null) }
     var showWeightsImport by remember { mutableStateOf(false) }
     var weightDraft by remember { mutableStateOf("") }
@@ -208,6 +218,7 @@ fun SettingsScreen(
     var showFitScope by remember { mutableStateOf(false) }
     var showWeightsHelp by remember { mutableStateOf(false) }
     var confirmMature by remember { mutableStateOf(false) }
+    var reminderHourMenu by remember { mutableStateOf(false) }
     val weightProfileLabel = when (weightProfile) {
         AppSettings.SHARED_WEIGHTS -> "Shared"
         "SIMPLIFIED" -> "Simplified"
@@ -340,6 +351,25 @@ fun SettingsScreen(
         }
     }
 
+    fun enableReminders() {
+        val next = settings.copy(
+            remindersEnabled = true,
+            reminderDays = settings.reminderDays.ifEmpty { setOf(1, 2, 3, 4, 5, 6, 7) },
+        )
+        update(next)
+        ReminderScheduler.schedule(context, next)
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            enableReminders()
+        } else {
+            message = "Notifications are blocked. Allow them in Android Settings."
+        }
+    }
+
     fun saveName() {
         val cleaned = nameDraft.trim().take(40)
         scope.launch {
@@ -429,6 +459,8 @@ fun SettingsScreen(
                 } else {
                     message = result.reason
                 }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
             } catch (error: Exception) {
                 message = "The fit failed. The current weights are unchanged."
             } finally {
@@ -498,8 +530,12 @@ fun SettingsScreen(
                 val progressBytes = if (exportScope.progress) {
                     progress?.let { storeRef ->
                         val temp = java.io.File(context.cacheDir, "export-progress.db")
-                        storeRef.exportTo(temp)
-                        temp.readBytes().also { temp.delete() }
+                        try {
+                            storeRef.exportTo(temp)
+                            temp.readBytes()
+                        } finally {
+                            temp.delete()
+                        }
                     }
                 } else {
                     null
@@ -552,14 +588,19 @@ fun SettingsScreen(
             try {
                 runCatching {
                     val bytes = readBytes(context, uri)
-                if (com.bassmd.bihua.backup.BackupArchive.isZip(bytes)) {
-                    val archive = com.bassmd.bihua.backup.BackupArchive.decode(bytes)
-                    pendingProgress = archive.progressDb
-                    pendingImport = archive.backupJson?.let { BackupCodec.decode(it) }
-                } else {
-                    pendingProgress = null
-                    pendingImport = BackupCodec.decode(bytes.decodeToString())
-                }
+                    // Decode both halves before touching the pending state, so a
+                    // corrupt settings blob cannot leave a progress-only import
+                    // dialog behind after the error.
+                    if (com.bassmd.bihua.backup.BackupArchive.isZip(bytes)) {
+                        val archive = com.bassmd.bihua.backup.BackupArchive.decode(bytes)
+                        val progress = archive.progressDb
+                        val backup = archive.backupJson?.let { BackupCodec.decode(it) }
+                        pendingProgress = progress
+                        pendingImport = backup
+                    } else {
+                        pendingImport = BackupCodec.decode(bytes.decodeToString())
+                        pendingProgress = null
+                    }
                 }.onSuccess {
                     importApplySettings = pendingImport != null
                     importApplyProgress = pendingProgress != null
@@ -1209,7 +1250,7 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.School,
                             title = "New characters per day",
-                            subtitle = "0 pauses new characters; reviews continue.",
+                            subtitle = "0 pauses new characters; reviews continue. Most learners start at 5.",
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Slider(
@@ -1496,6 +1537,149 @@ fun SettingsScreen(
                 }
             }
 
+            }
+            if (settingsSection == "Reminders") {
+            item {
+                SoftCard(Modifier.fillMaxWidth()) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.NotificationsNone,
+                            title = "Study reminders",
+                            subtitle = "A quiet nudge when reviews or a new lesson are waiting.",
+                        )
+                        SwitchRow(
+                            title = "Study reminders",
+                            subtitle = if (settings.remindersEnabled) {
+                                "On at ${"%02d:00".format(settings.reminderHour)}."
+                            } else {
+                                "Off. A quiet nudge on the days you choose."
+                            },
+                            checked = settings.remindersEnabled,
+                            onCheckedChange = { enabled ->
+                                if (enabled) {
+                                    val needsPermission = Build.VERSION.SDK_INT >= 33 &&
+                                        ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.POST_NOTIFICATIONS,
+                                        ) != PackageManager.PERMISSION_GRANTED
+                                    if (needsPermission) {
+                                        notificationPermissionLauncher.launch(
+                                            Manifest.permission.POST_NOTIFICATIONS,
+                                        )
+                                    } else {
+                                        enableReminders()
+                                    }
+                                } else {
+                                    val next = settings.copy(remindersEnabled = false)
+                                    update(next)
+                                    ReminderScheduler.cancel(context)
+                                }
+                            },
+                        )
+                        if (settings.remindersEnabled) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Time",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Box {
+                                OutlinedButton(onClick = { reminderHourMenu = true }) {
+                                    Text("%02d:00".format(settings.reminderHour))
+                                }
+                                DropdownMenu(
+                                    expanded = reminderHourMenu,
+                                    onDismissRequest = { reminderHourMenu = false },
+                                ) {
+                                    (0..23).forEach { hour ->
+                                        DropdownMenuItem(
+                                            text = { Text("%02d:00".format(hour)) },
+                                            onClick = {
+                                                reminderHourMenu = false
+                                                val next = settings.copy(reminderHour = hour)
+                                                update(next)
+                                                ReminderScheduler.schedule(context, next)
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Days",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                REMINDER_DAYS.forEach { (day, label) ->
+                                    FilterChip(
+                                        selected = day in settings.reminderDays,
+                                        onClick = {
+                                            val days = if (day in settings.reminderDays) {
+                                                settings.reminderDays - day
+                                            } else {
+                                                settings.reminderDays + day
+                                            }
+                                            val next = settings.copy(
+                                                reminderDays = days,
+                                                remindersEnabled = settings.remindersEnabled &&
+                                                    days.isNotEmpty(),
+                                            )
+                                            update(next)
+                                            if (next.remindersEnabled) {
+                                                ReminderScheduler.schedule(context, next)
+                                            } else {
+                                                ReminderScheduler.cancel(context)
+                                            }
+                                        },
+                                        label = { Text(label) },
+                                        shape = CircleShape,
+                                    )
+                                }
+                            }
+                            if (settings.reminderDays.isEmpty()) {
+                                Text(
+                                    "Choose at least one day. Reminders stay off while no day is selected.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Bihua checks for due reviews and a new lesson when the reminder fires. If there is nothing to study, it stays quiet. Android Settings controls the notification permission and sound.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            TextButton(
+                                onClick = {
+                                    if (!ReminderNotifications.canNotify(context)) {
+                                        if (Build.VERSION.SDK_INT >= 33) {
+                                            notificationPermissionLauncher.launch(
+                                                Manifest.permission.POST_NOTIFICATIONS,
+                                            )
+                                        } else {
+                                            message = "Notifications are blocked. Allow them in Android Settings."
+                                        }
+                                    } else {
+                                        ReminderNotifications.show(
+                                            context,
+                                            ReminderMessage(
+                                                title = "One character is waiting",
+                                                text = "This is how a study reminder will look.",
+                                            ),
+                                        )
+                                    }
+                                },
+                            ) {
+                                Text("Send a test notification")
+                            }
+                        }
+                    }
+                }
+            }
             }
             if (settingsSection == "Writing") {
             item {
@@ -1950,6 +2134,21 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.height(10.dp))
                         OutlinedButton(
+                            onClick = { showWorksheet = true },
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Rounded.Print, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Print practice sheets (PDF)")
+                        }
+                        Text(
+                            "A4 worksheets with guided boxes, stroke numbers, reading, and meaning.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedButton(
                             onClick = { knownListLauncher.launch(arrayOf("text/plain", "*/*")) },
                             shape = RoundedCornerShape(50),
                             modifier = Modifier.fillMaxWidth(),
@@ -2028,7 +2227,7 @@ fun SettingsScreen(
                                 Column(Modifier.weight(1f)) {
                                     Text("Sync with another device", style = MaterialTheme.typography.titleMedium, color = InkDark)
                                     Text(
-                                        "Same Wi-Fi only. Nothing leaves your network.",
+                                        "Same Wi-Fi only. Encrypted with the pairing code. Nothing leaves your network.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = InkSoft,
                                     )
@@ -2075,7 +2274,7 @@ fun SettingsScreen(
                             )
                             Text(
                                 if (hostCode == null) {
-                                    "Start sharing to get a six-digit code. Enter that code on the other device."
+                                    "Start sharing to get a pairing code. Enter that code on the other device."
                                 } else {
                                     "Enter this code on the other device, then choose Copy from this device."
                                 },
@@ -2106,8 +2305,8 @@ fun SettingsScreen(
                                         shape = RoundedCornerShape(14.dp),
                                     ) {
                                         Text(
-                                            hostCode!!,
-                                            style = MaterialTheme.typography.headlineMedium,
+                                            SyncCode.format(hostCode!!),
+                                            style = MaterialTheme.typography.titleLarge,
                                             color = InkDark,
                                             modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
                                         )
@@ -2132,7 +2331,7 @@ fun SettingsScreen(
                                 color = InkDark,
                             )
                             Text(
-                                "Open Sync on the other device, start sharing, and type its six-digit code here. You choose what to apply after the transfer.",
+                                "Open Sync on the other device, start sharing, and type its pairing code here. You choose what to apply after the transfer.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
                             )
@@ -2141,19 +2340,19 @@ fun SettingsScreen(
                                 OutlinedTextField(
                                     value = joinCode,
                                     onValueChange = { text ->
-                                        joinCode = text.filter { it.isDigit() }.take(6)
+                                        joinCode = SyncCode.normalize(text)
                                     },
                                     modifier = Modifier.width(170.dp),
                                     singleLine = true,
                                     label = { Text("Pairing code") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                                     shape = RoundedCornerShape(14.dp),
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Button(
                                     onClick = {
-                                        if (joinCode.length != 6) {
-                                            syncMessage = "Enter the six digits shown on the other device."
+                                        if (joinCode.length != SyncCode.LENGTH) {
+                                            syncMessage = "Enter the pairing code shown on the other device."
                                             return@Button
                                         }
                                         syncing = true
@@ -2317,6 +2516,15 @@ fun SettingsScreen(
         )
     }
 
+    if (showWorksheet) {
+        WorksheetScreen(
+            mode = settings.studyMode,
+            studyList = settings.studyList,
+            pinyinNumbers = settings.pinyinNumbers,
+            onClose = { showWorksheet = false },
+        )
+    }
+
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
@@ -2431,24 +2639,30 @@ fun SettingsScreen(
                                 storeRef.exportTo(file)
                                 if (applyProgress) {
                                     val dbFile = java.io.File(context.cacheDir, "incoming-progress.db")
-                                    dbFile.writeBytes(incoming.progressDb!!)
-                                    storeRef.importFrom(dbFile)
-                                    dbFile.delete()
+                                    try {
+                                        dbFile.writeBytes(incoming.progressDb!!)
+                                        storeRef.importFrom(dbFile)
+                                    } finally {
+                                        dbFile.delete()
+                                    }
                                 }
                                 if (applySettings) {
                                     store.restore(incoming.backup!!)
                                 }
                             }
                             if (result.isSuccess) {
+                                fallback?.delete()
                                 com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
                                 onProgressChanged()
                                 message = "Sync complete."
                                 context.findActivity()?.recreate()
                             } else {
                                 if (applyProgress) {
-                                    fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
-                                        runCatching { storeRef.importFrom(it) }
-                                    }
+                                    val rolledBack = fallback
+                                        ?.takeIf { it.isFile && it.length() > 0 }
+                                        ?.let { runCatching { storeRef.importFrom(it) }.isSuccess }
+                                        ?: false
+                                    if (rolledBack) fallback?.delete()
                                     onProgressChanged()
                                 }
                                 val error = result.exceptionOrNull()
@@ -2505,15 +2719,19 @@ fun SettingsScreen(
                             fallback = backup
                             storeRef.exportTo(backup)
                             val file = java.io.File(context.cacheDir, "import-progress.db")
-                            file.writeBytes(progressBytes!!)
-                            storeRef.importFrom(file)
-                            file.delete()
+                            try {
+                                file.writeBytes(progressBytes!!)
+                                storeRef.importFrom(file)
+                            } finally {
+                                file.delete()
+                            }
                         }
                         if (applySettings) {
                             store.restore(settingsBundle!!)
                         }
                     }
                     if (restored.isSuccess) {
+                        fallback?.delete()
                         com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
                         onProgressChanged()
                         message = when {
@@ -2524,11 +2742,15 @@ fun SettingsScreen(
                         if (applySettings || applyProgress) context.findActivity()?.recreate()
                     } else {
                         if (applyProgress) {
-                            fallback?.takeIf { it.isFile && it.length() > 0 }?.let {
-                                progressStoreRef?.let { storeRef ->
-                                    runCatching { storeRef.importFrom(it) }
+                            val rolledBack = fallback
+                                ?.takeIf { it.isFile && it.length() > 0 }
+                                ?.let { file ->
+                                    progressStoreRef
+                                        ?.let { storeRef -> runCatching { storeRef.importFrom(file) } }
+                                        ?.isSuccess
                                 }
-                            }
+                                ?: false
+                            if (rolledBack) fallback?.delete()
                             onProgressChanged()
                         }
                         val error = restored.exceptionOrNull()
@@ -2680,6 +2902,11 @@ private val SETTINGS_ENTRIES = listOf(
         "goal pace new characters order queue review cue story hints counters motion share progress vacation session order mixed lessons first progress bar mature explicit words dictionary content intervals grade buttons schedule",
     ),
     SettingsEntry(
+        "Reminders", "Reminders", "Daily study nudge, time and days",
+        Icons.Rounded.NotificationsNone, Butter, "LEARNING",
+        "reminder notification notifications daily time days study review lesson nudge",
+    ),
+    SettingsEntry(
         "Schedule", "Schedule", "FSRS-7 weights and personal fit",
         Icons.Rounded.Tune, Mint, "LEARNING",
         "fsrs weights optimize fit tune schedule retention personal",
@@ -2712,6 +2939,16 @@ private val SETTINGS_ENTRIES = listOf(
 )
 
 private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "ABOUT")
+
+private val REMINDER_DAYS = listOf(
+    1 to "Mon",
+    2 to "Tue",
+    3 to "Wed",
+    4 to "Thu",
+    5 to "Fri",
+    6 to "Sat",
+    7 to "Sun",
+)
 
 private fun settingsLabel(id: String?): String =
     SETTINGS_ENTRIES.firstOrNull { it.id == id }?.label ?: "Settings"
@@ -2976,9 +3213,11 @@ private fun writeText(context: Context, uri: Uri, text: String) {
         ?: error("Could not open the selected file for writing.")
 }
 
-private fun readBytes(context: Context, uri: Uri): ByteArray =
-    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+private fun readBytes(context: Context, uri: Uri): ByteArray {
+    val input = context.contentResolver.openInputStream(uri)
         ?: error("Could not open the selected file.")
+    return input.use { com.bassmd.bihua.backup.BackupArchive.readAll(it) }
+}
 
 private fun writeBytes(context: Context, uri: Uri, bytes: ByteArray) {
     context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }

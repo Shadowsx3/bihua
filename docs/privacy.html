@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bihua Privacy Policy</title>
-<meta name="description" content="Bihua's privacy policy: local progress, no account, no analytics, and the few optional network actions.">
+<meta name="description" content="Bihua's privacy policy: local progress, no account, no developer-run analytics, and the few optional network actions.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/icon-256.png">
@@ -51,7 +51,7 @@
     <div class="kicker">Privacy</div>
     <h1>Bihua Privacy Policy</h1>
     <p class="lead">Bihua has no account, no advertising, and no developer-operated analytics. The app writes progress to a local SQLite database. This policy explains the local data, the optional network actions, and the diagnostics that Google ML Kit may process.</p>
-    <div class="article-meta"><span>Last updated: 22 November 2026</span><span>Applies to Bihua 1.0.4</span><span>Developer: Shadowsx3</span></div>
+    <div class="article-meta"><span>Last updated: 22 November 2026</span><span>Applies to Bihua 1.0.5</span><span>Developer: Shadowsx3</span></div>
   </div>
   <div class="wrap article-layout">
     <aside class="toc" aria-label="On this page">
@@ -61,6 +61,7 @@
       <a href="#sdk">Third-party SDKs</a>
       <a href="#sharing">Sharing and retention</a>
       <a href="#backups">Backups</a>
+      <a href="#reminders">Study reminders</a>
       <a href="#children">Children</a>
       <a href="#rights">Your choices</a>
       <a href="#contact">Contact</a>
@@ -68,7 +69,7 @@
     <article class="article" id="article">
       <div class="callout">
         <strong>Short version</strong>
-        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. Google ML Kit processes limited diagnostics and usage data as a service provider, as described below.</p>
+        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. A full backup or a settings sync can include your profile name and photo, but only when you start it. Google ML Kit processes limited diagnostics and usage data as a service provider, as described below.</p>
       </div>
       <h2 id="stored">What is stored on the device</h2>
       <ul>
@@ -76,30 +77,36 @@
         <li>Study settings: script, schedule, theme, writing guide, and practice preferences.</li>
         <li>Review history, due dates, XP, known-character levels, notes, study list, and word-practice history.</li>
         <li>Downloaded handwriting models, if you choose to download them.</li>
+        <li>The reminder time and selected days, if you enable study reminders.</li>
       </ul>
-      <p>Bihua does not create an account. The developer does not receive this data. Android cloud backup is disabled in the app manifest, so the app data is not copied to Google Drive by the operating system. The app has its own backup export when you want one. Data remains on the device until you delete it from the app, remove the relevant item, or uninstall the app.</p>
+      <p>Bihua does not create an account. The developer does not receive this data. Android cloud backup is disabled in the app manifest, so the app data is not copied to Google Drive by the operating system. The app has its own backup export when you want one. A full backup or a settings sync includes the profile name and photo when you have set them, because the profile is part of the settings. Data remains on the device until you delete it from the app, remove the relevant item, or uninstall the app.</p>
 
       <h2 id="network">Network access</h2>
       <p>Bihua does not run a developer-operated server. Network access is used for these actions:</p>
       <ul>
         <li><strong>Handwriting model download.</strong> When Bihua starts, when you switch scripts, or when you first use the handwriting check, ML Kit Digital Ink may download the small recognition model for the active script through Google Play services. The model runs on the device. You can also prepare all four models from Settings.</li>
-        <li><strong>Local Wi-Fi sync.</strong> Two devices on the same network can exchange a backup using a short-lived local server and a pairing code.</li>
+        <li><strong>Local Wi-Fi sync.</strong> Two devices on the same network can exchange a backup over a short-lived TLS connection. The sender shows a 10-character pairing code derived from the session certificate. The receiver types the code and pins that certificate. The transfer is direct between the devices and is not relayed through the internet.</li>
       </ul>
-      <p>Text-to-speech uses the voice engine installed on the device. Handwriting model downloads use HTTPS and are handled by Google Play services. Local Wi-Fi sync uses a short-lived HTTP server on your local network and is not relayed through the internet. Bihua does not send study history to a third party.</p>
+      <p>Handwriting model downloads use HTTPS and are handled by Google Play services. Local Wi-Fi sync uses a short-lived TLS server on your local network. The connection is encrypted and pinned to the pairing code, so another device on the network cannot read or impersonate the transfer. Read-aloud uses the text-to-speech engine installed on your device. Depending on the engine and downloaded voices, that engine's provider may process the text under its own policy; Bihua does not send it to a Bihua server. Bihua does not send study history to a third party.</p>
+      <p class="small">Version note: Bihua 1.0.4 used a short-lived HTTP connection for local sync. Bihua 1.0.5 replaces it with TLS and certificate pinning.</p>
 
       <h2 id="sdk">Third-party SDKs</h2>
       <p>Bihua includes Google ML Kit Digital Ink for handwriting candidates. Your handwriting strokes and the recognition candidates are processed on the device. Bihua does not send the ink itself, your notes, your review history, or your study list to Google.</p>
       <p>ML Kit may contact Google servers from time to time to receive bug fixes, updated models, and hardware-accelerator compatibility information. It also sends metrics about its performance and utilization to Google. According to Google's ML Kit disclosure, this can include device information (manufacturer, model, OS version, ML accelerators), app package name and version, per-installation identifiers, performance metrics, configured recognition languages, API configuration, feature input/output size, feature version, event type, and error codes. ML Kit encrypts this data in transit with HTTPS and does not transfer it to third parties. Google processes it as a service provider for the SDK.</p>
       <p>Links: <a href="https://developers.google.com/ml-kit/android-data-disclosure">ML Kit data disclosure</a>, <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a>, and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</p>
+      <p>Bihua does not include Firebase Analytics, Crashlytics, an advertising SDK, or an advertising ID permission. The only third-party data collection in the app is the ML Kit diagnostics described above.</p>
 
       <h2 id="sharing">Sharing, sale, and retention</h2>
-      <p>Bihua does not sell, rent, or trade personal data. The developer does not share notes, review history, or study data with third parties. A backup leaves the app only when you choose a destination in the Android file picker. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
+      <p>Bihua does not sell, rent, or trade personal data. The developer does not share notes, review history, or study data with third parties. A backup leaves the app only when you choose a destination in the Android file picker. A settings sync sends only the parts you select directly to the other device on your local network; the developer does not receive that transfer. A full backup or settings sync can include your profile name and photo when you have set them. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
       <p>Local data is retained until you delete it, clear it through Settings → Data → Start over, or uninstall the app. Bihua has no user accounts, so there is no account-deletion process. Backups you exported remain wherever you saved them until you delete them.</p>
       <h2 id="backups">Backups</h2>
-      <p>A full backup is created only when you choose Export. It contains the settings JSON and the local progress database. The Android file picker chooses the destination; Bihua does not upload the file. You control where it goes and who can open it.</p>
+      <p>A full backup is created only when you choose Export. It contains the settings JSON, the local progress database, and the profile name and photo when you have set them. The Android file picker chooses the destination; Bihua does not upload the file. You control where it goes and who can open it.</p>
+
+      <h2 id="reminders">Study reminders</h2>
+      <p>Study reminders are off by default. If you turn them on, the time and selected days are stored on the device. At that time Bihua checks for due reviews or a new lesson and posts a local notification. The developer does not receive the schedule or the notification. You can turn reminders off in Settings → Reminders or in Android Settings.</p>
 
       <h2 id="children">Children</h2>
-      <p>Bihua is a general-audience study tool and is not directed to children under 13. It does not create accounts, run advertising, or collect personal information from children.</p>
+      <p>Bihua is a general-audience study tool and is not directed to children under 13. It does not create accounts, run advertising, or collect personal information from children. Mature dictionary examples are off by default and require a confirmation before they appear.</p>
 
       <h2 id="rights">Your choices</h2>
       <ul>

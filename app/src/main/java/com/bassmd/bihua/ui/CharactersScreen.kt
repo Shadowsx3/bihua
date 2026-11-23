@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FilterAlt
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.VolumeUp
@@ -84,12 +85,10 @@ import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.content.visible
-import com.bassmd.bihua.content.WordResult
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.progress.ReviewEntry
-import com.bassmd.bihua.progress.WordPracticeEntry
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.Dot
 import com.bassmd.bihua.ui.components.Pill
@@ -165,9 +164,7 @@ fun CharactersScreen(
     var writingOnly by rememberSaveable { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
     var showDrawSearch by remember { mutableStateOf(false) }
-    var showWords by remember { mutableStateOf(false) }
-    var wordsLoading by remember { mutableStateOf(false) }
-    var wordResults by remember { mutableStateOf<List<WordResult>>(emptyList()) }
+    var showDictionary by remember { mutableStateOf(false) }
 
     val all = characters
     val characterSet = remember(all) { all.mapTo(HashSet()) { it.character } }
@@ -190,25 +187,8 @@ fun CharactersScreen(
     }
     val repository = LocalContentRepository.current
     val progressStore = LocalProgressStore.current
-    var recentWords by remember { mutableStateOf<List<WordPracticeEntry>>(emptyList()) }
-    LaunchedEffect(showWords, mode, progressStore, includeMatureContent) {
-        recentWords = if (showWords) {
-            progressStore?.recentWordPractice(mode, 5, includeMatureContent).orEmpty()
-        } else {
-            emptyList()
-        }
-    }
     LaunchedEffect(mode) {
-        showWords = false
-        wordResults = emptyList()
-    }
-    val searchWords: () -> Unit = {
-        scope.launch {
-            wordsLoading = true
-            wordResults = repository?.searchWords(mode, query, includeMature = includeMatureContent).orEmpty()
-            wordsLoading = false
-            showWords = true
-        }
+        showDictionary = false
     }
     var sharedModes by remember { mutableStateOf(emptyList<StudyMode>()) }
     LaunchedEffect(selected?.id, repository) {
@@ -231,7 +211,8 @@ fun CharactersScreen(
 
     Box(Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val wide = maxWidth >= 780.dp
+            val book = LocalFoldState.current == FoldState.BOOK
+            val wide = maxWidth >= if (book) 700.dp else 780.dp
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     Column(
@@ -257,8 +238,8 @@ fun CharactersScreen(
                             ).size,
                             onOpenFilters = { showFilters = true },
                             onDrawSearch = { showDrawSearch = true },
-                            onSearchWords = searchWords,
-                            wordsLoading = wordsLoading,
+                            onOpenDictionary = { showDictionary = true },
+                            wrapFilters = LocalFoldState.current == FoldState.BOOK,
                         )
                         CharacterGrid(
                             entries = filtered,
@@ -270,7 +251,7 @@ fun CharactersScreen(
                     if (selected != null) {
                         Box(
                             modifier = Modifier
-                                .width(390.dp)
+                                .width(if (book) 420.dp else 390.dp)
                                 .fillMaxSize()
                                 .padding(start = 4.dp),
                         ) {
@@ -442,8 +423,8 @@ fun CharactersScreen(
                             ).size,
                             onOpenFilters = { showFilters = true },
                             onDrawSearch = { showDrawSearch = true },
-                            onSearchWords = searchWords,
-                            wordsLoading = wordsLoading,
+                            onOpenDictionary = { showDictionary = true },
+                            wrapFilters = LocalFoldState.current == FoldState.BOOK,
                         )
                         CharacterGrid(
                             entries = filtered,
@@ -463,21 +444,23 @@ fun CharactersScreen(
         )
     }
 
-    if (showWords) {
-        WordSearchDialog(
-            query = query,
-            results = wordResults,
-            recent = recentWords,
+    if (showDictionary) {
+        DictionaryScreen(
             mode = mode,
-            onOpenCharacter = { id ->
-                showWords = false
-                if (allById.containsKey(id)) selectedId = id
-            },
+            includeMatureContent = includeMatureContent,
+            initialQuery = query,
+            characters = all,
+            speechEnabled = speechEnabled,
+            onSpeak = { text -> onSpeak(text) },
             onPracticeWord = { word ->
-                showWords = false
+                showDictionary = false
                 onPracticeWord(word)
             },
-            onDismiss = { showWords = false },
+            onOpenCharacter = { id ->
+                showDictionary = false
+                if (allById.containsKey(id)) selectedId = id
+            },
+            onClose = { showDictionary = false },
         )
     }
     if (showDrawSearch) {
@@ -634,154 +617,6 @@ private fun StudyMode.plainName(): String = when (this) {
 }
 
 @Composable
-private fun WordSearchDialog(
-    query: String,
-    results: List<WordResult>,
-    recent: List<WordPracticeEntry> = emptyList(),
-    mode: StudyMode,
-    onOpenCharacter: (String) -> Unit,
-    onPracticeWord: (WordContext) -> Unit = {},
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Words matching “$query”") },
-        text = {
-            if (results.isEmpty() && recent.isEmpty()) {
-                Text(
-                    "No words matched. Try the characters, or a shorter meaning.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkSoft,
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 380.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (recent.isNotEmpty()) {
-                        item {
-                            Text(
-                                "Recently practised",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = InkSoft,
-                            )
-                        }
-                        items(recent) { entry ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onPracticeWord(
-                                            WordContext(
-                                                word = entry.word,
-                                                reading = entry.reading,
-                                                meaning = entry.meaning,
-                                                mature = entry.mature,
-                                            )
-                                        )
-                                    }
-                                    .padding(vertical = 3.dp),
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            entry.word,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = InkDark,
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            displayReading(entry.reading, mode),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = InkSoft,
-                                        )
-                                    }
-                                    Text(
-                                        "${entry.meaning} · practised ${entry.completions} ${if (entry.completions == 1) "time" else "times"}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = InkSoft,
-                                    )
-                                }
-                                Icon(
-                                    Icons.Rounded.Brush,
-                                    contentDescription = "Practise ${entry.word} again",
-                                    tint = InkSoft,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                        if (results.isNotEmpty()) {
-                            item {
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    "Matches",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = InkSoft,
-                                )
-                            }
-                        }
-                    }
-                    items(results) { result ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = result.characterId != null) {
-                                    result.characterId?.let(onOpenCharacter)
-                                }
-                                .padding(vertical = 4.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    result.word,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = InkDark,
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    displayReading(result.reading, mode),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkSoft,
-                                )
-                                Spacer(Modifier.weight(1f))
-                                IconButton(
-                                    onClick = {
-                                        onPracticeWord(
-                                            WordContext(
-                                                word = result.word,
-                                                reading = result.reading,
-                                                meaning = result.meaning,
-                                                mature = result.mature,
-                                            )
-                                        )
-                                    },
-                                    modifier = Modifier.size(30.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Brush,
-                                        contentDescription = "Write this word",
-                                        tint = InkSoft,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                }
-                            }
-                            Text(
-                                result.meaning,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = InkSoft,
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        },
-    )
-}
-
-@Composable
 private fun ListHeader(
     query: String,
     onQueryChange: (String) -> Unit,
@@ -796,8 +631,8 @@ private fun ListHeader(
     activeFilters: Int,
     onOpenFilters: () -> Unit,
     onDrawSearch: () -> Unit,
-    onSearchWords: () -> Unit,
-    wordsLoading: Boolean = false,
+    onOpenDictionary: () -> Unit,
+    wrapFilters: Boolean = false,
 ) {
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 4.dp),
@@ -884,34 +719,55 @@ private fun ListHeader(
             }
         }
         Spacer(Modifier.height(6.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (query.isNotBlank()) {
+        if (wrapFilters) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                TextButton(onClick = onOpenDictionary) {
+                    Icon(
+                        Icons.Rounded.MenuBook,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Dictionary")
+                }
+                StatusFilter.entries.forEach { item ->
+                    val count = if (item.status == null) total else counts[item.status] ?: 0
+                    FilterChip(
+                        selected = filter == item,
+                        onClick = { onFilterChange(item) },
+                        label = { Text("${item.label} ${formatCompactCount(count)}") },
+                        shape = CircleShape,
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 item {
-                    TextButton(
-                        onClick = onSearchWords,
-                        enabled = !wordsLoading,
-                    ) {
+                    TextButton(onClick = onOpenDictionary) {
                         Icon(
-                            Icons.Rounded.Search,
+                            Icons.Rounded.MenuBook,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text(if (wordsLoading) "Words…" else "Words")
+                        Text("Dictionary")
                     }
                 }
-            }
-            items(StatusFilter.entries) { item ->
-                val count = if (item.status == null) total else counts[item.status] ?: 0
-                FilterChip(
-                    selected = filter == item,
-                    onClick = { onFilterChange(item) },
-                    label = { Text("${item.label} ${formatCompactCount(count)}") },
-                    shape = CircleShape,
-                )
+                items(StatusFilter.entries) { item ->
+                    val count = if (item.status == null) total else counts[item.status] ?: 0
+                    FilterChip(
+                        selected = filter == item,
+                        onClick = { onFilterChange(item) },
+                        label = { Text("${item.label} ${formatCompactCount(count)}") },
+                        shape = CircleShape,
+                    )
+                }
             }
         }
     }
@@ -963,6 +819,8 @@ private fun CharacterGrid(
 @Composable
 private fun CharacterTile(entry: CharacterEntry, selected: Boolean, onClick: () -> Unit) {
     val reading = displayReading(entry.reading, entry.mode)
+    val label =
+        "${entry.character}, $reading, ${entry.meaning}, ${entry.levelLabel.ifBlank { "level ${entry.level}" }}"
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -970,10 +828,9 @@ private fun CharacterTile(entry: CharacterEntry, selected: Boolean, onClick: () 
         modifier = Modifier
             .fillMaxWidth()
             .clearAndSetSemantics {
-                contentDescription =
-                    "${entry.character}, $reading, ${entry.meaning}, ${entry.levelLabel.ifBlank { "level ${entry.level}" }}"
+                contentDescription = label
                 role = androidx.compose.ui.semantics.Role.Button
-                onClick(label = contentDescription) {
+                onClick(label = label) {
                     onClick()
                     true
                 }

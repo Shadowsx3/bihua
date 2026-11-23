@@ -68,12 +68,15 @@ import com.bassmd.bihua.ai.RecognitionResult
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.InkStroke
 import com.bassmd.bihua.progress.LocalProgressStore
 import com.bassmd.bihua.ink.StrokeGuideLayer
 import com.bassmd.bihua.ink.StrokeOrderPlayer
 import com.bassmd.bihua.ink.StrokePlayback
+import com.bassmd.bihua.ui.FoldState
+import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.components.InkHistoryPlaybackBar
 import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ink.rememberStrokePlayback
@@ -165,7 +168,7 @@ fun PracticeScreen(
             val targetId = entry?.id
             val readEntry = read?.let { glyph -> characters.firstOrNull { it.character == glyph } }
             if (targetId != null && readEntry != null && readEntry.id != targetId) {
-                progress?.recordConfusion(targetId, readEntry.id)
+                runCatching { progress?.recordConfusion(targetId, readEntry.id) }
             }
         }
     }
@@ -209,7 +212,8 @@ fun PracticeScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = maxWidth >= 900.dp
+        val book = LocalFoldState.current == FoldState.BOOK
+        val wide = maxWidth >= if (book) 700.dp else 900.dp
         if (wide) {
             Column(
                 modifier = Modifier
@@ -249,8 +253,7 @@ fun PracticeScreen(
                         )
                     }
                     Column(
-                        modifier = Modifier
-                            .width(320.dp)
+                        modifier = (if (book) Modifier.weight(1f) else Modifier.width(320.dp))
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -306,6 +309,7 @@ fun PracticeScreen(
                     brush = brush,
                     allowFinger = allowFinger,
                     showReference = showReference,
+                    outlineOnly = guideMode == com.bassmd.bihua.settings.GuideMode.OUTLINE,
                     showOrder = showOrder,
                     revealProgress = reveal,
                     onStrokeStart = {
@@ -544,12 +548,14 @@ private fun PracticeCanvas(
             writingSize.sideDp.dp,
         )
         Box(Modifier.size(side).writingSheet(), contentAlignment = Alignment.Center) {
+            WritingGrid(gridStyle, Modifier.fillMaxSize())
             if (showReference) {
                 if (!outlineOnly && player.strokeCount > 0) {
                     StrokeGuideLayer(
                         player = player,
                         showNumbers = showOrder,
                         modifier = Modifier.fillMaxSize(),
+                        ghostCharacter = entry?.character.orEmpty(),
                     )
                 } else {
                     OutlineGuide(character = entry?.character.orEmpty(), side = side)
@@ -564,6 +570,7 @@ private fun PracticeCanvas(
                 brush = brush,
                 allowFinger = allowFinger,
                 revealProgress = revealProgress,
+                drawGrid = false,
                 contentDescription = "Handwriting canvas for ${entry?.character.orEmpty()}.",
                 onStrokeStart = onStrokeStart,
             )

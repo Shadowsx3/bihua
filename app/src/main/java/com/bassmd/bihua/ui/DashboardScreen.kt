@@ -111,7 +111,8 @@ fun DashboardScreen(
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = maxWidth >= 820.dp
+        val book = LocalFoldState.current == FoldState.BOOK
+        val wide = maxWidth >= if (book) 700.dp else 820.dp
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(

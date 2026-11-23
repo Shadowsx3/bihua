@@ -178,6 +178,62 @@ class ContentDatabaseTest {
         assertEquals(0, undocumented)
     }
 
+
+    @Test
+    fun strokeGuideBlobsAreWellFormed() {
+        val badLength = count(
+            "SELECT COUNT(*) FROM glyph_stroke WHERE points IS NOT NULL " +
+                "AND length(points)>0 AND length(points) % 8 != 0",
+        )
+        assertEquals(0, badLength)
+        val badPoints = database.rawQuery(
+            "SELECT points FROM glyph_stroke WHERE points IS NOT NULL AND length(points)>0",
+            null,
+        ).use { cursor ->
+            var bad = 0
+            var checked = 0
+            while (cursor.moveToNext()) {
+                val bytes = cursor.getBlob(0)
+                checked++
+                val floats = java.nio.ByteBuffer.wrap(bytes)
+                    .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    .asFloatBuffer()
+                while (floats.remaining() >= 2) {
+                    val x = floats.get()
+                    val y = floats.get()
+                    if (!x.isFinite() || !y.isFinite() || x < -0.05f || x > 1.05f || y < -0.05f || y > 1.05f) {
+                        bad++
+                    }
+                }
+            }
+            assertTrue("no stroke guides were checked", checked > 40_000)
+            bad
+        }
+        assertEquals(0, badPoints)
+    }
+
+    @Test
+    fun everyCourseHasDrawableGuideStrokes() {
+        listOf("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN").forEach { mode ->
+            val drawable = count(
+                "SELECT COUNT(DISTINCT c.id) FROM character c " +
+                    "JOIN glyph_stroke g ON g.glyph_group_id=c.glyph_group_id " +
+                    "WHERE c.mode='$mode' AND g.points IS NOT NULL AND length(g.points)>0",
+            )
+            assertTrue("$mode has too few drawable guides: $drawable", drawable > 500)
+        }
+    }
+
+    @Test
+    fun mountainHasAUsableGuide() {
+        val strokes = count(
+            "SELECT COUNT(*) FROM glyph_stroke g JOIN character c " +
+                "ON c.glyph_group_id=g.glyph_group_id WHERE c.character='山' " +
+                "AND c.mode='SIMPLIFIED' AND g.points IS NOT NULL AND length(g.points)>0",
+        )
+        assertTrue("山 guide is missing", strokes >= 3)
+    }
+
     private fun count(sql: String): Int =
         database.rawQuery(sql, null).use { cursor ->
             if (cursor.moveToFirst()) cursor.getInt(0) else 0

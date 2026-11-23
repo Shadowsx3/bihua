@@ -20,8 +20,8 @@ android {
         applicationId = "com.bassmd.bihua"
         minSdk = 29
         targetSdk = 36
-        versionCode = 14
-        versionName = "1.0.4"
+        versionCode = 17
+        versionName = "1.0.7"
         ndk {
             // The tablet and phone are arm64. Dropping emulator ABIs keeps the
             // local model runtime from doubling the APK size.
@@ -95,6 +95,10 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.tls)
+    implementation(libs.androidx.work.ktx)
+    implementation(libs.androidx.window)
     implementation(libs.mlkit.digital.ink)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.activity.compose)

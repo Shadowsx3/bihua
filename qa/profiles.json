@@ -1,0 +1,54 @@
+{
+  "phone": {
+    "avd": "voxbloom",
+    "width": 1080,
+    "height": 2400,
+    "density": 420,
+    "group": "phone"
+  },
+  "phone-compact": {
+    "avd": "voxbloom",
+    "width": 720,
+    "height": 1280,
+    "density": 320,
+    "group": "phone"
+  },
+  "phone-landscape": {
+    "avd": "voxbloom",
+    "width": 2400,
+    "height": 1080,
+    "density": 420,
+    "group": "phone",
+    "rotation": 1
+  },
+  "fold-inner": {
+    "avd": "bihua_fold",
+    "width": 2208,
+    "height": 1840,
+    "density": 420,
+    "group": "fold",
+    "posture": "unfold"
+  },
+  "fold-outer": {
+    "avd": "bihua_fold",
+    "width": 1080,
+    "height": 2092,
+    "density": 420,
+    "group": "fold",
+    "posture": "fold"
+  },
+  "tablet": {
+    "avd": "bihua_tablet",
+    "width": 2560,
+    "height": 1600,
+    "density": 320,
+    "group": "tablet"
+  },
+  "tablet-7": {
+    "avd": "bihua_tablet",
+    "width": 1200,
+    "height": 1920,
+    "density": 240,
+    "group": "tablet"
+  }
+}
