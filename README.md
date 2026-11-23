@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.0.7-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.8-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -169,7 +169,7 @@ not a public issue.
 
 ## Status
 
-The current development version is **1.0.7 (versionCode 17)**. New learners
+The current development version is **1.0.8 (versionCode 18)**. New learners
 start with five new characters a day, reviews are mixed with new lessons, and
 the session progress bar fills to the next lesson. It also adds encrypted local
 sync, off-by-default study reminders, foldable book layouts, and the regression

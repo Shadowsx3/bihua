@@ -3,6 +3,7 @@
 package com.bassmd.bihua.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +40,8 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.PushPin
@@ -244,6 +248,7 @@ fun CharactersScreen(
                         CharacterGrid(
                             entries = filtered,
                             selectedId = selectedId,
+                            queryActive = query.isNotBlank(),
                             onSelect = { selectedId = it.id },
                             modifier = Modifier.weight(1f),
                         )
@@ -429,6 +434,7 @@ fun CharactersScreen(
                         CharacterGrid(
                             entries = filtered,
                             selectedId = selectedId,
+                            queryActive = query.isNotBlank(),
                             onSelect = { selectedId = it.id },
                             modifier = Modifier.weight(1f),
                         )
@@ -777,6 +783,7 @@ private fun ListHeader(
 private fun CharacterGrid(
     entries: List<CharacterEntry>,
     selectedId: String?,
+    queryActive: Boolean,
     onSelect: (CharacterEntry) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -799,6 +806,16 @@ private fun CharacterGrid(
         }
         return
     }
+    val groups = remember(entries) {
+        val grouped = LinkedHashMap<String, MutableList<CharacterEntry>>()
+        entries.forEach { entry ->
+            val label = entry.levelLabel.ifBlank { "Level ${entry.level}" }
+            grouped.getOrPut(label) { mutableListOf() }.add(entry)
+        }
+        grouped.toList()
+    }
+    var collapsed by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val showHeaders = !queryActive && groups.size > 1
     LazyVerticalGrid(
         columns = GridCells.Adaptive(86.dp),
         modifier = modifier.fillMaxSize(),
@@ -806,18 +823,89 @@ private fun CharacterGrid(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        items(entries, key = { it.id }) { entry ->
-            CharacterTile(
-                entry = entry,
-                selected = entry.id == selectedId,
-                onClick = { onSelect(entry) },
+        if (!showHeaders) {
+            items(entries, key = { it.id }) { entry ->
+                CharacterTile(
+                    entry = entry,
+                    selected = entry.id == selectedId,
+                    onClick = { onSelect(entry) },
+                )
+            }
+        } else {
+            groups.forEach { (label, group) ->
+                val isCollapsed = label in collapsed
+                item(key = "category:$label", span = { GridItemSpan(maxLineSpan) }) {
+                    CategoryHeader(
+                        label = label,
+                        count = group.size,
+                        collapsed = isCollapsed,
+                        onToggle = {
+                            collapsed = if (isCollapsed) collapsed - label else collapsed + label
+                        },
+                    )
+                }
+                if (!isCollapsed) {
+                    items(group, key = { it.id }) { entry ->
+                        CharacterTile(
+                            entry = entry,
+                            selected = entry.id == selectedId,
+                            showLevelLabel = false,
+                            onClick = { onSelect(entry) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryHeader(
+    label: String,
+    count: Int,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+) {
+    Surface(
+        onClick = onToggle,
+        shape = RoundedCornerShape(16.dp),
+        color = PaperWarm,
+        border = BorderStroke(1.dp, InkSoft.copy(alpha = 0.12f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = InkDark,
+                modifier = Modifier.weight(1f),
+            )
+            Pill(
+                text = formatCompactCount(count),
+                color = Lilac.copy(alpha = 0.20f),
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                imageVector = if (collapsed) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
+                contentDescription = if (collapsed) "Expand $label" else "Collapse $label",
+                tint = InkSoft,
+                modifier = Modifier.size(20.dp),
             )
         }
     }
 }
 
 @Composable
-private fun CharacterTile(entry: CharacterEntry, selected: Boolean, onClick: () -> Unit) {
+private fun CharacterTile(
+    entry: CharacterEntry,
+    selected: Boolean,
+    showLevelLabel: Boolean = true,
+    onClick: () -> Unit,
+) {
     val reading = displayReading(entry.reading, entry.mode)
     val label =
         "${entry.character}, $reading, ${entry.meaning}, ${entry.levelLabel.ifBlank { "level ${entry.level}" }}"
@@ -851,7 +939,15 @@ private fun CharacterTile(entry: CharacterEntry, selected: Boolean, onClick: () 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Dot(statusColor(entry.status), 5.dp)
                 Spacer(Modifier.width(4.dp))
-                Text(entry.levelLabel.ifBlank { "Level ${entry.level}" }, style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Text(
+                    if (showLevelLabel) {
+                        entry.levelLabel.ifBlank { "Level ${entry.level}" }
+                    } else {
+                        entry.status.label
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
             }
         }
     }

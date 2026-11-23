@@ -101,6 +101,13 @@ slogans.
   learned, recent mistakes, and confusions. Trace, trace-twice, memory, and
   alternate templates; Mi zi ge, Tian zi ge, and plain grids; numbered models,
   pale tracing cells, cover page, and a sheet contents list.
+- **Per-stroke coaching closure.** The coach card highlights the exact repair
+  stroke, offers Show me / Trace it / Write alone, and returns to the whole
+  character with the fixed stroke in mint.
+- **Kana that reads like kana.** Hiragana and katakana use a round, even pen
+  instead of the Han brush polygon, so long curves no longer pinch.
+- **Collapsible character sections.** The 3,100-entry grid groups by level with
+  counts and collapse/expand; search returns a flat list.
 
 ## 4. Proposed work, ordered by learning value per unit of risk
 

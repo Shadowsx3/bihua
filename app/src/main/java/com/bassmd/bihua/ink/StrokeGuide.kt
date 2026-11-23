@@ -147,6 +147,11 @@ fun StrokeGuideLayer(
     progressOverride: Float? = null,
     /** A very faint font silhouette behind the strokes, to anchor the shape. */
     ghostCharacter: String? = null,
+    /** 1-based stroke to emphasise, used by the stroke coach. */
+    focusStroke: Int? = null,
+    focusColor: Color = GuideGreen,
+    /** Draw every other stroke softly so the focused one reads clearly. */
+    dimUnfocused: Boolean = false,
 ) {
     val guide = player.guide ?: return
     if (guide.strokes.isEmpty()) return
@@ -175,6 +180,7 @@ fun StrokeGuideLayer(
         val progress = (progressOverride?.times(rendered.size) ?: player.progress)
             .coerceIn(0f, rendered.size.toFloat())
         val completed = progress.toInt()
+        val focusIndex = focusStroke?.minus(1)
         rendered.forEachIndexed { index, stroke ->
             val fraction = when {
                 index < completed -> 1f
@@ -182,7 +188,16 @@ fun StrokeGuideLayer(
                 else -> 0f
             }
             if (fraction > 0f) {
-                drawGuideStroke(stroke, fraction, guideColor, palette.paperWarm)
+                val focused = focusIndex == null || index == focusIndex
+                val strokeColor = if (focused) focusColor else guideColor
+                drawGuideStroke(
+                    stroke = stroke,
+                    fraction = fraction,
+                    guideColor = strokeColor,
+                    paperColor = palette.paperWarm,
+                    kana = guide.kana,
+                    muted = dimUnfocused && !focused,
+                )
             }
         }
         if (showNumbers) {
@@ -192,12 +207,13 @@ fun StrokeGuideLayer(
                     index == completed && progress > completed -> progress - completed
                     else -> 0f
                 }
-                if (fraction > 0f) {
+                val focused = focusIndex == null || index == focusIndex
+                if (fraction > 0f && focused) {
                     drawStrokeNumber(
                         textMeasurer = textMeasurer,
                         start = stroke.start,
                         number = index + 1,
-                        guideColor = guideColor,
+                        guideColor = if (focusIndex == null) guideColor else focusColor,
                         badgeColor = palette.paperWarm,
                     )
                 }
@@ -223,7 +239,13 @@ fun SingleStrokeGuideLayer(
     val palette = LocalBihuaPalette.current
     val rendered = remember(guide, strokeIndex) { toRenderStroke(stroke, guide.source) }
     Canvas(modifier) {
-        drawGuideStroke(rendered, progress.coerceIn(0f, 1f), guideColor, palette.paperWarm)
+        drawGuideStroke(
+            stroke = rendered,
+            fraction = progress.coerceIn(0f, 1f),
+            guideColor = guideColor,
+            paperColor = palette.paperWarm,
+            kana = guide.kana,
+        )
     }
 }
 
@@ -320,6 +342,8 @@ private fun DrawScope.drawGuideStroke(
     fraction: Float,
     guideColor: Color,
     paperColor: Color,
+    kana: Boolean = false,
+    muted: Boolean = false,
 ) {
     val outline = stroke.outlinePath
     if (fraction >= 0.999f && outline != null) {
@@ -353,13 +377,51 @@ private fun DrawScope.drawGuideStroke(
         if (visible.isEmpty()) return
         val points = chaikin(visible, 1).map { it.scaleTo(size) }
         val total = points.zipWithNext().sumOf { (a, b) -> (b - a).getDistance().toDouble() }.toFloat()
-        val base = size.minDimension * 0.040f
+        val base = size.minDimension * (if (kana) 0.032f else 0.040f)
+        if (muted) {
+            drawPath(
+                path = polylinePath(points),
+                color = guideColor.copy(alpha = 0.20f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = base,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                ),
+            )
+            return
+        }
         if (total < size.minDimension * 0.085f) {
             // Dots and very short marks are round, like a brush touching down.
             val center = points.first()
             val radius = base * 0.46f
             drawCircle(paperColor.copy(alpha = 0.95f), radius = radius + 1.6.dp.toPx(), center = center)
             drawCircle(guideColor.copy(alpha = 0.90f), radius = radius, center = center)
+            return
+        }
+        if (kana) {
+            // Kana are long, tight curves. A stroked polyline keeps the pen
+            // round and even; offsetting a centreline into a filled polygon
+            // pinches and self-intersects on those curves.
+            val line = polylinePath(points)
+            val haloWidth = base + 2.4.dp.toPx()
+            drawPath(
+                path = line,
+                color = paperColor.copy(alpha = 0.95f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = haloWidth,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                ),
+            )
+            drawPath(
+                path = line,
+                color = guideColor.copy(alpha = 0.90f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = base,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                ),
+            )
             return
         }
         // A paper halo separates overlapping strokes; the tapered polygon makes

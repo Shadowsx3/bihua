@@ -172,7 +172,10 @@ class SqliteContentRepository(
                 "SELECT path_source FROM glyph_stroke WHERE glyph_group_id=? AND path_source IS NOT NULL LIMIT 1",
                 arrayOf(groupId),
             ).use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else "" }
-            if (strokes.isEmpty()) null else CharacterGuide(strokes, source)
+            val codepoint = groupId.substringAfter("U+", "").take(4).toIntOrNull(16)
+            val kana = codepoint != null &&
+                (codepoint in 0x3040..0x30FF || codepoint in 0xFF66..0xFF9D)
+            if (strokes.isEmpty()) null else CharacterGuide(strokes, source, kana)
         }
     }
 

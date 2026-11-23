@@ -16,6 +16,8 @@ data class CharacterGuide(
     val strokes: List<GuideStroke>,
     /** "makemeahanzi" paths are y-up; "kanjivg" paths are y-down. */
     val source: String = "",
+    /** Kana need a lighter, rounder pen than Han characters. */
+    val kana: Boolean = false,
 ) {
     val isEmpty: Boolean get() = strokes.isEmpty()
 }

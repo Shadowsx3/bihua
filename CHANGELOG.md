@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.8 (in progress)
+
+### Added
+
+- Per-stroke coaching now shows the exact repair stroke on the character and
+  offers **Show me**, **Trace it**, and **Write alone**. A successful repair
+  returns to the whole character with the fixed stroke marked in mint.
+- Characters can be collapsed by level section. Each header carries its count,
+  search returns a flat list, and tiles switch from level labels to status
+  labels while grouped.
+
+### Improved
+
+- Hiragana and katakana guides use a rounder, lighter pen so long curves stay
+  legible. Han, Hanja, and Hanzi keep the filled outline and brush style.
+
 ## 1.0.7
 
 ### Added

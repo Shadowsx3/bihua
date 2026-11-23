@@ -200,6 +200,10 @@ Status:
 | Worksheet templates are a wall of chips. | Fixed | Seven named templates set a full pattern, with a plain-language description and fine-tune controls below. |
 | A single-character worksheet says “1 characters.” | Fixed | Counts are pluralised in the builder, preview, export message, and PDF labels. |
 | The landing page can keep showing an old screenshot after a UI change. | Fixed | The practice capture was rebuilt from the final build and every content image URL now carries `?v=1.0.7` so a cached copy is not reused. |
+| Kana curves were rendered with the Han offset-brush polygon and looked pinched or blobby. | Fixed | Kana now use a round, even stroked path; Han keeps the filled outline and brush. |
+| The character grid was a flat list of 3,100 entries. | Fixed | The grid groups by level with collapsible headers; search returns a flat result list so nothing stays hidden. |
+| The stroke coach card could push its repair actions below the feedback fold. | Fixed | The actions sit above the summary, the duplicate status chips were removed, and the card fits the phone-width layout. |
+| The dictionary listing crop cut the left and right margins. | Fixed | The dictionary card no longer applies the top-crop transform. The print card keeps its status-bar breathing room. |
 
 ## Local journey harness
 

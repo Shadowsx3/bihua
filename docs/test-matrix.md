@@ -25,6 +25,9 @@ device pass below.
 | Worksheet selection | Course start number, picked set, imported .txt/.csv, all, reverse | manual review plus `worksheet` journey |
 | Worksheet templates | Trace, two traces, model/copy, memory, trace only, alternate, poster; A4/Letter; boxes and pages | manual PDF review (A4 and Letter poster) |
 | Worksheet builder look | Filled pills, inset panel, start-at field, pick/import tiles, character preview | manual phone and tablet review |
+| Kana guides | Hiragana and katakana use round stroked paths; Han keeps the filled brush | manual phone/tablet capture of あ and ア |
+| Character categories | Level headers with counts, collapse/expand, flat search results | manual tablet and fold review |
+| Stroke coaching | Exact-stroke highlight, Show me/Trace it/Write alone, mint fixed-stroke closure | manual review plus `stroke-clean` journey |
 | Review tasks | Writing and typing paths, wrong/correct/tone feedback, real guide-stroke drawing | `review-modes`, `draw-recognition` journeys; `ReadingCheckTest`, `ReviewTaskTest` |
 | Guide and hints | Fade rules for guide, story, and mnemonic | `GuideScaffoldTest`, `MnemonicModeTest` |
 | Known list | Import matching and header validation | `KnownListTest`, `CharacterSearchTest` |

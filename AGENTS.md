@@ -82,6 +82,7 @@ some etymology quality.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
+- 1.0.8 work tracker and next additions: `docs/1.0.8-roadmap.md`.
 
 ## Answer privacy
 
