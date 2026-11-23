@@ -784,6 +784,8 @@ private fun WordSparkCard(
     onPracticeWord: (com.bassmd.bihua.content.WordContext) -> Unit,
 ) {
     val reading = displayReading(word.reading, mode)
+    val headline = if (mode == StudyMode.KOREAN) word.reading else word.word
+    val secondary = if (mode == StudyMode.KOREAN) word.word else reading
     val spoken = if (mode == StudyMode.KOREAN) word.reading else word.word
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -802,13 +804,13 @@ private fun WordSparkCard(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        word.word,
+                        headline,
                         style = MaterialTheme.typography.titleLarge,
                         color = InkDark,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        reading,
+                        secondary,
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )

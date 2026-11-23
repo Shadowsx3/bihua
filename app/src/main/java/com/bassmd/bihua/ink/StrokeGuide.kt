@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalContext
@@ -287,8 +288,8 @@ private data class RenderStroke(
     val points: List<Offset>?,
     val path: Path?,
     val start: Offset,
-    /** Make Me a Hanzi filled stroke outline, in its 1024 x 900 y-up space. */
-    val outlinePath: String? = null,
+    /** Parsed Make Me a Hanzi filled stroke outline, in its 1024 x 900 y-up space. */
+    val outline: Path? = null,
 )
 
 private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
@@ -300,7 +301,9 @@ private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
             points = shrunk,
             path = null,
             start = shrunk.first(),
-            outlinePath = stroke.pathData.takeIf { source == "makemeahanzi" },
+            outline = stroke.pathData
+                ?.takeIf { source == "makemeahanzi" }
+                ?.let { runCatching { PathParser().parsePathString(it).toPath() }.getOrNull() },
         )
     }
     if (stroke.pathData != null) {
@@ -329,7 +332,9 @@ private fun toRenderStroke(stroke: GuideStroke, source: String): RenderStroke {
                     points = points,
                     path = null,
                     start = points.first(),
-                    outlinePath = stroke.pathData.takeIf { source == "makemeahanzi" },
+                    outline = stroke.pathData
+                        ?.takeIf { source == "makemeahanzi" }
+                        ?.let { runCatching { PathParser().parsePathString(it).toPath() }.getOrNull() },
                 )
             }
         }
@@ -345,39 +350,69 @@ private fun DrawScope.drawGuideStroke(
     kana: Boolean = false,
     muted: Boolean = false,
 ) {
-    val outline = stroke.outlinePath
-    if (fraction >= 0.999f && outline != null) {
-        val raw = runCatching { PathParser().parsePathString(outline).toPath() }.getOrNull()
-        if (raw != null) {
-            val matrix = androidx.compose.ui.graphics.Matrix()
-            matrix.values[0] = size.width * 0.84f / 1024f
-            matrix.values[5] = -size.height * 0.84f / 900f
-            matrix.values[12] = size.width * 0.08f
-            matrix.values[13] = size.height * 0.92f
-            val path = Path().apply {
-                addPath(raw)
-                transform(matrix)
-            }
+    val base = size.minDimension * (if (kana) 0.032f else 0.040f)
+    val parsedOutline = stroke.outline?.let { raw ->
+        val matrix = androidx.compose.ui.graphics.Matrix()
+        matrix.values[0] = size.width * 0.84f / 1024f
+        matrix.values[5] = -size.height * 0.84f / 900f
+        matrix.values[12] = size.width * 0.08f
+        matrix.values[13] = size.height * 0.92f
+        Path().apply {
+            addPath(raw)
+            transform(matrix)
+        }
+    }
+    if (parsedOutline != null) {
+        if (muted) {
+            drawPath(parsedOutline, guideColor.copy(alpha = 0.18f))
+            return
+        }
+        if (fraction >= 0.999f) {
             // The real stroke outline, with a paper gap so overlapping strokes
             // stay legible. This is the same shape a brush would leave.
             drawPath(
-                path = path,
+                path = parsedOutline,
                 color = paperColor.copy(alpha = 0.96f),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(
                     width = 2.2.dp.toPx(),
                     join = androidx.compose.ui.graphics.StrokeJoin.Round,
                 ),
             )
-            drawPath(path, guideColor.copy(alpha = 0.90f))
+            drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
             return
         }
+        if (stroke.points != null) {
+            val visible = partialPolyline(stroke.points, fraction)
+            if (visible.isEmpty()) return
+            val points = chaikin(visible, 1).map { it.scaleTo(size) }
+            if (points.size >= 2) {
+                // Reveal the final filled outline along the median, instead of
+                // swapping from a temporary brush polygon to the outline at the
+                // end. That swap was the visible "transform" in playback.
+                val clip = brushPath(points, base * 1.8f, torch = 0f, halo = false)
+                clipPath(clip) {
+                    drawPath(
+                        path = parsedOutline,
+                        color = paperColor.copy(alpha = 0.96f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = 2.2.dp.toPx(),
+                            join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                        ),
+                    )
+                    drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
+                }
+                return
+            }
+        }
+        // A source with an outline but no median can only reveal at the end.
+        drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
+        return
     }
     if (stroke.points != null) {
         val visible = partialPolyline(stroke.points, fraction)
         if (visible.isEmpty()) return
         val points = chaikin(visible, 1).map { it.scaleTo(size) }
         val total = points.zipWithNext().sumOf { (a, b) -> (b - a).getDistance().toDouble() }.toFloat()
-        val base = size.minDimension * (if (kana) 0.032f else 0.040f)
         if (muted) {
             drawPath(
                 path = polylinePath(points),

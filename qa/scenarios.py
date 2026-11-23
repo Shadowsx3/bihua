@@ -649,10 +649,18 @@ def word_guide(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Practise writing", timeout=8)
         journey.tap("Practise writing")
         journey.wait("Write the word", timeout=8)
+    with journey.step("reveal one character"):
+        journey.tap("Show answer")
+        journey.wait("Next character", timeout=4)
+        journey.screenshot("word-guide-reveal")
+    with journey.step("next character keeps the first visible"):
+        journey.tap("Next character")
+        journey.wait("Character 2 of 2", timeout=4, exact=False)
+        journey.screenshot("word-guide-next")
     with journey.step("show the real stroke guide"):
         journey.tap("Strokes")
-        journey.wait("Watch the stroke order", timeout=6)
-        journey.tap("Play")
+        journey.wait("Play stroke order", timeout=6)
+        journey.tap("Play stroke order")
         time.sleep(0.4)
         if not journey.exists("Numbers", timeout=2):
             raise JourneyFailure("stroke number control is missing")

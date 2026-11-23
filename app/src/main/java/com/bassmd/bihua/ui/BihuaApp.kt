@@ -1643,7 +1643,11 @@ private fun GlobalHeader(
                 .padding(horizontal = if (compact) 10.dp else 18.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            InkMascot(size = if (compact) 28.dp else 32.dp, sparkle = false)
+            InkMascot(
+                size = if (compact) 32.dp else 36.dp,
+                withBrush = true,
+                sparkle = false,
+            )
             if (!compact) {
                 Spacer(Modifier.width(8.dp))
                 Text(

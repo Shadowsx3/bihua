@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FormatListNumbered
@@ -54,6 +55,7 @@ import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
+import com.bassmd.bihua.ui.components.EraserIcon
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.writingSheet
 import com.bassmd.bihua.ink.StrokeGuideLayer
@@ -63,12 +65,12 @@ import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.settings.WritingSize
 import com.bassmd.bihua.ui.components.PrimaryAction
 import com.bassmd.bihua.ui.components.SoftCard
-import com.bassmd.bihua.ui.components.TonalAction
 import com.bassmd.bihua.ui.displayReading
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
+import com.bassmd.bihua.ui.theme.Sky
 
 /** How much of the reference is visible while writing a word. */
 private enum class WordGuideMode(val label: String) {
@@ -172,20 +174,25 @@ fun WordPracticeScreen(
         SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
             Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    word.word.forEach { char ->
+                    word.word.forEachIndexed { charIndex, char ->
+                        val shown = finished || charIndex < index || (charIndex == index && revealed)
+                        val current = charIndex == index && !finished
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = PaperWarm,
-                            border = BorderStroke(1.dp, InkSoft.copy(alpha = 0.25f)),
+                            border = BorderStroke(
+                                1.dp,
+                                if (current) Sky.copy(alpha = 0.70f) else InkSoft.copy(alpha = 0.25f),
+                            ),
                         ) {
                             Box(
                                 modifier = Modifier.size(44.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    if (revealed || finished) char.toString() else "＿",
+                                    if (shown) char.toString() else "＿",
                                     fontSize = 24.sp,
-                                    color = if (revealed) InkDark else InkSoft,
+                                    color = if (shown) InkDark else InkSoft,
                                 )
                             }
                         }
@@ -294,25 +301,83 @@ fun WordPracticeScreen(
                     onClick = { guideMode = option },
                     label = { Text(option.label) },
                     shape = CircleShape,
-                    modifier = Modifier.weight(1f),
                 )
+            }
+            Spacer(Modifier.weight(1f))
+            Surface(
+                shape = CircleShape,
+                color = if (guideMode == WordGuideMode.STROKES && player.strokeCount > 0) {
+                    Mint.copy(alpha = 0.35f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            ) {
+                IconButton(
+                    onClick = { player.play() },
+                    enabled = guideMode == WordGuideMode.STROKES &&
+                        player.strokeCount > 0 &&
+                        !player.isPlaying,
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.PlayArrow,
+                        contentDescription = "Play stroke order",
+                        tint = if (guideMode == WordGuideMode.STROKES && player.strokeCount > 0) {
+                            InkDark
+                        } else {
+                            InkSoft.copy(alpha = 0.35f)
+                        },
+                    )
+                }
             }
         }
         Spacer(Modifier.height(4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TonalAction(
-                text = "Undo",
-                onClick = { ink.undo() },
-                enabled = ink.canUndo,
-                icon = Icons.AutoMirrored.Rounded.Undo,
-                modifier = Modifier.weight(1f),
-            )
-            TonalAction(
-                text = "Clear",
-                onClick = { ink.clear(); revealed = false },
-                enabled = ink.canUndo,
-                modifier = Modifier.weight(1f),
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = { ink.undo() },
+                        enabled = ink.canUndo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Undo,
+                            contentDescription = "Undo",
+                            modifier = Modifier.size(19.dp),
+                            tint = if (ink.canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(
+                        onClick = { ink.redo() },
+                        enabled = ink.canRedo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Redo,
+                            contentDescription = "Redo",
+                            modifier = Modifier.size(19.dp),
+                            tint = if (ink.canRedo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                    IconButton(
+                        onClick = { ink.clear(); revealed = false },
+                        enabled = ink.canUndo,
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        EraserIcon(
+                            size = 19.dp,
+                            tint = if (ink.canUndo) InkDark else InkSoft.copy(alpha = 0.35f),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.weight(1f))
             FilterChip(
                 selected = showOrder,
                 onClick = { showOrder = !showOrder },
@@ -326,28 +391,7 @@ fun WordPracticeScreen(
                     )
                 },
                 shape = CircleShape,
-                modifier = Modifier.weight(1.2f),
             )
-        }
-        if (guideMode == WordGuideMode.STROKES && player.strokeCount > 0) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "Watch the stroke order",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkSoft,
-                    modifier = Modifier.weight(1f),
-                )
-                TonalAction(
-                    text = "Play",
-                    onClick = { player.play() },
-                    enabled = !player.isPlaying,
-                    icon = Icons.Rounded.PlayArrow,
-                    accent = Mint.copy(alpha = 0.55f),
-                )
-            }
         }
         Spacer(Modifier.height(4.dp))
         PrimaryAction(

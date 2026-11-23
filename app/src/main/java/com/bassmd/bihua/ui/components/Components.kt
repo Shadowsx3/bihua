@@ -223,7 +223,7 @@ fun InkMascot(
     Canvas(Modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
-        val detailed = w > 40.dp.toPx()
+        val detailed = w > 26.dp.toPx()
 
         // Coral badge and sticker halo.
         drawCircle(Coral, radius = w * 0.44f, center = Offset(w * 0.50f, h * 0.50f))

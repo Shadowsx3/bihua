@@ -204,6 +204,16 @@ Status:
 | The character grid was a flat list of 3,100 entries. | Fixed | The grid groups by level with collapsible headers; search returns a flat result list so nothing stays hidden. |
 | The stroke coach card could push its repair actions below the feedback fold. | Fixed | The actions sit above the summary, the duplicate status chips were removed, and the card fits the phone-width layout. |
 | The dictionary listing crop cut the left and right margins. | Fixed | The dictionary card no longer applies the top-crop transform. The print card keeps its status-bar breathing room. |
+| Show answer in word practice revealed every character in the word. | Fixed | Only the current character is revealed; completed characters stay visible while the next is written. |
+| Switching to Strokes pushed the canvas to make room for the play button. | Fixed | The play slot is always in the mode row, so the canvas does not move. |
+| Undo and clear took a full row in word practice. | Fixed | They use the compact character-practice history pill with redo and the eraser. |
+| Filled-guide playback swapped from a brush polygon to the outline at the end of each stroke. | Fixed | Playback clips the final outline along the median, so the shape never changes mid-stroke. |
+| A widget layout used a plain `View` and the launcher showed “Can't load widget”. | Fixed | RemoteViews only gets allowed views; the accent is an empty `TextView`. |
+| Widget data can go stale or wake the app too often. | Fixed | Update on app resume and a 30-minute provider period; no service, no wake lock. |
+| The daily word could show an explicit, rare, or cross-reference entry. | Fixed | Always non-mature, 2–6 characters, quality filters, curated words first, then a hashed common pool. |
+| A fast phone could flash the cold-start welcome. | Fixed | Hold the finished welcome for at least 1,050 ms (520 ms reduce-motion); tap still skips. |
+| The profile pet looked different from the launcher icon. | Fixed | Both use `InkMascot` with the brush; the profile avatar adds the sparkle. |
+| Filled-guide playback parsed the outline path every frame. | Fixed | Parse once per guide and only transform per frame. |
 
 ## Local journey harness
 

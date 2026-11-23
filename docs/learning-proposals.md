@@ -104,6 +104,17 @@ slogans.
 - **Per-stroke coaching closure.** The coach card highlights the exact repair
   stroke, offers Show me / Trace it / Write alone, and returns to the whole
   character with the fixed stroke in mint.
+- **Word practice that keeps the word in view.** Show answer reveals one
+  character at a time; completed characters stay visible while the next one is
+  written. The guide-mode row keeps its play slot, and playback reveals the
+  final filled outline instead of swapping styles.
+- **A daily word that feels chosen.** The Word of the Day is non-mature, short,
+  and filtered; a small curated set leads the cycle, followed by a large
+  deterministic common-word pool. Korean shows the Hangul word with the Hanja
+  beside it.
+- **A desk on the home screen.** The Today and Word of the Day widgets use the
+  pet and change with the hour, due count, new lessons, vacation, and all-clear
+  state. They are reminders, not debts.
 - **Kana that reads like kana.** Hiragana and katakana use a round, even pen
   instead of the Han brush polygon, so long curves no longer pinch.
 - **Collapsible character sections.** The 3,100-entry grid groups by level with

@@ -70,6 +70,30 @@ Keep this in mind for every screen:
   shot` captures to a device file and pulls it, which avoids the multi-display
   warning on foldables.
 
+## Home-screen widgets
+
+- Widgets are **RemoteViews**, not Compose. Only a limited view set is allowed:
+  `LinearLayout`, `TextView`, `ImageView`, and a few others. A plain `View` is
+  rejected by the launcher. Use an empty `TextView` for a coloured accent.
+- Two providers live in `widget/`: `TodayWidgetProvider` and
+  `WordWidgetProvider`. They read a `WidgetSnapshot` on `Dispatchers.IO` through
+  `goAsync()` and update the launcher. Do not add a background service.
+- The Today copy changes by day part (morning, afternoon, evening, night) and by
+  due count, new lessons, vacation, and all-clear. At night it never pushes; it
+  says the reviews will keep until morning.
+- The Word widget uses the same `featuredWord` as Home. The daily word is always
+  non-mature, 2–6 characters, and filtered away from variants, surnames, place
+  names, archaic/rare/dialect words, and abbreviations. Curated words lead each
+  cycle, then a deterministic hash of the common pool. Never let mature content
+  leak into the daily word, even when the dictionary mature setting is on.
+- `WidgetUpdater.updateAll` refreshes on app resume; the widgets also ask the
+  launcher every 30 minutes. Keep the update cheap.
+- The default profile avatar and the small top icon use the launcher pet:
+  `InkMascot` with the brush, plus the sparkle on the profile avatar. Do not fork
+  a second pet.
+- The cold-start welcome holds for at least 1,050 ms (520 ms with reduce-motion)
+  so a fast device does not flash it. A tap still skips.
+
 ## Content QA backlog
 
 Every character, word, reading, meaning, and story users see must be checked

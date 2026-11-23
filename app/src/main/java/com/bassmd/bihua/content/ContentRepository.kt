@@ -1,12 +1,14 @@
 package com.bassmd.bihua.content
 
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.time.LocalDate
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -77,39 +79,91 @@ class SqliteContentRepository(
         found
     }
 
+    /**
+     * The daily word is always non-mature, short, and readable on its own.
+     * The curated words lead each cycle; a deterministic shuffle of the common
+     * pool fills the rest, so the same word does not return for years.
+     */
     override suspend fun featuredWord(
         mode: StudyMode,
         includeMature: Boolean,
         seed: Int,
     ): WordContext? = withContext(Dispatchers.IO) {
-        val mature = if (includeMature) "1" else "0"
-        val total = database.rawQuery(
-            "SELECT COUNT(*) FROM word_context WHERE mode=? AND length(word)>1 AND (mature=0 OR mature=?)",
-            arrayOf(mode.name, mature),
+        fun read(cursor: Cursor): WordContext = WordContext(
+            word = cursor.getString(0),
+            reading = cursor.getString(1),
+            meaning = cursor.getString(2),
+            level = if (cursor.isNull(3)) null else cursor.getInt(3),
+            common = !cursor.isNull(4) && cursor.getInt(4) != 0,
+            mature = !cursor.isNull(5) && cursor.getInt(5) != 0,
+        )
+
+        val curated = FeaturedWords.forMode(mode)
+        val placeholders = curated.joinToString(",") { "?" }
+        val curatedRows = if (curated.isEmpty()) {
+            emptyList()
+        } else {
+            database.rawQuery(
+                """
+                SELECT w.word, w.reading, w.meaning, w.level, w.common, w.mature
+                FROM word_context w
+                WHERE w.mode=? AND w.mature=0
+                  AND length(w.word) BETWEEN 2 AND 6
+                  AND trim(w.meaning) <> ''
+                  AND w.word IN ($placeholders)
+                ORDER BY ((w.id * 2654435761) & 0x7fffffff)
+                """.trimIndent(),
+                arrayOf(mode.name, *curated.toTypedArray()),
+            ).use { cursor ->
+                buildList { while (cursor.moveToNext()) add(read(cursor)) }
+            }
+        }
+
+        val exclusion = if (curated.isEmpty()) "" else " AND w.word NOT IN ($placeholders)"
+        val quality = """
+            w.mode=? AND w.mature=0
+            AND length(w.word) BETWEEN 2 AND 6
+            AND trim(w.meaning) <> ''
+            AND w.meaning NOT LIKE '%variant%'
+            AND w.meaning NOT LIKE '%surname%'
+            AND w.meaning NOT LIKE '%place name%'
+            AND w.meaning NOT LIKE '%archaic%'
+            AND w.meaning NOT LIKE '%rare%'
+            AND w.meaning NOT LIKE '%dialect%'
+            AND w.meaning NOT LIKE '%abbr%'
+            AND w.common=1$exclusion
+        """.trimIndent()
+        val poolArgs = ArrayList<String>()
+        poolArgs.add(mode.name)
+        poolArgs.addAll(curated)
+        val poolCount = database.rawQuery(
+            "SELECT COUNT(*) FROM word_context w WHERE $quality",
+            poolArgs.toTypedArray(),
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+
+        val total = curatedRows.size + poolCount
         if (total <= 0) return@withContext null
-        val offset = Math.floorMod(seed, total)
+        // Start the curated season on the 1.0.8 launch day, then walk the
+        // shuffled pool. The same word does not return until the pool cycles.
+        val startDay = LocalDate.of(2026, 11, 23).toEpochDay().toInt()
+        val cycle = Math.floorMod(seed - startDay, total)
+        if (cycle < curatedRows.size) return@withContext curatedRows[cycle]
+
+        val offset = cycle - curatedRows.size
+        val selectArgs = ArrayList<String>(poolArgs)
+        selectArgs.add(offset.toString())
         database.rawQuery(
             """
             SELECT w.word, w.reading, w.meaning, w.level, w.common, w.mature
             FROM word_context w
-            WHERE w.mode=? AND length(w.word)>1 AND (w.mature=0 OR w.mature=?)
-            ORDER BY w.common DESC, w.frequency IS NULL, w.frequency,
-                     CASE WHEN w.level IS NULL THEN 1 ELSE 0 END,
-                     w.level, length(w.word), w.id
+            WHERE $quality
+            ORDER BY ((w.id * 2654435761) & 0x7fffffff)
             LIMIT 1 OFFSET ?
             """.trimIndent(),
-            arrayOf(mode.name, mature, offset.toString()),
+            selectArgs.toTypedArray(),
         ).use { cursor ->
             if (!cursor.moveToFirst()) return@withContext null
-            WordContext(
-                word = cursor.getString(0),
-                reading = cursor.getString(1),
-                meaning = cursor.getString(2),
-                level = if (cursor.isNull(3)) null else cursor.getInt(3),
-                common = !cursor.isNull(4) && cursor.getInt(4) != 0,
-                mature = !cursor.isNull(5) && cursor.getInt(5) != 0,
-            )
+            read(cursor)
         }
     }
 

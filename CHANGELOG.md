@@ -15,6 +15,24 @@
 
 - Hiragana and katakana guides use a rounder, lighter pen so long curves stay
   legible. Han, Hanja, and Hanzi keep the filled outline and brush style.
+- Word practice reveals one character at a time. Completed characters stay
+  visible while the next one is written, the Off/Faint/Strokes row keeps a
+  fixed play slot, and undo, redo, and clear use the compact character-practice
+  history pill.
+- Filled-guide playback now reveals the final outline along the stroke path
+  instead of switching from a temporary brush polygon to the outline at the
+  end. The motion reads as one continuous stroke.
+- Home-screen widgets: a Today card with due reviews and new lessons, and a Word
+  of the Day card with the pet, reading, and meaning. Both change with the time
+  of day and open the app.
+- The daily word is always non-mature, short, and free of variants, surnames,
+  place names, archaic/rare/dialect words, and abbreviations. Curated words lead
+  each cycle, then a deterministic common-word pool with at least a year of
+  candidates per course.
+- The profile avatar and the small top icon now use the launcher pet, including
+  the brush and sparkle.
+- The cold-start welcome holds for a fixed beat so a fast phone cannot flash it.
+  Filled-guide paths are parsed once per guide, not on every animation frame.
 
 ## 1.0.7
 

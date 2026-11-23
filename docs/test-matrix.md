@@ -28,6 +28,11 @@ device pass below.
 | Kana guides | Hiragana and katakana use round stroked paths; Han keeps the filled brush | manual phone/tablet capture of あ and ア |
 | Character categories | Level headers with counts, collapse/expand, flat search results | manual tablet and fold review |
 | Stroke coaching | Exact-stroke highlight, Show me/Trace it/Write alone, mint fixed-stroke closure | manual review plus `stroke-clean` journey |
+| Word practice flow | One-character reveal, previous characters stay visible, fixed play slot, compact history | manual review plus `word-guide` journey |
+| Home-screen widgets | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
+| Word of the Day quality | At least 365 non-mature quality candidates per course; curated + pool | `ContentDatabaseTest` |
+| Cold start | Minimum hold, reduce-motion, tap-to-skip | manual launch on phone and tablet |
+| Pet identity | Launcher icon, profile avatar, top icon use the same pet | manual light/dark review |
 | Review tasks | Writing and typing paths, wrong/correct/tone feedback, real guide-stroke drawing | `review-modes`, `draw-recognition` journeys; `ReadingCheckTest`, `ReviewTaskTest` |
 | Guide and hints | Fade rules for guide, story, and mnemonic | `GuideScaffoldTest`, `MnemonicModeTest` |
 | Known list | Import matching and header validation | `KnownListTest`, `CharacterSearchTest` |

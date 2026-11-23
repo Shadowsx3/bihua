@@ -93,6 +93,33 @@ Hard-won test details:
 - `make check` runs tests + audit + debug APK + verify. `make test` alone is not
   a release check.
 
+
+## Widget and cold-start traps
+
+- **RemoteViews is not Compose.** The launcher inflates the widget layout in its
+  own process. A plain `View` is rejected (the preview says “Can't load
+  widget”); use `TextView`, `ImageView`, `LinearLayout`, `FrameLayout`, and the
+  other allowed classes. Use an empty `TextView` for a coloured accent.
+- **Do not read the database on the main thread.** `AppWidgetProvider.onUpdate`
+  calls `goAsync()`, loads a `WidgetSnapshot` on `Dispatchers.IO`, updates the
+  views, and calls `finish()` in `finally`. Do not add a service or a wake lock.
+- **Keep widgets cheap.** Refresh on app resume plus a 30-minute provider
+  period. Both widgets share `WidgetSnapshot.load`; do not duplicate the
+  content, progress, and settings reads.
+- **The daily word is a showcase.** It is always non-mature, even when the
+  dictionary mature setting is on. It must be 2–6 characters and filtered away
+  from variants, surnames, place names, archaic/rare/dialect words, and
+  abbreviations. Curated words lead each cycle; the common pool is a
+  deterministic hash. Keep at least a year of candidates per course.
+- **The cold-start welcome needs a floor.** The animation is 620 ms, but a fast
+  content read must not close it immediately. Hold it for at least 1,050 ms
+  (520 ms with reduce-motion). Tap still skips.
+- **Filled guides are expensive to parse.** Parse the outline once per guide in
+  `toRenderStroke`; only transform it per frame. Re-parsing every animation
+  frame causes visible jank.
+- **One pet.** Use `InkMascot` for the launcher, profile avatar, and top icon.
+  Do not fork a second mascot drawing.
+
 ## 5. Compose and layout traps
 
 - **Modifier order matters.**

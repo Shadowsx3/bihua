@@ -65,7 +65,7 @@ fun ProfileAvatar(profile: UserProfile, size: Dp = 56.dp) {
                 contentScale = ContentScale.Crop,
             )
         } else {
-            InkMascot(size = size * 0.82f, sparkle = false)
+            InkMascot(size = size * 0.82f, withBrush = true, sparkle = true)
         }
     }
 }

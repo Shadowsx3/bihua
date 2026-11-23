@@ -60,6 +60,7 @@ fun OpeningInk(
     val latestReady by rememberUpdatedState(ready)
 
     LaunchedEffect(Unit) {
+        val started = System.currentTimeMillis()
         if (reduceMotion) {
             progress.snapTo(1f)
         } else {
@@ -75,7 +76,12 @@ fun OpeningInk(
         while (!latestReady && System.currentTimeMillis() < deadline) {
             delay(60)
         }
-        delay(120)
+        // A very fast phone can finish the hand-off before the eye has read the
+        // mark. Hold the finished welcome for a short, fixed beat so it never
+        // flashes. A tap still skips it immediately.
+        val minimumVisibleMs = if (reduceMotion) 520L else 1_050L
+        val remaining = minimumVisibleMs - (System.currentTimeMillis() - started)
+        if (remaining > 0) delay(remaining)
         onDone()
     }
 

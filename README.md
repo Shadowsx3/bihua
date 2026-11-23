@@ -54,6 +54,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 | **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
+| **Home-screen widgets** | A Today widget with due reviews and new lessons that changes with the time of day, and a Word of the Day widget with the pet, reading, and meaning. |
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |

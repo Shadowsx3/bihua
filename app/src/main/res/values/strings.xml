@@ -76,4 +76,19 @@
     <string name="recommend_pending">A suggestion appears once handwriting recognition is ready. You always choose the grade.</string>
     <string name="recommend_suggests">Suggested: %1$s</string>
     <string name="draw_again">Draw again</string>
+
+    <string name="widget_today_label" translatable="false">Today</string>
+    <string name="widget_today_description" translatable="false">Reviews and new lessons at a glance</string>
+    <string name="widget_word_label" translatable="false">Word of the day</string>
+    <string name="widget_word_description" translatable="false">A daily word from your current script</string>
+    <string name="widget_action_study" translatable="false">Study</string>
+    <string name="widget_action_open" translatable="false">Open</string>
+    <string name="widget_today_greeting" translatable="false">Today</string>
+    <string name="widget_today_headline" translatable="false">A calm page</string>
+    <string name="widget_today_detail" translatable="false">Reviews and new lessons</string>
+    <string name="widget_word_default" translatable="false">微笑</string>
+    <string name="widget_word_reading" translatable="false">wēixiào</string>
+    <string name="widget_word_meaning" translatable="false">a smile</string>
+    <string name="widget_word_note" translatable="false">A gentle start.</string>
+    <string name="widget_word_hint" translatable="false">Tap to open</string>
 </resources>

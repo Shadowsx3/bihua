@@ -87,6 +87,29 @@ class ContentDatabaseTest {
     }
 
     @Test
+    fun everyCourseHasAtLeastAYearOfWordOfTheDayCandidates() {
+        listOf("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN").forEach { mode ->
+            val candidates = count(
+                """
+                SELECT COUNT(*) FROM word_context w
+                WHERE w.mode='$mode' AND w.mature=0
+                  AND length(w.word) BETWEEN 2 AND 6
+                  AND trim(w.meaning) <> ''
+                  AND w.meaning NOT LIKE '%variant%'
+                  AND w.meaning NOT LIKE '%surname%'
+                  AND w.meaning NOT LIKE '%place name%'
+                  AND w.meaning NOT LIKE '%archaic%'
+                  AND w.meaning NOT LIKE '%rare%'
+                  AND w.meaning NOT LIKE '%dialect%'
+                  AND w.meaning NOT LIKE '%abbr%'
+                  AND w.common=1
+                """.trimIndent(),
+            )
+            assertTrue("$mode has only $candidates daily words", candidates >= 365)
+        }
+    }
+
+    @Test
     fun japaneseExamplesLeadWithTheCommonWord() {
         val top = query(
             "SELECT w.word FROM word_context w " +

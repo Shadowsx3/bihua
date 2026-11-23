@@ -34,8 +34,14 @@ import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.rememberFoldState
 import com.bassmd.bihua.ui.theme.BihuaTheme
 import com.bassmd.bihua.ui.theme.Paper
+import com.bassmd.bihua.widget.WidgetUpdater
 
 class MainActivity : ComponentActivity() {
+    override fun onResume() {
+        super.onResume()
+        WidgetUpdater.updateAll(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
