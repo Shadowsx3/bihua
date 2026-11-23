@@ -932,7 +932,7 @@ def paper_compare(journey: Journey, state: ScenarioState) -> None:
         _search_character(journey, "日")
         journey.wait("Write on paper", timeout=8)
     with journey.step("paper check reveal and strokes"):
-        journey.tap("Write on paper")
+        journey.tap_visible("Write on paper")
         journey.wait("Paper check", timeout=8)
         journey.wait("Write it on paper", timeout=6, exact=False)
         journey.tap("Show answer")
@@ -943,7 +943,7 @@ def paper_compare(journey: Journey, state: ScenarioState) -> None:
         journey.tap("Back to character details")
         journey.wait("Write on paper", timeout=8)
     with journey.step("compare two characters and write both"):
-        journey.tap("Compare")
+        journey.tap_visible("Compare")
         journey.wait("Add a character to compare", timeout=8)
         journey.tap("Add a character to compare")
         journey.wait("Add a character", timeout=6, exact=False)
@@ -1100,11 +1100,11 @@ def navigation_deep(journey: Journey, state: ScenarioState) -> None:
                 break
         else:
             raise JourneyFailure("character tile did not open its detail")
-        journey.tap("Write on paper")
+        journey.tap_visible("Write on paper")
         journey.wait("Paper check", timeout=8)
         journey.d.press("back")
         journey.wait("Write on paper", timeout=8)
-        journey.tap("Compare")
+        journey.tap_visible("Compare")
         journey.wait("Compare", timeout=8)
         journey.d.press("back")
         journey.wait("Write on paper", timeout=8)
@@ -1272,9 +1272,19 @@ def synonyms(journey: Journey, state: ScenarioState) -> None:
     with journey.step("add a synonym"):
         journey.tap("Add synonym")
         journey.wait("Add a synonym", timeout=6)
-        field = journey.d(className="android.widget.EditText")
-        if not field.exists:
-            raise JourneyFailure("synonym field missing")
+        journey.screenshot("character-synonym-dialog")
+        # On wide layouts the character search field is still behind the
+        # dialog. Focus the dialog field by tapping its placeholder first.
+        placeholder = journey.d(text="For example, affection")
+        if placeholder.exists:
+            placeholder.click()
+        field = journey.d(className="android.widget.EditText", focused=True)
+        if not field.exists or field.get_text().strip() == "爱":
+            fields = journey.d(className="android.widget.EditText")
+            if fields.count < 1:
+                raise JourneyFailure("synonym field missing")
+            field = fields[fields.count - 1]
+            field.click()
         field.set_text("affection")
         journey.tap("Add")
         journey.wait("affection", timeout=6)
