@@ -308,7 +308,7 @@ private fun WelcomePage() {
             "1" to ("Meet the character" to "See its shape, reading, and meaning."),
             "2" to (
                 "Trace it once" to if (hasPen) {
-                    "Follow the green guide with your stylus."
+                    "Follow the green guide with your S Pen or finger."
                 } else {
                     "Follow the green guide with your pen or finger."
                 }
@@ -1209,9 +1209,9 @@ private fun BrushPage(tool: DrawingTool, onPick: (DrawingTool) -> Unit) {
         Spacer(Modifier.height(6.dp))
         Text(
             if (hasPen) {
-                "Use your stylus; the line follows pressure. Finger drawing can be enabled later in Settings."
+                "S Pen detected. The line follows pressure, and finger drawing is on by default. You can turn the finger off later in Settings → Writing."
             } else {
-                "Use a pen for pressure, or a finger. Tune the line later in Settings."
+                "Use a pen for pressure, or a finger. Finger drawing is on by default; tune the line later in Settings."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = InkSoft,
