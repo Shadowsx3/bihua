@@ -73,20 +73,22 @@ Read the full rationale in [The Bihua method](docs/method.html).
 
 ## Install
 
-The latest signed APK is on the [releases page](https://github.com/Shadowsx3/bihua/releases/latest).
-The app is a private beta; read the release notes before installing.
+The signed 1.1.0 test APK is on the [landing page](https://shadowsx3.github.io/bihua/#download).
+The app is a private beta; read the release notes before installing. Uninstall a
+Play copy first because the test build uses the local release key.
 
 ## Build
 
 ```bash
 source scripts/env.sh
-make check       # compile, 310 unit tests, content audit, debug APK, verification
+make check       # compile, unit tests, content audit, debug APK, verification
 make lint        # Android lint
 make run         # check, install, and launch on a connected device
 make smoke       # launch/navigation smoke test on a connected device
 make journey     # quick local full-app journeys on the phone AVD
 make journey-standard  # phone, fold, and tablet core journeys
 make journey-full      # every profile and daily-state journey
+make nav-gap           # bottom bar meets content at 1x and 1.5x
 make release    # signed minified APK when keystore.properties is present
 ```
 
@@ -189,10 +191,11 @@ not a public issue.
 ## Status
 
 **1.0.9 is in Play review.** The current development version is **1.1.0
-(versionCode 20)**. It adds optional meaning reviews and synonyms, an Anki-style
-reveal for writing, pronunciation, and meaning, large-text layout fixes, safer
-study-list imports, widget count parity, loading timeouts, and a deep navigation
-pass.
+(versionCode 20)**. It adds Progress windows with course-scoped analytics and
+empty states, optional meaning reviews and synonyms, an Anki-style reveal for
+writing, pronunciation, and meaning, large-text layout fixes, safer study-list
+imports, widget count parity, loading timeouts, a phone shell that meets the
+bottom bar at every font scale, and a deep navigation pass.
 
 New learners start with five new characters a day, reviews are mixed with new
 lessons, and the session progress bar fills to the next lesson. The app also has

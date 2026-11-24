@@ -1,6 +1,6 @@
 # Flow inventory
 
-Status: living document, started 2026-11-23.
+Status: living document, started 2026-11-23; updated 2026-11-24 for 1.1.0.
 
 Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to automate,
 **M** manual-only for now.
@@ -82,6 +82,16 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Add word | Word practice bookmark | Active list words updated | G |
 | Meaning synonyms | Meaning reveal or character detail | Add/remove a wording, clean and persist | A |
 
+## Progress
+
+| Flow | Steps | Expected | A |
+|---|---|---|---|
+| Switch range | Progress → 7D / 30D / 90D / 1Y | Labels, Momentum, charts, quality, and practice time follow the window; streak does not get capped | A |
+| Empty progress | New course → Progress | New window, no grades, calm empty cards, no `0% passed` | A |
+| Course scoping | Switch Simplified/Traditional/Japanese/Korean | Only the active course's reviews, growth, and pace appear | A |
+| Day detail | Tap a calendar day | Due/review detail sheet, closes cleanly | P |
+| Memory map | Progress → Memory | Buckets and recall, empty state | P |
+
 ## Settings
 
 | Flow | Steps | Expected | A |
@@ -112,4 +122,5 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Dark + fold + tablet | All screens | Layout, contrast, bar | G |
 | Settings back stack | Settings → every section → system back | Returns to Settings, never exits | A |
 | Overlay back stack | Compare, Paper, study lists, word queue, study tools | One layer at a time, never exits | A |
-| Large font scale | All screens | No clipped controls | G |
+| Bottom bar inset | Phone shell → every tab → scroll | Content viewport meets the floating bar at 1x/1.5x, no leftover gap or overlap | A |
+| Large font scale | All screens | No clipped controls; 1.5x core screens and 2x dialogs | P |

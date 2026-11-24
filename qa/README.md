@@ -30,6 +30,14 @@ scripts/journey.sh --scenario draw-recognition --profile phone --screenshots
 # Run two AVDs at once
 scripts/journey.sh --standard --parallel 2
 
+# Bottom bar must meet the content viewport, at 1x and large text
+scripts/journey.sh --scenario nav-gap --profile phone --screenshots
+scripts/journey.sh --scenario nav-gap --profile phone-compact --font-scale 1.5
+
+# Progress windows, empty states, and course-scoped analytics
+scripts/journey.sh --scenario progress-ranges --profile phone
+scripts/journey.sh --scenario progress-empty --profile phone
+
 # Fold posture transition
 scripts/journey.sh --scenario fold-transition --profile fold-inner
 
@@ -95,6 +103,11 @@ Guide strokes are drawn with one batched ADB motion-event command per stroke. Th
 | `word-guide` | opens word practice from the dictionary and checks the real stroke guide |
 | `pronounce-kana` | checks that a kana pronunciation review masks its reading in the meaning |
 | `reminders` | enables reminders, sends a test notification, and checks the notification shade |
+| `nav-gap` | scroll viewport meets the floating bottom bar at 1x and 1.5x; fails above 14dp gap or under 2dp overlap |
+| `progress-ranges` | 7D/30D/90D/1Y labels, Momentum, and the actual streak surviving each window |
+| `progress-empty` | untouched course shows New window, no grades, and calm empty cards |
+| `settings-outfit` | pins a widget outfit from Display and checks the dialog labels |
+| `grade-help` | opens the plain-word grade legend from a session |
 
 ## Review modes
 

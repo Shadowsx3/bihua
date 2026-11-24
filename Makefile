@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 # Shortcuts for the build, check, and device loop. Run `make help` for the list.
 
-.PHONY: help check quick test lint audit smoke journey journey-standard journey-full apk verify install run log crash shot status hooks clean clean-shots \
+.PHONY: help check quick test lint audit smoke journey journey-standard journey-full nav-gap apk verify install run log crash shot status hooks clean clean-shots \
 	devices ui find tap type draw swipe key release install-release \
 	db-pull db-cards db-reviews db-reset seed-review seed-learning content content-bump
 
@@ -27,6 +27,7 @@ help:
 	@echo "make journey   local full-app quick journey check"
 	@echo "make journey-standard  phone, fold, tablet core journeys"
 	@echo "make journey-full  local full-app journey matrix"
+	@echo "make nav-gap   bottom bar meets content at 1x and 1.5x"
 	@echo "make apk       debug APK only"
 	@echo "make verify    verify the existing APK"
 	@echo "make run       check, then install and launch on the selected device"
@@ -78,6 +79,10 @@ journey-standard:
 
 journey-full:
 	@scripts/journey.sh --full
+
+nav-gap:
+	@scripts/journey.sh --scenario nav-gap --profile phone --screenshots
+	@scripts/journey.sh --scenario nav-gap --profile phone-compact --font-scale 1.5 --screenshots
 
 apk:
 	@. scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"

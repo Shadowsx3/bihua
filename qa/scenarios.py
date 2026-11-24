@@ -66,6 +66,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
     ScenarioSpec("settings-outfit", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_outfit"),
     ScenarioSpec("progress-ranges", level="standard", state={"reviews": 20, "new": 2, "days": 12}, runner="progress_ranges"),
+    ScenarioSpec("nav-gap", level="standard", state={"reviews": 20, "new": 2, "days": 12}, runner="nav_gap"),
     ScenarioSpec("progress-empty", level="standard", state={"reviews": 0, "new": 0, "goal": 0, "known": 0, "days": 0}, runner="progress_empty"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
 ]
@@ -1415,6 +1416,24 @@ def settings_outfit(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Make Bihua yours", timeout=8, exact=False)
 
 
+def nav_gap(journey: Journey, state: ScenarioState) -> None:
+    """The scroll viewport meets the floating bottom bar without a leftover gap."""
+    with journey.step("bottom bar sits against content"):
+        dpi = journey.density_dpi()
+        for tab in ("Home", "Characters", "Progress", "Settings"):
+            journey.open_tab(tab)
+            time.sleep(0.8)
+            gap_px = journey.bottom_nav_gap_px()
+            if gap_px is None:
+                continue
+            gap_dp = gap_px * 160 / dpi
+            if gap_dp > 14:
+                raise JourneyFailure(f"{tab} leaves {gap_dp:.1f}dp above the nav bar")
+            if gap_dp < -2:
+                raise JourneyFailure(f"{tab} content overlaps the nav bar by {-gap_dp:.1f}dp")
+        journey.screenshot("nav-gap-settings")
+
+
 def progress_empty(journey: Journey, state: ScenarioState) -> None:
     """An untouched course has calm, non-punitive empty states."""
     with journey.step("empty progress"):
@@ -1538,4 +1557,5 @@ RUNNERS = {
     "grade_help": grade_help,
     "progress_ranges": progress_ranges,
     "progress_empty": progress_empty,
+    "nav_gap": nav_gap,
 }

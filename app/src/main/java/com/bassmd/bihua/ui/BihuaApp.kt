@@ -59,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
@@ -513,6 +514,7 @@ fun BihuaApp(
     var paperEntries by remember { mutableStateOf<List<CharacterEntry>>(emptyList()) }
     var sessionXp by remember { mutableIntStateOf(0) }
     var sessionLevelUp by remember { mutableStateOf(false) }
+    var phoneBottomBarHeightPx by remember { mutableIntStateOf(0) }
     var progressRangeName by rememberSaveable {
         mutableStateOf(com.bassmd.bihua.progress.ProgressRange.MONTH.name)
     }
@@ -1548,6 +1550,9 @@ fun BihuaApp(
                     }
                 }
             } else {
+                val bottomBarPadding = with(LocalDensity.current) {
+                    phoneBottomBarHeightPx.toDp()
+                }
                 Box(Modifier.fillMaxSize()) {
                     Column(Modifier.fillMaxSize()) {
                         GlobalHeader(
@@ -1558,7 +1563,7 @@ fun BihuaApp(
                         Box(
                             Modifier
                                 .weight(1f)
-                                .padding(bottom = 72.dp),
+                                .padding(bottom = bottomBarPadding),
                         ) {
                             AppContent(
                                 tab = tab,
@@ -1669,6 +1674,9 @@ fun BihuaApp(
                         onSelect = changeTab,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
+                            .onGloballyPositioned { coordinates ->
+                                phoneBottomBarHeightPx = coordinates.size.height
+                            }
                             .appNavigationBarsPadding(trim = 10.dp)
                             .padding(horizontal = 12.dp, vertical = 2.dp),
                     )

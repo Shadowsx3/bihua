@@ -101,6 +101,28 @@ Keep this in mind for every screen:
 - Settings stays compact. Explanations belong in dialogs. Mature words are off
   by default and require a confirmation when enabled.
 
+## Progress and analytics
+
+- Every Progress query is scoped to the active course (`mode.name`). A review
+  in Simplified must never appear in Traditional, Japanese, or Korean totals.
+  The range-dependent store calls (`gradeMix`, `practiceTimeMs`, `writingPace`,
+  `taskStats`, `activity`, `learnedHistory`) take a nullable mode; pass the
+  active course from `BihuaApp`, never leave it null on a screen.
+- The page has four windows: 7D, 30D, 90D, 1Y. All range-dependent queries and
+  the selected label rerun when the window changes. The 35-day calendar is
+  allowed for longer windows and must say “Last 35 days”.
+- Empty windows are calm, not punitive: “New window”, “No grades yet”, “No
+  practice in this window yet”, “No memory data yet”, and “Nothing scheduled
+  yet”. Never show `0% passed` before there is a grade.
+- Streak is the real current run, not the selected window. `studyStreak` reads
+  up to 366 days, allows an untouched today, and counts a day with a review or a
+  newly learned card. Do not recompute the streak from `rangeActivity`; that
+  capped a 12-day streak at 7 days on the 7D window.
+- The range summary keeps Reviews, Learned, Practice, Streak, and the
+  practiced-days/best-day line. The review-quality card owns the grade split,
+  pass rate, average interval, pace trend, and task mix. Do not duplicate those
+  numbers in the header.
+
 ## Scheduling and research models
 
 - FSRS-7 and SBD are the advertised schedulers. Both keep a state on every card
@@ -269,6 +291,19 @@ some etymology quality.
 - `qa/scenarios.py:navigation-deep` is the back-stack regression: every Settings
   section, Compare, Paper, Practice picker, study lists, and the study tools
   sheet. Run it on phone and tablet after changing headers or overlays.
+- Phone chrome is part of the layout contract. The floating bottom bar overlays
+  the shell; the content viewport must meet its top edge, not a fixed `72.dp`
+  inset. `BihuaApp` measures the bar outer height with `onGloballyPositioned`
+  before the `appNavigationBarsPadding`/outer padding modifiers and applies that
+  height to the content box. Do not hard-code the old inset again.
+- Settings is wrapped in a `Scaffold`. Set
+  `contentWindowInsets = WindowInsets(0, 0, 0, 0)` because the shell already
+  owns status/navigation insets. Leaving the default double-applies the bottom
+  inset and leaves the Settings list short of the bar.
+- `nav-gap` is the shell regression. It measures the scroll viewport against
+  the visible bottom tabs at 1× and 1.5× and fails above 14 dp of gap or below
+  −2 dp of overlap. Run it after touching the shell, Settings Scaffold, insets,
+  navigation labels, or font scale.
 - System back must close overlays one layer at a time: Settings section, then
   Settings; paper/Compare, then the character; word queue, then the character or
   Home. Never leave a screen that exits the app while an overlay is open.
@@ -276,8 +311,14 @@ some etymology quality.
   model downloads and recognition have timeouts. Content loading has Retry.
   The first read-aloud tap is queued while the voice engine starts.
 - Large text is a layout target, not an afterthought. Check 1.5x on Home Study
-  tools, Compare, Paper, Settings, and session. Titles should wrap, not become a
-  vertical strip; action rows may move below the title.
+  tools, Compare, Paper, Settings, character detail, and session. Titles should
+  wrap, not become a vertical strip; action rows may move below the title.
+- On character detail, the synonyms header keeps “Your synonyms” whole by
+  shortening the action to “Add” above 1.25×. Do not let a narrow title column
+  break a word into pieces.
+- The widget outfit dialog is two columns through 1.7×, then one column with a
+  scrollable body. Keep every option visible or reachable; do not clip labels.
+  Use `settings-outfit` at 1×, 1.5×, and a 2× visual pass.
 
 ## Dependency updates
 
@@ -290,7 +331,7 @@ separate from behavior changes.
 
 ```bash
 source scripts/env.sh          # JDK 17
-make check                     # compile, 310 tests, content audit, debug APK, verify
+make check                     # compile, unit tests, content audit, debug APK, verify
 make quick                     # compile only
 make test                      # unit tests
 make lint                      # Android lint
@@ -298,6 +339,7 @@ make run                       # check, install, launch on selected device
 make journey                   # quick phone journeys
 make journey-standard          # phone, fold, tablet core journeys
 make journey-full              # every profile and daily state
+make nav-gap                   # bottom bar/content inset at 1x and 1.5x
 make release                   # signed minified release APK
 make smoke                     # on-device launch/navigation smoke test
 ```
@@ -528,6 +570,12 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   script, push it back, then fit a profile from Settings → Schedule.
 - Test phone and tablet, light and dark, 1.3× text, emulator/mouse, and a real
   stylus device when available.
+- When adding a Progress query, add it to `ProgressStoreModeTest` so a review
+  from another course cannot leak in. When changing shell insets, run
+  `nav-gap` at 1× and 1.5×. When changing a large-text header, rerun the
+  relevant journey with `--font-scale 1.5` and inspect the screenshot.
+- The standard matrix is the release gate. `nav-gap`, `progress-ranges`,
+  `progress-empty`, `settings-outfit`, and `grade-help` are part of it.
 
 ## Files worth knowing
 
@@ -560,6 +608,19 @@ The canonical landing is `docs/index.html`, served at
 `https://shadowsx3.github.io/bihua/`. Test APKs live in `docs/download/` and are
 force-added because `*.apk` is ignored. `bihua.app` is a separate Vercel site;
 changing `docs/` does not update it.
+
+After every source change that reaches a release, rebuild and re-smoke the APK,
+then update all three places together:
+
+1. Copy `app/build/outputs/apk/release/app-release.apk` to
+   `docs/download/bihua-1.1.0.apk`.
+2. Put the new SHA-256 in `docs/download/SHA256SUMS.txt` and the landing card.
+3. Change the landing download query to `?v=<first 8 hash chars>` so the Pages
+   CDN cannot keep serving the previous binary. Verify the hosted bytes with
+   `curl -sL <url> | shasum -a 256`, not just the HTML.
+
+Do not describe an APK as hosted before the hosted checksum matches the local
+signed build.
 
 ## Known gaps
 

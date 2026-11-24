@@ -232,6 +232,38 @@ class Journey:
                 return closest[1]
         return None
 
+    def bottom_nav_gap_px(self) -> int | None:
+        """Vertical gap between the scroll viewport and the floating bottom bar."""
+        height = self.d.info.get("displayHeight") or 0
+        labels = {
+            "Home", "Characters", "Progress", "Practice", "Settings",
+            "Chars", "Stats", "Draw", "Setup",
+        }
+        try:
+            root = ET.fromstring(self.d.dump_hierarchy(compressed=False))
+        except Exception:
+            return None
+        scroll_bottom = None
+        nav_top = None
+        for node in root.iter("node"):
+            match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
+            if not match:
+                continue
+            x1, y1, x2, y2 = (int(part) for part in match.groups())
+            if node.attrib.get("scrollable") == "true":
+                scroll_bottom = y2 if scroll_bottom is None else max(scroll_bottom, y2)
+            label = (node.attrib.get("content-desc") or node.attrib.get("text") or "").strip()
+            if label in labels and height and y1 > height * 0.85:
+                nav_top = y1 if nav_top is None else min(nav_top, y1)
+        if scroll_bottom is None or nav_top is None:
+            return None
+        return nav_top - scroll_bottom
+
+    def density_dpi(self) -> int:
+        out = self.device.shell("wm density")
+        values = [int(value) for value in re.findall(r"\d+", out)]
+        return values[-1] if values else 420
+
     def texts(self) -> list[str]:
         xml = self.d.dump_hierarchy(compressed=False)
         root = ET.fromstring(xml)

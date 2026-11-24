@@ -13,7 +13,7 @@ layout can differ. Landscape and large font scale are separate passes.
 |---|---|---|---|
 | Cold start / opening ink | Launch | fast device, slow content, tap to skip, reduced motion | P |
 | Global header | All tabs | four scripts, long name, avatar, tablet rail | A |
-| Bottom navigation | Phone/fold | five tabs, active state, nav-bar inset, 3-button nav | P |
+| Bottom navigation | Phone/fold | five tabs, active state, nav-bar inset, 3-button nav, content viewport meets the bar at 1x/1.5x | A |
 | Navigation rail | Tablet | five tabs, window resize | A |
 | Busy dialog | Starting a session | loading, failure | P |
 
@@ -102,9 +102,10 @@ layout can differ. Landscape and large font scale are separate passes.
 
 | Screen | Entry | Main states | A |
 |---|---|---|---|
-| Dashboard | Tab | new user, active, caught up, long history | A |
+| Dashboard | Tab | new user, active, caught up, long history; 7D/30D/90D/1Y | A |
+| Range summary | Dashboard | empty window, no grades, active streak, best day | A |
 | Forecast | Dashboard | empty, loaded | P |
-| History / streak | Dashboard | empty, partial, full | A |
+| History / streak | Dashboard | empty, partial, full; actual streak across windows | A |
 | Mistakes / confusions | Dashboard | empty, loaded | P |
 | Memory buckets | Dashboard | empty, loaded | P |
 | Writing pace | Dashboard | first week, loaded | M |
@@ -152,5 +153,8 @@ layout can differ. Landscape and large font scale are separate passes.
 
 Checked at 1.5x on a 1080 x 2400 phone: Home, Characters, Progress, Practice,
 Settings, Compare, Paper check, Word practice, Learn, and onboarding. The Home
-Study tools card, Compare header, and Paper check header use stacked titles and
-wrapping action rows so they stay readable. A 2.0x TalkBack pass is still open.
+Study tools card, Compare header, Paper check header, synonym header, and widget
+outfit dialog use stacked titles and wrapping action rows so they stay readable.
+The phone content viewport meets the floating bottom bar at 1x and 1.5x; the
+Settings Scaffold no longer double-applies the navigation-bar inset. A 2.0x
+TalkBack pass is still open, including the scrolling outfit dialog.

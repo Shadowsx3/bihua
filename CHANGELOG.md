@@ -58,6 +58,18 @@
   learned characters, practice time, pass rate, streak, best day, growth, and
   daily rhythm all follow the selected window. Coverage rings are calmer, and
   the memory card no longer frames the rest of the course as debt.
+- Progress analytics are scoped to the active course. A Simplified review no
+  longer appears in Traditional, Japanese, or Korean totals or pace.
+- Empty Progress windows read calmly: New window, no grades yet, no memory data,
+  nothing scheduled, and the first session starts the chart. No more 0% passed.
+- The streak is the real current run from up to a year of study, so it does not
+  shrink when the learner switches to the 7-day window.
+- The phone bottom bar now meets the scroll content at every font scale instead
+  of leaving a fixed 72 dp gap, and Settings no longer applies the navigation-bar
+  inset twice.
+- Large-text polish: the synonym action shortens to “Add” so the heading stays
+  whole, the grade legend is available in writing sessions, and the outfit
+  dialog uses readable labeled columns and scrolls at 2×.
 
 ## 1.0.9 — 2026-11-23
 

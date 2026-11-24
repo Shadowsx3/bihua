@@ -17,14 +17,17 @@ harness; pure composables and physical hardware still need the device pass.
 | Task mix | Writing keeps half when meaning or pronunciation is enabled; meaning never starts a new card | `ReviewTaskTest` |
 | Settings switches | Writing and pronunciation are independent, off by default, and survive sanitize | `SettingsSanitizeTest`, `anki` journey |
 | Deep navigation | Every Settings section, Compare, Paper, Practice picker, study lists, and study tools sheet, closed with system back | `navigation-deep` journey |
-| Large-text layout | Home study tools, Compare header, and Paper header at 1.5x | manual phone pass |
+| Large-text layout | Home study tools, Compare header, Paper header, synonym header, outfit dialog at 1.5x; outfit scroll at 2x | manual phone pass plus `navigation-deep`, `synonyms`, `settings-outfit` at 1.5x |
 | Loading states | Model download and recognition timeouts, TTS first tap, content Retry, session prepare | `InkRecognition` timeout test plus manual phone pass |
 | Widget parity | Skipped and suspended cards excluded; refresh on stop | `WidgetCopyTest`, manual launcher pass |
 | Widget pet costumes | Study cap, word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat at all-clear; pinned outfit wins | `WidgetCopyTest`, manual launcher pass |
 | Widget layout states | 2×2 Today and 4×2 Word, counts, all-clear, vacation, 1.5× font, night text, backgrounds | manual launcher pass |
 | Grade legend | “?” opens Again/Hard/Good/Easy from the session prompt | `grade-help` journey |
 | Widget outfit | Pin Witch in Display and verify the row persists | `settings-outfit` journey |
-| Progress ranges | 7D, 90D, 1Y, then 30D; Momentum and range labels follow | `progress-ranges` journey |
+| Progress ranges | 7D, 90D, 1Y, then 30D; Momentum and range labels follow; actual streak survives every window | `progress-ranges` journey, `StudyStreakTest` |
+| Progress empty states | No grades, no reviews, no memory data, nothing scheduled, nothing stuck; no `0% passed` | `progress-empty` journey |
+| Progress course scoping | Reviews, practice time, pace, task mix, activity, and growth ignore the other three courses | `ProgressStoreModeTest` |
+| Bottom bar chrome | Scroll viewport meets the floating bottom bar at 1x and 1.5x; no fixed-gap leftover and no overlapped content | `nav-gap` journey |
 | Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
@@ -102,6 +105,7 @@ make journey-standard
 make journey-full
 scripts/journey.sh --scenario review-modes --profile phone
 scripts/journey.sh --scenario daily100 --profile phone --drain
+scripts/journey.sh --scenario nav-gap --profile phone-compact --font-scale 1.5
 ```
 
 All runs write screenshots, logs, JUnit XML, and an HTML report under
@@ -142,7 +146,7 @@ These are not fully automated yet.
 | Settings, backup, import, export | Yes | Yes | Invalid file errors |
 | Local sync | Yes | Yes | Two devices on one Wi-Fi |
 | Reminders, permission, test notification | Yes | Yes | Off by default |
-| Dark theme and 1.5x text | Yes | Yes | Full TalkBack sweep at 2x still open |
+| Dark theme and 1.5x text | Yes | Yes | Bottom chrome is automated with `nav-gap`; full TalkBack sweep at 2x still open |
 | Fold postures | n/a | Partial | Folded and unfolded checked; tabletop is detected but not used |
 
 ## Open gaps
@@ -157,6 +161,13 @@ These are not fully automated yet.
 
 | Bug | Fix | Regression |
 |---|---|---|
+| Phone content left a visible gap above the floating bottom bar | Measure the bar outer height and use it as the content inset; Settings Scaffold zero insets | `nav-gap` at 1x and 1.5x |
+| Settings list stopped short because its Scaffold applied navigation-bar insets twice | `contentWindowInsets = WindowInsets(0, 0, 0, 0)` | `nav-gap` |
+| Progress analytics mixed every course together | Mode-filtered store queries and `mode.name` keys | `ProgressStoreModeTest` |
+| Progress streak was capped at 7/30/90 days by the selected window | `studyStreak` reads up to 366 days and is passed separately | `StudyStreakTest`, `progress-ranges` |
+| Empty Progress showed `0% passed` and blank cards | New window/no grades copy and empty states for memory, daily reviews, and forecast | `progress-empty` |
+| “Your synonyms” broke into “Your / synonym / s” at 1.5x | Shorten the action to “Add” above 1.25x | `synonyms`, `navigation-deep` at 1.5x |
+| Widget outfit dialog labels were unlabeled/clipped at large text | Two columns through 1.7x, one scrolling column above, labeled rows | `settings-outfit` at 1x/1.5x, 2x visual pass |
 | Mixed-session bar stayed at zero because the pending queue shrank | Stable block math against the original block | `SessionBlockTest` |
 | "Skip setup" created a 10-new session despite the 5-new recommendation | Shared onboarding recommendation constant | manual |
 | First settings frame could migrate shared glyph cards before saved settings loaded | Removed the destructive startup migration and added a legacy-card fallback | `ProgressStoreGlyphTest` |

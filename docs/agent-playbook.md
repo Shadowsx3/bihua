@@ -29,6 +29,11 @@ shasum -a 256 app/build/outputs/apk/release/app-release.apk
 Verify the APK signature before installing it. The release build is invalid if a
 source file changed after it was assembled.
 
+When the landing page hosts the APK, update `docs/download/bihua-1.1.0.apk`,
+`docs/download/SHA256SUMS.txt`, the landing hash, and the `?v=` cache-bust query
+together. A Pages deploy can keep the old binary at the unversioned URL, so
+compare the hosted bytes with `curl -sL <url> | shasum -a 256`.
+
 ## 3. Content database workflow
 
 ```bash
@@ -86,6 +91,13 @@ Hard-won test details:
   `app/src/main/assets/bihua_content.db` so it works from the module or root.
 - Test the backup round trip when adding a setting. A new `AppSettings` field is
   easy to forget.
+- Test Progress queries with a second course in the database. `gradeMix`,
+  `practiceTimeMs`, `writingPace`, `taskStats`, `activity`, and
+  `learnedHistory` all take a mode; a null mode is global and must not be used
+  by the Progress page. `ProgressStoreModeTest` is the guard.
+- The streak is a 366-day current run (`studyStreak`), not a count inside the
+  selected range. `StudyStreakTest` covers today-empty, gaps, and learned-only
+  days; `progress-ranges` checks the 7D/30D value stays the same.
 - Test default-off settings explicitly.
 - If a builder pipeline adds a word/character field, add a content test that
   would fail if the field silently becomes empty or unsafe.
@@ -122,6 +134,12 @@ Hard-won test details:
   The tour adds moods, a brush swing, and small held props; the widgets add
   hats, a monocle, a witch hat, a vampire cape, a nightcap, and a party hat.
   Settings → Display can pin one for the widgets. Still one pet.
+- **Bottom bar and scroll viewport are one contract.**
+  On phone, the floating bottom bar overlays the shell. The content viewport
+  must end at the bar's top, not at a fixed 72 dp and not under the bar. The
+  `nav-gap` journey reads the scrollable bounds and the tab bounds; use it before
+  and after shell changes. On Settings, the `Scaffold` must not re-apply the
+  navigation-bar inset.
 - **The tour lives over the real app.** `GuidedTour.kt` uses live `TourAnchors`
   and a spotlight, not screenshots. Keep the overlay in-app so window
   coordinates match the anchors. Use one finite beat per stop; a perpetual
@@ -135,6 +153,21 @@ Hard-won test details:
 - **Large text changes navigation.**
   The bottom bar shortens "Characters" to "Chars" above 1.15× font scale; the
   tablet rail is 104 dp. Test at 1.3×, 1.5×, and 2×.
+- **Phone content meets the floating bar.**
+  The shell used to reserve a fixed 72 dp above the bottom bar, which left a
+  visible gap at 1× and could overlap at 1.5×. The bar now reports its outer
+  height with `onGloballyPositioned` (before the navigation-bar and outer
+  padding modifiers) and the content box uses that height. If you add an inset
+  there, run `scripts/journey.sh --scenario nav-gap --profile phone` and the
+  `phone-compact` run at 1.5×. The scenario fails above 14 dp of gap.
+- **Settings has its own Scaffold.**
+  The parent shell already owns window insets. Keep
+  `contentWindowInsets = WindowInsets(0, 0, 0, 0)` on the Settings Scaffold;
+  without it, the navigation-bar inset is applied twice and the Settings list
+  ends short of the bottom bar.
+- **Settings sections are LazyColumn content.**
+  Their bottom padding is not a substitute for shell insets. Do not add another
+  fixed bottom gap to hide the bar; fix the shell measurement instead.
 - **Clickable Surface semantics.**
   `Surface(onClick = ...)` plus a child `semantics { contentDescription }` can
   produce an empty clickable node with a separate description child. For custom

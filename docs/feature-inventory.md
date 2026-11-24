@@ -37,7 +37,7 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Tour invite | Dismissible Home card once; “Not now” goes straight to the app | A |
 | Tour replay | Settings → Help & tour → Start tour; Skip/Back/Next and final Back to app | A |
 | Grading help | Again/Hard/Good/Easy explained in plain words with colour; “?” in the session too | P |
-| Progress windows | 7/30/90/365-day ranges for momentum, reviews, learned, practice time, pass rate, streak, best day, growth, and daily rhythm | A |
+| Progress windows | 7/30/90/365-day ranges for momentum, reviews, learned, practice time, pass rate, streak, best day, growth, and daily rhythm; course-scoped with calm empty states and a real 366-day streak | A |
 | Paper and lists help | Exact Settings paths for printable sheets and saved lists | A |
 | Reduce motion + TalkBack | No typewriter, bobbing, pulse, or confetti; full line read at once | P |
 | Sound effects | Synthesised tick, check, grade, add, tour, and session cues; one Settings switch | P |
