@@ -99,13 +99,15 @@ fun rememberStrokeOrderPlayer(
     startComplete: Boolean = true,
     /** How long one guide stroke takes while playing. */
     strokeDurationMs: Long = STROKE_PLAY_MS,
+    /** Change this to start the same character from a clean circle again. */
+    resetKey: Any? = Unit,
 ): StrokeOrderPlayer {
     val guide = rememberStrokeGuide(characterId)
-    val progress = remember(characterId) { mutableFloatStateOf(0f) }
-    val playing = remember(characterId) { mutableStateOf(false) }
-    var playToken by remember(characterId) { mutableIntStateOf(0) }
+    val progress = remember(characterId, resetKey) { mutableFloatStateOf(0f) }
+    val playing = remember(characterId, resetKey) { mutableStateOf(false) }
+    var playToken by remember(characterId, resetKey) { mutableIntStateOf(0) }
 
-    LaunchedEffect(characterId) {
+    LaunchedEffect(characterId, resetKey) {
         playing.value = false
         progress.floatValue = 0f
     }

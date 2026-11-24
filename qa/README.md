@@ -6,6 +6,7 @@ Local, full-app UI journeys for daily learner states. This is not a CI job.
 scripts/journey.sh                 # quick phone check
 scripts/journey.sh --standard      # phone, fold, tablet core
 scripts/journey.sh --full          # every profile and daily state
+scripts/journey.sh --spell         # the spell quest suite: phone, tablet, fold
 scripts/journey.sh --list
 ```
 
@@ -41,6 +42,12 @@ scripts/journey.sh --scenario progress-empty --profile phone
 # Fold posture transition
 scripts/journey.sh --scenario fold-transition --profile fold-inner
 
+# Spell quest: every script, theme, motion setting, and entry point
+scripts/journey.sh --spell --screenshots
+scripts/journey.sh --scenario spell-quest --profile phone --screenshots
+scripts/journey.sh --scenario spell-quest-ja --profile phone --screenshots
+scripts/journey.sh --scenario spell-quest-ko --profile phone --screenshots
+
 # Keep screenshots and close the emulators when finished
 scripts/journey.sh --scenario daily20 --profile phone --screenshots --shut-down
 ```
@@ -50,6 +57,7 @@ scripts/journey.sh --scenario daily20 --profile phone --screenshots --shut-down
 - `--quick`: phone, 8 short journeys including writing/typing review modes and guide-stroke drawing recognition. Good before a commit.
 - `--standard`: phone, fold inner/outer, tablet. Core, daily edge cases, typing pronunciation, and guide-stroke drawing recognition.
 - `--full`: all profiles, all daily states, the 100-review drain, multi-script drawing recognition, accessibility sweep, fold transition.
+- `--spell`: the spell quest on phone, tablet, fold-inner, and fold-outer: gate, entry points, gift, result, real draw/cast, brush tray, one-way clues, effect frames, dark, reduce motion, and all four scripts.
 
 `--drain` converts daily and completion scenarios into full drains. Drain runs force pronunciation reviews because they have a “Show answer” path, so the queue can be completed quickly. Drawing and recognition coverage stays in `review-modes`.
 
@@ -108,6 +116,14 @@ Guide strokes are drawn with one batched ADB motion-event command per stroke. Th
 | `progress-empty` | untouched course shows New window, no grades, and calm empty cards |
 | `settings-outfit` | pins a widget outfit from Display and checks the dialog labels |
 | `grade-help` | opens the plain-word grade legend from a session |
+| `spell-entry` | opens the quest from the Home Study tools card and from Study tools |
+| `spell-quest` | gate, scene, grimoire gift, result, real 水 draw/cast, brush tray, clue reveals, effect frames, wrong-answer path |
+| `spell-quest-dark` | the same flow with the dark palette |
+| `spell-quest-calm` | the same flow with reduce motion; effects skip, strokes still play |
+| `spell-quest-ja` | the same flow in Japanese kanji |
+| `spell-quest-ko` | the same flow in Korean Hanja |
+| `spell-quest-traditional` | the same flow in Traditional characters |
+| `spell-entry-ja`, `spell-entry-ko` | the two entry points in those scripts |
 
 ## Review modes
 

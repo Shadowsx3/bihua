@@ -53,7 +53,13 @@ def select_scenarios(preset: str, profile: str, group: str, explicit: list[str] 
     for spec in SCENARIOS:
         if spec.group and spec.group != group:
             continue
-        if preset == "quick":
+        if preset == "spell":
+            if not spec.name.startswith("spell"):
+                continue
+            if spec.runner == "spell_entry" and profile != "phone":
+                continue
+            out.append(spec)
+        elif preset == "quick":
             if spec.level == "quick":
                 out.append(spec)
         elif preset == "standard":
@@ -214,6 +220,7 @@ def main() -> int:
     preset.add_argument("--quick", action="store_const", const="quick", dest="preset")
     preset.add_argument("--standard", action="store_const", const="standard", dest="preset")
     preset.add_argument("--full", action="store_const", const="full", dest="preset")
+    preset.add_argument("--spell", action="store_const", const="spell", dest="preset")
     parser.set_defaults(preset="quick")
     parser.add_argument("--profile", help="comma-separated profile names")
     parser.add_argument("--scenario", help="comma-separated scenario names")
@@ -242,6 +249,8 @@ def main() -> int:
         selected_profiles = ["phone"]
     elif args.preset == "standard":
         selected_profiles = ["phone", "fold-inner", "fold-outer", "tablet"]
+    elif args.preset == "spell":
+        selected_profiles = ["phone", "tablet", "fold-inner", "fold-outer"]
     else:
         selected_profiles = list(profiles)
 

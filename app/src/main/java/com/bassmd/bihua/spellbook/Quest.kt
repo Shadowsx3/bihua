@@ -34,8 +34,14 @@ sealed class CastResult {
  * return a hint.
  */
 object QuestSolver {
-    fun solve(puzzle: Puzzle, family: String): CastResult {
-        val solution = puzzle.solutions.firstOrNull { family in it.families }
+    fun solve(puzzle: Puzzle, family: String, character: String = ""): CastResult {
+        val solution = puzzle.solutions.firstOrNull { option ->
+            when {
+                option.characters.isNotEmpty() -> character in option.characters
+                option.categories.isNotEmpty() -> SpellFamilies.chapter(family) in option.categories
+                else -> family in option.families
+            }
+        }
         if (solution != null) return CastResult.Solved(solution)
         return CastResult.Hint(puzzle.hints[family] ?: puzzle.fallback)
     }
@@ -60,15 +66,28 @@ object QuestGenerator {
     ): List<QuestScene> {
         if (spells.isEmpty() || parts.obstacles.isEmpty()) return emptyList()
         val scenes = mutableListOf<QuestScene>()
+        // Every chapter mixes broad and narrow puzzles: many family doors, a
+        // whole chapter that answers, and a puzzle that wants one exact shape.
+        val styles = listOf(
+            PuzzleStyle.FAMILY, PuzzleStyle.CATEGORY, PuzzleStyle.FAMILY,
+            PuzzleStyle.CHARACTER, PuzzleStyle.CATEGORY, PuzzleStyle.FAMILY,
+        ).shuffled(random)
         var previousPlace: String? = null
-        repeat(count) {
+        val used = mutableSetOf<String>()
+        repeat(count) { sceneIndex ->
             val knownSpells = spells.filter { it.character in known }
-            val pool = if (knownSpells.size >= 8 && random.nextInt(100) < 70) knownSpells else spells
+            val preferred = if (knownSpells.size >= 8 && random.nextInt(100) < 70) knownSpells else spells
+            val pool = preferred.filter { it.character !in used }.ifEmpty {
+                spells.filter { it.character !in used }.ifEmpty { preferred }
+            }
             val row = pool[random.nextInt(pool.size)]
+            used += row.character
             val puzzle = PuzzleForge.generate(
                 parts,
                 random,
                 family = row.family,
+                character = row.character,
+                style = styles[sceneIndex % styles.size],
                 previousPlace = previousPlace,
             )
             previousPlace = puzzle.place

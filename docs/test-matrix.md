@@ -31,10 +31,13 @@ harness; pure composables and physical hardware still need the device pass.
 | Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
-| Spell quest | Gate, scene, reading gift, real draw/cast, wrong-answer path, cast overlay labels; phone, tablet, fold | `spell-quest` journey |
-| Spellbook data | 104 spells, 25 families, 8 chapters, every chapter has spells and a seal | `SpellbookTest` |
-| Forge honesty | Every family carrying an accepted tag solves; targeted generation; no repeated place | `PuzzleForgeTest`, `QuestGeneratorTest`, `ShippedPuzzlePartsTest` |
-| Gift playback | Starts empty, plays the real guide in the circle, Continue waits for the stroke end | `spell-quest` journey, screenshots |
+| Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
+| Spell quest scripts | Same flow in Traditional, Japanese kanji, and Korean Hanja; entry from Home and Study tools | `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry-ja`, `spell-entry-ko` |
+| Spell quest theme and motion | Dark palette, reduce motion, large text, effect frames | `spell-quest-dark`, `spell-quest-calm`, `--font-scale 1.5` |
+| Spellbook data | 1,393 spells across four scripts, 35 families, 10 chapters, ≥30 choices per chapter, unique characters per script | `SpellbookTest` |
+| Puzzle shapes | Family doors, whole-chapter doors, and exact-shape puzzles; the scene spell always solves; narrow rules reject wider casts | `QuestGeneratorTest`, `PuzzleForgeTest` |
+| Forge honesty | Every family carrying an accepted tag solves; targeted generation; no repeated place; 950k+ place combinations | `PuzzleForgeTest`, `QuestGeneratorTest`, `ShippedPuzzlePartsTest` |
+| Gift playback | Starts empty, plays the real guide (or a readable fallback) in the circle, actions wait for the stroke end | `spell-quest` journey, screenshots |
 | Spell quest copy and logic | Scroll word, family label, definition gloss, fixed pacing, tip card, emoji | `SpellQuestLogicTest` |
 | Spell quest audio | Ambient bed and cast/wrong/gift/reveal/walk/chapter cues; quiet, no buzzer | manual audio pass |
 | Guided tour | Invite dismiss, replay from Settings, tap and Next through all nine stops, Back to app | `tour` journey |

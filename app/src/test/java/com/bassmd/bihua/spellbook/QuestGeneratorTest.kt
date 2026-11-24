@@ -32,10 +32,10 @@ class QuestGeneratorTest {
             ),
         ),
         outcomes = mapOf(
-            "FLOW" to "The {family} runs with the current.",
-            "SOLID" to "The {family} makes a firm path.",
-            "HEAT" to "The {family} warms the garden.",
-            "LIGHT" to "The {family} lights the garden.",
+            "FLOW" to listOf("The {family} runs with the current."),
+            "SOLID" to listOf("The {family} makes a firm path."),
+            "HEAT" to listOf("The {family} warms the garden."),
+            "LIGHT" to listOf("The {family} lights the garden."),
         ),
         settings = listOf("The old gate", "The mill on the stream", "The lantern hill"),
         times = listOf(TimeOfDay("", ""), TimeOfDay("at dusk", "The light goes soft.")),
@@ -43,15 +43,21 @@ class QuestGeneratorTest {
     )
 
     private val spells = listOf(
-        Spell("水", "water", "Tides", "", "", ""),
-        Spell("火", "fire", "Flame", "", "", ""),
-        Spell("石", "stone", "Ground", "", "", ""),
+        Spell("SIMPLIFIED", "水", "water", "Tides", "", "", ""),
+        Spell("SIMPLIFIED", "火", "fire", "Flame", "", "", ""),
+        Spell("SIMPLIFIED", "石", "stone", "Ground", "", "", ""),
+        Spell("SIMPLIFIED", "河", "water", "Tides", "", "", ""),
+        Spell("SIMPLIFIED", "炎", "fire", "Flame", "", "", ""),
+        Spell("SIMPLIFIED", "岩", "stone", "Ground", "", "", ""),
     )
 
     private val byGlyph = mapOf(
         "水" to QuestSpell("水", "water", "shui3", "water"),
         "火" to QuestSpell("火", "fire", "huo3", "fire"),
         "石" to QuestSpell("石", "stone", "shi2", "stone"),
+        "河" to QuestSpell("河", "water", "he2", "river"),
+        "炎" to QuestSpell("炎", "fire", "yan2", "flame"),
+        "岩" to QuestSpell("岩", "stone", "yan2", "rock"),
     )
 
     @Test
@@ -80,9 +86,40 @@ class QuestGeneratorTest {
             scenes.forEach { scene ->
                 assertTrue(
                     "${scene.spell.family} cannot solve ${scene.puzzle.prompt}",
-                    scene.puzzle.solutions.any { scene.spell.family in it.families },
+                    QuestSolver.solve(scene.puzzle, scene.spell.family, scene.spell.character) is CastResult.Solved,
                 )
             }
         }
+    }
+
+    @Test
+    fun chaptersMixBroadAndNarrowPuzzles() {
+        val scenes = QuestGenerator.chapter(24, 1, Random(5), spells, byGlyph, emptySet(), parts)
+        assertTrue(scenes.any { scene -> scene.puzzle.solutions.any { it.families.isNotEmpty() } })
+        assertTrue(scenes.any { scene -> scene.puzzle.solutions.any { it.categories.isNotEmpty() } })
+        assertTrue(scenes.any { scene -> scene.puzzle.solutions.any { it.characters.isNotEmpty() } })
+    }
+
+    @Test
+    fun anExactCharacterPuzzleRejectsAnotherSpellFromItsFamily() {
+        val scene = (0 until 100).asSequence()
+            .flatMap { seed -> QuestGenerator.chapter(6, 1, Random(seed), spells, byGlyph, emptySet(), parts).asSequence() }
+            .first { it.puzzle.solutions.any { solution -> solution.characters.isNotEmpty() } }
+        val exact = scene.puzzle.solutions.first { it.characters.isNotEmpty() }.characters.single()
+        assertTrue(QuestSolver.solve(scene.puzzle, scene.spell.family, exact) is CastResult.Solved)
+        val other = byGlyph.values.first { it.family == scene.spell.family && it.character != exact }
+        assertTrue(QuestSolver.solve(scene.puzzle, other.family, other.character) is CastResult.Hint)
+    }
+
+    @Test
+    fun aChapterPuzzleAcceptsAnySpellFromThatChapter() {
+        val scene = (0 until 100).asSequence()
+            .flatMap { seed -> QuestGenerator.chapter(6, 1, Random(seed), spells, byGlyph, emptySet(), parts).asSequence() }
+            .first { it.puzzle.solutions.any { solution -> solution.categories.isNotEmpty() } }
+        val chapter = scene.puzzle.solutions.first { it.categories.isNotEmpty() }.categories.single()
+        val inside = byGlyph.values.first { SpellFamilies.chapter(it.family) == chapter }
+        assertTrue(QuestSolver.solve(scene.puzzle, inside.family, inside.character) is CastResult.Solved)
+        val outside = byGlyph.values.first { SpellFamilies.chapter(it.family) != chapter }
+        assertTrue(QuestSolver.solve(scene.puzzle, outside.family, outside.character) is CastResult.Hint)
     }
 }

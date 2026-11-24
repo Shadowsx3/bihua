@@ -1,145 +1,265 @@
-"""Build app/src/main/assets/spellbook.csv for the 100-character starter set.
+"""Build app/src/main/assets/spellbook.csv for every supported script.
 
-Family comes from the radical in char_meta; signature characters override it.
 Run from the repo root: python3 tools/spells/build_spellbook.py
+
+The authored catalog in spell_catalog.py is the source of truth. Each entry is
+mapped to the learner's script (Traditional, Japanese kanji, Korean Hanja). If a
+concept has no counterpart, a common character with the same idea fills the gap,
+so every chapter keeps at least 35 spells.
 """
+from __future__ import annotations
+
 import csv
+import re
 import sqlite3
+from collections import Counter, OrderedDict
 from pathlib import Path
+
+from spell_catalog import CATEGORY_FAMILIES, FAMILIES, FAMILY_EFFECT
 
 ROOT = Path(__file__).resolve().parents[2]
 DB = ROOT / "app/src/main/assets/bihua_content.db"
 OUT = ROOT / "app/src/main/assets/spellbook.csv"
-CHARS_FILE = Path(__file__).with_name("starter_chars.txt")
+PER_CATEGORY = 35
+MODES = ("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN")
 
-# Radical → family. Only the families we will draw; others fall through to an override.
-RADICAL_FAMILY = {
-    "氵": "water", "冫": "ice", "火": "fire", "灬": "fire", "石": "stone", "岩": "stone",
-    "土": "earth", "木": "wood", "艹": "wood", "禾": "wood", "雨": "rain", "雪": "snow",
-    "风": "wind", "日": "sun", "月": "moon", "山": "mountain", "人": "person", "亻": "person",
-    "扌": "hand", "犭": "animal", "马": "animal", "鸟": "animal", "鱼": "animal", "虫": "animal",
-    "舟": "boat", "金": "metal", "钅": "metal", "电": "lightning", "云": "cloud",
+# A few scripts use a different everyday character for a concept. These keep the
+# Flame chapter full without stretching an unrelated word into a spell.
+MODE_SUPPLEMENT = {
+    "JAPANESE": {
+        "Flame": [
+            ("炎", "fire"), ("燃", "fire"), ("焼", "fire"), ("熱", "fire"),
+            ("炉", "fire"), ("灰", "fire"), ("炭", "fire"), ("焦", "fire"),
+            ("爆", "fire"), ("赤", "fire"), ("紅", "fire"), ("丹", "fire"),
+            ("暖", "fire"), ("暑", "fire"), ("温", "fire"), ("燥", "fire"),
+            ("炊", "fire"), ("煙", "fire"), ("災", "fire"), ("熟", "fire"),
+            ("窯", "fire"), ("電", "lightning"), ("雷", "lightning"),
+            ("震", "lightning"), ("輝", "lightning"),
+        ],
+    },
+    "KOREAN": {
+        "Flame": [
+            ("炎", "fire"), ("燃", "fire"), ("熱", "fire"), ("燈", "fire"),
+            ("燭", "fire"), ("爐", "fire"), ("炭", "fire"), ("爆", "fire"),
+            ("赤", "fire"), ("紅", "fire"), ("丹", "fire"), ("暖", "fire"),
+            ("暑", "fire"), ("溫", "fire"), ("燥", "fire"), ("火", "fire"),
+            ("燒", "fire"), ("烈", "fire"), ("煙", "fire"), ("災", "fire"),
+            ("熟", "fire"), ("螢", "fire"), ("辛", "fire"),
+            ("電", "lightning"), ("雷", "lightning"), ("震", "lightning"),
+        ],
+    },
 }
 
-# Signature characters: an explicit family and effect id, with the reason kept in the note.
-OVERRIDES = {
-    "马": ("animal", "fx_horse", "A horse. The animal family with a horse silhouette."),
-    "桥": ("stone", "fx_bridge", "A bridge: stone span that crosses water."),
-    "船": ("boat", "fx_boat", "A boat that floats on water."),
-    "门": ("stone", "fx_door", "A door that opens or blocks a path."),
-    "刀": ("metal", "fx_sword", "A blade that cuts."),
-    "光": ("sun", "fx_light", "Light that shines through the dark."),
-    "影": ("moon", "fx_shadow", "A shadow that hides what stands in the light."),
-    "星": ("sun", "fx_star", "A star that lights the night."),
-    "树": ("wood", "fx_tree", "A tree whose roots hold the ground."),
-    "花": ("wood", "fx_flower", "A flower that opens in warm light."),
-    "鸟": ("animal", "fx_bird", "A bird that flies across gaps."),
-    "鱼": ("animal", "fx_fish", "A fish that swims in water."),
-    "龙": ("animal", "fx_dragon", "A dragon that moves the weather."),
-    "塔": ("stone", "fx_tower", "A tower that stands tall."),
-    "城": ("stone", "fx_castle", "A walled city that stays put."),
-    "洞": ("stone", "fx_cave", "A cave that goes deep."),
-    "雾": ("cloud", "fx_fog", "Fog that hides and then lifts."),
-    "雷": ("lightning", "fx_thunder", "Thunder that cracks through the air."),
-    "电": ("lightning", "fx_bolt", "A bolt of lightning."),
-    "烟": ("cloud", "fx_smoke", "Smoke that rises and drifts."),
-    "沙": ("earth", "fx_sand", "Sand that spills and piles up."),
-    "尘": ("earth", "fx_dust", "Dust that drifts on the wind."),
-    "井": ("water", "fx_well", "A well that holds water below."),
-    "湖": ("water", "fx_lake", "A lake that fills a basin."),
-    "海": ("water", "fx_sea", "A sea with tall waves."),
-    "川": ("water", "fx_river", "A river that flows down the valley."),
-    "泉": ("water", "fx_spring", "A spring that bubbles up from the ground."),
-    "雪": ("snow", "fx_snow", "Snow that falls soft and deep."),
-    "水": ("water", "fx_water", "Water itself, the source of the tides."),
-    "犬": ("animal", "fx_dog", "A dog that runs ahead."),
-    "牛": ("animal", "fx_ox", "An ox that pulls the plough."),
-    "羊": ("animal", "fx_sheep", "A sheep that grazes the hills."),
-    "虎": ("animal", "fx_tiger", "A tiger that prowls the ridge."),
-    "兔": ("animal", "fx_rabbit", "A rabbit that hops away."),
-    "龟": ("animal", "fx_turtle", "A turtle that carries its home."),
-    "云": ("cloud", "fx_cloud", "A cloud that gathers and drifts."),
-    "天": ("wind", "fx_sky", "The open sky above."),
-    "竹": ("wood", "fx_bamboo", "Bamboo that bends and springs back."),
-    "叶": ("wood", "fx_leaf", "A leaf that turns in the breeze."),
-    "米": ("wood", "fx_grain", "Grain that grows in the field."),
-    "路": ("stone", "fx_path", "A path laid across the land."),
-    "飞": ("wind", "fx_fly", "Flight lifting up over the ground."),
-    "走": ("earth", "fx_walk", "Steady steps on the ground."),
-    "跑": ("earth", "fx_run", "A quick run that kicks up dust."),
-    "跳": ("earth", "fx_jump", "A jump that clears a gap."),
-    "爬": ("stone", "fx_climb", "A climb up the rock face."),
-    "举": ("hand", "fx_lift", "Lifting something up."),
-    "压": ("stone", "fx_press", "A weight that presses down."),
-    "切": ("metal", "fx_cut", "A clean cut through."),
-    "开": ("hand", "fx_open", "A door or path that opens."),
-    "关": ("stone", "fx_gate", "A gate that closes the way."),
-    "亮": ("sun", "fx_bright", "Something that starts to glow."),
-    "黑": ("moon", "fx_dark", "Darkness that settles in."),
-    "白": ("sun", "fx_white", "Pale light."),
-    "红": ("fire", "fx_red", "A warm red glow."),
-    "青": ("wood", "fx_green", "Fresh green growth."),
-    "黄": ("earth", "fx_yellow", "Golden dust on the wind."),
-}
+CATEGORY_OF = {family: category for category, families in CATEGORY_FAMILIES.items() for family in families}
 
-# Grimoire chapters. Each family belongs to exactly one spell type, so the book
-# groups spells the way learners will think about them.
-CATEGORY = {
-    "water": "Tides", "ice": "Tides", "snow": "Tides", "rain": "Tides",
-    "fire": "Flame", "lightning": "Flame",
-    "wind": "Sky", "cloud": "Sky", "sun": "Sky", "moon": "Sky",
-    "earth": "Ground", "stone": "Ground", "mountain": "Ground", "wood": "Ground",
-    "animal": "Creatures", "person": "Creatures", "hand": "Creatures",
-    "boat": "Constructs", "metal": "Constructs",
-}
-CATEGORY_NAMES = ["Tides", "Flame", "Sky", "Ground", "Creatures", "Constructs"]
-
-# Learners see the family name and the effect, never the character before casting.
-FAMILY_PLAIN = {
-    "water": "Water", "fire": "Fire", "stone": "Stone", "earth": "Earth", "wood": "Wood",
-    "wind": "Wind", "rain": "Rain", "snow": "Snow", "ice": "Ice", "sun": "Sun", "moon": "Moon",
-    "animal": "Creature", "mountain": "Mountain", "person": "Spark", "hand": "Gesture",
-    "boat": "Vessel", "metal": "Metal", "lightning": "Lightning", "cloud": "Cloud",
+# Only used to fill a shortfall after the authored catalog is mapped. Matching is
+# on whole words, so "well" does not smuggle a character into Tides.
+FILL_KEYWORDS = {
+    "water": ["water", "liquid", "river", "stream", "sea", "ocean", "lake", "pond", "well", "spring", "wave", "tide", "flow", "swim", "wash", "bathe", "drink", "wet", "tear", "sweat", "milk", "juice", "soup", "pool", "fountain", "waterfall", "flood", "drown", "sink"],
+    "ice": ["ice", "frost", "freeze", "frozen", "icicle", "hail", "chill", "glacier"],
+    "snow": ["snow", "flake"],
+    "rain": ["rain", "drizzle", "umbrella", "dew", "shower", "storm"],
+    "fire": ["fire", "flame", "blaze", "burn", "heat", "hot", "warm", "cook", "roast", "bake", "ash", "ember", "candle", "incense", "volcano", "furnace", "forge", "lamp", "torch"],
+    "lightning": ["lightning", "thunder", "electric", "shock"],
+    "wind": ["wind", "breeze", "gust", "blow", "air", "breath", "fan", "kite", "fly"],
+    "cloud": ["cloud", "fog", "mist", "smoke", "vapor", "steam", "haze", "sky"],
+    "sun": ["sun", "solar", "noon", "daylight", "dawn", "yang"],
+    "moon": ["moon", "lunar", "night", "silver"],
+    "light": ["light", "shine", "glow", "bright", "star", "glimmer", "beacon"],
+    "shadow": ["shadow", "shade", "dark", "black", "eclipse"],
+    "earth": ["earth", "soil", "ground", "land", "dirt", "mud", "clay", "sand", "dust", "field", "farm", "garden", "desert", "valley", "plain", "grave", "tomb"],
+    "stone": ["stone", "rock", "cliff", "boulder", "pebble", "brick", "wall", "cave", "quarry", "jade", "gem"],
+    "mountain": ["mountain", "hill", "peak", "ridge", "summit", "slope"],
+    "wood": ["wood", "tree", "forest", "bamboo", "grass", "flower", "leaf", "root", "branch", "seed", "fruit", "grain", "rice", "plant", "green"],
+    "metal": ["metal", "gold", "silver", "iron", "copper", "steel", "coin", "money", "treasure", "jade", "bell"],
+    "animal": ["animal", "horse", "bird", "fish", "dog", "cat", "tiger", "rabbit", "turtle", "frog", "bee", "insect", "snake", "dragon", "ox", "cow", "sheep", "pig", "fox", "bear", "deer", "wolf", "mouse", "monkey", "chicken", "duck", "butterfly", "whale", "shark", "lion", "elephant", "bug"],
+    "person": ["person", "man", "woman", "child", "people", "human", "friend", "family", "king", "queen", "teacher", "student", "doctor", "body", "face", "eye", "self", "name"],
+    "hand": ["hand", "finger", "palm", "grasp", "hold", "pull", "push", "lift", "carry", "touch", "point", "throw", "catch", "hit", "strike"],
+    "boat": ["boat", "ship", "sail", "oar", "canoe", "raft", "harbor", "port", "anchor", "voyage", "float", "ferry"],
+    "tool": ["tool", "sword", "knife", "blade", "hammer", "axe", "saw", "needle", "wheel", "cart", "plow", "rope", "net", "basket", "pot", "cup", "bowl", "plate", "box", "chest", "door", "gate", "window", "house", "home", "room", "bridge", "road", "city", "tower", "castle", "book", "brush", "pen", "paper", "cloth", "clothes", "shoe", "hat", "machine", "engine", "vehicle", "car"],
+    "mind": ["mind", "thought", "think", "idea", "know", "knowledge", "wise", "wisdom", "understand", "remember", "memory", "forget", "decide", "believe", "doubt", "reason", "logic", "truth", "lie", "will", "intention", "attention", "focus", "imagine", "imagination", "conscious"],
+    "dream": ["dream", "sleep", "nightmare", "fantasy", "hope", "wish", "desire"],
+    "sound": ["sound", "voice", "song", "music", "sing", "speak", "word", "language", "speech", "talk", "say", "tell", "ask", "answer", "call", "read", "write", "poem", "story", "drum", "flute", "piano", "echo", "silence", "whisper", "shout", "laugh", "cry", "weep"],
+    "time": ["time", "hour", "minute", "second", "moment", "instant", "clock", "watch", "calendar", "date", "day", "night", "morning", "evening", "midnight", "dusk", "today", "tomorrow", "yesterday", "week", "month", "year", "season", "spring", "summer", "autumn", "winter", "age", "old", "ancient", "new", "young", "early", "late", "begin", "start", "end", "finish", "future", "past", "present", "always", "never", "often", "sometimes", "wait", "long", "short", "quick", "slow", "sudden", "gradual", "forever", "temporary", "era", "period", "century", "decade"],
+    "rune": ["rune", "symbol", "sign", "mark", "letter", "glyph", "sigil", "seal", "charm", "spell", "magic", "enchant", "circle", "pentagram"],
+    "mirror": ["mirror", "reflect", "reflection", "glass", "lens", "image", "copy", "twin", "double"],
+    "key": ["key", "lock", "unlock", "password", "code", "secret"],
+    "potion": ["potion", "medicine", "drug", "herb", "brew", "elixir", "poison", "antidote", "heal", "cure", "sick", "illness", "health", "alchemy", "flask", "bottle", "bubble"],
+    "illusion": ["illusion", "trick", "deceive", "fake", "pretend", "mirage", "disguise", "mask", "hidden", "invisible", "appear", "disappear", "transform", "shapeshift"],
+    "oracle": ["oracle", "fortune", "fate", "destiny", "predict", "prophecy", "divination", "card", "dice", "chance", "luck", "omen", "vision"],
+    "spirit": ["spirit", "ghost", "god", "goddess", "deity", "divine", "holy", "sacred", "angel", "demon", "devil", "monster", "fairy", "elf", "ancestor", "shrine", "temple", "prayer", "worship", "ritual", "offering", "bless", "pure", "immortal", "death", "life", "afterlife"],
+    "soul": ["soul", "rebirth", "reincarnation", "eternal", "essence", "blood", "heart"],
+    "ward": ["ward", "protect", "protection", "shield", "guard", "defense", "safe", "safety", "amulet", "talisman", "barrier", "curse", "hex"],
 }
 
 
 def main() -> None:
-    chars = list(dict.fromkeys(CHARS_FILE.read_text(encoding="utf-8").split()))
     db = sqlite3.connect(DB)
-    radicals = dict(db.execute("SELECT character, radical FROM char_meta"))
-    rows = []
-    for char in chars:
-        if char in OVERRIDES:
-            family, effect, note = OVERRIDES[char]
-            source = "override"
-        else:
-            radical = radicals.get(char, "") or ""
-            family = RADICAL_FAMILY.get(radical)
-            if family is None:
+    pools = {}
+    for mode in MODES:
+        pools[mode] = {
+            row[0]: {
+                "reading": row[1],
+                "meaning": row[2],
+                "strokes": row[3],
+                "level": row[4],
+                "index": row[5],
+            }
+            for row in db.execute(
+                "SELECT character, reading, meaning, stroke_count, level, list_index "
+                "FROM character WHERE mode = ? AND stroke_count > 0",
+                (mode,),
+            )
+        }
+    traditional = {
+        row[0]: (row[1].split() or [row[0]])[0]
+        for row in db.execute("SELECT character, traditional FROM character WHERE mode = 'SIMPLIFIED'")
+    }
+
+    # The authored catalog, with the first family claiming a repeated character.
+    catalog: list[tuple[str, str]] = []
+    claimed: set[str] = set()
+    for family, chars in FAMILIES.items():
+        for char in chars.split():
+            if char in claimed:
                 continue
-            if family not in CATEGORY:
-                raise SystemExit(f"family {family} has no grimoire category")
-            effect = f"fx_{family}"
-            note = f"Radical {radical}."
-            source = "radical"
-        rows.append({
-            "character": char,
-            "family": family,
-            "category": CATEGORY[family],
-            "effect": effect,
-            "source": source,
-            "note": note,
-        })
+            if char not in pools["SIMPLIFIED"]:
+                continue
+            claimed.add(char)
+            catalog.append((char, family))
+
+    rows: list[dict] = []
+    report: dict[str, Counter] = {}
+    for mode in MODES:
+        pool = pools[mode]
+        used: set[str] = set()
+        mapped_seen: set[str] = set()
+        by_category: dict[str, list[tuple[str, str, str]]] = {c: [] for c in CATEGORY_FAMILIES}
+        for char, family in catalog:
+            candidate = _candidate(mode, char, traditional, pool)
+            if candidate is None or candidate in mapped_seen:
+                continue
+            mapped_seen.add(candidate)
+            source = "override" if candidate == char else "variant"
+            by_category[CATEGORY_OF[family]].append((candidate, family, source))
+
+        all_mapped = {item[0] for items in by_category.values() for item in items}
+        for category, families in CATEGORY_FAMILIES.items():
+            items = [item for item in by_category[category] if item[0] not in used]
+            selected = _balanced(items, families, PER_CATEGORY)
+            # Leftovers from this same chapter are still honest fits; use them
+            # before borrowing a character from another chapter.
+            for item in items:
+                if len(selected) >= PER_CATEGORY:
+                    break
+                if item[0] not in {chosen[0] for chosen in selected}:
+                    selected.append(item)
+            if len(selected) < PER_CATEGORY:
+                _fill.mode = mode
+                selected += _fill(
+                    category, families, pool, used | all_mapped, PER_CATEGORY - len(selected)
+                )
+            for character, family, source in selected[:PER_CATEGORY]:
+                if character in used:
+                    continue
+                used.add(character)
+                entry = pool[character]
+                rows.append({
+                    "script": mode,
+                    "character": character,
+                    "family": family,
+                    "category": category,
+                    "effect": f"fx_{family}",
+                    "source": source,
+                    "note": _note(family, entry["meaning"]),
+                })
+            report.setdefault(mode, Counter())[category] = min(len(selected), PER_CATEGORY)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    fields = ["script", "character", "family", "category", "effect", "source", "note"]
     with OUT.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["character", "family", "category", "effect", "source", "note"])
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     print(f"wrote {len(rows)} spells to {OUT.relative_to(ROOT)}")
-    for name in CATEGORY_NAMES:
-        print(f"  {name}: {sum(r['category'] == name for r in rows)}")
-    unmapped = [c for c in chars if c not in {r['character'] for r in rows}]
-    print(f"unmapped ({len(unmapped)}): {' '.join(unmapped)}")
+    for mode in MODES:
+        counts = report.get(mode, Counter())
+        print(f"  {mode}: {sum(counts.values())} · " + " ".join(f"{c}={counts[c]}" for c in CATEGORY_FAMILIES))
+    families = Counter(r["family"] for r in rows)
+    empty = [f for f in CATEGORY_OF if families[f] == 0]
+    if empty:
+        print(f"  families with no spell: {' '.join(empty)}")
+
+
+def _candidate(mode: str, char: str, traditional: dict[str, str], pool: dict) -> str | None:
+    fallback = traditional.get(char, char)
+    order = {
+        "SIMPLIFIED": (char,),
+        "TRADITIONAL": (fallback, char),
+        "JAPANESE": (char, fallback),
+        "KOREAN": (fallback, char),
+    }[mode]
+    for candidate in dict.fromkeys(order):
+        if candidate in pool:
+            return candidate
+    return None
+
+
+def _balanced(items: list[tuple[str, str, str]], families: tuple[str, ...], limit: int) -> list[tuple[str, str, str]]:
+    """One from each family in turn, so no chapter becomes a single family."""
+    buckets = {family: [item for item in items if item[1] == family] for family in families}
+    out: list[tuple[str, str, str]] = []
+    while len(out) < limit and any(buckets.values()):
+        for family in families:
+            if buckets[family]:
+                out.append(buckets[family].pop(0))
+                if len(out) >= limit:
+                    break
+    # Preserve the authored order as much as possible for the book's feel.
+    order = {item[0]: i for i, item in enumerate(items)}
+    return sorted(out, key=lambda item: order.get(item[0], 0))
+
+
+def _fill(category: str, families: tuple[str, ...], pool: dict, used: set[str], need: int) -> list[tuple[str, str, str]]:
+    out: list[tuple[str, str, str]] = []
+    for char, family in MODE_SUPPLEMENT.get(_fill.mode, {}).get(category, []):
+        if len(out) >= need:
+            break
+        if char in pool and char not in used and family in families:
+            used.add(char)
+            out.append((char, family, "fill"))
+    target = len(out) + need
+    candidates = sorted(
+        ((entry["level"], entry["index"], char) for char, entry in pool.items() if char not in used),
+        key=lambda row: (row[0], row[1], row[2]),
+    )
+    cursor = 0
+    while len(out) < target and cursor < len(candidates):
+        _level, _index, char = candidates[cursor]
+        cursor += 1
+        meaning = pool[char]["meaning"]
+        family = _family_for(category, meaning, families)
+        if family is None:
+            continue
+        used.add(char)
+        out.append((char, family, "fill"))
+    return out
+
+
+def _family_for(category: str, meaning: str, families: tuple[str, ...]) -> str | None:
+    text = " " + (meaning or "").lower() + " "
+    for family in families:
+        for word in FILL_KEYWORDS.get(family, []):
+            if re.search(r"(?<![a-z])" + re.escape(word) + r"(?![a-z])", text):
+                return family
+    return None
+
+
+def _note(family: str, meaning: str) -> str:
+    first = (meaning or "").split(";")[0].strip()
+    if first:
+        return f"{first[0].upper() + first[1:]}. A {family} spell."
+    return f"A {family} spell."
 
 
 if __name__ == "__main__":

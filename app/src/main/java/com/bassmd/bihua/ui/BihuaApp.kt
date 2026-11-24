@@ -154,6 +154,11 @@ fun BihuaApp(
     onContentReady: () -> Unit = {},
 ) {
     val settings by store.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
+    val darkTheme = when (settings.themeMode) {
+        com.bassmd.bihua.settings.ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+        com.bassmd.bihua.settings.ThemeMode.LIGHT -> false
+        com.bassmd.bihua.settings.ThemeMode.DARK -> true
+    }
     val profile by store.profile.collectAsStateWithLifecycle(initialValue = UserProfile())
     LaunchedEffect(Unit) {
         store.updateSettings { current -> StudyLists.ensureMigrated(current) }
@@ -1782,6 +1787,13 @@ fun BihuaApp(
             onSpeak = { text -> speak(text) },
             onClose = { showQuest = false },
             repository = repository,
+            // A starting tool; the quest keeps its own copy and never writes back.
+            brush = settings.brush,
+            // Quest pages and the chapter are part of the progress database.
+            progress = progressStore,
+            // The quest is drawn over the app; pass the resolved palette choice
+            // so the grimoire does not fall back to light paper behind a dark app.
+            dark = darkTheme,
         )
     }
     if (startingSession) BusyDialog("Preparing your session…")

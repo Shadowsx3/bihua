@@ -84,15 +84,14 @@ fun StudyToolsSheet(
         ) {
             Text("Study tools", style = MaterialTheme.typography.headlineSmall, color = InkDark)
             Text(
-                "${mode.label} only. Study lists, pins, and skips follow the script you set them in.",
+                "${mode.label} course. Study lists, pins, and skips follow the script you set them in.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
                 modifier = Modifier.padding(top = 2.dp),
             )
 
             Spacer(Modifier.height(14.dp))
-            if (mode == StudyMode.SIMPLIFIED) {
-                Surface(
+            Surface(
                     onClick = onOpenQuest,
                     shape = RoundedCornerShape(16.dp),
                     color = Mint.copy(alpha = 0.18f),
@@ -115,7 +114,6 @@ fun StudyToolsSheet(
                         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
                     }
                 }
-            }
 
             Spacer(Modifier.height(10.dp))
             Surface(

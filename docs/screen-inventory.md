@@ -102,10 +102,10 @@ layout can differ. Landscape and large font scale are separate passes.
 
 | Screen | Entry | Main states | A |
 |---|---|---|---|
-| Spell quest gate | Home Study tools / Study tools sheet | rules, start, grimoire, leave; phone and BOOK two-page | A |
+| Spell quest gate | Home Study tools / Study tools sheet | rules, met count and chapter, start/walk on, grimoire, leave; phone and BOOK two-page | A |
 | Spell quest scene | Start the road | problem, draw, gift, hint, result, walk on | A |
-| Cast overlay | Draw | rune circle, clue card above, shape/reading/meaning, undo/clear, cast, grimoire | A |
-| Grimoire | Scene or gate | cover, index, 8 chapter spreads, fold hinge, light/dark | A |
+| Cast overlay | Draw | rune circle, clue card above, shape/reading/meaning reveals, quest-only brush tray, undo/clear, cast, grimoire | A |
+| Grimoire | Scene or gate | cover, index, 10 chapter spreads, script-specific seals, met stars, fold hinge, light/dark | A |
 
 ## Progress
 

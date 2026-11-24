@@ -48,11 +48,11 @@ class ShippedPuzzlePartsTest {
 
     @Test
     fun theShippedLibraryHasTheExpectedShape() {
-        assertEquals(25, parts.familyNames.size)
-        assertTrue(parts.obstacles.size >= 10)
-        assertTrue(parts.settings.size >= 10)
-        assertTrue(parts.times.size >= 5)
-        assertTrue(parts.weathers.size >= 4)
+        assertEquals(35, parts.familyNames.size)
+        assertTrue(parts.obstacles.size >= 40)
+        assertTrue(parts.settings.size >= 30)
+        assertTrue(parts.times.size >= 20)
+        assertTrue(parts.weathers.size >= 15)
     }
 
     @Test

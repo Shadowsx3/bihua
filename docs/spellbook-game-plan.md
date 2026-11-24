@@ -9,24 +9,34 @@ built, how the game loop works, and what is still missing. The working handoff
 - Free practice. Casting never creates cards, XP, review rows, or schedule changes.
 - Nothing is graded or timed. A wrong cast is not a failure: it names what was drawn,
   shows the right answer if asked, and offers another try.
-- Every puzzle has several honest solutions. A family solves an obstacle only when it
-  carries one of the obstacle's accepted tags.
+- Every puzzle has several honest solutions. An obstacle accepts tags, and any spell
+  whose family or chapter carries one of those tags can solve it. Some puzzles widen
+  the door to a whole chapter; a few ask for one exact shape, and say so.
 - Clues are optional and escalate: reading (Hear it), meaning, shape. Casting without
   clues is always possible.
 - Warm and quiet: paper, ink, soft motion, no streaks, no pressure, no ads.
-- Mò (the witch) is the guide. Mò's nudge names an element or a need, never the answer.
+- A reason to continue that is not a grade: met pages, chapter banners, new-page
+  notes, and every-tenth-page milestones. None of it changes study scheduling.
+- Mò (the witch) is the guide. Mò's nudge names a need, never the answer.
 
 ## What is built
 
 ### Data
 
-- `app/src/main/assets/spellbook.csv`: 104 spells, 25 families, 8 chapters (Tides,
-  Flame, Sky, Ground, Creatures, Craft, Mind, Time). Each spell has a character, a
-  family, a category, an effect, a source, and a note.
-- `tools/spells/parts.sql`: the procedural puzzle parts (families and their tags,
-  obstacles and what they accept, tag outcomes, settings, times of day, weather).
-  Source of truth. `tools/spells/build_parts.py` compiles it to
-  `app/src/main/assets/puzzle_parts.db`.
+- `app/src/main/assets/spellbook.csv`: about 1,390 spells across four scripts
+  (Simplified, Traditional, Japanese kanji, Korean Hanja), 35 families, and 10
+  chapters (Tides, Flame, Sky, Ground, Creatures, Craft, Mind, Time, Arcana, Spirit).
+  Each script has roughly 30–35 choices in every chapter. A spell row carries its
+  script, character, family, category, effect, source, and note. Readings and
+  meanings come from the course content database, so they are native to the script.
+- `tools/spells/spell_catalog.py` is the authored semantic core; the builder maps
+  each idea to the learner's script and fills gaps only with characters that exist in
+  that course. `tools/spells/build_spellbook.py` writes the CSV.
+- `tools/spells/parts.sql`: the procedural puzzle parts (35 families and their tags,
+  47 obstacles and what they accept, 18 tags with multiple outcomes, 40 settings,
+  26 times of day, 20 weathers). That is roughly 950,000 place combinations before
+  scene order, style, and cast choice. Source of truth.
+  `tools/spells/build_parts.py` compiles it to `app/src/main/assets/puzzle_parts.db`.
 - The fixed 1500-variant library and its seed/build files are retired. Every scene is
   built from `puzzle_parts.db`; there is no fallback puzzle database in the app.
 - Content store: `bihua_content.db` provides the stroke guides (path-only strokes are
@@ -36,12 +46,16 @@ built, how the game loop works, and what is still missing. The working handoff
 
 - `Spellbook.kt`, `SpellFamilies.kt`, `Motifs.kt`: the taxonomy and visual identity.
 - `Puzzle.kt`: the `Puzzle` and `Solution` models shared by the forge, solver, and UI.
+  A solution can require families, a whole category, or exact characters, so a puzzle
+  can be broad or narrow.
 - `PuzzleForge.kt`: procedural generation. `PuzzleParts.load(context)` reads the parts;
-  `PuzzleForge.generate(parts, random, family, previousPlace)` builds a puzzle. The same
-  seed gives the same puzzle, and the combinations are far more than any library holds.
-- `Quest.kt`: `QuestSolver` (a cast solves when its family is one of the puzzle's
-  solutions, otherwise it gets the hint) and `QuestGenerator` (scenes per chapter,
-  always built from the forge).
+  `PuzzleForge.generate(parts, random, family, character, style, previousPlace)` builds
+  a puzzle. `PuzzleStyle` chooses a family door, a whole chapter, or one exact shape.
+  The same seed gives the same puzzle, and the combinations are far more than any
+  library holds.
+- `Quest.kt`: `QuestSolver` (a cast solves when its family, chapter, or exact character
+  matches a solution, otherwise it gets the hint) and `QuestGenerator` (six scenes per
+  chapter, always built from the forge, with a shuffled mix of the three styles).
 - `QuestText.kt` (practice package): `shortGloss` for the word on the scroll, and
   `spellEmoji` for the emoji (animal faces for animals, element emoji otherwise).
 
@@ -61,12 +75,18 @@ built, how the game loop works, and what is still missing. The working handoff
   guide circle, the drawn shape, and the effects. The effect plays inside the circle:
   a lead-in before the strokes, a flourish after them.
 - **Draw** (cast overlay): a paper drawing surface inside the same rune ring as the
-  main circle stage. The paper is clipped to the inner circle so ink cannot run over
-  the runes. Each rune takes one of the eight chapter colours. The outer ring starts
-  neutral and switches to the detected spell family's colour after recognition.
+  main circle stage. The paper is clipped to the inner circle, with black inner and
+  outer borders, so ink cannot run over the runes and the drawing boundary is
+  unmistakable. The drawing canvas fills the entire inner circle. Each rune takes one
+  of the ten chapter colours and category runes. The outer background starts neutral and takes the
+  detected spell family's tint after recognition.
   "Show the shape" plays the strokes, Hear it reveals the reading, Meaning reveals
-  the gloss; Undo, Clear, Cast, Go back. The definition card sits above the circle;
-  the Cast button stays pinned. Clues and ink controls scroll below.
+  the gloss; both stay revealed and keep their names. A quest-only brush tray (Ink,
+  Pen, Pencil, Marker) fills the quiet space under the clues and changes only this
+  game's ink, never the app-wide brush. Undo, Clear, Cast, Go back. On a phone the
+  definition card sits above the circle; on a tablet or fold it sits on the story
+  page, where it fills the page and leaves the circle more room. The Cast button
+  stays pinned. Clues and ink controls scroll below.
 - **Tip card**: readings and meanings appear in a tinted card with a small spark icon,
   not as bare text.
 - **Home entry**: the Study tools card has a direct "Spell quest" row, so the game is
@@ -75,29 +95,41 @@ built, how the game loop works, and what is still missing. The working handoff
 ### Game loop
 
 1. A chapter is built from six scenes. Each scene has a spell (a real character from
-   the course) and a puzzle the spell's family can solve.
+   the learner's script) and a puzzle that spell can solve. The six scenes always mix
+   three broad family puzzles, two whole-chapter puzzles, and one exact-shape puzzle.
 2. The scene shows the problem in the visual novel.
 3. The learner chooses one of:
    - **Draw**: opens the drawing circle. Show the shape if stuck; Hear it or Meaning
      for clues. Cast reads the ink with the handwriting recogniser.
-   - **Grimoire**: opens the book. Picking a character starts a reading gift: the
-     character's real guide plays in the circle, then Continue unlocks.
-4. A valid read or a gift plays the learner's strokes (or the guide) in the circle,
-   then the element effect, then the result ("It worked") with the word on the scroll.
-5. A cast that does not solve the puzzle shows "Not this one" with the character still
-   on the circle. Actions: See the right answer (plays the correct character, then
-   Walk on), Walk on without it, Draw, Grimoire.
-6. Walk on clears the circle and moves to the next scene.
+   - **Grimoire**: opens the book. Picking a character is one step: the result card
+     appears immediately and the character's real guide draws in the circle. The
+     result actions unlock when the guide finishes; there is no second Continue.
+4. A valid read or a gift lands directly on the result screen. The learner's own
+   strokes (or the guide) draw in the circle there, then the element effect plays;
+   the result actions wait for the drawing to settle. There is no second
+   "Continue" screen.
+5. A cast that does not solve the puzzle shows "A different way" with the character
+   still on the circle. The nudge names what the scene needs and, for narrow puzzles,
+   says that a whole chapter or one exact shape is wanted. Actions: See the right
+   answer (plays the correct character, then Walk on), Walk on without it, Draw,
+   Grimoire.
+6. Walk on clears the circle and moves to the next scene. Every tenth new page
+   gets a small milestone line, and crossing the sixth scene opens a short
+   "Chapter N — the road goes on" banner.
+7. The pages met and the chapter are stored in the progress database
+   (`spell_quest_met`, `spell_quest_road`), so closing the quest, exporting,
+   importing, or syncing keeps the collection. The gate shows the count; the
+   grimoire marks met pages with a star.
 
 ### Layout by device
 
 - **Phone**: stacked. The circle stage on top, the fixed-height card below. The cast
   overlay keeps the drawing circle large and the Cast button pinned.
-- **Tablet**: two halves. The visual novel on the left, the drawing circle on the
-  right, equal weight.
+- **Tablet**: two halves. The visual novel and definition card on the left, the
+  drawing circle and tools on the right, equal weight.
 - **Book fold**: the same two pages with a 28 dp hinge gap. The gate, scene, cast
-  overlay, and grimoire all respect the hinge; no card or circle spans the fold.
-  The circle is sized from the room it gets (up to 440 dp).
+  overlay, grimoire, and bookmark tabs all respect the hinge; no card or circle
+  spans the fold. The circle is sized from the room it gets (up to 440 dp).
 - Rune ring and circle use the smaller side on both axes, so they stay round in any
   container.
 
@@ -109,6 +141,9 @@ built, how the game loop works, and what is still missing. The working handoff
 - Guided drawing uses a **roughly fixed total time** for every character (about two
   seconds, clamped per stroke), so a complex character does not crawl and a simple
   one does not vanish. The learner's own cast playback uses the same pacing.
+- A result appears immediately, but its Walk on / hint actions stay quiet until the
+  guide or the learner's own strokes finish. "Mò is drawing the character…" or
+  "Mò is reading the circle…" holds the moment.
 - Reduce motion skips the effects, keeps the strokes, and shortens the waits. Scene
   motes and the rune spin stop as well.
 - A guide never flashes complete before its strokes: the player can start empty

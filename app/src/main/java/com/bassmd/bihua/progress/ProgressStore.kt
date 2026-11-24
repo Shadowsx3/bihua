@@ -249,6 +249,7 @@ class ProgressStore(private val context: Context) :
         createNoteTable(db)
         createConfusionTable(db)
         createWordPracticeTable(db)
+        createSpellQuestTables(db)
     }
 
     /** Closes the database and copies the current file for a sync package. */
@@ -277,34 +278,109 @@ class ProgressStore(private val context: Context) :
         if (oldVersion < 2) createXpTables(db)
         if (oldVersion < 3) createNoteTable(db)
         if (oldVersion < 4) createConfusionTable(db)
-        if (oldVersion < 5) {
-            db.execSQL("ALTER TABLE review_log ADD COLUMN elapsed_ms INTEGER NOT NULL DEFAULT 0")
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE review_log ADD COLUMN task TEXT NOT NULL DEFAULT 'WRITE'")
-        }
+        if (oldVersion < 5) addColumn(db, "review_log", "elapsed_ms", "INTEGER NOT NULL DEFAULT 0")
+        if (oldVersion < 6) addColumn(db, "review_log", "task", "TEXT NOT NULL DEFAULT 'WRITE'")
         if (oldVersion < 7) {
             db.execSQL("CREATE INDEX IF NOT EXISTS log_char ON review_log(character_id)")
             db.execSQL("CREATE INDEX IF NOT EXISTS log_time ON review_log(reviewed_at)")
         }
-        if (oldVersion < 8) {
-            db.execSQL("ALTER TABLE review_log ADD COLUMN strokes INTEGER NOT NULL DEFAULT 0")
-        }
+        if (oldVersion < 8) addColumn(db, "review_log", "strokes", "INTEGER NOT NULL DEFAULT 0")
         if (oldVersion < 9) {
             createWordPracticeTable(db)
         } else if (oldVersion < 10) {
-            db.execSQL(
-                "ALTER TABLE word_practice ADD COLUMN mature INTEGER NOT NULL DEFAULT 0"
-            )
+            addColumn(db, "word_practice", "mature", "INTEGER NOT NULL DEFAULT 0")
         }
+        if (oldVersion < 13) createSpellQuestTables(db)
         if (oldVersion < 11) {
-            db.execSQL("ALTER TABLE card ADD COLUMN sbd_log_s REAL")
-            db.execSQL("ALTER TABLE card ADD COLUMN sbd_grade REAL")
-            db.execSQL("ALTER TABLE card ADD COLUMN sbd_n REAL")
-            db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_log_s REAL")
-            db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_grade REAL")
-            db.execSQL("ALTER TABLE review_log ADD COLUMN sbd_n REAL")
+            addColumn(db, "card", "sbd_log_s", "REAL")
+            addColumn(db, "card", "sbd_grade", "REAL")
+            addColumn(db, "card", "sbd_n", "REAL")
+            addColumn(db, "review_log", "sbd_log_s", "REAL")
+            addColumn(db, "review_log", "sbd_grade", "REAL")
+            addColumn(db, "review_log", "sbd_n", "REAL")
         }
+    }
+
+    /** A crash can leave a half-applied migration; adding a column twice must not kill the app. */
+    private fun addColumn(db: SQLiteDatabase, table: String, column: String, declaration: String) {
+        val exists = db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+            val name = cursor.getColumnIndex("name")
+            var found = false
+            while (cursor.moveToNext()) {
+                if (name >= 0 && cursor.getString(name) == column) {
+                    found = true
+                    break
+                }
+            }
+            found
+        }
+        if (!exists) db.execSQL("ALTER TABLE $table ADD COLUMN $column $declaration")
+    }
+
+    /** Quest pages and the road they belong to. Kept in the progress DB so export/import carry them. */
+    private fun createSpellQuestTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS spell_quest_met(
+              mode TEXT NOT NULL,
+              character TEXT NOT NULL,
+              met_at INTEGER NOT NULL,
+              PRIMARY KEY(mode, character)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS spell_quest_road(
+              mode TEXT PRIMARY KEY,
+              chapter INTEGER NOT NULL DEFAULT 1,
+              updated_at INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        )
+    }
+
+    suspend fun spellQuestMet(mode: String): Set<String> = withContext(Dispatchers.IO) {
+        val out = linkedSetOf<String>()
+        readableDatabase.rawQuery(
+            "SELECT character FROM spell_quest_met WHERE mode = ? ORDER BY met_at",
+            arrayOf(mode),
+        ).use { cursor ->
+            while (cursor.moveToNext()) out += cursor.getString(0)
+        }
+        out
+    }
+
+    /** Returns true when this character was not in the book before. */
+    suspend fun markSpellQuestMet(mode: String, character: String): Boolean =
+        withContext(Dispatchers.IO) {
+            if (character.isBlank()) return@withContext false
+            val values = ContentValues().apply {
+                put("mode", mode)
+                put("character", character)
+                put("met_at", System.currentTimeMillis())
+            }
+            writableDatabase.insertWithOnConflict(
+                "spell_quest_met", null, values, SQLiteDatabase.CONFLICT_IGNORE,
+            ) != -1L
+        }
+
+    suspend fun spellQuestChapter(mode: String): Int = withContext(Dispatchers.IO) {
+        readableDatabase.rawQuery(
+            "SELECT chapter FROM spell_quest_road WHERE mode = ?",
+            arrayOf(mode),
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 1 }
+    }
+
+    suspend fun saveSpellQuestChapter(mode: String, chapter: Int) = withContext(Dispatchers.IO) {
+        val values = ContentValues().apply {
+            put("mode", mode)
+            put("chapter", chapter.coerceAtLeast(1))
+            put("updated_at", System.currentTimeMillis())
+        }
+        writableDatabase.insertWithOnConflict(
+            "spell_quest_road", null, values, SQLiteDatabase.CONFLICT_REPLACE,
+        )
     }
 
     private fun createWordPracticeTable(db: SQLiteDatabase) {
@@ -868,13 +944,18 @@ class ProgressStore(private val context: Context) :
                     "This progress file is from an incomplete newer version."
                 }
             }
+            if (db.version >= 13) {
+                require("spell_quest_met" in tables && "spell_quest_road" in tables) {
+                    "This progress file is missing spell quest data."
+                }
+            }
         } finally {
             db.close()
         }
     }
 
     companion object {
-        const val SCHEMA_VERSION = 12
+        const val SCHEMA_VERSION = 13
 
         fun cardKey(character: CharacterEntry, settings: AppSettings): String =
             if (settings.effectiveSharing(character.glyphGroupId)) {

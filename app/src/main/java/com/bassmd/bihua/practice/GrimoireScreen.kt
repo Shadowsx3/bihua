@@ -63,6 +63,8 @@ import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.Coral
+import com.bassmd.bihua.ui.theme.Gem
 import com.bassmd.bihua.ui.theme.Lilac
 import com.bassmd.bihua.ui.theme.LocalBihuaPalette
 import com.bassmd.bihua.ui.theme.Mint
@@ -131,8 +133,8 @@ private val GiltLeaf = Color(0xFFE6C47A)
 private val SealInk = Color(0xFF2A2620)
 
 @Composable
-private fun rememberGrimoireInk(): GrimoireInk {
-    val dark = LocalBihuaPalette.current.isDark
+private fun rememberGrimoireInk(darkOverride: Boolean? = null): GrimoireInk {
+    val dark = darkOverride ?: LocalBihuaPalette.current.isDark
     return remember(dark) {
         if (dark) {
             GrimoireInk(
@@ -170,14 +172,18 @@ private fun rememberGrimoireInk(): GrimoireInk {
 fun GrimoireScreen(
     mode: StudyMode,
     characters: List<CharacterEntry>,
+    /** Characters already met in the quest; shown with a small star. */
+    met: Set<String> = emptySet(),
+    /** The app's resolved theme; null falls back to the composition-local palette. */
+    dark: Boolean? = null,
     onBack: () -> Unit,
     /** When set, tapping a spell chooses it instead of opening its note. */
     onPick: ((Spell) -> Unit)? = null,
 ) {
-    val ink = rememberGrimoireInk()
+    val ink = rememberGrimoireInk(dark)
     val context = LocalContext.current
-    val spells = remember {
-        context.assets.open("spellbook.csv").bufferedReader().useLines { Spellbook.parse(it) }
+    val spells = remember(mode) {
+        Spellbook.forScript(Spellbook.load(context), mode.name)
     }
     val byGlyph = remember(characters) {
         characters.associateBy { it.character }
@@ -187,29 +193,6 @@ fun GrimoireScreen(
     var index by remember { mutableIntStateOf(0) }
     var open by remember { mutableStateOf<Spell?>(null) }
     val openSpell: (Spell) -> Unit = { spell -> if (onPick != null) onPick(spell) else open = spell }
-
-    if (mode != StudyMode.SIMPLIFIED) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .appStatusBarsPadding()
-                .appNavigationBarsPadding()
-                .background(ink.desk)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                "The grimoire is for Simplified for now.",
-                style = MaterialTheme.typography.titleMedium,
-                color = ink.accent,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(12.dp))
-            PagerPill("Close book", enabled = true, ink = ink, onClick = onBack)
-        }
-        return
-    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -255,33 +238,46 @@ fun GrimoireScreen(
             PagerPill("Close book", enabled = true, ink = ink, onClick = onBack)
             Spacer(Modifier.height(10.dp))
             // Bookmark tabs: each chapter has its own colour and seal, and tapping
-            // one turns straight to its category page.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                SpellCategories.forEach { name ->
-                    val target = spreads.indexOfFirst { (it.left as? BookPage.ChapterIntro)?.category == name }
-                    val active = (spread.left as? BookPage.ChapterIntro)?.category == name ||
-                        (spread.right as? BookPage.Spells)?.category == name
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                            .background(
-                                chapterColor(name).copy(alpha = if (active) 0.95f else 0.45f),
-                            )
-                            .clickable(enabled = target >= 0) { jump(name) }
-                            .padding(vertical = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        FamilyGlyph(family = chapterArt(name), tint = SealInk, modifier = Modifier.size(18.dp))
-                        Text(
-                            sealGlyph(name),
-                            fontSize = 13.sp,
-                            color = SealInk,
-                        )
+            // one turns straight to its category page. A fold gets a hinge gap, so
+            // no single tab is split by the physical hinge.
+            val bookmark: @Composable (String, Modifier) -> Unit = { name, modifier ->
+                val target = spreads.indexOfFirst { (it.left as? BookPage.ChapterIntro)?.category == name }
+                val active = (spread.left as? BookPage.ChapterIntro)?.category == name ||
+                    (spread.right as? BookPage.Spells)?.category == name
+                Column(
+                    modifier = modifier
+                        .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                        .background(chapterColor(name).copy(alpha = if (active) 0.95f else 0.45f))
+                        .clickable(enabled = target >= 0) { jump(name) }
+                        .semantics { contentDescription = "$name chapter" }
+                        .padding(vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    FamilyGlyph(family = chapterArt(name), tint = SealInk, modifier = Modifier.size(18.dp))
+                    Text(sealGlyph(name, mode), fontSize = 13.sp, color = SealInk)
+                }
+            }
+            if (book) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    SpellCategories.take(5).forEach { name ->
+                        bookmark(name, Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.width(28.dp))
+                    SpellCategories.drop(5).forEach { name ->
+                        bookmark(name, Modifier.weight(1f))
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    SpellCategories.forEach { name ->
+                        bookmark(name, Modifier.weight(1f))
                     }
                 }
             }
@@ -298,6 +294,8 @@ fun GrimoireScreen(
                             page = page,
                             pages = pages,
                             ink = ink,
+                            mode = mode,
+                            met = met,
                             onOpen = openSpell,
                             onJump = jump,
                             edge = PageEdge.LEFT,
@@ -314,6 +312,8 @@ fun GrimoireScreen(
                             page = page,
                             pages = pages,
                             ink = ink,
+                            mode = mode,
+                            met = met,
                             onOpen = openSpell,
                             onJump = jump,
                             edge = PageEdge.RIGHT,
@@ -329,13 +329,15 @@ fun GrimoireScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         if (intro != null) {
-                            ChapterCard(intro, ink)
+                            ChapterCard(intro, ink, mode)
                         } else {
                             spread.left?.let { page ->
                                 BookSheet(
                                     page = page,
                                     pages = pages,
                                     ink = ink,
+                                    mode = mode,
+                                    met = met,
                                     onOpen = openSpell,
                             onJump = jump,
                                     edge = PageEdge.BOTH,
@@ -348,10 +350,12 @@ fun GrimoireScreen(
                                 page = page,
                                 pages = pages,
                                 ink = ink,
+                                mode = mode,
+                                met = met,
                                 onOpen = openSpell,
-                            onJump = jump,
-                                    edge = PageEdge.BOTH,
-                                                    modifier = Modifier.weight(1f),
+                                onJump = jump,
+                                edge = PageEdge.BOTH,
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
@@ -435,7 +439,7 @@ internal fun bookSpreads(pages: List<BookPage>, wide: Boolean): List<Spread> {
 
 /** The category card for a phone: the same content as a left page, in one compact card. */
 @Composable
-private fun ChapterCard(intro: BookPage.ChapterIntro, ink: GrimoireInk) {
+private fun ChapterCard(intro: BookPage.ChapterIntro, ink: GrimoireInk, mode: StudyMode) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -445,7 +449,7 @@ private fun ChapterCard(intro: BookPage.ChapterIntro, ink: GrimoireInk) {
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Seal(sealGlyph(intro.category), chapterColor(intro.category), ink, size = 52.dp)
+        Seal(sealGlyph(intro.category, mode), chapterColor(intro.category), ink, size = 52.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(intro.category, style = MaterialTheme.typography.titleLarge, color = ink.ink)
@@ -538,6 +542,8 @@ private fun BookSheet(
     page: BookPage,
     pages: List<BookPage>,
     ink: GrimoireInk,
+    mode: StudyMode,
+    met: Set<String>,
     onOpen: (Spell) -> Unit,
     onJump: (String) -> Unit,
     edge: PageEdge,
@@ -584,6 +590,15 @@ private fun BookSheet(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (met.isNotEmpty()) {
+                    Text(
+                        "${met.size} ${if (met.size == 1) "page" else "pages"} met",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = GiltLeaf.copy(alpha = 0.75f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Spacer(Modifier.weight(1f))
             }
             BookPage.Contents -> {
@@ -594,6 +609,15 @@ private fun BookSheet(
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
+                if (met.isNotEmpty()) {
+                    Text(
+                        "${met.size} ${if (met.size == 1) "page" else "pages"} met",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ink.inkSoft,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
                 Column(
                     modifier = Modifier
@@ -655,7 +679,7 @@ private fun BookSheet(
                         tint = ink.ink,
                         modifier = Modifier.size(64.dp),
                     )
-                    Seal(sealGlyph(page.category), chapterColor(page.category), ink, size = 72.dp)
+                    Seal(sealGlyph(page.category, mode), chapterColor(page.category), ink, size = 72.dp)
                 }
                 Text(
                     page.category,
@@ -710,7 +734,7 @@ private fun BookSheet(
                         rows.forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally)) {
                                 row.forEach { spell ->
-                                    SpellTile(spell, ink, tile) { onOpen(spell) }
+                                    SpellTile(spell, ink, tile, met = spell.character in met) { onOpen(spell) }
                                 }
                             }
                         }
@@ -794,8 +818,14 @@ private fun Seal(glyph: String, color: Color, ink: GrimoireInk, size: androidx.c
 }
 
 @Composable
-private fun SpellTile(spell: Spell, ink: GrimoireInk, size: androidx.compose.ui.unit.Dp, onOpen: () -> Unit) {
-    Column(
+private fun SpellTile(
+    spell: Spell,
+    ink: GrimoireInk,
+    size: androidx.compose.ui.unit.Dp,
+    met: Boolean,
+    onOpen: () -> Unit,
+) {
+    Box(
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape(14.dp))
@@ -803,8 +833,7 @@ private fun SpellTile(spell: Spell, ink: GrimoireInk, size: androidx.compose.ui.
             .background(chapterColor(spell.category).copy(alpha = 0.12f))
             .border(1.dp, ink.rule.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
             .clickable(onClickLabel = "Open this spell", onClick = onOpen),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             spell.character,
@@ -812,6 +841,16 @@ private fun SpellTile(spell: Spell, ink: GrimoireInk, size: androidx.compose.ui.
             fontWeight = FontWeight.Medium,
             color = ink.ink,
         )
+        if (met) {
+            Text(
+                "✦",
+                fontSize = (size.value * 0.18f).sp,
+                color = chapterColor(spell.category),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = size * 0.04f, end = size * 0.07f),
+            )
+        }
     }
 }
 
@@ -824,30 +863,50 @@ fun chapterArt(category: String): String = when (category) {
     "Creatures" -> "animal"
     "Craft" -> "boat"
     "Mind" -> "mind"
-    else -> "time"
+    "Time" -> "time"
+    "Arcana" -> "rune"
+    else -> "spirit"
 }
 
 private fun chapterBlurb(category: String): String = when (category) {
     "Tides" -> "Water, ice, snow, and rain. Spells that flow, freeze, and fall."
     "Flame" -> "Fire and lightning. Quick, bright, and a little dangerous."
     "Sky" -> "Wind, cloud, sun, moon, light, and shadow. What moves overhead."
-    "Ground" -> "Earth, stone, mountain, and wood. What holds still."
+    "Ground" -> "Earth, stone, mountain, wood, and metal. What holds still."
     "Creatures" -> "Animals, sparks, and gestures. Things that move on their own."
-    "Craft" -> "Vessels and metal. Things people make and use."
+    "Craft" -> "Vessels and tools. Things people make and use."
     "Mind" -> "Mind, dream, and sound. What happens inside."
-    else -> "Time, seasons, and the long road. What moves on."
+    "Time" -> "Time, seasons, and the long road. What moves on."
+    "Arcana" -> "Runes, mirrors, keys, brews, illusions, and signs. The craft of magic itself."
+    else -> "Spirits, souls, and wards. What stays, and what stands guard."
 }
 
-/** A real character from each chapter, used as the seal on its opening page. */
-private fun sealGlyph(category: String): String = when (category) {
-    "Tides" -> "水"
-    "Flame" -> "火"
-    "Sky" -> "云"
-    "Ground" -> "石"
-    "Creatures" -> "马"
-    "Craft" -> "桥"
-    "Mind" -> "心"
-    else -> "时"
+/** A real character from each chapter, in the learner's own script. */
+private fun sealGlyph(category: String, mode: StudyMode): String {
+    val simplified = when (category) {
+        "Tides" -> "水"
+        "Flame" -> "火"
+        "Sky" -> "云"
+        "Ground" -> "石"
+        "Creatures" -> "马"
+        "Craft" -> "桥"
+        "Mind" -> "心"
+        "Time" -> "时"
+        "Arcana" -> "魔"
+        else -> "灵"
+    }
+    return when (mode) {
+        StudyMode.SIMPLIFIED -> simplified
+        StudyMode.TRADITIONAL -> mapOf(
+            "云" to "雲", "马" to "馬", "桥" to "橋", "时" to "時", "灵" to "靈",
+        )[simplified] ?: simplified
+        StudyMode.JAPANESE -> mapOf(
+            "云" to "雲", "马" to "馬", "桥" to "橋", "时" to "時", "灵" to "霊",
+        )[simplified] ?: simplified
+        StudyMode.KOREAN -> mapOf(
+            "云" to "雲", "马" to "馬", "桥" to "橋", "时" to "時", "灵" to "靈",
+        )[simplified] ?: simplified
+    }
 }
 
 private fun familyName(family: String): String = when (family) {
@@ -876,6 +935,16 @@ private fun familyName(family: String): String = when (family) {
     "dream" -> "Dream"
     "sound" -> "Sound"
     "time" -> "Time"
+    "tool" -> "Tool"
+    "rune" -> "Rune"
+    "mirror" -> "Mirror"
+    "key" -> "Key"
+    "potion" -> "Brew"
+    "illusion" -> "Illusion"
+    "oracle" -> "Omen"
+    "spirit" -> "Spirit"
+    "soul" -> "Soul"
+    "ward" -> "Ward"
     else -> family.replaceFirstChar { it.uppercase() }
 }
 
@@ -886,6 +955,8 @@ internal fun chapterColor(category: String) = when (category) {
     "Ground" -> Mint
     "Creatures" -> Butter
     "Craft" -> Rose
-    "Mind" -> Lilac
-    else -> Butter
+    "Mind" -> Gem
+    "Time" -> Coral
+    "Arcana" -> Color(0xFFE879F9)
+    else -> Color(0xFF94A3B8)
 }

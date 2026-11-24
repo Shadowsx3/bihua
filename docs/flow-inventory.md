@@ -96,8 +96,9 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 
 | Flow | Steps | Expected | A |
 |---|---|---|---|
-| Spell quest | Home → Study tools → Spell quest | Gate, scene, draw or gift, result, walk on; nothing scheduled | A |
-| Spell gift | Grimoire → choose a spell | Guide starts empty, draws in order, Continue only when ready | A |
+| Spell quest | Home → Study tools → Spell quest | Gate (met count/chapter), scene, draw or gift, result, walk on; nothing scheduled | A |
+| Spell quest return | Leave the road → reopen | Met pages and chapter come back from the progress DB; grimoire shows met stars | A |
+| Spell gift | Grimoire → choose a spell | Guide starts empty, draws in order on the result, actions unlock when it finishes | A |
 | Wrong cast | Draw → cast a non-fitting family | "A different way", Mò's need, attempted reading/meaning tip, Draw/Grimoire/one answer/walk on | A |
 | Spell quest fold/tablet | Same flow on tablet and BOOK | Story left, circle right, hinge gap, no spanning | A |
 

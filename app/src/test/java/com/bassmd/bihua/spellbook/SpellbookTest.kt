@@ -6,7 +6,7 @@ import org.junit.Test
 import java.io.File
 
 class SpellbookTest {
-    private val header = "character,family,category,effect,source,note"
+    private val header = "script,character,family,category,effect,source,note"
 
     private fun shippedSpells(): List<Spell> {
         val file = listOf(File("src/main/assets/spellbook.csv"), File("app/src/main/assets/spellbook.csv"))
@@ -17,7 +17,7 @@ class SpellbookTest {
     @Test
     fun parsesRowsAndKeepsCommasInNotes() {
         val spells = Spellbook.parse(
-            sequenceOf(header, "水,water,Tides,fx_water,override,Water, itself", ""),
+            sequenceOf(header, "SIMPLIFIED,水,water,Tides,fx_water,override,Water, itself", ""),
         )
         assertEquals(1, spells.size)
         assertEquals("水", spells[0].character)
@@ -26,13 +26,22 @@ class SpellbookTest {
 
     @Test
     fun wrongHeaderGivesNoSpells() {
-        assertTrue(Spellbook.parse(sequenceOf("not,the,header", "水,water,Tides,fx_water,x,y")).isEmpty())
+        assertTrue(Spellbook.parse(sequenceOf("not,the,header", "SIMPLIFIED,水,water,Tides,fx_water,x,y")).isEmpty())
     }
 
     @Test
-    fun shippedTableHasEveryChapter() {
-        assertEquals(104, shippedSpells().size)
-        assertEquals(8, SpellCategories.size)
+    fun shippedTableCoversEveryScriptAndChapter() {
+        val spells = shippedSpells()
+        val scripts = spells.groupBy { it.script }
+        assertEquals(setOf("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN"), scripts.keys)
+        assertEquals(10, SpellCategories.size)
+        assertTrue(scripts.values.all { it.size >= 300 })
+        SpellCategories.forEach { category ->
+            assertTrue(
+                "missing $category in a script",
+                scripts.values.all { group -> group.any { it.category == category } },
+            )
+        }
     }
 
     @Test
@@ -49,8 +58,18 @@ class SpellbookTest {
     }
 
     @Test
-    fun charactersAppearOnce() {
-        val characters = shippedSpells().map { it.character }
-        assertEquals(characters.size, characters.toSet().size)
+    fun charactersAppearOncePerScript() {
+        shippedSpells().groupBy { it.script }.forEach { (script, spells) ->
+            val characters = spells.map { it.character }
+            assertEquals(script, characters.size, characters.toSet().size)
+        }
+    }
+
+    @Test
+    fun everyCategoryHasAFunNumberOfChoices() {
+        val grouped = Spellbook.byCategory(shippedSpells())
+        grouped.forEach { (category, spells) ->
+            assertTrue("$category is too thin", spells.size >= 30)
+        }
     }
 }

@@ -228,11 +228,13 @@ some etymology quality.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
 - Current release plan: `docs/1.1.0-roadmap.md`.
-- Spell quest is the extra-practice spellbook: 104 spells, 25 families, 8
-  chapters, forge-only puzzles, two-page tablet/fold layouts, and a direct
-  Home Study tools entry. Working state and traps: `docs/spellbook-progress.md`.
-  Design intent: `docs/spellbook-game-plan.md`. Keep it a quiet extra tool; the
-  main path stays writing review.
+- Spell quest is the extra-practice spellbook: four scripts (Simplified,
+  Traditional, Japanese kanji, Korean Hanja), 35 families, 10 chapters, ~350
+  authored choices per script, forge-only puzzles, and two-page tablet/fold
+  layouts. Every puzzle is a family door, a whole-chapter door, or one exact
+  shape; chapters mix all three. Working state and traps:
+  `docs/spellbook-progress.md`. Design intent: `docs/spellbook-game-plan.md`.
+  Keep it a quiet extra tool; the main path stays writing review.
 - Screen, flow, and feature inventories: `docs/screen-inventory.md`,
   `docs/flow-inventory.md`, `docs/feature-inventory.md`.
 - Test coverage: `docs/test-matrix.md`; risk audit: `docs/user-journey-risk-audit.md`.
@@ -473,7 +475,23 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   guide for one frame.
 - `StrokeOrderGrader` stroke numbers are 1-based, including the empty-ink path.
 - Brush presets: Ink, Pen, Pencil, Marker. Stylus pressure is averaged and eased;
-  speed thins; ends taper. Finger input has no pressure.
+  speed thins; ends taper. Finger input has no pressure. The Spell quest offers a
+  brush tray inside its draw overlay; that choice is quest-local and must never
+  write back to the app-wide brush setting.
+- Spell rows are script-scoped (`SIMPLIFIED`, `TRADITIONAL`, `JAPANESE`,
+  `KOREAN`). Never mix script rows in a grimoire or quest; readings and stroke
+  guides come from the same course. Spellbook parsing is cached per process.
+- Korean Hanja and Japanese kanji casts must use the Han recognizer (pass a Han
+  target, or `StudyMode.TRADITIONAL` for Korean). Do not let the Hangul/kana
+  model decide a Han spell.
+- Quest met pages and the chapter live in the progress database
+  (`spell_quest_met`, `spell_quest_road`) so export/import/sync carry them.
+  Never store quest progress in SharedPreferences. Schema changes need an
+  idempotent migration and a `ProgressStore` test.
+- Puzzle solutions can be wider or narrower than a family. `Solution` may name
+  families, categories, or exact characters; the solver checks the narrowest
+  rule first. Keep the scene's own spell able to solve its scene, including when
+  a chapter puzzle picks two categories.
 - The Practice screen fills the screen: title, character summary, weighted square
   canvas, compact Guide/Order/undo/eraser row, and Check. Result opens in a
   compact scrollable dialog.

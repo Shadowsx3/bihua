@@ -16,13 +16,22 @@ internal fun shortGloss(meaning: String?): String? {
 }
 
 /** Emoji for a spell: an animal's own face when it is one, otherwise its element. */
+private val AnimalEmoji = mapOf(
+    "马" to "🐴", "虎" to "🐯", "兔" to "🐰", "龟" to "🐢", "蛙" to "🐸",
+    "蜂" to "🐝", "鸟" to "🐦", "鱼" to "🐟", "龙" to "🐉", "猫" to "🐱",
+    "狗" to "🐶", "牛" to "🐮", "羊" to "🐑", "猪" to "🐷", "蛇" to "🐍",
+    // Traditional, Japanese, and Korean forms of the same animals.
+    "馬" to "🐴", "鳥" to "🐦", "魚" to "🐟", "龍" to "🐉", "貓" to "🐱",
+    "兎" to "🐰", "龜" to "🐢", "亀" to "🐢", "蟲" to "🐛",
+    "鷄" to "🐔", "鶏" to "🐔", "鴨" to "🦆", "豬" to "🐷", "熊" to "🐻",
+    "鹿" to "🦌", "狐" to "🦊", "鼠" to "🐭", "象" to "🐘", "獅" to "🦁",
+    "狼" to "🐺", "猴" to "🐵", "鵝" to "🦢", "鶴" to "🦢", "鷹" to "🦅",
+    "燕" to "🐦", "蟻" to "🐜", "蛛" to "🕷️", "鯨" to "🐋", "鯊" to "🦈",
+    "猿" to "🐒", "豹" to "🐆", "驢" to "🐴", "駱" to "🐫", "駝" to "🐫",
+)
+
 internal fun spellEmoji(character: String, family: String): String {
-    val animal = mapOf(
-        "马" to "🐴", "虎" to "🐯", "兔" to "🐰", "龟" to "🐢", "蛙" to "🐸",
-        "蜂" to "🐝", "鸟" to "🐦", "鱼" to "🐟", "龙" to "🐉", "猫" to "🐱",
-        "狗" to "🐶", "牛" to "🐮", "羊" to "🐑", "猪" to "🐷", "蛇" to "🐍",
-    )
-    animal[character]?.let { return it }
+    AnimalEmoji[character]?.let { return it }
     return when (family) {
         "water", "boat" -> "💧"
         "ice", "snow" -> "❄️"
@@ -38,6 +47,16 @@ internal fun spellEmoji(character: String, family: String): String {
         "metal" -> "⚙️"
         "wood", "leaf" -> "🍃"
         "hand" -> "✋"
+        "boat" -> "⛵"
+        "tool" -> "🔧"
+        "rune" -> "🔮"
+        "mirror" -> "🪞"
+        "key" -> "🔑"
+        "potion" -> "🧪"
+        "illusion" -> "🎭"
+        "oracle" -> "👁️"
+        "spirit", "soul" -> "👻"
+        "ward" -> "🛡️"
         else -> "✨"
     }
 }

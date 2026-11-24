@@ -75,6 +75,11 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("spell-entry", level="quick", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_entry"),
     ScenarioSpec("spell-quest-dark", level="full", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="spell_quest"),
     ScenarioSpec("spell-quest-calm", level="full", state={"reviews": 5, "new": 2, "days": 5, "reduce_motion": True}, runner="spell_quest"),
+    ScenarioSpec("spell-quest-ja", level="full", state={"reviews": 5, "new": 2, "days": 5, "mode": "JAPANESE"}, runner="spell_quest"),
+    ScenarioSpec("spell-quest-ko", level="full", state={"reviews": 5, "new": 2, "days": 5, "mode": "KOREAN"}, runner="spell_quest"),
+    ScenarioSpec("spell-quest-traditional", level="full", state={"reviews": 5, "new": 2, "days": 5, "mode": "TRADITIONAL"}, runner="spell_quest"),
+    ScenarioSpec("spell-entry-ja", level="quick", state={"reviews": 5, "new": 2, "days": 5, "mode": "JAPANESE"}, runner="spell_entry"),
+    ScenarioSpec("spell-entry-ko", level="quick", state={"reviews": 5, "new": 2, "days": 5, "mode": "KOREAN"}, runner="spell_entry"),
 ]
 
 
@@ -1572,7 +1577,7 @@ def _spell_character_for(label: str) -> str | None:
 
 
 def spell_entry(journey: Journey, state: ScenarioState) -> None:
-    """The spell quest is one tap from Home, framed as extra practice."""
+    """The spell quest is one tap from Home, and also in Study tools, in every script."""
     with journey.step("open from the Home study tools card"):
         journey.open_tab("Home")
         journey.assert_home()
@@ -1580,6 +1585,15 @@ def spell_entry(journey: Journey, state: ScenarioState) -> None:
         journey.tap_visible("Spell quest", max_scrolls=8)
         journey.wait("The road ahead", timeout=10)
         journey.screenshot("spell-entry")
+        journey.tap_visible("Leave", max_scrolls=4)
+    with journey.step("open from the Study tools sheet"):
+        journey.tap_visible("Manage study tools")
+        journey.wait("Study tools", timeout=8)
+        if not journey.exists("Spell quest", timeout=3):
+            raise JourneyFailure("Spell quest is missing from Study tools")
+        journey.screenshot("spell-entry-sheet")
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
         journey.tap_visible("Leave", max_scrolls=4)
     journey.assert_no_crash()
 
@@ -1616,7 +1630,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         time.sleep(0.8)
         # Chapter seals sit in the tabs above the page; the spell tiles come later
         # in the tree, so take the last character on screen.
-        seals = set("水火云石马桥心时")
+        seals = set("水火云石马桥心时魔灵雲馬橋時靈霊")
         glyphs = [
             text for text in journey.texts()
             if text and len(text) == 1 and "\u4e00" <= text <= "\u9fff" and text not in seals
@@ -1638,7 +1652,23 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         else:
             raise JourneyFailure(f"gift produced no result. texts={journey.texts()}")
         journey.screenshot("spell-result")
+        for frame in (1, 2, 3):
+            time.sleep(0.35)
+            journey.screenshot(f"spell-effect-{frame}")
     with journey.step("continue the road"):
+        # The result appears before the guide finishes; the actions unlock
+        # only after the character has drawn itself into the circle.
+        deadline = time.time() + 25
+        while time.time() < deadline:
+            texts = journey.texts()
+            if any(
+                label in texts
+                for label in ("Walk on", "Walk on for now", "Show me one answer")
+            ):
+                break
+            time.sleep(0.3)
+        else:
+            raise JourneyFailure(f"gift actions never unlocked. texts={journey.texts()}")
         if journey.exists("Walk on", timeout=2):
             journey.tap("Walk on")
         else:
@@ -1655,10 +1685,26 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         issues = journey.a11y_unlabeled()
         if issues:
             raise JourneyFailure(f"cast overlay has unlabeled controls: {issues[:3]}")
+        # The quest has its own brush tray; the choice stays inside the game.
+        for tool in ("Ink", "Pen", "Pencil", "Marker"):
+            if not journey.exists(tool, timeout=2):
+                raise JourneyFailure(f"quest brush tray missing {tool}")
+        journey.tap("Pencil")
+        time.sleep(0.4)
+        journey.screenshot("spell-brush")
+        journey.tap("Ink")
+        # Meaning is a reveal, not a toggle: it stays on and keeps its name,
+        # the same way Hear it leaves the pronunciation visible.
+        journey.tap("Meaning")
+        time.sleep(0.6)
+        if "Hide meaning" in journey.texts():
+            raise JourneyFailure("meaning turned into a hide toggle")
+        journey.screenshot("spell-meaning")
         # Draw a real spell with the content database's guide strokes, the same
         # way the review journeys write. A plus can be read as 十, which is not
         # a spell in this book.
-        guide = character_guide("水", state.settings.get("studyMode", "SIMPLIFIED"))
+        mode = state.settings.get("studyMode", "SIMPLIFIED")
+        guide = character_guide("水", mode)
         if not guide:
             raise JourneyFailure("no guide strokes for 水")
         if not journey.draw_guide(guide):
@@ -1685,8 +1731,36 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             # A readable character that is not a spell here: back to the drawing.
             journey.tap("Go back")
         else:
+            deadline = time.time() + 25
+            while time.time() < deadline:
+                labels = journey.texts()
+                if any(
+                    label in labels
+                    for label in ("Walk on", "Walk on for now", "Show me one answer")
+                ):
+                    break
+                time.sleep(0.3)
+            else:
+                raise JourneyFailure(f"cast actions never unlocked. texts={journey.texts()}")
             journey.tap("Walk on for now" if outcome == "nudge" else "Walk on")
         journey.wait("Draw", timeout=10)
+    with journey.step("return to the road"):
+        # Quest progress lives in the progress database, so closing and reopening
+        # should show the pages met and the saved chapter in the gate.
+        journey.tap_visible("Leave the road")
+        journey.tap_visible("Manage study tools")
+        journey.wait("Study tools", timeout=8)
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
+        texts = journey.texts()
+        if not any("met" in text and "spell" in text for text in texts):
+            raise JourneyFailure(f"gate did not show met progress. texts={texts}")
+        journey.screenshot("spell-return")
+        journey.tap_any(["Open the grimoire", "Grimoire"])
+        journey.wait("Close book", timeout=10)
+        journey.screenshot("spell-met-book")
+        journey.tap("Close book")
+        journey.tap_visible("Leave", max_scrolls=4)
     journey.assert_no_crash()
 
 

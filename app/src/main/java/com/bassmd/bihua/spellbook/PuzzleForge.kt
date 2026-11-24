@@ -25,7 +25,7 @@ class PuzzleParts(
     val familyTags: Map<String, Set<String>>,
     val obstacles: List<Obstacle>,
     /** What happens when a tag works. `{family}` is replaced with the spell's name. */
-    val outcomes: Map<String, String>,
+    val outcomes: Map<String, List<String>>,
     val settings: List<String>,
     val times: List<TimeOfDay>,
     val weathers: List<Weather>,
@@ -76,9 +76,11 @@ class PuzzleParts(
                     )
                 }
             }
-            val outcomes = HashMap<String, String>()
+            val outcomes = HashMap<String, MutableList<String>>()
             db.rawQuery("SELECT tag, text FROM tag_outcome", null).use { c ->
-                while (c.moveToNext()) outcomes[c.getString(0)] = c.getString(1)
+                while (c.moveToNext()) {
+                    outcomes.getOrPut(c.getString(0)) { mutableListOf() }.add(c.getString(1))
+                }
             }
             val settings = mutableListOf<String>()
             db.rawQuery("SELECT place FROM setting ORDER BY place", null).use { c ->
@@ -112,27 +114,76 @@ object PuzzleForge {
         parts: PuzzleParts,
         random: Random,
         family: String? = null,
+        character: String = "",
+        style: PuzzleStyle = PuzzleStyle.FAMILY,
         previousPlace: String? = null,
     ): Puzzle {
         require(parts.obstacles.isNotEmpty()) { "no obstacles to build a puzzle from" }
         val carried = family?.let { parts.familyTags[it] }.orEmpty()
-        val fitting = parts.obstacles.filter { obstacle -> obstacle.accepts.any { it in carried } }
-        val obstacle = (fitting.ifEmpty { parts.obstacles }).let { it[random.nextInt(it.size)] }
+        val fittingObstacles = parts.obstacles.filter { obstacle -> obstacle.accepts.any { it in carried } }
+        val obstacle = (fittingObstacles.ifEmpty { parts.obstacles }).let { it[random.nextInt(it.size)] }
 
-        val solutions = parts.familyNames.keys
+        val fittingFamilies = parts.familyNames.keys
             .mapNotNull { id ->
                 val matched = parts.familyTags[id].orEmpty().intersect(obstacle.accepts).sorted()
                 if (matched.isEmpty()) return@mapNotNull null
-                val name = parts.familyNames[id].orEmpty().lowercase()
-                val outcome = parts.outcomes[matched.first()] ?: "The {family} works, and the way opens."
-                Solution(families = setOf(id), text = outcome.replace("{family}", name))
+                Triple(id, matched, parts.familyNames[id].orEmpty())
             }
             .shuffled(random)
 
-        val solvedBy = solutions.flatMap { it.families }.toSet()
+        val solutionList = when {
+            style == PuzzleStyle.CHARACTER && character.isNotEmpty() && family != null -> {
+                val match = fittingFamilies.firstOrNull { it.first == family }
+                val name = parts.familyNames[family].orEmpty().lowercase()
+                val outcome = match?.second?.firstOrNull()
+                    ?.let { parts.outcomes[it]?.random(random) }
+                    ?: "The {family} works, and the way opens."
+                listOf(
+                    Solution(
+                        families = setOf(family),
+                        characters = setOf(character),
+                        text = outcome.replace("{family}", name),
+                    ),
+                )
+            }
+            style == PuzzleStyle.CATEGORY -> {
+                // The scene's own chapter always answers, so its spell can solve
+                // the puzzle it introduced. A second chapter widens the door.
+                val own = family?.let { SpellFamilies.chapter(it) }
+                val others = fittingFamilies
+                    .map { SpellFamilies.chapter(it.first) }
+                    .filter { it != own }
+                    .distinct()
+                    .shuffled(random)
+                val chapters = (listOfNotNull(own) + others)
+                    .distinct()
+                    .take(if (random.nextBoolean()) 1 else 2)
+                chapters.map { chapter ->
+                    Solution(
+                        families = emptySet(),
+                        categories = setOf(chapter),
+                        text = categoryOutcome(chapter),
+                    )
+                }
+            }
+            else -> fittingFamilies.map { (id, matched, rawName) ->
+                val name = rawName.lowercase()
+                val outcome = parts.outcomes[matched.first()]?.random(random)
+                    ?: "The {family} works, and the way opens."
+                Solution(families = setOf(id), text = outcome.replace("{family}", name))
+            }
+        }
+
+        val solvedBy = solutionList.flatMap { it.families }.toSet()
+        val solvedChapters = solutionList.flatMap { it.categories }.toSet()
+        val styleNeed = when (style) {
+            PuzzleStyle.CHARACTER -> "Only one exact shape will do here. ${obstacle.need}"
+            PuzzleStyle.CATEGORY -> "This one wants a whole chapter of magic, not one narrow family. ${obstacle.need}"
+            else -> obstacle.need
+        }
         val hints = parts.familyNames.keys
-            .filter { it !in solvedBy }
-            .associateWith { obstacle.need }
+            .filter { it !in solvedBy && SpellFamilies.chapter(it) !in solvedChapters }
+            .associateWith { styleNeed }
 
         val setting = parts.settings
             .filter { previousPlace == null || !previousPlace.startsWith(it) }
@@ -141,16 +192,36 @@ object PuzzleForge {
         val time = parts.times[random.nextInt(parts.times.size)]
         val weather = parts.weathers[random.nextInt(parts.weathers.size)]
         val place = listOf(setting, time.suffix, weather.suffix).filter { it.isNotBlank() }.joinToString(" ")
-        val lines = listOf(time.line, weather.line).filter { it.isNotBlank() } + obstacle.lines
+        val styleLine = when {
+            style == PuzzleStyle.CHARACTER -> "It wants one exact shape, not just the right kind of magic."
+            style == PuzzleStyle.CATEGORY -> "It answers to a whole chapter, not one narrow family."
+            else -> ""
+        }
+        val lines = listOf(time.line, weather.line).filter { it.isNotBlank() } +
+            listOfNotNull(styleLine.takeIf { it.isNotEmpty() }) + obstacle.lines
 
         return Puzzle(
             id = "forge-${obstacle.id}-${java.lang.Long.toHexString(random.nextLong())}",
             place = place,
             lines = lines,
             prompt = obstacle.prompt,
-            solutions = solutions,
+            solutions = solutionList,
             hints = hints,
-            fallback = obstacle.need,
+            fallback = styleNeed,
         )
+    }
+
+/** The result line when a whole chapter answers, not one family. */
+    private fun categoryOutcome(chapter: String): String = when (chapter) {
+        "Tides" -> "The tide turns for you, and the way opens through the water."
+        "Flame" -> "A warm light answers, and the way clears."
+        "Sky" -> "The air moves with you, and the way opens overhead."
+        "Ground" -> "The ground settles into a path, and the way holds."
+        "Creatures" -> "Something living answers, and the way opens."
+        "Craft" -> "A made thing answers, and the way comes together."
+        "Mind" -> "A clear thought answers, and the way becomes simple."
+        "Time" -> "The moment turns, and the way opens."
+        "Arcana" -> "The sign answers, and the way unfolds."
+        else -> "A spirit answers, and the way is guarded no longer."
     }
 }

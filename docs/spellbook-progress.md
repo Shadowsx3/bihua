@@ -8,15 +8,25 @@ the traps, and the next checks.
 
 Everything below compiles and is covered by unit tests.
 
-- `spellbook/Spellbook.kt` reads `assets/spellbook.csv`: **104 spells, 25
-  families, 8 chapters**. The chapters are Tides, Flame, Sky, Ground, Creatures,
-  Craft, Mind, and Time. Light and shadow are separate families, and Mind/Time
-  have their own characters and chapter art.
-- `tools/spells/parts.sql` remains the authored source for `puzzle_parts.db`.
-  `tools/spells/build_parts.py` compiles it.
+- `spellbook/Spellbook.kt` reads `assets/spellbook.csv`: **1,387 spells across
+  four scripts, 35 families, 10 chapters**. The chapters are Tides, Flame, Sky,
+  Ground, Creatures, Craft, Mind, Time, Arcana, and Spirit. Simplified and
+  Traditional have 35 choices in every chapter; Japanese has 347 spells and
+  Korean 340, with a smaller Flame chapter because those courses have fewer
+  fire characters. Japanese uses kanji and Korean uses Hanja; readings and
+  meanings are native to each course.
+- `tools/spells/spell_catalog.py` is the authored semantic core; the builder maps
+  it to the learner's script through the content database and only fills gaps
+  with characters that are in that course.
+- `tools/spells/parts.sql` remains the authored source for `puzzle_parts.db`:
+  35 families, 47 obstacles, 18 tags with several outcomes each, 40 settings,
+  26 times, and 20 weathers. `tools/spells/build_parts.py` compiles it.
 - The fixed 1500-variant library, `puzzles.db`, `PuzzleBook`, and the seed/build
   tools are retired. Every scene is built by `PuzzleForge` from the parts.
-- `spellbook/Puzzle.kt` holds the `Puzzle` and `Solution` models.
+- `spellbook/Puzzle.kt` holds the `Puzzle` and `Solution` models. A solution can
+  name families, a whole category, or exact characters. `PuzzleStyle` chooses the
+  width, and every six-scene chapter mixes three family puzzles, two chapter
+  puzzles, and one exact-shape puzzle.
 - `QuestGenerator` always uses the forge. It never selects a library puzzle.
 - `spellbook/QuestText.kt` owns the scroll word, the first-gloss fallback, the
   emoji, the result family, and the definition gloss. `SpellQuestLogicTest`
@@ -25,44 +35,72 @@ Everything below compiles and is covered by unit tests.
   - gate with a pinned Start action and a book-fold two-page layout;
   - visual novel with a fixed-height, scrollable card;
   - cast overlay with the same rune ring as the main circle stage, a clipped paper
-    drawing surface, eight-colour runes, neutral outer ring while writing, family
-    colour after recognition, a larger drawing area, the clue card above, and a
-    pinned Cast;
-  - definition card above the circle, clues/ink controls below;
+    drawing surface with black boundaries, ten-colour runes, neutral background
+    while writing, family tint after recognition, a larger drawing area, the clue
+    card above, and a pinned Cast;
+  - definition card above the circle on a phone, and on the story page on a
+    tablet/fold so the circle gets the extra room; clues/ink controls below;
+    clues reveal once, stay revealed for the scene, and keep their names; a
+    quest-only brush tray changes this game's ink without touching the app-wide
+    brush;
   - hint/result tip card with the attempted character's reading, meaning, and a
     real word after a success;
   - wrong answers use Mò's need hint and the tip card shows what was actually
     drawn, not the scene answer;
   - guided drawing and learner playback use a roughly fixed total time; learner
     ink is flat and takes the detected family colour, with no glow;
+  - a cast or gift goes straight to the result; the strokes draw there and the
+    result actions wait for the drawing to settle; there is no Continue screen;
   - gift playback starts empty (`startComplete = false`) and only becomes the
     completed guide after its strokes play;
   - reduce motion stops the scene motes, rune spin, and effects.
 - `practice/GrimoireScreen.kt`:
-  - 8 chapter tabs, cover, index, one spread per chapter;
+  - 10 chapter tabs, cover, index, one spread per chapter, script-specific seals;
   - index rows are compact and scroll on short heights;
-  - light/dark palette; fold hinge gap instead of a fake spine on BOOK.
-- `HomeScreen` Study tools card has a direct "Spell quest" row in Simplified. The
-  game is one tap from Home, but framed as extra practice, not the main action.
+  - light/dark palette; fold hinge gap instead of a fake spine on BOOK, including
+    a 5 + 5 bookmark split so no tab crosses the physical hinge.
+- `HomeScreen` Study tools card has a direct "Spell quest" row in every script,
+  and the Study tools sheet has the same entry. The game is one tap from Home,
+  but framed as extra practice, not the main action.
 - Sound: a generated ambient bed (pad, low fifth, heartbeat, plucks) and warm cues
   for cast, wrong, gift, reveal, walk, and chapter.
-- The spell quest is Simplified-only. The entry is hidden in other courses until
-  those spell tables exist; the grimoire remains guarded too.
+- The spell quest is available in Simplified, Traditional, Japanese, and Korean
+  courses. Each script's grimoire and puzzle pool come from its own spell rows.
+- Met pages and the current chapter are stored in the progress database
+  (`spell_quest_met`, `spell_quest_road`) so export, import, and sync carry
+  them. The gate shows the met count and chapter; the grimoire marks met pages
+  with a star; the result card celebrates a new page and every tenth page.
+- Korean Hanja and Japanese kanji casts use the Han recognizer (a Han target and
+  the zh-Hant/ja model), not the Hangul/kana model. This keeps a 水 drawing from
+  being read as a Hangul syllable.
 
 ## Tests
 
-- `SpellbookTest`: 104 spells, 8 chapters, unique characters.
+- `SpellbookTest`: four scripts, 10 chapters, at least 300 spells per script,
+  at least 30 choices per chapter, unique characters per script.
 - `QuestGeneratorTest`: six-scene chapters, no back-to-back place, every chosen
-  spell can solve its own scene.
+  spell can solve its own scene, and chapters mix family, chapter, and exact-shape
+  puzzles. Exact-shape puzzles reject another spell in the same family; chapter
+  puzzles accept any spell from the chapter.
+- `PuzzleForgeTest` also covers each solution shape and the hint for a narrow
+  puzzle.
 - `PuzzleForgeTest`: solver rule, hints, determinism, target generation, variety.
 - `ShippedPuzzlePartsTest`: every obstacle has at least two fitting families;
   2000 seeds give 200+ place/prompt combinations.
 - `GrimoireSpreadsTest`: cover/index order, spread pairing, phone pairs.
+- `ProgressStoreSpellQuestTest`: met pages and chapter are per script and survive
+  export/import; duplicate marks do not create a second page.
 - `SpellQuestLogicTest`: scroll word, result family, definition gloss, timing,
   emoji, tip text.
 - UIAutomator `spell-quest` checks the gate, a gift from the grimoire, the
-  result, a real draw/cast, the cast overlay's labels, and the wrong-answer
-  path. It draws 水's real guide strokes, not a synthetic plus.
+  result, a real draw/cast, the cast overlay's labels, the brush tray, the
+  meaning reveal, and the wrong-answer path. It draws 水's real guide strokes,
+  not a synthetic plus.
+- `spell-quest-ja`, `spell-quest-ko`, and `spell-quest-traditional` run the same
+  flow in the other scripts; `spell-entry-ja`/`-ko` check the entry points.
+- `spell-quest-dark` and `spell-quest-calm` cover theme and reduce motion.
+- `scripts/journey.sh --spell` runs the whole spell suite on phone, tablet, and
+  fold-inner.
 
 ## Bugs fixed in this pass
 
@@ -88,15 +126,15 @@ Everything below compiles and is covered by unit tests.
 
 ## Next tasks
 
-1. Verify the latest builds on all three main resolutions: phone, tablet, and
-   fold-inner. The current `spell-quest` scenario covers the whole flow.
-2. Dark theme at 1x and 1.5x on the gate, grimoire, scene, hint, and cast
-   overlay. Use the `spell-quest-dark` scenario and inspect screenshots.
-3. Reduce motion: run `spell-quest-calm`; effects should skip, strokes should
-   still play, and the scene should not drift.
-4. Re-run the full standard matrix so the Home Study tools card, the removed
-   library, and the new data do not regress other screens.
-5. Keep the landing copy in sync if the quest becomes part of the release story.
+1. Finish the verification pass on phone, tablet, fold-inner, and fold-outer for
+   all four scripts; inspect the new 10-chapter grimoire, the wider circle, and
+   the effect frames.
+2. Dark theme and large text on the gate, grimoire, scene, hint, and cast
+   overlay.
+3. Reduce motion: effects skip, strokes still play, the scene does not drift.
+4. Re-run the standard matrix so the Home/Study tools entry, shared spell cache,
+   and new data do not regress other screens.
+5. Rebuild the signed release and update the landing hash when the feature ships.
 
 ## Traps
 
@@ -120,3 +158,12 @@ Everything below compiles and is covered by unit tests.
   glyph can belong to another character entry.
 - The scenario excludes chapter seals when picking a spell tile. New chapters
   add seals; update the exclusion set when adding a chapter.
+- Quest progress belongs in the progress DB, never SharedPreferences: the app's
+  export/import/sync only carries the DB. Schema changes are idempotent and need
+  a `ProgressStore` test.
+- Korean/Japanese Han spells need the Han recognizer. Passing no target uses the
+  Hangul/kana model and misreads Han characters.
+- The quest overlay can sit outside a CompositionLocal provider. Pass the
+  resolved `dark` flag into `SpellQuestScreen`/`GrimoireScreen` as well as the
+  progress store; do not assume `LocalBihuaPalette` or `LocalProgressStore`
+  reaches it.

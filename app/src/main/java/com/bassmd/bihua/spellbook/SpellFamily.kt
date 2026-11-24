@@ -52,7 +52,7 @@ data class SpellFamily(
 object SpellFamilies {
     /** Chapters in reading order. */
     val chapters: List<String> = listOf(
-        "Tides", "Flame", "Sky", "Ground", "Creatures", "Craft", "Mind", "Time",
+        "Tides", "Flame", "Sky", "Ground", "Creatures", "Craft", "Mind", "Time", "Arcana", "Spirit",
     )
 
     val all: List<SpellFamily> = listOf(
@@ -89,6 +89,19 @@ object SpellFamilies {
         SpellFamily("sound", "Sound", "Mind", EffectStyle.PULSE),
         // Time
         SpellFamily("time", "Time", "Time", EffectStyle.CLOCK),
+        // Arcana: magic systems, mirrors, keys, brews, illusions, and signs.
+        SpellFamily("rune", "Rune", "Arcana", EffectStyle.GLOW),
+        SpellFamily("mirror", "Mirror", "Arcana", EffectStyle.VEIL),
+        SpellFamily("key", "Key", "Arcana", EffectStyle.PULSE),
+        SpellFamily("potion", "Brew", "Arcana", EffectStyle.RIPPLE),
+        SpellFamily("illusion", "Illusion", "Arcana", EffectStyle.VEIL),
+        SpellFamily("oracle", "Omen", "Arcana", EffectStyle.DRIFT),
+        // Spirit: what stays after the body, and what guards the living.
+        SpellFamily("spirit", "Spirit", "Spirit", EffectStyle.DRIFT),
+        SpellFamily("soul", "Soul", "Spirit", EffectStyle.DRIFT),
+        SpellFamily("ward", "Ward", "Spirit", EffectStyle.PULSE),
+        // Craft gets a second everyday family beyond the vessel.
+        SpellFamily("tool", "Tool", "Craft", EffectStyle.RISE),
     )
 
     private val byId: Map<String, SpellFamily> = all.associateBy { it.id }

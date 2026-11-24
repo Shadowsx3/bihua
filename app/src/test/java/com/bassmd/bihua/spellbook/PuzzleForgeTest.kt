@@ -33,9 +33,9 @@ class PuzzleForgeTest {
             ),
         ),
         outcomes = mapOf(
-            "FLOW" to "The {family} runs with the current.",
-            "SOLID" to "The {family} makes a firm path.",
-            "PUSH" to "The {family} shoves the way clear.",
+            "FLOW" to listOf("The {family} runs with the current."),
+            "SOLID" to listOf("The {family} makes a firm path."),
+            "PUSH" to listOf("The {family} shoves the way clear."),
         ),
         settings = listOf("The old gate", "The mill on the stream", "The lantern hill"),
         times = listOf(TimeOfDay("", ""), TimeOfDay("at dusk", "The light goes soft.")),

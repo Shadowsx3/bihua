@@ -9,7 +9,7 @@ import org.junit.Test
 class GrimoireSpreadsTest {
 
     private fun spell(character: String, category: String) =
-        Spell(character = character, family = "water", category = category, effect = "", source = "", note = "")
+        Spell(script = "SIMPLIFIED", character = character, family = "water", category = category, effect = "", source = "", note = "")
 
     private val grouped = linkedMapOf(
         "Tides" to listOf(spell("水", "Tides"), spell("雨", "Tides"), spell("雪", "Tides")),
