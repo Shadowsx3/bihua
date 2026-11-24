@@ -20,38 +20,39 @@ built, how the game loop works, and what is still missing. The working handoff
 
 ### Data
 
-- `app/src/main/assets/spellbook.csv`: 100 spells, 24 families, 8 chapters. Each spell
-  has a character, a family, a category, an effect, a source, and a note.
+- `app/src/main/assets/spellbook.csv`: 104 spells, 25 families, 8 chapters (Tides,
+  Flame, Sky, Ground, Creatures, Craft, Mind, Time). Each spell has a character, a
+  family, a category, an effect, a source, and a note.
 - `tools/spells/parts.sql`: the procedural puzzle parts (families and their tags,
   obstacles and what they accept, tag outcomes, settings, times of day, weather).
   Source of truth. `tools/spells/build_parts.py` compiles it to
   `app/src/main/assets/puzzle_parts.db`.
-- `tools/spells/puzzle_seeds.sql`: the authored puzzle seeds (32 places, each with
-  honest solutions and per-family hints), in SQL.
-- `app/src/main/assets/puzzles.db`: the expanded puzzle library (1500 variants), built
-  from the seed SQL by `tools/spells/build_puzzles.py`. The app reads only this file.
+- The fixed 1500-variant library and its seed/build files are retired. Every scene is
+  built from `puzzle_parts.db`; there is no fallback puzzle database in the app.
 - Content store: `bihua_content.db` provides the stroke guides (path-only strokes are
   common; never key UI on `centerlines()`).
 
 ### Engine (`spellbook/`)
 
 - `Spellbook.kt`, `SpellFamilies.kt`, `Motifs.kt`: the taxonomy and visual identity.
-- `Puzzles.kt`: `PuzzleBook` loads the authored library from `puzzles.db`.
+- `Puzzle.kt`: the `Puzzle` and `Solution` models shared by the forge, solver, and UI.
 - `PuzzleForge.kt`: procedural generation. `PuzzleParts.load(context)` reads the parts;
   `PuzzleForge.generate(parts, random, family, previousPlace)` builds a puzzle. The same
   seed gives the same puzzle, and the combinations are far more than any library holds.
 - `Quest.kt`: `QuestSolver` (a cast solves when its family is one of the puzzle's
-  solutions, otherwise it gets the hint) and `QuestGenerator` (scenes per chapter; uses
-  the forge when parts are present, the library otherwise).
+  solutions, otherwise it gets the hint) and `QuestGenerator` (scenes per chapter,
+  always built from the forge).
 - `QuestText.kt` (practice package): `shortGloss` for the word on the scroll, and
   `spellEmoji` for the emoji (animal faces for animals, element emoji otherwise).
 
 ### Screens (`practice/`)
 
 - **Gate** (`SpellQuestScreen.kt`): "The road ahead", three rule cards, Start the road,
-  Open the grimoire, Leave.
+  Open the grimoire, Leave. On a book fold it is a two-page gate: intro on the left,
+  rules and actions on the right. The action row stays pinned so Start is always reachable.
 - **Visual novel**: the scene card (place, speaker, Mò, the label pill, the text, the
-  actions). The card has a fixed height (380 dp); its text scrolls inside it.
+  tip card, the actions). The card height is fixed per font scale (380 dp at 1x, 400 dp
+  for a hint at 1.5x) and its text scrolls inside it.
 - **Grimoire** (`GrimoireScreen.kt`): a book. Cover, index, then one spread per
   category: the category on the left, every character on the right. The index rows and
   the bookmark tabs jump to a category. Light and dark follow the app theme. Phones
@@ -59,9 +60,14 @@ built, how the game loop works, and what is still missing. The working handoff
 - **Circle stage**: outer ring with rotating runes (drawn as strokes, no font), the
   guide circle, the drawn shape, and the effects. The effect plays inside the circle:
   a lead-in before the strokes, a flourish after them.
-- **Draw** (cast overlay): the drawing circle, "Show the shape" (plays the strokes),
-  Hear it (reveals the reading), Meaning (reveals the gloss), Undo, Clear, Cast, Go back.
-  The definition card under the circle shows the reading and gloss once asked for.
+- **Draw** (cast overlay): the drawing circle with the same rune ring as the main
+  circle stage, "Show the shape" (plays the strokes), Hear it (reveals the reading),
+  Meaning (reveals the gloss), Undo, Clear, Cast, Go back. The definition card sits
+  above the circle; the Cast button stays pinned. Clues and ink controls scroll below.
+- **Tip card**: readings and meanings appear in a tinted card with a small spark icon,
+  not as bare text.
+- **Home entry**: the Study tools card has a direct "Spell quest" row, so the game is
+  one tap from Home but still framed as extra practice.
 
 ### Game loop
 
@@ -82,10 +88,13 @@ built, how the game loop works, and what is still missing. The working handoff
 
 ### Layout by device
 
-- **Phone**: stacked. The circle stage on top, the fixed-height card below.
-- **Fold and tablet** (screen width 700 dp and up): two halves. The visual novel on the
-  left half, the drawing circle on the right half, equal weight, a 24 dp gap at the
-  hinge. The circle is sized from the room it gets (up to 440 dp).
+- **Phone**: stacked. The circle stage on top, the fixed-height card below. The cast
+  overlay keeps the drawing circle large and the Cast button pinned.
+- **Tablet**: two halves. The visual novel on the left, the drawing circle on the
+  right, equal weight.
+- **Book fold**: the same two pages with a 28 dp hinge gap. The gate, scene, cast
+  overlay, and grimoire all respect the hinge; no card or circle spans the fold.
+  The circle is sized from the room it gets (up to 440 dp).
 - Rune ring and circle use the smaller side on both axes, so they stay round in any
   container.
 
@@ -95,31 +104,29 @@ built, how the game loop works, and what is still missing. The working handoff
   still plays when system animations are off. Decorative loops may use the infinite
   variant.
 - Reduce motion skips the effects, keeps the strokes, and shortens the waits.
-- A guide never flashes complete before its strokes: the player resets progress at the
-  moment play is requested.
+- A guide never flashes complete before its strokes: the player can start empty
+  (`startComplete = false`) and resets progress at the moment play is requested.
 
 ### Quality
 
 - Unit tests: `GrimoireSpreadsTest` (spread rules), `PuzzleForgeTest` (solver rule,
   nudges, determinism, variety), `ShippedPuzzlePartsTest` (every obstacle has at least
-  two fitting families; 2000 seeds give 200+ distinct combinations), `PuzzleBookTest`,
-  `SpellbookTest`.
+  two fitting families; 2000 seeds give 200+ distinct combinations), `QuestGeneratorTest`,
+  `SpellbookTest`, `SpellQuestLogicTest`.
 - UIAutomator scenario `spell-quest` (`qa/scenarios.py`): the gate, the gift from the
-  grimoire, the result, a real draw and cast, and the wrong-answer path. Runs on phone,
-  tablet, and fold-inner.
+  grimoire, the result, a real draw and cast, the cast overlay's labels, and the
+  wrong-answer path. Runs on phone, tablet, and fold-inner.
 
 ## Still to do before release
 
 ### Required
 
-- Switch gameplay fully to the forge and retire the 1500-variant library once the
-  forge's variety is checked on device.
-- Verify on device: the fold two-pane layout (left visual novel, right drawing), the
-  rune ring, the effect choreography, the name scroll timing, the definition card, and
-  the wrong-answer flow on all three profiles.
-- Dark theme and 1.5x text on the grimoire, the gate, and the visual novel.
+- Done: gameplay uses the forge only; the 1500-variant library and its tools are gone.
+- Verify on device: the fold two-page layout, the rune ring, effect choreography, name
+  scroll timing, the definition card, and the wrong-answer flow on phone, tablet, fold.
+- Dark theme and 1.5x text on the grimoire, gate, and visual novel.
 - Reduce-motion pass on every flow.
-- Accessibility: TalkBack labels on the circle, the buttons, and the grimoire tiles.
+- Accessibility: TalkBack labels on the circle, buttons, and grimoire tiles.
 
 ### Planned (from the earlier backlog)
 

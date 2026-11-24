@@ -725,9 +725,12 @@ private fun SpellQuestContent(
                         color = PlumInk,
                     )
                     if (phase == QuestPhase.HINT || phase == QuestPhase.RESULT) {
+                        val tipCharacter = badgeCharacter.ifEmpty { castCharacter }
+                        val tipEntry = characters.firstOrNull { it.character == tipCharacter }
                         SpellTipCard(
-                            reading = scene.spell.reading,
-                            meaning = scene.spell.meaning,
+                            reading = tipEntry?.reading.orEmpty(),
+                            meaning = tipEntry?.meaning.orEmpty(),
+                            word = if (phase == QuestPhase.RESULT) tipEntry?.words?.firstOrNull() else null,
                             tint = chapterColor(SpellFamilies.chapter(headerFamily)),
                         )
                     }
@@ -1163,8 +1166,13 @@ private fun GateCard(title: String, body: String, tint: Color) {
 
 /** A warm little note for the reading and meaning, instead of two bare lines. */
 @Composable
-private fun SpellTipCard(reading: String, meaning: String, tint: Color) {
-    if (reading.isBlank() && meaning.isBlank()) return
+private fun SpellTipCard(
+    reading: String,
+    meaning: String,
+    word: com.bassmd.bihua.content.WordContext? = null,
+    tint: Color,
+) {
+    if (reading.isBlank() && meaning.isBlank() && word == null) return
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1208,6 +1216,14 @@ private fun SpellTipCard(reading: String, meaning: String, tint: Color) {
                     meaning,
                     style = MaterialTheme.typography.bodySmall,
                     color = PlumInk.copy(alpha = 0.86f),
+                )
+            }
+            if (word != null) {
+                Text(
+                    "In a word: ${word.word} · ${word.reading} · ${word.meaning}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = PlumSoft,
+                    maxLines = 2,
                 )
             }
         }
@@ -2067,6 +2083,7 @@ private fun MagicCircle(
         Box(
             modifier = Modifier
                 .fillMaxSize(0.78f)
+                .align(Alignment.Center)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.04f))
                 .border(1.5.dp, glow.copy(alpha = 0.6f), CircleShape),

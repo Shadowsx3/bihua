@@ -1427,6 +1427,9 @@ fun BihuaApp(
             Modifier
                 .fillMaxSize()
                 .appStatusBarsPadding()
+                // The full-screen quest owns the screen and the accessibility
+                // tree; do not leave Home controls focusable behind it.
+                .then(if (showQuest) Modifier.clearAndSetSemantics { } else Modifier)
         ) {
             val fold = LocalFoldState.current
             val book = fold == FoldState.BOOK && maxWidth >= 700.dp
