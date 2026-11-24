@@ -34,7 +34,7 @@ harness; pure composables and physical hardware still need the device pass.
 | Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
 | Spell quest scripts | Same flow in Traditional, Japanese kanji, and Korean Hanja; entry from Home and Study tools | `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry-ja`, `spell-entry-ko` |
 | Spell quest theme and motion | Dark palette, reduce motion, large text, effect frames | `spell-quest-dark`, `spell-quest-calm`, `--font-scale 1.5` |
-| Spellbook data | 1,393 spells across four scripts, 35 families, 10 chapters, ≥30 choices per chapter, unique characters per script | `SpellbookTest` |
+| Spellbook data | 1,387 spells across four scripts, 35 families, 10 chapters, ≥30 choices per chapter, unique characters per script | `SpellbookTest` |
 | Puzzle shapes | Family doors, whole-chapter doors, and exact-shape puzzles; the scene spell always solves; narrow rules reject wider casts | `QuestGeneratorTest`, `PuzzleForgeTest` |
 | Forge honesty | Every family carrying an accepted tag solves; targeted generation; no repeated place; 950k+ place combinations | `PuzzleForgeTest`, `QuestGeneratorTest`, `ShippedPuzzlePartsTest` |
 | Gift playback | Starts empty, plays the real guide (or a readable fallback) in the circle, actions wait for the stroke end | `spell-quest` journey, screenshots |

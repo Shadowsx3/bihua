@@ -47,7 +47,7 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Completion party hat | Mò wears a party hat on the session-complete panel | P |
 | Spell quest | Extra practice in all four scripts: draw a character that fits the scene, or take a gift from the grimoire; nothing graded or scheduled | A/P |
 | Spell quest road | Met pages, chapter, new-page note, and every-tenth-page milestone; stored in the progress DB so export/import/sync carry it | A/P |
-| Spellbook data | 104 spells, 25 families, 8 chapters, 8 category tabs | A |
+| Spellbook data | 1,387 spells across four scripts, 35 families, 10 chapters and category tabs | A |
 | Spell quest cast surface | Rune circle, clue card above the drawing, one-way clues, quest-only brush tray, pinned Cast, plain learner ink, tip card with reading/meaning/word | A/P |
 | Spell quest sound | Generated pad, fifth, heartbeat, plucks; soft cast/wrong/gift/reveal/walk/chapter cues | P |
 
