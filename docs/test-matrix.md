@@ -24,6 +24,7 @@ harness; pure composables and physical hardware still need the device pass.
 | Widget layout states | 2×2 Today and 4×2 Word, counts, all-clear, vacation, 1.5× font, night text, backgrounds | manual launcher pass |
 | Grade legend | “?” opens Again/Hard/Good/Easy from the session prompt | `grade-help` journey |
 | Widget outfit | Pin Witch in Display and verify the row persists | `settings-outfit` journey |
+| Progress ranges | 7D, 90D, 1Y, then 30D; Momentum and range labels follow | `progress-ranges` journey |
 | Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |

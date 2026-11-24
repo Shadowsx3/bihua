@@ -45,6 +45,7 @@ import kotlin.math.roundToInt
 @Composable
 fun LearnedChart(
     history: List<DayActivity>,
+    periodLabel: String = "",
     modifier: Modifier = Modifier,
 ) {
     if (history.isEmpty()) return
@@ -69,6 +70,13 @@ fun LearnedChart(
                     style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )
+                if (periodLabel.isNotBlank()) {
+                    Text(
+                        periodLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                    )
+                }
             }
             selected?.let { day ->
                 Surface(

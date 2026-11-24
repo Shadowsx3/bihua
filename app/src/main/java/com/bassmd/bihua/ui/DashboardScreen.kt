@@ -31,6 +31,9 @@ import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -54,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.progress.DueDay
+import com.bassmd.bihua.progress.ProgressRange
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.ui.components.Dot
@@ -85,6 +90,9 @@ fun DashboardScreen(
     mode: StudyMode,
     characters: List<CharacterEntry>,
     activity: List<DayActivity>,
+    rangeActivity: List<DayActivity> = activity,
+    range: ProgressRange = ProgressRange.MONTH,
+    onRangeChange: (ProgressRange) -> Unit = {},
     today: java.time.LocalDate = java.time.LocalDate.now(),
     forecast: List<DueDay>,
     history: List<DayActivity> = emptyList(),
@@ -93,7 +101,6 @@ fun DashboardScreen(
     confusions: List<CharacterEntry> = emptyList(),
     memoryBuckets: List<com.bassmd.bihua.progress.MemoryBucket> = emptyList(),
     gradeMix: com.bassmd.bihua.progress.GradeMix = com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0),
-    totalReviews: Int = 0,
     averageInterval: Float = 0f,
     practiceTimeMs: Long = 0,
     writingPace: com.bassmd.bihua.progress.WritingPace? = null,
@@ -108,6 +115,7 @@ fun DashboardScreen(
     val learning = counts[StudyStatus.LEARNING] ?: 0
     val leeches = remember(characters) { characters.filter { it.status == StudyStatus.LEECH } }
     val new = counts[StudyStatus.NEW] ?: 0
+    val largeText = LocalDensity.current.fontScale > 1.25f
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -131,8 +139,13 @@ fun DashboardScreen(
                     Column(Modifier.weight(1f)) {
                         Text("Progress", style = MaterialTheme.typography.headlineLarge, color = InkDark)
                         Text(
-                            "$known known · ${review + learning} in review" +
-                                if (leeches.isNotEmpty()) " · ${leeches.size} tricky" else "",
+                            if (largeText) {
+                                "$known known · ${review + learning} reviewing" +
+                                    if (leeches.isNotEmpty()) " · ${leeches.size} tricky" else ""
+                            } else {
+                                "$known known · ${review + learning} in review" +
+                                    if (leeches.isNotEmpty()) " · ${leeches.size} tricky" else ""
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = InkSoft,
                         )
@@ -141,19 +154,57 @@ fun DashboardScreen(
                 }
             }
             item {
-                StudyCalendarCard(days = activity, today = today, onDayClick = { selectedDay = it })
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        ProgressRange.entries.forEachIndexed { index, option ->
+                            SegmentedButton(
+                                selected = range == option,
+                                onClick = { onRangeChange(option) },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = ProgressRange.entries.size,
+                                ),
+                                label = { Text(option.shortLabel) },
+                            )
+                        }
+                    }
+                    Text(
+                        "Reviews, growth, pace, and practice time for ${range.label.lowercase()}.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+            }
+            item {
+                RangeSummaryCard(
+                    range = range,
+                    days = rangeActivity,
+                    mix = gradeMix,
+                    practiceTimeMs = practiceTimeMs,
+                )
+            }
+            item {
+                val calendarDays = when (range) {
+                    ProgressRange.WEEK, ProgressRange.MONTH -> rangeActivity
+                    else -> activity
+                }
+                StudyCalendarCard(days = calendarDays, today = today, onDayClick = { selectedDay = it })
             }
             if (history.any { it.reviewed > 0 }) {
                 item {
                     SoftCard(Modifier.fillMaxWidth()) {
-                        LearnedChart(history = history, modifier = Modifier.fillMaxWidth())
+                        LearnedChart(
+                            history = history,
+                            periodLabel = range.label,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
             item {
                 ReviewQualityCard(
                     mix = gradeMix,
-                    totalReviews = totalReviews,
+                    range = range,
                     averageInterval = averageInterval,
                     practiceTimeMs = practiceTimeMs,
                     writingPace = writingPace,
@@ -181,12 +232,12 @@ fun DashboardScreen(
             item {
                 if (wide) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TimelineCard(days = activity.takeLast(14), modifier = Modifier.weight(1.2f))
+                        TimelineCard(days = rangeActivity, modifier = Modifier.weight(1.2f))
                         TroubleCard(leeches, onOpenCharacter, Modifier.weight(0.8f))
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TimelineCard(days = activity.takeLast(14))
+                        TimelineCard(days = rangeActivity)
                         TroubleCard(leeches, onOpenCharacter)
                     }
                 }
@@ -228,9 +279,96 @@ fun DashboardScreen(
 }
 
 @Composable
+private fun RangeSummaryCard(
+    range: ProgressRange,
+    days: List<DayActivity>,
+    mix: com.bassmd.bihua.progress.GradeMix,
+    practiceTimeMs: Long,
+) {
+    val reviews = days.sumOf { it.reviewed }
+    val learned = days.sumOf { it.learned }
+    val practiced = days.count { it.reviewed + it.learned > 0 }
+    var cursor = days.lastIndex
+    if (cursor >= 0 && days[cursor].reviewed + days[cursor].learned == 0) cursor--
+    var streak = 0
+    while (cursor >= 0 && days[cursor].reviewed + days[cursor].learned > 0) {
+        streak++
+        cursor--
+    }
+    val best = days.maxByOrNull { it.reviewed }
+    val passed = (mix.passRate * 100).toInt()
+
+    SoftCard(Modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.10f)) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Momentum", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    Text(
+                        range.label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+                Pill("$passed% passed", Mint.copy(alpha = 0.45f))
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RangeStatTile("Reviews", "$reviews", Rose, Modifier.weight(1f))
+                RangeStatTile("Learned", "$learned", Mint, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RangeStatTile("Practice", formatDuration(practiceTimeMs), Sky, Modifier.weight(1f))
+                RangeStatTile("Streak", if (streak == 0) "0d" else "${streak}d", Butter, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                when {
+                    practiced == 0 -> "No practice in this window yet. One session starts it."
+                    else -> buildString {
+                        append("$practiced of ${range.days} days with ink")
+                        if (streak > 0) append(" · $streak-day streak")
+                        if (best != null && best.reviewed > 0) {
+                            append(" · best day ${best.reviewed} reviews")
+                        }
+                    }
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RangeStatTile(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = accent.copy(alpha = 0.16f),
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(
+                value,
+                style = MaterialTheme.typography.headlineSmall,
+                color = InkDark,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Text(label, style = MaterialTheme.typography.labelSmall, color = InkSoft)
+        }
+    }
+}
+
+@Composable
 private fun ReviewQualityCard(
     mix: com.bassmd.bihua.progress.GradeMix,
-    totalReviews: Int,
+    range: ProgressRange,
     averageInterval: Float,
     practiceTimeMs: Long,
     writingPace: com.bassmd.bihua.progress.WritingPace?,
@@ -244,7 +382,7 @@ private fun ReviewQualityCard(
         Column {
             Text("Review quality", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
-                "Last 30 days · how your grades split",
+                "${range.label} · how your grades split",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -296,7 +434,7 @@ private fun ReviewQualityCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${(mix.passRate * 100).toInt()}% passed · $totalReviews reviews all time",
+                    "${(mix.passRate * 100).toInt()}% passed · ${mix.total} reviews in this window",
                     style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )
@@ -304,7 +442,10 @@ private fun ReviewQualityCard(
                     buildString {
                         append("Average interval ${averageInterval.toInt()} days")
                         if (practiceTimeMs > 0) {
-                            append(" · ${formatDuration(practiceTimeMs)} practising in 30 days")
+                            append(
+                                " · ${formatDuration(practiceTimeMs)} practising in " +
+                                    range.label.lowercase(),
+                            )
                         }
                         com.bassmd.bihua.progress.formatPace(writingPace)?.let {
                             append(" · $it")
@@ -314,9 +455,9 @@ private fun ReviewQualityCard(
                             ?.let { trend ->
                                 append(
                                     if (trend > 0) {
-                                        " · $trend% quicker than the previous 30 days"
+                                        " · $trend% quicker than the previous ${range.days} days"
                                     } else {
-                                        " · ${-trend}% slower than the previous 30 days"
+                                        " · ${-trend}% slower than the previous ${range.days} days"
                                     }
                                 )
                             }
@@ -416,7 +557,7 @@ private fun CoverageCard(characters: List<CharacterEntry>, modifier: Modifier = 
                             CoverageRing(
                                 fraction = fraction,
                                 label = formatPercent(fraction),
-                                color = if (fraction >= 0.999f) GuideGreen else MaterialTheme.colorScheme.error,
+                                color = if (fraction >= 0.999f) GuideGreen else Sky,
                                 size = 56.dp,
                             )
                         }
@@ -611,7 +752,15 @@ private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, ne
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Dot(Lilac, 7.dp)
                 Spacer(Modifier.width(6.dp))
-                Text("$new new characters are waiting.", style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                Text(
+                    if (new == 0) {
+                        "Every character has been met."
+                    } else {
+                        "$new characters still to meet, at your pace."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
             }
         }
     }
@@ -649,14 +798,22 @@ private fun MemoryRow(label: String, count: Int, recall: Int, color: Color) {
 
 @Composable
 private fun TimelineCard(days: List<DayActivity>, modifier: Modifier = Modifier) {
-    val total = days.sumOf { it.learned }
-    var running = 0
-    val points = days.map { day -> running += day.learned; running.toFloat() }
+    val reviews = days.sumOf { it.reviewed }
+    val active = days.count { it.reviewed > 0 }
+    val values = days.map { it.reviewed }
+    val max = (values.maxOrNull() ?: 0).coerceAtLeast(1)
+    val firstLabel = days.firstOrNull()?.date
+        ?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")) ?: "Start"
+    val soft = InkSoft
     SoftCard(modifier.fillMaxWidth()) {
         Column {
-            Text("Learned over time", style = MaterialTheme.typography.titleMedium, color = InkDark)
+            Text("Daily reviews", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
-                if (total == 0) "Your first lesson starts this line." else "Cumulative characters with a first lesson.",
+                if (reviews == 0) {
+                    "No reviews in this window yet."
+                } else {
+                    "$reviews reviews · $active days with reviews"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -666,24 +823,27 @@ private fun TimelineCard(days: List<DayActivity>, modifier: Modifier = Modifier)
                     .fillMaxWidth()
                     .height(120.dp)
             ) {
-                val max = (points.maxOrNull() ?: 0f).coerceAtLeast(1f)
-                val stepX = size.width / (points.size - 1).coerceAtLeast(1)
-                val path = androidx.compose.ui.graphics.Path()
-                points.forEachIndexed { index, value ->
-                    val x = index * stepX
-                    val y = size.height - (value / max) * size.height * 0.9f
-                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                }
-                drawPath(path, color = Sky, style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round))
-                points.forEachIndexed { index, value ->
-                    val x = index * stepX
-                    val y = size.height - (value / max) * size.height * 0.9f
-                    drawCircle(Sky, radius = 3.dp.toPx(), center = Offset(x, y))
+                val stepX = size.width / values.size.coerceAtLeast(1)
+                val barWidth = (stepX * 0.58f).coerceAtLeast(1f)
+                values.forEachIndexed { index, value ->
+                    val ratio = value.toFloat() / max
+                    val height = (size.height * 0.86f * ratio).coerceAtLeast(if (value > 0) 2f else 1f)
+                    val left = index * stepX + (stepX - barWidth) / 2f
+                    drawRoundRect(
+                        color = if (value > 0) {
+                            Sky.copy(alpha = 0.30f + 0.60f * ratio)
+                        } else {
+                            soft.copy(alpha = 0.10f)
+                        },
+                        topLeft = Offset(left, size.height - height),
+                        size = Size(barWidth, height),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f),
+                    )
                 }
             }
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("14 days ago", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Text(firstLabel, style = MaterialTheme.typography.labelSmall, color = InkSoft)
                 Text("Today", style = MaterialTheme.typography.labelSmall, color = InkSoft)
             }
         }

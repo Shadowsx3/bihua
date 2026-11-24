@@ -7,6 +7,7 @@ journey/unit test, P = partly automated or manual visual review, G = gap.
 |---|---|---|
 | Onboarding and restore | `fresh`, `resume` | A |
 | Home counts, caught-up, learning | `day1`, `daily20`, `caught-up`, `learning` | A |
+| Progress windows and analytics | `progress-ranges`, `daily100`, `goal30` | A/P |
 | Mixed sessions and resume | `daily20`, `resume`, `process-death` | A |
 | Writing and pronunciation review modes | `review-modes`, `review-modes-long`, `pronounce-kana` | A |
 | Anki writing and pronunciation | `anki` | A |

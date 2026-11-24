@@ -556,6 +556,11 @@ screenshots are refreshed **after** the UI and versionCode are frozen. Keep the
 source captures and store files local in `store/`; the repo stays app-focused.
 See `docs/learning-proposals.md` for the final-asset checklist.
 
+The canonical landing is `docs/index.html`, served at
+`https://shadowsx3.github.io/bihua/`. Test APKs live in `docs/download/` and are
+force-added because `*.apk` is ignored. `bihua.app` is a separate Vercel site;
+changing `docs/` does not update it.
+
 ## Known gaps
 
 - The physical stylus pass was done on the SM-X520; recheck after any ink change.

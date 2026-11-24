@@ -65,6 +65,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("tour", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour"),
     ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
     ScenarioSpec("settings-outfit", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_outfit"),
+    ScenarioSpec("progress-ranges", level="standard", state={"reviews": 20, "new": 2, "days": 12}, runner="progress_ranges"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
 ]
 
@@ -1400,6 +1401,22 @@ def settings_outfit(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Make Bihua yours", timeout=8, exact=False)
 
 
+def progress_ranges(journey: Journey, state: ScenarioState) -> None:
+    """Progress stats follow the selected window."""
+    with journey.step("switch the range"):
+        journey.open_tab("Progress")
+        journey.wait("Progress", timeout=8)
+        for short, label in (("7D", "Last 7 days"), ("90D", "Last 90 days"), ("1Y", "Last year")):
+            journey.tap_text(short)
+            time.sleep(0.8)
+            journey.assert_text(label)
+            journey.assert_text("Momentum")
+        journey.tap_text("30D")
+        time.sleep(0.8)
+        journey.assert_text("Last 30 days")
+        journey.screenshot("progress-ranges")
+
+
 def grade_help(journey: Journey, state: ScenarioState) -> None:
     """The session grade prompt opens the plain-word legend."""
     with journey.step("open the grade legend"):
@@ -1470,4 +1487,5 @@ RUNNERS = {
     "tour": tour,
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
+    "progress_ranges": progress_ranges,
 }

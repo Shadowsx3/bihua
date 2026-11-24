@@ -54,6 +54,10 @@
 - The all-clear Home card loses the duplicate “All caught up” pill and the
   decorative pet.
 - The session grade prompt has a “?” that opens the plain-word legend.
+- Progress now has 7-day, 30-day, 90-day, and 1-year windows. Momentum, reviews,
+  learned characters, practice time, pass rate, streak, best day, growth, and
+  daily rhythm all follow the selected window. Coverage rings are calmer, and
+  the memory card no longer frames the rest of the course as debt.
 
 ## 1.0.9 — 2026-11-23
 
