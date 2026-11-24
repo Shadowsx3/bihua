@@ -92,6 +92,15 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Day detail | Tap a calendar day | Due/review detail sheet, closes cleanly | P |
 | Memory map | Progress → Memory | Buckets and recall, empty state | P |
 
+## Extra practice
+
+| Flow | Steps | Expected | A |
+|---|---|---|---|
+| Spell quest | Home → Study tools → Spell quest | Gate, scene, draw or gift, result, walk on; nothing scheduled | A |
+| Spell gift | Grimoire → choose a spell | Guide starts empty, draws in order, Continue only when ready | A |
+| Wrong cast | Draw → cast a non-fitting family | "A different way", Mò's need, attempted reading/meaning tip, Draw/Grimoire/one answer/walk on | A |
+| Spell quest fold/tablet | Same flow on tablet and BOOK | Story left, circle right, hinge gap, no spanning | A |
+
 ## Settings
 
 | Flow | Steps | Expected | A |

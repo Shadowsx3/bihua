@@ -47,6 +47,24 @@ object Sfx {
 
         /** The tour is finished. */
         TOUR_DONE,
+
+        /** A spell lands. */
+        CAST,
+
+        /** A cast that does not fit the scene. Soft, never a buzzer. */
+        WRONG,
+
+        /** A character is chosen from the grimoire. */
+        GIFT,
+
+        /** The answer is revealed on the circle. */
+        REVEAL,
+
+        /** Moving to the next scene. */
+        WALK,
+
+        /** A new chapter opens. */
+        CHAPTER,
     }
 
     @Volatile
@@ -117,6 +135,12 @@ object Sfx {
             noteMs = 105,
             volume = 0.18f,
         )
+        Effect.CAST -> chime(listOf(392f, 523.25f, 659.25f), noteMs = 150, volume = 0.13f)
+        Effect.WRONG -> softChord(listOf(220f, 277.18f), durationMs = 260, volume = 0.085f)
+        Effect.GIFT -> arpeggio(listOf(440f, 523.25f, 659.25f, 783.99f), noteMs = 72, volume = 0.11f)
+        Effect.REVEAL -> bell(frequency = 659.25f, durationMs = 360, volume = 0.11f)
+        Effect.WALK -> tone(frequency = 330f, durationMs = 58, volume = 0.075f, decay = 24f)
+        Effect.CHAPTER -> softChord(listOf(261.63f, 329.63f, 392f, 523.25f), durationMs = 720, volume = 0.10f)
     }
 
     private fun tone(
@@ -153,7 +177,63 @@ object Sfx {
             val local = (index % perNote).toFloat() / perNote
             val t = index.toFloat() / SAMPLE_RATE
             val envelope = exp(-4.2f * local)
-            (sin(2.0 * PI * notes[noteIndex] * t) * envelope * volume * Short.MAX_VALUE).toInt().toShort()
+            val voice = sin(2.0 * PI * notes[noteIndex] * t) +
+                0.18 * sin(4.0 * PI * notes[noteIndex] * t)
+            (voice * envelope * volume * Short.MAX_VALUE).toInt().toShort()
+        }
+    }
+
+    /** A harp-like run with a soft attack and a little body. */
+    private fun chime(notes: List<Float>, noteMs: Int, volume: Float): ShortArray {
+        val perNote = SAMPLE_RATE * noteMs / 1000
+        val total = perNote * notes.size + SAMPLE_RATE / 3
+        return ShortArray(total) { index ->
+            var value = 0f
+            notes.forEachIndexed { noteIndex, frequency ->
+                val start = noteIndex * perNote
+                if (index >= start) {
+                    val local = (index - start).toFloat() / SAMPLE_RATE
+                    val attack = (local / 0.018f).coerceIn(0f, 1f)
+                    val envelope = attack * exp(-3.1f * local)
+                    value += (
+                        sin(2.0 * PI * frequency * local) +
+                            0.22 * sin(4.0 * PI * frequency * local)
+                        ).toFloat() * envelope
+                }
+            }
+            (value * volume * Short.MAX_VALUE / notes.size.toFloat()).toInt().toShort()
+        }
+    }
+
+    /** A low, warm answer for a cast that does not fit. */
+    private fun softChord(notes: List<Float>, durationMs: Int, volume: Float): ShortArray {
+        val count = SAMPLE_RATE * durationMs / 1000
+        return ShortArray(count) { index ->
+            val t = index.toFloat() / SAMPLE_RATE
+            val progress = index.toFloat() / count
+            val attack = (progress / 0.08f).coerceIn(0f, 1f)
+            val envelope = attack * exp(-2.4f * progress)
+            var value = 0f
+            notes.forEach { frequency ->
+                value += (
+                    sin(2.0 * PI * frequency * t) + 0.15 * sin(4.0 * PI * frequency * t)
+                    ).toFloat()
+            }
+            (value * envelope * volume * Short.MAX_VALUE / notes.size.toFloat()).toInt().toShort()
+        }
+    }
+
+    /** A small glass bell, for revealing a shape. */
+    private fun bell(frequency: Float, durationMs: Int, volume: Float): ShortArray {
+        val count = SAMPLE_RATE * durationMs / 1000
+        return ShortArray(count) { index ->
+            val t = index.toFloat() / SAMPLE_RATE
+            val attack = (t / 0.008f).coerceIn(0f, 1f)
+            val envelope = attack * exp(-5.2f * t)
+            val value = sin(2.0 * PI * frequency * t) +
+                0.32 * sin(2.0 * PI * frequency * 2.01f * t) +
+                0.12 * sin(2.0 * PI * frequency * 3.98f * t)
+            (value * envelope * volume * Short.MAX_VALUE).toInt().toShort()
         }
     }
 }

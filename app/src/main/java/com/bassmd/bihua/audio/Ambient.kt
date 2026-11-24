@@ -3,6 +3,10 @@ package com.bassmd.bihua.audio
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
@@ -23,6 +27,10 @@ object Ambient {
 
     @Volatile
     private var track: AudioTrack? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val lock = Any()
+    private var generation = 0
+    private var starting = false
 
     /** Soft, open intervals. Each row is one chord in semitones from A2. */
     private val progressions = listOf(
@@ -36,41 +44,71 @@ object Ambient {
 
     fun start() {
         if (!Sfx.enabled) return
-        if (track != null) return
-        val samples = runCatching { synthesise(progressions.random(), Random(System.nanoTime())) }
-            .getOrNull() ?: return
-        val built = runCatching {
-            AudioTrack.Builder()
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build(),
-                )
-                .setAudioFormat(
-                    AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(SAMPLE_RATE)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                        .build(),
-                )
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .setBufferSizeInBytes(samples.size * 2)
-                .build()
-        }.getOrNull() ?: return
-        built.write(samples, 0, samples.size)
-        built.setLoopPoints(0, samples.size, -1)
-        built.setVolume(VOLUME)
-        built.play()
-        track = built
+        val token: Int
+        synchronized(lock) {
+            if (track != null || starting) return
+            starting = true
+            token = ++generation
+        }
+        // Synthesising 24 seconds of audio is too much for the first frame of
+        // the quest. Build it on a worker; the screen opens immediately.
+        scope.launch {
+            val samples = runCatching {
+                synthesise(progressions.random(), Random(System.nanoTime()))
+            }.getOrNull()
+            if (samples == null || !Sfx.enabled) {
+                synchronized(lock) { if (token == generation) starting = false }
+                return@launch
+            }
+            val built = runCatching {
+                AudioTrack.Builder()
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build(),
+                    )
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(SAMPLE_RATE)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build(),
+                    )
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .setBufferSizeInBytes(samples.size * 2)
+                    .build()
+            }.getOrNull()
+            if (built == null) {
+                synchronized(lock) { if (token == generation) starting = false }
+                return@launch
+            }
+            synchronized(lock) {
+                if (token != generation || !Sfx.enabled) {
+                    starting = false
+                    runCatching { built.release() }
+                    return@launch
+                }
+                built.write(samples, 0, samples.size)
+                built.setLoopPoints(0, samples.size, -1)
+                built.setVolume(VOLUME)
+                built.play()
+                track = built
+                starting = false
+            }
+        }
     }
 
     fun stop() {
-        val current = track ?: return
-        track = null
-        runCatching {
-            current.stop()
-            current.release()
+        synchronized(lock) {
+            generation++
+            starting = false
+            val current = track ?: return
+            track = null
+            runCatching {
+                current.stop()
+                current.release()
+            }
         }
     }
 
@@ -90,9 +128,21 @@ object Ambient {
                     val t = i.toDouble() / SAMPLE_RATE
                     val env = sin(PI * (i.toDouble() / barLength)).coerceAtLeast(0.0)
                     val swell = 0.55 + 0.45 * sin(2 * PI * 0.07 * t + bar)
-                    buffer[start + i] += (sin(2 * PI * freq * t) * 0.055 * env * swell).toFloat()
+                    val voice = sin(2 * PI * freq * t) +
+                        0.24 * sin(4 * PI * freq * t) +
+                        0.10 * sin(6 * PI * freq * t) +
+                        0.12 * sin(2 * PI * freq * 1.003 * t)
+                    buffer[start + i] += (voice * 0.045 * env * swell).toFloat()
                 }
             }
+        }
+
+        // A low open fifth under everything, with a very slow breath.
+        for (i in 0 until total) {
+            val t = i.toDouble() / SAMPLE_RATE
+            val breath = 0.75 + 0.25 * sin(2 * PI * 0.021 * t)
+            buffer[i] += (sin(2 * PI * 55.0 * t) * 0.016 * breath).toFloat()
+            buffer[i] += (sin(2 * PI * 82.5 * t) * 0.010 * breath).toFloat()
         }
 
         // A soft heartbeat every two bars, barely there.
@@ -119,12 +169,19 @@ object Ambient {
             for (i in 0 until length) {
                 if (cursor + i >= total) break
                 val t = i.toDouble() / SAMPLE_RATE
-                val env = exp(-2.6 * t)
+                val attack = (t / 0.012).coerceAtMost(1.0)
+                val env = attack * exp(-2.6 * t)
                 buffer[cursor + i] += (sin(2 * PI * freq * t) * gain * env).toFloat()
-                buffer[cursor + i] += (sin(2 * PI * freq * 2 * t) * gain * 0.25 * exp(-4.5 * t)).toFloat()
+                buffer[cursor + i] += (sin(2 * PI * freq * 2.003 * t) * gain * 0.22 * attack * exp(-4.2 * t)).toFloat()
+                buffer[cursor + i] += (sin(2 * PI * freq * 3.01 * t) * gain * 0.08 * attack * exp(-6.0 * t)).toFloat()
             }
             cursor += SAMPLE_RATE * (2 + random.nextInt(4))
         }
+
+        // One soft reflection pass, so the plucks sit in a room instead of a vacuum.
+        val delay = (SAMPLE_RATE * 0.11).toInt()
+        val dry = buffer.copyOf()
+        for (i in delay until total) buffer[i] += dry[i - delay] * 0.16f
 
         // Crossfade the tail into the head so the loop point is invisible.
         val fade = (SAMPLE_RATE * 0.75).toInt()

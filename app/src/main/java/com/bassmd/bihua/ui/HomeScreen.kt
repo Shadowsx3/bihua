@@ -358,6 +358,7 @@ fun HomeScreen(
                     entries = studyList,
                     onOpenStudyTools = onOpenStudyTools,
                     onOpenQuest = onOpenQuest,
+                    canOpenQuest = mode == StudyMode.SIMPLIFIED,
                     onDrill = onDrill,
                     onPaper = onPaper,
                     onStudyList = onStudyList,
@@ -569,6 +570,7 @@ fun HomeScreen(
                             entries = studyList,
                             onOpenStudyTools = onOpenStudyTools,
                             onOpenQuest = onOpenQuest,
+                            canOpenQuest = mode == StudyMode.SIMPLIFIED,
                             onDrill = onDrill,
                             onPaper = onPaper,
                             onStudyList = onStudyList,
@@ -1216,6 +1218,7 @@ private fun StudyToolsCard(
     entries: List<CharacterEntry>,
     onOpenStudyTools: () -> Unit,
     onOpenQuest: () -> Unit,
+    canOpenQuest: Boolean,
     onDrill: () -> Unit,
     onPaper: () -> Unit,
     onStudyList: () -> Unit,
@@ -1256,6 +1259,7 @@ private fun StudyToolsCard(
                     },
                 ) { Text("Manage") }
             }
+            if (canOpenQuest) {
             Surface(
                 onClick = onOpenQuest,
                 shape = RoundedCornerShape(12.dp),
@@ -1291,6 +1295,7 @@ private fun StudyToolsCard(
                         color = InkSoft,
                     )
                 }
+            }
             }
             if (entries.isNotEmpty()) {
                 FlowRow(

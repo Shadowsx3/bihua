@@ -97,6 +97,8 @@ fun rememberStrokeOrderPlayer(
     characterId: String?,
     /** Practice shows a guide complete. A gift starts empty and plays into view. */
     startComplete: Boolean = true,
+    /** How long one guide stroke takes while playing. */
+    strokeDurationMs: Long = STROKE_PLAY_MS,
 ): StrokeOrderPlayer {
     val guide = rememberStrokeGuide(characterId)
     val progress = remember(characterId) { mutableFloatStateOf(0f) }
@@ -113,12 +115,12 @@ fun rememberStrokeOrderPlayer(
         if (startComplete && count > 0 && !playing.value) progress.floatValue = count.toFloat()
     }
 
-    LaunchedEffect(playToken, guide) {
+    LaunchedEffect(playToken, guide, strokeDurationMs) {
         val strokes = guide?.strokes ?: return@LaunchedEffect
         if (playToken <= 0 || strokes.isEmpty()) return@LaunchedEffect
         playing.value = true
         progress.floatValue = 0f
-        val totalMs = (strokes.size * STROKE_PLAY_MS).coerceAtLeast(1L)
+        val totalMs = (strokes.size * strokeDurationMs).coerceAtLeast(1L)
         val startFrame = withFrameNanos { it }
         while (true) {
             val frame = withFrameNanos { it }

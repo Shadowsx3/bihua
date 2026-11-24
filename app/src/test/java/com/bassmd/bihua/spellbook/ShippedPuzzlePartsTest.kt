@@ -56,6 +56,20 @@ class ShippedPuzzlePartsTest {
     }
 
     @Test
+    fun everyFittingFamilyIsAccepted() {
+        repeat(200) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed))
+            val obstacle = parts.obstacles.first { it.prompt == puzzle.prompt }
+            val solved = puzzle.solutions.flatMap { it.families }.toSet()
+            parts.familyTags.forEach { (family, tags) ->
+                if (tags.any { it in obstacle.accepts }) {
+                    assertTrue("$family fits ${obstacle.id} but was not accepted", family in solved)
+                }
+            }
+        }
+    }
+
+    @Test
     fun generatedPuzzlesAreSolvableAndVary() {
         val puzzles = (0 until 2000).map { PuzzleForge.generate(parts, Random(it)) }
         puzzles.forEach { puzzle ->

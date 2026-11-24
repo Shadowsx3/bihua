@@ -98,6 +98,15 @@ layout can differ. Landscape and large font scale are separate passes.
 | Paper check | Detail/list | reveal, strokes, back | P |
 | Compare write drill | Compare | fixed canvas, Off/Faint/Strokes, undo/redo/clear, back | P |
 
+## Extra practice
+
+| Screen | Entry | Main states | A |
+|---|---|---|---|
+| Spell quest gate | Home Study tools / Study tools sheet | rules, start, grimoire, leave; phone and BOOK two-page | A |
+| Spell quest scene | Start the road | problem, draw, gift, hint, result, walk on | A |
+| Cast overlay | Draw | rune circle, clue card above, shape/reading/meaning, undo/clear, cast, grimoire | A |
+| Grimoire | Scene or gate | cover, index, 8 chapter spreads, fold hinge, light/dark | A |
+
 ## Progress
 
 | Screen | Entry | Main states | A |

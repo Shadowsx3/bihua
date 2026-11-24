@@ -31,6 +31,12 @@ harness; pure composables and physical hardware still need the device pass.
 | Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
+| Spell quest | Gate, scene, reading gift, real draw/cast, wrong-answer path, cast overlay labels; phone, tablet, fold | `spell-quest` journey |
+| Spellbook data | 104 spells, 25 families, 8 chapters, every chapter has spells and a seal | `SpellbookTest` |
+| Forge honesty | Every family carrying an accepted tag solves; targeted generation; no repeated place | `PuzzleForgeTest`, `QuestGeneratorTest`, `ShippedPuzzlePartsTest` |
+| Gift playback | Starts empty, plays the real guide in the circle, Continue waits for the stroke end | `spell-quest` journey, screenshots |
+| Spell quest copy and logic | Scroll word, family label, definition gloss, fixed pacing, tip card, emoji | `SpellQuestLogicTest` |
+| Spell quest audio | Ambient bed and cast/wrong/gift/reveal/walk/chapter cues; quiet, no buzzer | manual audio pass |
 | Guided tour | Invite dismiss, replay from Settings, tap and Next through all nine stops, Back to app | `tour` journey |
 | Tour dark theme | Same tour with the dark palette; card, spotlight, and pet stay legible | `tour-dark` journey |
 | Tour copy and anchors | Every stop has a live anchor; copy explains reviews and grades without SRS jargon | `GuidedTour` review plus `tour` journey |

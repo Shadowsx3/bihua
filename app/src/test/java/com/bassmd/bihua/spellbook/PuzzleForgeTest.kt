@@ -58,6 +58,20 @@ class PuzzleForgeTest {
     }
 
     @Test
+    fun everyFamilyThatCarriesAnAcceptedTagCanSolve() {
+        repeat(100) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed))
+            val obstacle = parts.obstacles.first { it.prompt == puzzle.prompt }
+            val solved = puzzle.solutions.flatMap { it.families }.toSet()
+            parts.familyTags.forEach { (family, tags) ->
+                if (tags.any { it in obstacle.accepts }) {
+                    assertTrue("$family fits ${obstacle.id} but was not accepted", family in solved)
+                }
+            }
+        }
+    }
+
+    @Test
     fun aFamilyThatDoesNotFitGetsTheNeedAsItsNudge() {
         val puzzle = PuzzleForge.generate(parts, Random(7), family = "water")
         val obstacle = parts.obstacles.first { it.prompt == puzzle.prompt }

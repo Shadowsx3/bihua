@@ -72,6 +72,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("progress-empty", level="standard", state={"reviews": 0, "new": 0, "goal": 0, "known": 0, "days": 0}, runner="progress_empty"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
     ScenarioSpec("spell-quest", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_quest"),
+    ScenarioSpec("spell-entry", level="quick", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_entry"),
     ScenarioSpec("spell-quest-dark", level="full", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="spell_quest"),
     ScenarioSpec("spell-quest-calm", level="full", state={"reviews": 5, "new": 2, "days": 5, "reduce_motion": True}, runner="spell_quest"),
 ]
@@ -1183,6 +1184,9 @@ def navigation_deep(journey: Journey, state: ScenarioState) -> None:
     with journey.step("study tools sheet closes"):
         journey.open_tab("Home")
         journey.assert_home()
+        # A fresh install spends the first moment JIT-compiling the shell and
+        # loading the content/progress stores. Let it settle before the tap.
+        time.sleep(1.5)
         journey.tap_visible("Manage study tools")
         journey.wait("Pinned", timeout=8)
         journey.d.press("back")
@@ -1567,6 +1571,19 @@ def _spell_character_for(label: str) -> str | None:
     return None
 
 
+def spell_entry(journey: Journey, state: ScenarioState) -> None:
+    """The spell quest is one tap from Home, framed as extra practice."""
+    with journey.step("open from the Home study tools card"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        time.sleep(1.2)
+        journey.tap_visible("Spell quest", max_scrolls=8)
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("spell-entry")
+        journey.tap_visible("Leave", max_scrolls=4)
+    journey.assert_no_crash()
+
+
 def spell_quest(journey: Journey, state: ScenarioState) -> None:
     """The endless road, reached from Study tools, casting from the book."""
     with journey.step("open the spell quest"):
@@ -1611,14 +1628,11 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         # Mid-drawing: the guide is playing stroke by stroke.
         time.sleep(1.6)
         journey.screenshot("spell-gift-draw")
-        journey.wait("Continue the quest", timeout=20)
-        journey.screenshot("spell-gift")
-        journey.tap("Continue the quest")
-        # A cast always lands somewhere: it works, or Mò explains why not.
+        # A gift is one step: the result is already on screen while the circle draws.
         deadline = time.time() + 25
         while time.time() < deadline:
             texts = journey.texts()
-            if any("It worked" in text or "Not this one" in text for text in texts):
+            if any("It worked" in text or "A different way" in text for text in texts):
                 break
             time.sleep(0.3)
         else:
@@ -1629,7 +1643,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             journey.tap("Walk on")
         else:
             # A wrong pick shows the right answer first, then Walk on.
-            journey.tap("See the right answer")
+            journey.tap("Show me one answer")
             journey.wait("Walk on", timeout=25)
             journey.tap("Walk on")
         journey.wait("Draw", timeout=10)
@@ -1641,7 +1655,13 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         issues = journey.a11y_unlabeled()
         if issues:
             raise JourneyFailure(f"cast overlay has unlabeled controls: {issues[:3]}")
-        if not journey.draw_guide([[(0.15, 0.5), (0.85, 0.5)], [(0.5, 0.15), (0.5, 0.85)]]):
+        # Draw a real spell with the content database's guide strokes, the same
+        # way the review journeys write. A plus can be read as 十, which is not
+        # a spell in this book.
+        guide = character_guide("水", state.settings.get("studyMode", "SIMPLIFIED"))
+        if not guide:
+            raise JourneyFailure("no guide strokes for 水")
+        if not journey.draw_guide(guide):
             raise JourneyFailure("no handwriting canvas to draw on")
         journey.wait("Cast the spell", timeout=8)
         journey.screenshot("spell-drawn")
@@ -1650,11 +1670,11 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         outcome = None
         while time.time() < deadline and outcome is None:
             texts = journey.texts()
-            if any("Not this one" in text for text in texts):
+            if any("A different way" in text for text in texts):
                 outcome = "nudge"
             elif any("It worked" in text for text in texts):
                 outcome = "worked"
-            elif any("not a spell in this book" in text for text in texts):
+            elif any("is not in this book yet" in text or "Mò read" in text for text in texts):
                 outcome = "unreadable"
             else:
                 time.sleep(0.4)
@@ -1665,7 +1685,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             # A readable character that is not a spell here: back to the drawing.
             journey.tap("Go back")
         else:
-            journey.tap("Walk on without it" if outcome == "nudge" else "Walk on")
+            journey.tap("Walk on for now" if outcome == "nudge" else "Walk on")
         journey.wait("Draw", timeout=10)
     journey.assert_no_crash()
 
@@ -1705,6 +1725,7 @@ RUNNERS = {
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
     "spell_quest": spell_quest,
+    "spell_entry": spell_entry,
     "progress_ranges": progress_ranges,
     "progress_empty": progress_empty,
     "nav_gap": nav_gap,

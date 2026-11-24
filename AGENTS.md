@@ -228,10 +228,11 @@ some etymology quality.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
 - Current release plan: `docs/1.1.0-roadmap.md`.
-- Spellbook/Spell quest work in progress, with next tasks and traps:
-  `docs/spellbook-progress.md`. Read it first when continuing that work, and
-  update it as tasks complete so a compacted session can resume without a
-  briefing. Design intent: `docs/spellbook-game-plan.md`.
+- Spell quest is the extra-practice spellbook: 104 spells, 25 families, 8
+  chapters, forge-only puzzles, two-page tablet/fold layouts, and a direct
+  Home Study tools entry. Working state and traps: `docs/spellbook-progress.md`.
+  Design intent: `docs/spellbook-game-plan.md`. Keep it a quiet extra tool; the
+  main path stays writing review.
 - Screen, flow, and feature inventories: `docs/screen-inventory.md`,
   `docs/flow-inventory.md`, `docs/feature-inventory.md`.
 - Test coverage: `docs/test-matrix.md`; risk audit: `docs/user-journey-risk-audit.md`.

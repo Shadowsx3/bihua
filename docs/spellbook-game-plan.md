@@ -60,10 +60,13 @@ built, how the game loop works, and what is still missing. The working handoff
 - **Circle stage**: outer ring with rotating runes (drawn as strokes, no font), the
   guide circle, the drawn shape, and the effects. The effect plays inside the circle:
   a lead-in before the strokes, a flourish after them.
-- **Draw** (cast overlay): the drawing circle with the same rune ring as the main
-  circle stage, "Show the shape" (plays the strokes), Hear it (reveals the reading),
-  Meaning (reveals the gloss), Undo, Clear, Cast, Go back. The definition card sits
-  above the circle; the Cast button stays pinned. Clues and ink controls scroll below.
+- **Draw** (cast overlay): a paper drawing surface inside the same rune ring as the
+  main circle stage. The paper is clipped to the inner circle so ink cannot run over
+  the runes. Each rune takes one of the eight chapter colours. The outer ring starts
+  neutral and switches to the detected spell family's colour after recognition.
+  "Show the shape" plays the strokes, Hear it reveals the reading, Meaning reveals
+  the gloss; Undo, Clear, Cast, Go back. The definition card sits above the circle;
+  the Cast button stays pinned. Clues and ink controls scroll below.
 - **Tip card**: readings and meanings appear in a tinted card with a small spark icon,
   not as bare text.
 - **Home entry**: the Study tools card has a direct "Spell quest" row, so the game is
@@ -103,9 +106,21 @@ built, how the game loop works, and what is still missing. The working handoff
 - Essential playback (strokes, effects) runs on frame time (`withFrameNanos`), so it
   still plays when system animations are off. Decorative loops may use the infinite
   variant.
-- Reduce motion skips the effects, keeps the strokes, and shortens the waits.
+- Guided drawing uses a **roughly fixed total time** for every character (about two
+  seconds, clamped per stroke), so a complex character does not crawl and a simple
+  one does not vanish. The learner's own cast playback uses the same pacing.
+- Reduce motion skips the effects, keeps the strokes, and shortens the waits. Scene
+  motes and the rune spin stop as well.
 - A guide never flashes complete before its strokes: the player can start empty
   (`startComplete = false`) and resets progress at the moment play is requested.
+- The learner's own ink is **never glowing**. In the draw overlay it is ordinary dark
+  ink on paper. When it plays back after a successful cast, it is flat ink in the
+  detected spell family's colour, with no halo or glow. Only guides and the spell
+  effect carry magic.
+- Sound: a 24-second generated pad, low fifth, heartbeat, and pentatonic plucks loop
+  under the quest. Cues are soft bells, harps, and low warm answers, never buzzers or
+  jingles. The solved cue is a three-note chime; a wrong cast is a low fifth, not a
+  failure sound. A new chapter gets a warm chord, and a walk gets a quiet step.
 
 ### Quality
 
@@ -122,6 +137,8 @@ built, how the game loop works, and what is still missing. The working handoff
 ### Required
 
 - Done: gameplay uses the forge only; the 1500-variant library and its tools are gone.
+- Done: every family that carries an accepted tag is now accepted by the solver; the
+  old four-solution cap made some honest answers read as wrong.
 - Verify on device: the fold two-page layout, the rune ring, effect choreography, name
   scroll timing, the definition card, and the wrong-answer flow on phone, tablet, fold.
 - Dark theme and 1.5x text on the grimoire, gate, and visual novel.

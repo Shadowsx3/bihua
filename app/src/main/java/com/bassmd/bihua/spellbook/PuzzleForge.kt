@@ -128,7 +128,6 @@ object PuzzleForge {
                 Solution(families = setOf(id), text = outcome.replace("{family}", name))
             }
             .shuffled(random)
-            .take(4)
 
         val solvedBy = solutions.flatMap { it.families }.toSet()
         val hints = parts.familyNames.keys

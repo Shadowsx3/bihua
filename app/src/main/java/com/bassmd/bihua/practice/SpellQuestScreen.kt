@@ -241,7 +241,12 @@ private fun SpellQuestContent(
             }
         }
     }
-    val bookPlayer = rememberStrokeOrderPlayer(bookId, startComplete = false)
+    val bookStrokeCount = bookGuide?.strokes?.size ?: 0
+    val bookPlayer = rememberStrokeOrderPlayer(
+        bookId,
+        startComplete = false,
+        strokeDurationMs = guideStrokeMs(bookStrokeCount),
+    )
     val bookStrokes = remember(bookGuide, bookPick) {
         if (bookPick == null) emptyList() else bookGuide?.centerlines().orEmpty()
     }
@@ -265,7 +270,11 @@ private fun SpellQuestContent(
     val sceneGuide = rememberStrokeGuide(sceneGlyph?.let { idByGlyph[it] })
     val sceneShape = remember(sceneGuide) { sceneGuide?.centerlines().orEmpty() }
     // "Show the shape" plays the same stroke playback as Practice, in the drawing circle.
-    val shapePlayer = rememberStrokeOrderPlayer(sceneGlyph?.let { idByGlyph[it] })
+    val shapeStrokeCount = sceneGuide?.strokes?.size ?: 0
+    val shapePlayer = rememberStrokeOrderPlayer(
+        sceneGlyph?.let { idByGlyph[it] },
+        strokeDurationMs = guideStrokeMs(shapeStrokeCount),
+    )
     // The grimoire, opened from the quest. Choosing a spell here starts the gift.
     var showBook by remember { mutableStateOf(false) }
 
@@ -335,10 +344,10 @@ private fun SpellQuestContent(
      * character the learner actually wrote. If the model is unavailable, the
      * scene's spell still carries the cast, so an offline device is never stuck.
      */
-    fun resolve(target: QuestScene, family: String) {
+    fun resolve(target: QuestScene, family: String, immediate: Boolean = false) {
         when (val result = QuestSolver.solve(target.puzzle, family)) {
             is CastResult.Solved -> {
-                Sfx.play(Sfx.Effect.CHECK)
+                Sfx.play(Sfx.Effect.CAST)
                 solvedText = result.solution.text
                 inkPoints += if (forgotten) 1 else 3
                 // Keep the magic circle on screen while the effect plays over it.
@@ -349,15 +358,19 @@ private fun SpellQuestContent(
                     fxMs = 1400L
                 }
                 badgeCharacter = castCharacter
+                if (immediate) {
+                    // The book gift has already taken its one step. Show the
+                    // result while the circle draws the character.
+                    phase = QuestPhase.RESULT
+                }
                 scope.launch {
                     kotlinx.coroutines.delay(resultDelayMs(reduceMotion))
                     channeling = null
-                    // The character stays in its final state until "Walk on".
-                    phase = QuestPhase.RESULT
+                    if (!immediate) phase = QuestPhase.RESULT
                 }
             }
             is CastResult.Hint -> {
-                Sfx.play(Sfx.Effect.POP)
+                Sfx.play(Sfx.Effect.WRONG)
                 // The character stays on the circle, so the learner sees what was drawn.
                 answerShown = false
                 hint = result.message
@@ -383,22 +396,22 @@ private fun SpellQuestContent(
             ?.firstOrNull { candidate: String -> spells.any { it.character == candidate } }
         if (detected == null) {
             val message = when {
-                recognized == null -> "The reading model is still getting ready. Try again in a moment, or open the grimoire."
+                recognized == null -> "Mò is still waking the reading model. Try again in a moment, or open the grimoire."
                 recognized.candidates.isEmpty() ->
-                    "The ink did not read clearly. Write it larger and cast again."
+                    "The ink was hard to read. A larger, calmer shape will help if you want another try."
                 else ->
-                    "I can read ${recognized.candidates.first()}, but it is not a spell in this book yet. Try another character, or open the grimoire."
+                    "Mò read ${recognized.candidates.first()}, but that shape is not in this book yet. Try another, or open the grimoire."
             }
             castNote = message
             hint = message
             return
         }
         castCharacter = detected
+        castFamily = spells.first { it.character == detected }.family
         // Show what was read, written into the circle, before the world answers.
         preview = detected
         kotlinx.coroutines.delay(650)
         preview = null
-        castFamily = spells.first { it.character == detected }.family
         castStrokes = strokes.map { stroke -> stroke.points.map { Offset(it.x, it.y) } }
         castTraced = false
         phase = QuestPhase.READ
@@ -460,6 +473,8 @@ private fun SpellQuestContent(
     }
 
     fun advance() {
+        val nextChapter = index + 1 >= scenes.size
+        Sfx.play(if (nextChapter) Sfx.Effect.CHAPTER else Sfx.Effect.WALK)
         answerShown = false
         residualFamily = null
         fxFamily = null
@@ -489,19 +504,21 @@ private fun SpellQuestContent(
 
     /** A reading gift: the page's real shape is drawn into the circle, then the spell lands. */
     fun startGift(pick: QuestSpell) {
-        Sfx.play(Sfx.Effect.ADD)
+        Sfx.play(Sfx.Effect.GIFT)
         badgeCharacter = pick.character
         forgotten = true
         castCharacter = pick.character
         giftTraced = false
         hint = ""
-        phase = QuestPhase.READ
         bookPick = pick
+        // A book gift is one step: show the result and draw the character there
+        // instead of asking for a second "Continue" tap.
+        resolve(scene, pick.family, immediate = true)
     }
 
     /** A wrong attempt is set aside: the right character plays on the circle. */
     fun revealAnswer() {
-        Sfx.play(Sfx.Effect.TICK)
+        Sfx.play(Sfx.Effect.REVEAL)
         answerShown = true
         badgeCharacter = scene.spell.character
         bookPick = scene.spell
@@ -513,6 +530,7 @@ private fun SpellQuestContent(
     /** Back to the drawing with a clean circle. */
     fun drawAgain() {
         Sfx.play(Sfx.Effect.TICK)
+        ink.clear()
         bookPick = null
         giftTraced = false
         castStrokes = emptyList()
@@ -531,8 +549,9 @@ private fun SpellQuestContent(
     val circleTraced = if (bookPick != null) giftTraced else castTraced
     val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
     val dialogueHeight = when {
-        fontScale > 1.6f && phase == QuestPhase.HINT -> 430.dp
-        fontScale > 1.25f && phase == QuestPhase.HINT -> 400.dp
+        fontScale > 1.6f && phase == QuestPhase.HINT -> 480.dp
+        fontScale > 1.25f && phase == QuestPhase.HINT -> 450.dp
+        phase == QuestPhase.HINT -> 450.dp
         fontScale > 1.6f -> 300.dp
         fontScale > 1.25f -> 330.dp
         else -> DialogueHeight
@@ -648,6 +667,30 @@ private fun SpellQuestContent(
                             }
                         }
                     }
+                } else if (phase != QuestPhase.CAST) {
+                    // An idle circle keeps the stage from feeling like empty
+                    // space and points to the one action that starts a cast.
+                    val ring = Color.White.copy(alpha = 0.85f)
+                    BoxWithConstraints(contentAlignment = Alignment.Center) {
+                        val idle = minOf(if (wideScreen) 340.dp else 220.dp, maxHeight * 0.8f)
+                        Box(
+                            modifier = Modifier
+                                .size(idle)
+                                .alpha(0.38f),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            RuneRing(
+                                color = ring,
+                                animate = !reduceMotion,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            Text(
+                                "Draw to cast",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.65f),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -698,18 +741,22 @@ private fun SpellQuestContent(
                             scene.lines.joinToString("\n")
                         }
                         QuestPhase.CAST -> (listOf(scene.castPrompt) + scene.lines.take(1)).joinToString("\n")
-                        QuestPhase.HINT -> hint
+                        QuestPhase.HINT -> if (answerShown) {
+                            "Here is one shape that fits. Take it with you, or walk on."
+                        } else {
+                            hint
+                        }
                         QuestPhase.RESULT -> listOf(solvedText, scene.lines.first()).joinToString("\n")
                     }
                     // Every block says what it is, in a colour that matches its meaning.
                     val label = when (phase) {
                         QuestPhase.READ -> if (bookPick != null) "A gift" else if (castStrokes.isNotEmpty()) "Your spell" else "Problem"
                         QuestPhase.CAST -> "Problem"
-                        QuestPhase.HINT -> "Not this one"
+                        QuestPhase.HINT -> if (answerShown) "One way through" else "A different way"
                         QuestPhase.RESULT -> "It worked"
                     }
                     val labelTint = when (phase) {
-                        QuestPhase.HINT -> Peach
+                        QuestPhase.HINT -> if (answerShown) Mint else Peach
                         QuestPhase.RESULT -> Mint
                         else -> Butter
                     }
@@ -804,10 +851,7 @@ private fun SpellQuestContent(
                         }
                         if (answerShown) {
                             Button(
-                                onClick = {
-                                    Sfx.play(Sfx.Effect.ADD)
-                                    advance()
-                                },
+                                onClick = { advance() },
                                 enabled = giftTraced,
                                 shape = CircleShape,
                                 modifier = Modifier.fillMaxWidth(),
@@ -821,18 +865,15 @@ private fun SpellQuestContent(
                                     contentColor = PlumInk,
                                 ),
                                 modifier = Modifier.fillMaxWidth(),
-                            ) { Text("See the right answer") }
+                            ) { Text("Show me one answer") }
                             TextButton(
                                 onClick = { advance() },
                                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                            ) { Text("Walk on without it", color = PlumSoft) }
+                            ) { Text("Walk on for now", color = PlumSoft) }
                         }
                     }
                     QuestPhase.RESULT -> Button(
-                        onClick = {
-                            Sfx.play(Sfx.Effect.ADD)
-                            advance()
-                        },
+                        onClick = { advance() },
                         shape = CircleShape,
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Walk on") }
@@ -919,12 +960,13 @@ private fun SpellQuestContent(
                 } else {
                     null
                 },
+                detectedFamily = if (preview != null) castFamily else null,
                 reading = reading,
                 note = when {
                     reading -> "Casting…"
                     bookPick != null && giftTraced -> "The shape is drawn. Take your time, then continue."
                     castNote.isNotBlank() -> castNote
-                    modelReady == false -> "The reading model is not ready yet. Cast from the book, or try writing again."
+                    modelReady == false -> "Mò is not ready to read ink yet. Cast from the book, or try writing again."
                     else -> ""
                 },
                 onClose = {
@@ -1352,19 +1394,17 @@ private fun CastOverlay(
     gloss: String,
     onSpeak: () -> Unit,
     preview: String?,
+    detectedFamily: String?,
     writing: List<List<Offset>>?,
     reading: Boolean,
     note: String,
     onClose: () -> Unit,
 ) {
     val style = SpellFamilies.style(scene.spell.family)
-    val glow = when (style) {
-        EffectStyle.BURST -> Peach
-        EffectStyle.RIPPLE, EffectStyle.FROST -> Sky
-        EffectStyle.RISE -> Butter
-        EffectStyle.GROW -> Mint
-        else -> Lilac
-    }
+    // While the learner is writing, the circle stays on plain paper with a quiet
+    // neutral ring. The category colour arrives only after recognition.
+    val glow = detectedFamily?.let { chapterColor(SpellFamilies.chapter(it)) }
+        ?: Color(0xFFF8F0DC)
     // The target is never shown unless the learner asks for it.
     var showGuide by remember(scene.place) { mutableStateOf(false) }
     var showMeaning by remember(scene.place) { mutableStateOf(false) }
@@ -1392,6 +1432,12 @@ private fun CastOverlay(
             .appNavigationBarsPadding(),
         contentAlignment = Alignment.Center,
     ) {
+        SceneBackdrop(
+            place = scene.place,
+            family = scene.spell.family,
+            style = style,
+            animate = !reduceMotion,
+        )
         // A fold or tablet has room for the story and the circle side by side.
         // A phone keeps them stacked, like a card you turn over.
         val fold = LocalFoldState.current
@@ -1443,10 +1489,10 @@ private fun CastOverlay(
                 ) {
                     Text(
                         when {
-                            reading -> "Reading your ink…"
-                            busy -> "The spell takes hold…"
-                            giftReady -> "Continue the quest"
-                            gifting -> "The book is drawing…"
+                            reading -> "Mò is reading your ink…"
+                            busy -> "The spell is settling…"
+                            giftReady -> "Continue when ready"
+                            gifting -> "Mò is drawing the book's shape…"
                             ink.canUndo -> "Cast the spell"
                             else -> "Draw in the circle first"
                         },
@@ -1683,12 +1729,25 @@ private fun CastOverlay(
 /** One tag for everything the quest logs, so a device run can be filtered with `logcat -s`. */
 internal const val QUEST_LOG = "BihuaQuest"
 
-internal const val GIFT_STROKE_MS = 620L
-internal const val CAST_STROKE_MS = 1220L
+/**
+ * A guide animation has a roughly fixed total length, so a 3-stroke character
+ * is not over in a blink and a 20-stroke character does not crawl. Short
+ * characters get a little more time per stroke; long ones get less.
+ */
+internal fun guideStrokeMs(strokes: Int): Long {
+    if (strokes <= 0) return 620L
+    return (2200L / strokes).coerceIn(140L, 500L)
+}
 
-internal fun giftPlaybackMs(strokes: Int): Long = strokes * GIFT_STROKE_MS + 150L
+internal fun writingPlaybackMs(strokes: Int): Long {
+    val stroke = guideStrokeMs(strokes)
+    val gap = (stroke * 0.15f).toLong().coerceAtLeast(30L)
+    return strokes * (stroke + gap) + 250L
+}
 
-internal fun castPlaybackMs(strokes: Int): Long = strokes * CAST_STROKE_MS + 600L
+internal fun giftPlaybackMs(strokes: Int): Long = strokes * guideStrokeMs(strokes) + 150L
+
+internal fun castPlaybackMs(strokes: Int): Long = writingPlaybackMs(strokes) + 350L
 
 internal fun resultDelayMs(reduceMotion: Boolean): Long = if (reduceMotion) 900L else 3000L
 
@@ -1709,11 +1768,14 @@ private fun GuideWriting(
     modifier: Modifier,
     ink: Color = Color.White,
     glow: Color = Color(0xFFD9C7FF),
+    magical: Boolean = true,
+    strokeMs: Float = STROKE_MS,
+    gapMs: Float = STROKE_GAP_MS,
 ) {
     var elapsedMs by remember(strokes) { mutableFloatStateOf(0f) }
     LaunchedEffect(strokes) {
         var start = 0L
-        val total = strokes.size * (STROKE_MS + STROKE_GAP_MS) + 250f
+        val total = strokes.size * (strokeMs + gapMs) + 250f
         while (true) {
             androidx.compose.runtime.withFrameNanos { now ->
                 if (start == 0L) start = now
@@ -1725,7 +1787,7 @@ private fun GuideWriting(
     Canvas(modifier) {
         strokes.forEachIndexed { index, points ->
             if (points.size < 2) return@forEachIndexed
-            val raw = ((elapsedMs - index * (STROKE_MS + STROKE_GAP_MS)) / STROKE_MS).coerceIn(0f, 1f)
+            val raw = ((elapsedMs - index * (strokeMs + gapMs)) / strokeMs).coerceIn(0f, 1f)
             if (raw <= 0f) return@forEachIndexed
             val t = easeInOut(raw)
             val visible = partialPoints(points, t).map {
@@ -1735,16 +1797,19 @@ private fun GuideWriting(
                 moveTo(visible.first().x, visible.first().y)
                 for (i in 1 until visible.size) lineTo(visible[i].x, visible[i].y)
             }
-            // A soft glow under the ink, then the ink itself.
-            drawPath(
-                path,
-                color = glow.copy(alpha = 0.22f),
-                style = Stroke(
-                    width = size.width * 0.14f,
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
-                ),
-            )
+            // A soft glow under the ink, then the ink itself. A learner's
+            // own stroke stays plain, like the Practice canvas.
+            if (magical) {
+                drawPath(
+                    path,
+                    color = glow.copy(alpha = 0.22f),
+                    style = Stroke(
+                        width = size.width * 0.14f,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                    ),
+                )
+            }
             drawPath(
                 path,
                 color = ink.copy(alpha = 0.95f),
@@ -1755,7 +1820,7 @@ private fun GuideWriting(
                 ),
             )
             // The nib: a bright tip with a halo, while this stroke is being written.
-            if (raw < 1f) {
+            if (magical && raw < 1f) {
                 val tip = visible.last()
                 drawCircle(glow.copy(alpha = 0.45f), radius = size.width * 0.045f, center = tip)
                 drawCircle(Color.White, radius = size.width * 0.018f, center = tip)
@@ -2079,44 +2144,54 @@ private fun MagicCircle(
             .background(Color.White.copy(alpha = 0.06f))
             .border(2.dp, glow.copy(alpha = 0.75f), CircleShape),
     ) {
-        RuneRing(color = glow, animate = animate, modifier = Modifier.fillMaxSize())
+        RuneRing(
+            color = glow,
+            animate = animate,
+            modifier = Modifier.fillMaxSize(),
+            categoryColors = true,
+            radius = 0.455f,
+        )
+        // The paper is the only drawing surface. Clipping it here keeps the
+        // learner's ink off the runes and the outer ring.
         Box(
             modifier = Modifier
-                .fillMaxSize(0.78f)
+                .fillMaxSize(0.86f)
                 .align(Alignment.Center)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.04f))
-                .border(1.5.dp, glow.copy(alpha = 0.6f), CircleShape),
-        )
-        if (writing != null) {
-            GuideWriting(strokes = writing, modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center))
-        } else if (preview != null) {
-            WritingReveal(
-                character = preview,
-                glow = glow,
-                modifier = Modifier.align(Alignment.Center),
-            )
-        } else if (showGuide) {
-            // The shape only ever appears as it is being drawn, never as a finished character.
-            if (shapePlayer != null && shapePlayer.guide != null) {
-                StrokeGuideLayer(
-                    player = shapePlayer,
-                    modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center),
-                    showNumbers = false,
-                    strokeColor = glow,
-                    paperGap = false,
+                .background(PaperWarm)
+                .border(1.5.dp, glow.copy(alpha = 0.7f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (writing != null) {
+                GuideWriting(strokes = writing, modifier = Modifier.fillMaxSize(0.92f))
+            } else if (preview != null) {
+                WritingReveal(
+                    character = preview,
+                    glow = PlumInk,
+                    modifier = Modifier.fillMaxSize(0.92f),
                 )
+            } else if (showGuide) {
+                // The shape only ever appears as it is being drawn, never as a finished character.
+                if (shapePlayer != null && shapePlayer.guide != null) {
+                    StrokeGuideLayer(
+                        player = shapePlayer,
+                        modifier = Modifier.fillMaxSize(0.92f),
+                        showNumbers = false,
+                        strokeColor = PlumInk,
+                        paperGap = false,
+                    )
+                }
             }
+            InkCanvas(
+                state = ink,
+                modifier = Modifier.fillMaxSize(0.92f).clip(CircleShape),
+                // No target in the label: the answer stays hidden from screen readers too.
+                contentDescription = "Handwriting canvas, draw in the circle",
+                allowFinger = true,
+                // No square grid: the character is drawn inside the circle itself.
+                drawGrid = false,
+            )
         }
-        InkCanvas(
-            state = ink,
-            modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center),
-            // No target in the label: the answer stays hidden from screen readers too.
-            contentDescription = "Handwriting canvas, draw in the circle",
-            allowFinger = true,
-            // No square grid: the character is drawn inside the circle itself.
-            drawGrid = false,
-        )
     }
 }
 
@@ -2138,7 +2213,13 @@ private val RuneStrokes: List<List<List<Offset>>> = listOf(
 
 /** Two slow rings of runes behind the circle. Still when the learner asks for less motion. */
 @Composable
-private fun RuneRing(color: Color, animate: Boolean, modifier: Modifier) {
+private fun RuneRing(
+    color: Color,
+    animate: Boolean,
+    modifier: Modifier,
+    categoryColors: Boolean = false,
+    radius: Float = 0.445f,
+) {
     var turn by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(animate) {
         if (!animate) return@LaunchedEffect
@@ -2150,11 +2231,12 @@ private fun RuneRing(color: Color, animate: Boolean, modifier: Modifier) {
             }
         }
     }
+    val palette = com.bassmd.bihua.spellbook.SpellCategories.map { chapterColor(it) }
     Canvas(modifier) {
         val center = Offset(size.width / 2f, size.height / 2f)
-        val glyph = size.minDimension * 0.075f
+        val glyph = size.minDimension * (if (radius > 0.45f) 0.065f else 0.075f)
         val stroke = 1.6.dp.toPx()
-        val rings = listOf(Triple(0.445f, 10, 1f))
+        val rings = listOf(Triple(radius, 10, 1f))
         rings.forEachIndexed { ringIndex, ring ->
             val (radius, count, direction) = ring
             repeat(count) { i ->
@@ -2163,6 +2245,11 @@ private fun RuneRing(color: Color, animate: Boolean, modifier: Modifier) {
                 val cx = center.x + cos(angle) * size.minDimension * radius
                 val cy = center.y + sin(angle) * size.minDimension * radius
                 val rune = RuneStrokes[(ringIndex * 5 + i * 3) % RuneStrokes.size]
+                val runeColor = if (categoryColors) {
+                    palette[(ringIndex * 3 + i) % palette.size]
+                } else {
+                    color
+                }
                 rune.forEach { polyline ->
                     val path = Path().apply {
                         polyline.forEachIndexed { k, p ->
@@ -2173,7 +2260,7 @@ private fun RuneRing(color: Color, animate: Boolean, modifier: Modifier) {
                     }
                     drawPath(
                         path,
-                        color = color.copy(alpha = 0.55f),
+                        color = runeColor.copy(alpha = 0.78f),
                         style = Stroke(width = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round),
                     )
                 }
@@ -2196,6 +2283,7 @@ private fun GiftCircle(
     player: StrokeOrderPlayer? = null,
     reduceMotion: Boolean = false,
 ) {
+    val learnerInk = player == null && strokes.isNotEmpty()
     Box(
         modifier = modifier
             .aspectRatio(1f)
@@ -2215,7 +2303,15 @@ private fun GiftCircle(
                 paperGap = false,
             )
         } else if (strokes.isNotEmpty()) {
-            GuideWriting(strokes = strokes, modifier = Modifier.fillMaxSize(0.74f), ink = glow, glow = glow.copy(alpha = 0.35f))
+            GuideWriting(
+                strokes = strokes,
+                modifier = Modifier.fillMaxSize(0.74f),
+                ink = glow,
+                glow = glow.copy(alpha = 0.35f),
+                magical = !learnerInk,
+                strokeMs = guideStrokeMs(strokes.size).toFloat(),
+                gapMs = (guideStrokeMs(strokes.size) * 0.15f).coerceAtLeast(30f),
+            )
         }
     }
 }
@@ -2231,16 +2327,16 @@ private fun GiftActions(ready: Boolean, busy: Boolean, onContinue: () -> Unit, o
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE6C47A),
                 contentColor = Color(0xFF2B2118),
-                disabledContainerColor = Color(0x33E6C47A),
-                disabledContentColor = Color(0x80F8F0DC),
+                disabledContainerColor = Color(0x22E6C47A),
+                disabledContentColor = Color.White.copy(alpha = 0.72f),
             ),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 when {
-                    busy -> "The spell takes hold…"
-                    ready -> "Continue the quest"
-                    else -> "Drawing the shape…"
+                    busy -> "The spell is settling…"
+                    ready -> "Continue when ready"
+                    else -> "Mò is drawing the shape…"
                 },
             )
         }

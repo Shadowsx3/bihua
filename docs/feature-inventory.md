@@ -45,6 +45,10 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Widget day-part backgrounds | Warm morning, mint afternoon, lilac evening, deep night with light text and soft glows | P |
 | Widget stat blocks | Today shows review and lesson counts; Word shows two chips below the definition | P |
 | Completion party hat | Mò wears a party hat on the session-complete panel | P |
+| Spell quest | Extra practice: draw a character that fits the scene, or take a gift from the grimoire; nothing graded or scheduled | A/P |
+| Spellbook data | 104 spells, 25 families, 8 chapters, 8 category tabs | A |
+| Spell quest cast surface | Rune circle, clue card above the drawing, pinned Cast, plain learner ink, tip card with reading/meaning/word | A/P |
+| Spell quest sound | Generated pad, fifth, heartbeat, plucks; soft cast/wrong/gift/reveal/walk/chapter cues | P |
 
 ## Writing
 
