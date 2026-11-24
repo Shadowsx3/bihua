@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bihua: learn characters by writing them</title>
-<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did. Print-ready sheets when you want paper.">
+<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did. Optional meaning checks, a guided tour with Mò, and home-screen widgets that dress for the day. Print-ready sheets when you want paper.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Bihua: learn characters by writing them">
@@ -147,6 +147,7 @@
           <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter FSRS or create review debt.</span></div>
           <div class="point"><b>Sound is separate.</b><span>Pronunciation is its own task, so a word can be read without pretending it was written.</span></div>
           <div class="point"><b>No hidden shortcut.</b><span>If you can write 愛 from memory, 愛情 is a reward, not a guess.</span></div>
+          <div class="point"><b>Mò is your guide.</b><span>The optional tour and the widgets use the same paper-ink pet, never a second mascot.</span></div>
         </div>
         <div class="philosophy-chips">
           <span class="chip">FSRS cards are characters</span>
@@ -358,20 +359,42 @@
 
   <section class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">New in 1.0.9</div>
-      <h2>A calmer hand, a louder word.</h2>
-      <p class="lead">Finger drawing is on from the first stroke. Light touches stay readable, a single tap is a real dot, and your stylus wins over a resting palm. The Word of the Day speaker speaks, and the first tap waits for the voice instead of disappearing.</p>
+      <div class="kicker">New in 1.1.0</div>
+      <h2>A gentler start. More ways to remember.</h2>
+      <p class="lead">Mò can show you around the real app, meanings are there if you want them, and the home-screen widgets now dress for the hour. Writing is still the default and the desktop is still quiet.</p>
+    </div>
+    <div class="grid three gap-top">
+      <article class="card pillar accent-mint reveal">
+        <div class="icon">墨</div>
+        <h3>Mò shows you around</h3>
+        <p>An optional one-minute tour runs over the real screens. The pet waves, holds a prop, and explains the desk, reviews, grades, and paper. Skip it once and it stays out of the way; replay it any time from Settings → Help &amp; tour.</p>
+      </article>
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">意</div>
+        <h3>Meanings, if you want them</h3>
+        <p>Add an optional meaning check, type the meaning in your own words, then reveal a clean gloss and a real word that uses the character. Add your own synonyms and keep them on the character sheet. Writing stays the normal path.</p>
+      </article>
+      <article class="card pillar accent-red reveal">
+        <div class="icon">☼</div>
+        <h3>Widgets that dress for the day</h3>
+        <p>The Today widget shows reviews and lessons at a glance. The Word widget keeps the word as the hero, with the reading, meaning, and counts. Mò wears a study cap, monocle, witch hat, vampire, nightcap, or party hat, and the background follows the hour.</p>
+      </article>
     </div>
     <div class="license-chips reveal">
-      <span class="chip">Stylus or finger</span>
-      <span class="chip">Palm safety</span>
-      <span class="chip">Readable light ink</span>
-      <span class="chip">Dot strokes</span>
-      <span class="chip">Word of the Day audio</span>
-      <span class="chip">Scrollable onboarding</span>
-      <span class="chip">Paper and Compare back</span>
+      <span class="chip">Guided live tour</span>
+      <span class="chip">Optional meaning checks</span>
+      <span class="chip">Your synonyms</span>
+      <span class="chip">Anki writing</span>
+      <span class="chip">Anki pronunciation</span>
+      <span class="chip">Anki meaning</span>
+      <span class="chip">Grade legend</span>
+      <span class="chip">Hour-aware widgets</span>
+      <span class="chip">Pinned widget outfit</span>
+      <span class="chip">Sound effects</span>
+      <span class="chip">Short labels at large text</span>
       <span class="chip">Still offline</span>
     </div>
+    <p class="small note reveal">From 1.0.9: finger drawing, palm safety, readable light ink, dot strokes, Word of the Day audio, scrollable onboarding, and Paper/Compare back. Bihua is still free, with no account and no ads.</p>
   </section>
 
   <section id="print" class="wrap">
@@ -472,19 +495,19 @@
   <section id="download" class="wrap">
     <div class="download-card reveal">
       <div>
-        <div class="kicker">Signed release</div>
+        <div class="kicker">Signed 1.1.0 test build</div>
         <h2>Install Bihua.</h2>
-        <p>Install Bihua on an Android 10+ arm64 phone. Write one character a day, or ten. The schedule will still be there when you come back.</p>
+        <p>This is the signed 1.1.0 build for testing on your phone. It includes the guided tour, optional meaning checks, widget costumes, and the latest UI polish. 1.0.9 is still in Play review; 1.1.0 will follow after it clears.</p>
         <div class="hero-actions">
-          <a class="button" href="https://github.com/Shadowsx3/bihua/releases/latest">Download APK</a>
+          <a class="button" href="download/bihua-1.1.0.apk" download>Download 1.1.0 APK</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">Read the source</a>
         </div>
-        <p class="small">APK 1.0.9 · signed release candidate · Android 10+ · content version 34 · no account</p>
-        <p class="small">1.0.9 is in Play review. The GitHub download follows once it clears.</p>
+        <p class="small">APK 1.1.0 · signed test build · Android 10+ · content version 34 · no account</p>
+        <p class="small">If you already installed from Play, uninstall that copy first. This APK uses the local release key and may not install over the Play signature.</p>
       </div>
       <div class="download-side">
         <p class="small">SHA-256</p>
-        <code>df3d000213f8794b208d8681c4abc2ad20554051359d81517dcf305f7e770eb0</code>
+        <code>83eebbd8efc7f0c39e657806b4b61dcbd0ffd6c029c8f51a6800a62e2145af47</code>
         <p class="small"><a href="download/SHA256SUMS.txt">Checksum file</a></p>
       </div>
     </div>

@@ -546,6 +546,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 | Guided tour | `ui/GuidedTour.kt` (MoActor, anchors, overlay), `ui/BihuaApp.kt`, `settings/SettingsScreen.kt` |
 | Widgets and pet costumes | `widget/WidgetCopy.kt`, `widget/WidgetLook.kt`, `res/layout/widget_*.xml`, `res/drawable/widget_pet_*.xml` |
 | Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `scripts/journey.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
+| Coverage map | `docs/ui-test-coverage.md`, `docs/test-matrix.md` |
 | Local journeys | `qa/journey.py`, `qa/state.py`, `qa/driver.py`, `qa/scenarios.py` |
 
 ## Release assets

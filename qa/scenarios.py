@@ -64,6 +64,8 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("synonyms", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="synonyms"),
     ScenarioSpec("tour", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour"),
     ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
+    ScenarioSpec("settings-outfit", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_outfit"),
+    ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
 ]
 
 
@@ -223,6 +225,8 @@ def learning_state(journey: Journey, state: ScenarioState) -> None:
             raise JourneyFailure(f"missing learning or caught-up copy: {text}")
         if not journey.exists("Practice instead", timeout=2):
             raise JourneyFailure("Practice instead action missing")
+        if "All done for today" in text and "All caught up" in text:
+            raise JourneyFailure("the all-done card repeats the all-caught-up message")
 
 
 def vacation(journey: Journey, state: ScenarioState) -> None:
@@ -895,17 +899,15 @@ def _settings_section(journey: Journey, label: str) -> None:
     # "Practice" exists in both, so use the row text explicitly. The hierarchy
     # fallback matters because uiautomator's idle wait can fail after a theme
     # switch even though the row is on screen.
-    row = journey.find(label, timeout=1.0)
     for _ in range(8):
-        if row is not None or journey._match_hierarchy(label, True):
+        if journey.exists_text(label):
             break
         journey.scroll_down()
         time.sleep(0.3)
-        row = journey.find(label, timeout=0.5)
-    if row is None and not journey._match_hierarchy(label, True):
-        # Help is below several groups. Search narrows the list and is also a
-        # useful check of the settings search itself. Re-find the field after
-        # every edit: large text and tablet recomposition can stale the node.
+    if not journey.exists_text(label):
+        # Help is below several groups. Search narrows the list. Re-find the
+        # field after every edit: large text and tablet recomposition can
+        # stale the node.
         for _ in range(3):
             try:
                 field = journey.d(className="android.widget.EditText")
@@ -919,12 +921,11 @@ def _settings_section(journey: Journey, label: str) -> None:
                 time.sleep(0.3)
                 continue
             time.sleep(0.8)
-            row = journey.find(label, timeout=0.6)
-            if row is not None or journey._match_hierarchy(label, True):
+            if journey.exists_text(label):
                 break
-    if row is None and not journey._match_hierarchy(label, True):
+    if not journey.exists_text(label):
         raise JourneyFailure(f"settings row missing: {label}")
-    journey.tap(label)
+    journey.tap_text(label)
     time.sleep(0.5)
 
 
@@ -1371,6 +1372,57 @@ def tour(journey: Journey, state: ScenarioState) -> None:
     journey.assert_home()
 
 
+def settings_outfit(journey: Journey, state: ScenarioState) -> None:
+    """Pin a widget outfit from Display, then return it to Auto."""
+    with journey.step("pin a widget outfit"):
+        _settings_section(journey, "Display")
+        for _ in range(8):
+            if journey.exists_text("Mò's widget outfit"):
+                break
+            journey.scroll_down()
+            time.sleep(0.3)
+        if not journey.exists_text("Mò's widget outfit"):
+            raise JourneyFailure("widget outfit row missing")
+        journey.tap_text("Change")
+        journey.wait("Mò's outfit", timeout=6)
+        issues = journey.a11y_unlabeled()
+        if issues:
+            raise JourneyFailure(f"outfit dialog has unlabeled clickables: {issues[:3]}")
+        journey.tap_text("Witch hat")
+        time.sleep(0.5)
+        if journey.exists("Mò's outfit", timeout=0.5):
+            raise JourneyFailure("outfit dialog did not close")
+        if not journey.exists_text("Witch hat"):
+            raise JourneyFailure("outfit did not persist")
+        journey.screenshot("widget-outfit-pinned")
+    with journey.step("leave the section"):
+        journey.d.press("back")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+
+
+def grade_help(journey: Journey, state: ScenarioState) -> None:
+    """The session grade prompt opens the plain-word legend."""
+    with journey.step("open the grade legend"):
+        journey.assert_home()
+        journey.start_session()
+        journey.wait("Show answer", timeout=10)
+        journey.tap("Show answer")
+        journey.wait("How did that feel?", timeout=8, exact=False)
+        journey.tap("What do the grades mean?")
+        journey.wait("What the grades mean", timeout=6)
+        issues = journey.a11y_unlabeled()
+        if issues:
+            raise JourneyFailure(f"grade dialog has unlabeled clickables: {issues[:3]}")
+        journey.assert_text("It slipped away.")
+        journey.assert_text("Instant and effortless.")
+        journey.screenshot("grade-help")
+        journey.tap("Got it")
+        journey.wait("How did that feel?", timeout=6, exact=False)
+    with journey.step("grade and leave"):
+        journey.tap_visible("Good")
+        journey.leave_session("End session")
+
+
 def accessibility(journey: Journey, state: ScenarioState) -> None:
     issues: list[str] = []
     for screen in ("Home", "Characters", "Progress", "Practice", "Settings"):
@@ -1416,4 +1468,6 @@ RUNNERS = {
     "meaning_anki": meaning_anki,
     "synonyms": synonyms,
     "tour": tour,
+    "settings_outfit": settings_outfit,
+    "grade_help": grade_help,
 }

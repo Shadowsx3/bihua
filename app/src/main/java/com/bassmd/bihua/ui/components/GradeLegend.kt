@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
@@ -68,7 +70,10 @@ fun GradeHelpButton(modifier: Modifier = Modifier) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { open = false }) { Text("Got it") }
+                TextButton(
+                    onClick = { open = false },
+                    modifier = Modifier.semantics { contentDescription = "Got it" },
+                ) { Text("Got it") }
             },
         )
     }

@@ -94,9 +94,66 @@ class Journey:
     def _match_hierarchy(self, label: str, exact: bool) -> list[tuple[str, tuple[int, int, int, int], bool]]:
         found = []
         for value, bounds, clickable in self._hierarchy_nodes():
-            if (value == label) if exact else (label in value):
+            if ((value == label) if exact else (label in value)):
                 found.append((value, bounds, clickable))
         return found
+
+    def _hierarchy_text_nodes(self) -> list[tuple[str, tuple[int, int, int, int]]]:
+        try:
+            root = ET.fromstring(self.d.dump_hierarchy(compressed=False))
+        except Exception:
+            return []
+        out = []
+        for node in root.iter("node"):
+            value = node.attrib.get("text") or ""
+            if not value or node.attrib.get("visible-to-user") != "true":
+                continue
+            match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
+            if not match:
+                continue
+            out.append((value, tuple(int(part) for part in match.groups())))
+        return out
+
+    def _match_text_hierarchy(self, label: str, exact: bool) -> list[tuple[str, tuple[int, int, int, int]]]:
+        return [
+            (value, bounds)
+            for value, bounds in self._hierarchy_text_nodes()
+            if ((value == label) if exact else (label in value))
+        ]
+
+    def exists_text(self, label: str, timeout: float = 0.5, exact: bool = True) -> bool:
+        deadline = time.time() + timeout
+        selector = self.d(text=label) if exact else self.d(textContains=label)
+        while time.time() < deadline:
+            try:
+                if selector.exists:
+                    return True
+            except Exception:
+                pass
+            if self._match_text_hierarchy(label, exact):
+                return True
+            time.sleep(0.2)
+        return False
+
+    def tap_text(self, label: str, timeout: float = 8.0, exact: bool = True) -> None:
+        deadline = time.time() + timeout
+        selector = self.d(text=label) if exact else self.d(textContains=label)
+        while time.time() < deadline:
+            try:
+                if selector.exists:
+                    selector.click()
+                    time.sleep(0.12)
+                    return
+            except Exception:
+                pass
+            matches = self._match_text_hierarchy(label, exact)
+            if matches:
+                _value, (x1, y1, x2, y2) = matches[0]
+                self.d.click((x1 + x2) // 2, (y1 + y2) // 2)
+                time.sleep(0.12)
+                return
+            time.sleep(0.2)
+        raise JourneyFailure(f"could not tap text: {label}")
 
     def _tap_hierarchy(self, label: str, timeout: float, exact: bool) -> bool:
         deadline = time.time() + timeout
@@ -467,13 +524,39 @@ class Journey:
     def a11y_unlabeled(self) -> list[str]:
         xml = self.d.dump_hierarchy(compressed=False)
         root = ET.fromstring(xml)
+
+        def bounds(node) -> tuple[int, int, int, int] | None:
+            match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
+            return tuple(int(part) for part in match.groups()) if match else None
+
+        def inside(inner, outer) -> bool:
+            return (
+                inner[0] >= outer[0] - 2
+                and inner[1] >= outer[1] - 2
+                and inner[2] <= outer[2] + 2
+                and inner[3] <= outer[3] + 2
+            )
+
+        labeled = []
+        for node in root.iter("node"):
+            label = (node.attrib.get("content-desc") or node.attrib.get("text") or "").strip()
+            box = bounds(node)
+            if label and box:
+                labeled.append(box)
+
         issues = []
         for node in root.iter("node"):
             if node.attrib.get("clickable") != "true":
                 continue
             label = (node.attrib.get("content-desc") or node.attrib.get("text") or "").strip()
-            if not label:
-                issues.append(node.attrib.get("bounds", "?"))
+            if label:
+                continue
+            box = bounds(node)
+            # Compose often puts the visible word on a child node. A clickable
+            # surface with a labeled child is still understandable.
+            if box and any(inside(child, box) for child in labeled):
+                continue
+            issues.append(node.attrib.get("bounds", "?"))
         return issues
 
     def step(self, name: str):

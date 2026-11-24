@@ -127,6 +127,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.bassmd.bihua.BuildConfig
@@ -3315,6 +3320,11 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = option.label
+                                    role = Role.RadioButton
+                                    this.selected = settings.mascotOutfit == option
+                                }
                                 .clickable {
                                     update(settings.copy(mascotOutfit = option))
                                     showOutfit = false
@@ -3328,6 +3338,7 @@ fun SettingsScreen(
                                     update(settings.copy(mascotOutfit = option))
                                     showOutfit = false
                                 },
+                                modifier = Modifier.clearAndSetSemantics { },
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(option.label, style = MaterialTheme.typography.bodyMedium, color = InkDark)
@@ -3336,7 +3347,10 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showOutfit = false }) { Text("Close") }
+                TextButton(
+                    onClick = { showOutfit = false },
+                    modifier = Modifier.semantics { contentDescription = "Close" },
+                ) { Text("Close") }
             },
         )
     }

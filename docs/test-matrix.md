@@ -22,7 +22,9 @@ harness; pure composables and physical hardware still need the device pass.
 | Widget parity | Skipped and suspended cards excluded; refresh on stop | `WidgetCopyTest`, manual launcher pass |
 | Widget pet costumes | Study cap, word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat at all-clear; pinned outfit wins | `WidgetCopyTest`, manual launcher pass |
 | Widget layout states | 2×2 Today and 4×2 Word, counts, all-clear, vacation, 1.5× font, night text, backgrounds | manual launcher pass |
-| Grade legend | “?” opens Again/Hard/Good/Easy from the session prompt | manual session pass |
+| Grade legend | “?” opens Again/Hard/Good/Easy from the session prompt | `grade-help` journey |
+| Widget outfit | Pin Witch in Display and verify the row persists | `settings-outfit` journey |
+| Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
 | Guided tour | Invite dismiss, replay from Settings, tap and Next through all nine stops, Back to app | `tour` journey |
