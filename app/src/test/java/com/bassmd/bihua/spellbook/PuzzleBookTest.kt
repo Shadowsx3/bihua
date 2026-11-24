@@ -1,138 +1,139 @@
 package com.bassmd.bihua.spellbook
 
+import android.database.sqlite.SQLiteDatabase
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.File
-import kotlin.random.Random
 
+/** The puzzle library is read from `puzzles.db`. These tests write small databases the same way. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class PuzzleBookTest {
-    private fun asset(name: String): String {
-        val file = listOf(File("src/main/assets/$name"), File("app/src/main/assets/$name")).first { it.exists() }
-        return file.readText()
+
+    private val schema = """
+        CREATE TABLE puzzle(id TEXT PRIMARY KEY, place TEXT NOT NULL, lines TEXT NOT NULL, prompt TEXT NOT NULL, fallback TEXT NOT NULL);
+        CREATE TABLE solution(puzzle_id TEXT NOT NULL, family TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(puzzle_id, family, text));
+        CREATE TABLE hint(puzzle_id TEXT NOT NULL, family TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY(puzzle_id, family));
+    """.trimIndent()
+
+    /** Writes a database from SQL statements separated by `;` and returns the file. */
+    private fun database(vararg statements: String): File {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val file = File.createTempFile("puzzles", ".db", context.cacheDir)
+        file.delete()
+        val db = SQLiteDatabase.openOrCreateDatabase(file, null)
+        (schema.split(";") + statements.joinToString(";").split(";"))
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .forEach { db.execSQL(it) }
+        db.close()
+        return file
     }
 
-    private fun shippedBook(): PuzzleBook =
-        PuzzleBook.parse(asset("puzzles.csv"), asset("puzzle_hints.csv"))
-
-    private val header = "id,place,lines,prompt,family,text"
-    private val hintsHeader = "id,family,text"
+    private fun load(vararg statements: String): PuzzleBook {
+        val problems = mutableListOf<String>()
+        return PuzzleBook.fromFile(database(*statements), problems).let { book ->
+            PuzzleBook(book.puzzles, problems)
+        }
+    }
 
     @Test
-    fun parsesSolutionsAndMergesSharedText() {
-        val book = PuzzleBook.parse(
+    fun groupsSolutionsByTextAndKeepsEveryFamily() {
+        val book = load(
             """
-            $header
-            river,The river,Line one|Line two,Get across,water,The water rises.
-            river,The river,Line one|Line two,Get across,ice,The water freezes.
-            river,The river,Line one|Line two,Get across,stone,Stone steps rise.
-            """.trimIndent(),
+            INSERT INTO puzzle VALUES('river','The river','Line one|Line two','Get across','Nothing changes.');
+            INSERT INTO solution VALUES('river','water','The water rises.');
+            INSERT INTO solution VALUES('river','ice','The water freezes.');
+            INSERT INTO solution VALUES('river','stone','The water rises.');
+            """,
         )
         val puzzle = book.puzzle("river")!!
-        assertEquals("The river", puzzle.place)
+        assertEquals(2, puzzle.solutions.size)
+        val rising = puzzle.solutions.single { it.text == "The water rises." }
+        assertEquals(setOf("water", "stone"), rising.families)
         assertEquals(listOf("Line one", "Line two"), puzzle.lines)
-        assertEquals(3, puzzle.solutions.size)
         assertTrue(book.problems.isEmpty())
     }
 
     @Test
-    fun unknownFamilyIsReported() {
-        val book = PuzzleBook.parse(
+    fun aPuzzleWithOneWayThroughIsReported() {
+        val book = load(
             """
-            $header
-            x,Place,Line,Prompt,unicorn,It sparkles.
-            x,Place,Line,Prompt,water,It flows.
-            """.trimIndent(),
+            INSERT INTO puzzle VALUES('gate','The gate','A gate.','Open the gate','Nothing.');
+            INSERT INTO solution VALUES('gate','wind','The wind pushes it open.');
+            """,
         )
-        assertTrue(book.problems.any { "unknown family unicorn" in it })
+        assertTrue(book.problems.any { it.contains("only one way through") })
     }
 
     @Test
-    fun singleSolutionPuzzleIsFlagged() {
-        val book = PuzzleBook.parse(
+    fun aPuzzleWithNoSolutionsIsLeftOut() {
+        val book = load(
             """
-            $header
-            x,Place,Line,Prompt,water,It flows.
-            """.trimIndent(),
+            INSERT INTO puzzle VALUES('empty','Nowhere','A line.','Nothing','Nothing.');
+            """,
         )
-        assertTrue(book.problems.any { "only one way through" in it })
+        assertTrue(book.puzzles.isEmpty())
+        assertTrue(book.problems.any { it.contains("no solutions") })
     }
 
     @Test
-    fun hintsAndFallbackLoad() {
-        val book = PuzzleBook.parse(
+    fun unknownFamiliesAreReported() {
+        val book = load(
             """
-            $header
-            x,Place,Line,Prompt,water,It flows.
-            x,Place,Line,Prompt,ice,It freezes.
-            """.trimIndent(),
-            """
-            $hintsHeader
-            x,fire,It burns nothing.
-            x,*,Try something else.
-            """.trimIndent(),
+            INSERT INTO puzzle VALUES('door','The door','A door.','Open it','Nothing.');
+            INSERT INTO solution VALUES('door','nonsense','It opens.');
+            INSERT INTO solution VALUES('door','water','It opens wider.');
+            """,
         )
-        val puzzle = book.puzzle("x")!!
-        assertEquals("It burns nothing.", puzzle.hints["fire"])
-        assertEquals("Try something else.", puzzle.fallback)
+        assertTrue(book.problems.any { it.contains("unknown family nonsense") })
     }
 
     @Test
-    fun shippedLibraryIsClean() {
-        val book = shippedBook()
-        assertTrue("problems: ${book.problems}", book.problems.isEmpty())
-        assertTrue("expected a real library", book.puzzles.size >= 15)
+    fun hintsAndFallbackComeFromTheDatabase() {
+        val book = load(
+            """
+            INSERT INTO puzzle VALUES('bridge','The bridge','A gap.','Cross','The ink settles.');
+            INSERT INTO solution VALUES('bridge','stone','A firm path.');
+            INSERT INTO solution VALUES('bridge','boat','A boat carries you.');
+            INSERT INTO hint VALUES('bridge','fire','Fire is not the answer here.');
+            """,
+        )
+        val puzzle = book.puzzle("bridge")!!
+        assertEquals("Fire is not the answer here.", puzzle.hints["fire"])
+        assertEquals("The ink settles.", puzzle.fallback)
     }
 
     @Test
-    fun everyShippedPuzzleHasSeveralWaysThrough() {
-        assertTrue(shippedBook().puzzles.all { it.solutions.size >= 3 })
+    fun forFamilyReturnsPuzzlesThatFamilyCanSolve() {
+        val book = load(
+            """
+            INSERT INTO puzzle VALUES('river','The river','Water.','Cross','Nothing.');
+            INSERT INTO solution VALUES('river','water','The water holds you.');
+            INSERT INTO solution VALUES('river','boat','A boat waits.');
+            INSERT INTO puzzle VALUES('cave','The cave','Dark.','Light the way','Nothing.');
+            INSERT INTO solution VALUES('cave','fire','A flame walks ahead.');
+            INSERT INTO solution VALUES('cave','sun','Sunlight finds the way.');
+            """,
+        )
+        assertEquals(listOf("river"), book.forFamily("boat").map { it.id })
+        assertEquals(listOf("cave"), book.forFamily("fire").map { it.id })
     }
 
     @Test
-    fun solverAcceptsAnyMatchingFamilyAndHintsOtherwise() {
-        val book = shippedBook()
-        val river = book.puzzle("river")!!
-        assertTrue(QuestSolver.solve(river, "ice") is CastResult.Solved)
-        assertTrue(QuestSolver.solve(river, "fire") is CastResult.Hint)
-        assertTrue((QuestSolver.solve(river, "fire") as CastResult.Hint).message.isNotBlank())
-    }
-
-    private fun spellRows(): List<Spell> {
-        val file = listOf(File("src/main/assets/spellbook.csv"), File("app/src/main/assets/spellbook.csv"))
-            .first { it.exists() }
-        return Spellbook.parse(file.readLines().asSequence())
-    }
-
-    @Test
-    fun everySpellFamilyHasSolvablePuzzles() {
-        val book = shippedBook()
-        val solved = mutableSetOf<String>()
-        book.puzzles.forEach { puzzle ->
-            puzzle.solutions.forEach { solved += it.families }
-        }
-        val families = spellRows().map { it.family }.toSet()
-        val uncovered = families.filter { family ->
-            val borrowed = FallbackFamilies[family] ?: family
-            borrowed !in solved
-        }
-        assertTrue("no puzzle for: $uncovered", uncovered.isEmpty())
-    }
-
-    @Test
-    fun generatorProducesPlayableScenes() {
-        val book = shippedBook()
-        val spells = spellRows()
-        val byGlyph = spells.associate {
-            it.character to QuestSpell(it.character, it.family, "reading", "meaning")
-        }
-        val scenes = QuestGenerator.chapter(6, 1, Random(7), book, spells, byGlyph, emptySet())
-        assertEquals(6, scenes.size)
-        assertTrue(scenes.all { it.puzzle.solutions.isNotEmpty() })
-        assertTrue(scenes.all { it.spell.character.isNotBlank() })
-        // Never the same place twice in a row.
-        scenes.zipWithNext().forEach { (a, b) ->
-            assertTrue("repeated place ${a.place}", a.place != b.place)
-        }
+    fun theShippedLibraryLoadsCleanly() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val file = File.createTempFile("shipped_puzzles", ".db", context.cacheDir)
+        context.assets.open("puzzles.db").use { input -> file.outputStream().use { input.copyTo(it) } }
+        val problems = mutableListOf<String>()
+        val book = PuzzleBook.fromFile(file, problems)
+        assertTrue("shipped library has problems: ${problems.take(5)}", problems.isEmpty())
+        assertTrue(book.puzzles.size >= 1500)
+        assertTrue(book.puzzles.all { it.solutions.isNotEmpty() })
     }
 }

@@ -26,9 +26,10 @@ built, how the game loop works, and what is still missing. The working handoff
   obstacles and what they accept, tag outcomes, settings, times of day, weather).
   Source of truth. `tools/spells/build_parts.py` compiles it to
   `app/src/main/assets/puzzle_parts.db`.
-- `app/src/main/assets/puzzles.db`: the authored puzzle library (1500 variants from 29
-  seeds, built by `tools/spells/expand_puzzles.py` and `build_puzzle_db.py`). Kept as
-  the fallback for now.
+- `tools/spells/puzzle_seeds.sql`: the authored puzzle seeds (32 places, each with
+  honest solutions and per-family hints), in SQL.
+- `app/src/main/assets/puzzles.db`: the expanded puzzle library (1500 variants), built
+  from the seed SQL by `tools/spells/build_puzzles.py`. The app reads only this file.
 - Content store: `bihua_content.db` provides the stroke guides (path-only strokes are
   common; never key UI on `centerlines()`).
 
@@ -111,10 +112,6 @@ built, how the game loop works, and what is still missing. The working handoff
 
 ### Required
 
-- Remove the CSV puzzle path. `tools/spells/puzzle_seeds.csv`,
-  `puzzle_hints_seeds.csv`, and `app/src/main/assets/puzzles.csv` and `puzzle_hints.csv`
-  must go once `PuzzleBookTest` is moved to read `puzzle_parts.db` (Robolectric is
-  already in place). Authoring stays in SQL.
 - Switch gameplay fully to the forge and retire the 1500-variant library once the
   forge's variety is checked on device.
 - Verify on device: the fold two-pane layout (left visual novel, right drawing), the

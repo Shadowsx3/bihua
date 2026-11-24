@@ -168,7 +168,7 @@ private fun SpellQuestContent(
     val spells = remember {
         context.assets.open("spellbook.csv").bufferedReader().useLines { Spellbook.parse(it) }
     }
-    // Indexed SQLite asset; the CSVs remain the authoring format.
+    // Indexed SQLite asset, built from the SQL seeds under tools/spells/.
     val book = remember { PuzzleBook.load(context) }
     // Fresh scenes come from the forge; the fixed library stays as the fallback.
     val parts = remember { com.bassmd.bihua.spellbook.PuzzleParts.load(context) }

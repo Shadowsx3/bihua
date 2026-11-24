@@ -12,8 +12,8 @@ Built and compiling:
 - `spellbook/SpellFamilies.kt` is the taxonomy: 24 families, 8 chapters
   (Tides, Flame, Sky, Ground, Creatures, Craft, Mind, Time), each with an
   `EffectStyle` that drives the cast animation.
-- `spellbook/Puzzles.kt` + `spellbook/Csv.kt` read `assets/puzzles.csv`
-  (17 puzzles, 125 solutions) and `assets/puzzle_hints.csv`.
+- `spellbook/Puzzles.kt` reads the compiled `assets/puzzles.db` (SQL seeds under
+  `tools/spells/puzzle_seeds.sql`, built by `tools/spells/build_puzzles.py`).
 - `spellbook/Quest.kt` holds `QuestSolver` (any fitting family wins, otherwise a
   hint) and `QuestGenerator` (endless chapters, real characters, no repeated
   place back to back).
@@ -48,10 +48,10 @@ Not verified yet:
 
 ## Since the first pass
 
-- Puzzle library is now 1500 variants (10,145 solution rows) generated from 29
-  authored seeds by `tools/spells/expand_puzzles.py`, varying time of day and
-  weather. Compile them with `tools/spells/build_puzzle_db.py` into the indexed
-  `puzzles.db` (2.7 MB) that the app reads by family.
+- Puzzle library is 1500 variants (9,517 solution rows) expanded from the SQL seeds
+  in `tools/spells/puzzle_seeds.sql` by `tools/spells/build_puzzles.py`, varying time
+  of day and weather. The app reads the indexed `puzzles.db` directly. No CSV is used
+  for puzzles.
 - The book picker is a parchment sheet (not a Material dialog), with family
   chips that show counts and glow before a character is traced.
 - Choosing a character traces its real guide strokes into the circle, then the
