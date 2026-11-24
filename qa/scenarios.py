@@ -2,6 +2,8 @@
 """Daily learner journeys and expected states."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import re
 import time
 from dataclasses import dataclass, field
@@ -69,6 +71,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("nav-gap", level="standard", state={"reviews": 20, "new": 2, "days": 12}, runner="nav_gap"),
     ScenarioSpec("progress-empty", level="standard", state={"reviews": 0, "new": 0, "goal": 0, "known": 0, "days": 0}, runner="progress_empty"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
+    ScenarioSpec("spell-quest", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_quest"),
 ]
 
 
@@ -737,6 +740,9 @@ def worksheet(journey: Journey, state: ScenarioState) -> None:
         journey.tap_visible("Recently learned")
         journey.tap_visible("Confusions")
         journey.tap_visible("Course order")
+        scrollers = journey.d(scrollable=True)
+        if scrollers.exists and not journey.exists("Trace & write", timeout=0.5):
+            scrollers.scroll.to(text="Trace & write")
         journey.tap_visible("Trace & write")
         journey.tap_visible("Mi zi ge")
         journey.screenshot("worksheet-builder")
@@ -949,12 +955,17 @@ def _search_character(journey: Journey, glyph: str) -> None:
     # asking the list for a tile so the tap lands on the result, not the IME.
     # uiautomator2's hide_keyboard() installs AdbKeyboard, which is flaky on
     # this harness, so dismiss the IME with the system back key when it is up.
-    if "mInputShown=true" in journey.device.shell("dumpsys input_method"):
-        journey.d.press("back")
-        time.sleep(0.4)
     tile = journey.d(descriptionContains=f"{glyph},")
     if not tile.exists:
         tile = journey.d(descriptionContains=glyph)
+    if not tile.exists and "mInputShown=true" in journey.device.shell("dumpsys input_method"):
+        # Back only closes the keyboard here. It is never pressed while the
+        # result tile is already visible, because on phone that leaves Characters.
+        journey.d.press("back")
+        time.sleep(0.4)
+        tile = journey.d(descriptionContains=f"{glyph},")
+        if not tile.exists:
+            tile = journey.d(descriptionContains=glyph)
     if not tile.exists:
         raise JourneyFailure(f"no character tile for {glyph}")
     tile.click()
@@ -1521,6 +1532,133 @@ def accessibility(journey: Journey, state: ScenarioState) -> None:
     journey.artifact_dir.joinpath("a11y.txt").write_text("\n".join(issues) or "no unlabeled clickable nodes")
 
 
+SPELL_FAMILIES = [
+    "Water", "Ice", "Snow", "Rain", "Fire", "Lightning", "Wind", "Cloud", "Sun",
+    "Moon", "Light", "Shadow", "Earth", "Stone", "Mountain", "Wood", "Metal",
+    "Creature", "Spark", "Gesture", "Vessel", "Mind", "Dream", "Sound", "Time",
+]
+
+
+FAMILY_IDS = {
+    "Water": "water", "Ice": "ice", "Snow": "snow", "Rain": "rain",
+    "Fire": "fire", "Lightning": "lightning", "Wind": "wind", "Cloud": "cloud",
+    "Sun": "sun", "Moon": "moon", "Light": "light", "Shadow": "shadow",
+    "Earth": "earth", "Stone": "stone", "Mountain": "mountain", "Wood": "wood",
+    "Metal": "metal", "Creature": "animal", "Spark": "person", "Gesture": "hand",
+    "Vessel": "boat", "Mind": "mind", "Dream": "dream", "Sound": "sound",
+    "Time": "time",
+}
+
+
+def _spell_character_for(label: str) -> str | None:
+    """First character of a family in the shipped spellbook."""
+    import csv
+
+    family = FAMILY_IDS.get(label)
+    if family is None:
+        return None
+    path = Path(__file__).resolve().parents[1] / "app/src/main/assets/spellbook.csv"
+    with path.open(encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            if row["family"] == family:
+                return row["character"]
+    return None
+
+
+def spell_quest(journey: Journey, state: ScenarioState) -> None:
+    """The endless road, reached from Study tools, casting from the book."""
+    with journey.step("open the spell quest"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.tap_visible("Manage study tools")
+        journey.wait("Study tools", timeout=8)
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("spell-gate")
+    with journey.step("start the road"):
+        journey.tap("Start the road")
+        journey.wait("Draw", timeout=10)
+        journey.screenshot("spell-scene")
+    with journey.step("gift from the book"):
+        # "From the book" is a reading gift: the real strokes are traced into the
+        # circle, then the circle waits until the learner continues.
+        journey.wait("Grimoire", timeout=8)
+        journey.tap_visible("Grimoire")
+        journey.wait("Close book", timeout=10)
+        journey.screenshot("spell-kinds")
+        # The book opens on the cover; the Flame tab turns to its spells.
+        journey.tap_visible("火")
+        time.sleep(0.8)
+        # Chapter seals sit in the tabs above the page; the spell tiles come later
+        # in the tree, so take the last character on screen.
+        seals = set("水火云石马桥")
+        glyphs = [
+            text for text in journey.texts()
+            if text and len(text) == 1 and "\u4e00" <= text <= "\u9fff" and text not in seals
+        ]
+        if not glyphs:
+            raise JourneyFailure(f"no spell pages in the grimoire. texts={journey.texts()}")
+        glyph = glyphs[-1]
+        journey.tap_visible(glyph)
+        # Mid-drawing: the guide is playing stroke by stroke.
+        time.sleep(1.6)
+        journey.screenshot("spell-gift-draw")
+        journey.wait("Continue the quest", timeout=20)
+        journey.screenshot("spell-gift")
+        journey.tap("Continue the quest")
+        # A cast always lands somewhere: it works, or Mò explains why not.
+        deadline = time.time() + 25
+        while time.time() < deadline:
+            texts = journey.texts()
+            if any("It worked" in text or "Not this one" in text for text in texts):
+                break
+            time.sleep(0.3)
+        else:
+            raise JourneyFailure(f"gift produced no result. texts={journey.texts()}")
+        journey.screenshot("spell-result")
+    with journey.step("continue the road"):
+        if journey.exists("Walk on", timeout=2):
+            journey.tap("Walk on")
+        else:
+            # A wrong pick shows the right answer first, then Walk on.
+            journey.tap("See the right answer")
+            journey.wait("Walk on", timeout=25)
+            journey.tap("Walk on")
+        journey.wait("Draw", timeout=10)
+        journey.screenshot("spell-next")
+    with journey.step("draw and cast"):
+        # The drawing path itself: draw in the circle with touch, then cast.
+        journey.tap("Draw")
+        journey.wait("Draw in the circle first", timeout=8)
+        if not journey.draw_guide([[(0.15, 0.5), (0.85, 0.5)], [(0.5, 0.15), (0.5, 0.85)]]):
+            raise JourneyFailure("no handwriting canvas to draw on")
+        journey.wait("Cast the spell", timeout=8)
+        journey.screenshot("spell-drawn")
+        journey.tap("Cast the spell")
+        deadline = time.time() + 30
+        outcome = None
+        while time.time() < deadline and outcome is None:
+            texts = journey.texts()
+            if any("Not this one" in text for text in texts):
+                outcome = "nudge"
+            elif any("It worked" in text for text in texts):
+                outcome = "worked"
+            elif any("not a spell in this book" in text for text in texts):
+                outcome = "unreadable"
+            else:
+                time.sleep(0.4)
+        if outcome is None:
+            raise JourneyFailure(f"cast produced no result. texts={journey.texts()}")
+        journey.screenshot("spell-cast")
+        if outcome == "unreadable":
+            # A readable character that is not a spell here: back to the drawing.
+            journey.tap("Go back")
+        else:
+            journey.tap("Walk on without it" if outcome == "nudge" else "Walk on")
+        journey.wait("Draw", timeout=10)
+    journey.assert_no_crash()
+
+
 RUNNERS = {
     "fresh": fresh,
     "daily_sample": daily_sample,
@@ -1555,6 +1693,7 @@ RUNNERS = {
     "tour": tour,
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
+    "spell_quest": spell_quest,
     "progress_ranges": progress_ranges,
     "progress_empty": progress_empty,
     "nav_gap": nav_gap,

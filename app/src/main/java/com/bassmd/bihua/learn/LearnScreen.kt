@@ -388,15 +388,20 @@ fun LearnScreen(
     fun checkWriting() {
         val visible = visibleInk()
         if (recognizing || visible.isEmpty()) return
+        val askedIndex = index
+        val askedRound = drawingRound
         scope.launch {
             recognizing = true
-            recognition = recognitionService.recognize(
+            val result = recognitionService.recognize(
                 visible,
                 mode,
-                items.getOrNull(index)?.character,
+                items.getOrNull(askedIndex)?.character,
                 wifiOnly = wifiOnlyModels,
             )
             recognizing = false
+            if (askedIndex == index && askedRound == drawingRound) {
+                recognition = result
+            }
         }
     }
     fun advance(item: LearnItem, itemIndex: Int, grade: Grade) {

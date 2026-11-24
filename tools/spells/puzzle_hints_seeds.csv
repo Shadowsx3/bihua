@@ -1,0 +1,83 @@
+id,family,text
+river,fire,The water hisses and turns to steam where your spell lands. The river shrugs and keeps flowing.
+river,sun,Bright light on the water. Very pretty. Still very wet.
+river,metal,The blade dips into the current and is gone. The river does not care about edges.
+river,*,The river takes your spell and keeps going. It has been doing this for a long time.
+door,water,The door is now wet and just as closed. The joke is still not funny.
+door,wood,A green shoot curls around the hinge. It is charming. It does not open the door.
+door,*,The door is unmoved. Even the joke on it looks smug.
+bramble,water,The bramble is now damp and even more stubborn.
+bramble,stone,A rock lands on the bramble and now you have a rock and a bramble.
+bramble,*,The bramble closes ranks. Now it looks personal.
+garden,stone,You drop stones in. Now the garden is wet and has stones in it.
+garden,boat,The boat is lovely. It does not remove any water.
+garden,*,"The water sits there, patient as ever. The frog is still winning."
+ford,wind,The wind pushes at the water. The water pushes back. Nothing is crossed.
+ford,hand,"You reach for a stone. It rolls away again, almost apologetically."
+ford,*,"The current rolls on, unimpressed. Your boots are already wet."
+shore,fire,"A warm glow on the sand. The boat is not moved, but it is now cosy."
+shore,ice,The shallows freeze. Now the boat is high on ice instead of sand.
+shore,*,"The boat stays exactly where it was, and the sea stays exactly where it is."
+white-road,water,The snow is now wet snow. You have made the problem heavier.
+white-road,wood,"A branch sticks out of a drift. It is a start, not a road."
+white-road,*,The snow absorbs the effort and gives nothing back.
+night-field,earth,The ground is now nicely lit by nothing at all. You are still in the dark.
+night-field,metal,A blade glints faintly. Then it stops glinting. Then it is dark again.
+night-field,*,Darkness answers darkness. Nothing else happens.
+pass,water,"The stones get wet. The pass is still blocked, but cleaner."
+pass,wood,A tree grows beside the rockfall. Nice shade. No path.
+pass,*,The rockfall shifts by a finger's width and settles again.
+storm,fire,Your flame gutters in the rain. The storm is not impressed.
+storm,boat,A boat on a road. Even the storm pauses to judge you.
+storm,*,"The storm notices you, which is worse than being ignored."
+grove,water,"The branches are wet now. Heavier, too."
+grove,snow,Snow on a wreck. It is beautiful. It is still a wreck.
+grove,*,"The tangle creaks, settles, and keeps the road closed."
+ridge,water,Water runs down the rock. The rock is now slippery and still tall.
+ridge,fire,The rock glows warm. It is a warm wall. You are still below it.
+ridge,*,The ridge looks down at you. It has done this to better climbers.
+field,fire,The field is now warm and even drier. The crow is disappointed.
+field,metal,A blade cuts a neat line in the dust. Nothing grows along it.
+field,*,The field waits. It has waited longer than this.
+market,stone,You drop stones in the street. The water is higher and now there are stones.
+market,animal,Something small swims past. It is having a lovely time. The street is still flooded.
+market,*,"The water finds your shoes and stays there, delighted."
+gate,water,The gate is wet. The orchard is still on the other side.
+gate,ice,The gate is now cold and just as shut.
+gate,*,The gate holds. The orchard keeps its secret.
+bell,water,A splash on bronze. The bell stays quiet.
+bell,stone,A stone bounces off the bell with a dull thud. The village winces.
+bell,*,The bronze swallows the sound and offers nothing back.
+dream,shadow,The village gets darker and sleeps even more deeply.
+dream,ice,A cold snap. Everyone pulls the blankets tighter.
+dream,*,The village sleeps on. Somewhere the cat sighs.
+bridge,water,The water below is beautiful. It is also very far down.
+bridge,*,The gorge takes your spell and gives back an echo.
+chest,water,The chest is damp and still locked.
+chest,*,"The chest rattles once, smugly, and stays shut."
+crowd,fire,"A flame in a crowded market is a bad idea. The crowd moves away from you, not for you."
+crowd,*,"The crowd shifts, closes, and carries on its business."
+lake,fire,"The ice thins. Warm, but unhelpful."
+lake,*,The ice creaks under your feet and declines to help.
+wall,water,The wall is wet. The wall is still tall.
+wall,*,The wall keeps its apples and its silence.
+cart,wind,The wind pushes the cart deeper. The merchant is not grateful.
+cart,*,The cart digs in deeper. The ox looks embarrassed for you.
+dark-cave,shadow,You make the dark darker. Very impressive. Very unhelpful.
+dark-cave,*,The dark is generous. It gives you more dark.
+dragon,fire,"The dragon wakes a little, sighs a warm breath, and goes back to sleep. You are now warm."
+dragon,*,"The dragon stirs, sighs out a warm breath, and sleeps on."
+desert,fire,The desert is now hotter. The bird looks personally let down.
+desert,*,The sand takes your spell and returns heat.
+bell-tower,stone,A stone thuds against the bronze. The village winces.
+bell-tower,*,"The bell hangs there, enormous and uninterested."
+snow-pass,rain,The snow turns to slush. Every step is heavier now.
+snow-pass,*,The drift settles into a new shape and stays in the way.
+harbor,fire,A flame in a storm. The rain puts it out and the boat stays out.
+harbor,*,The storm throws your spell back at the shore.
+mill,fire,The wheel is not turning for heat. Find something that pushes it.
+mill,ice,"Ice would stop the wheel, not start it. Think about what moves water or air."
+lantern-hill,water,The lanterns are not going to light from water. Something warm or bright is needed.
+lantern-hill,ice,Cold will not light a path. Try something that brings light or warmth.
+frost-garden,fire,The frost is too thick for a little heat. Try something gentler and wider.
+frost-garden,water,Water would only freeze again here. Something dry and bright is needed.

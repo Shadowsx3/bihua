@@ -31,6 +31,11 @@ class PinyinTest {
         assertEquals("er2", Pinyin.toNumbered("ér"))
         assertEquals("shui3", Pinyin.toNumbered("shuǐ"))
         assertEquals("lü4", Pinyin.toNumbered("lǜ"))
+        // A coda n or ng belongs to its own syllable, never to the next one.
+        assertEquals("tong2nian2", Pinyin.toNumbered("tóngnián"))
+        assertEquals("zhong1wen2", Pinyin.toNumbered("zhōngwén"))
+        assertEquals("xi1'an1", Pinyin.toNumbered("xī'ān"))
+        assertEquals("ren2min2", Pinyin.toNumbered("rénmín"))
     }
 
     @Test

@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.FormatListBulleted
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,8 @@ import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
+import com.bassmd.bihua.ui.theme.Lilac
+import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.Sky
 
 /**
@@ -63,6 +67,7 @@ fun StudyToolsSheet(
     onResumeAllSuspended: () -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
     onOpenStudyLists: () -> Unit = {},
+    onOpenQuest: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -86,6 +91,31 @@ fun StudyToolsSheet(
             )
 
             Spacer(Modifier.height(14.dp))
+            Surface(
+                onClick = onOpenQuest,
+                shape = RoundedCornerShape(16.dp),
+                color = Mint.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Explore, contentDescription = null, tint = InkDark)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Spell quest", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                        Text(
+                            "An endless road · write to cast, nothing graded",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
             Surface(
                 onClick = onOpenStudyLists,
                 shape = RoundedCornerShape(16.dp),

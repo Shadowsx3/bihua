@@ -10,7 +10,7 @@ Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja)
 
 The hand is the interface. Bihua asks the learner to produce a character from a
 cue, fades the reference guide over time, and schedules the next review with
-FSRS-7. A stylus adds pressure; a finger or mouse also works. Writing and pronunciation are separate tasks. There is no account, no ads, and
+FSRS-7 or SBD. A stylus adds pressure; a finger or mouse also works. Writing and pronunciation are separate tasks. There is no account, no ads, and
 no developer-run analytics.
 
 <p align="center">
@@ -25,7 +25,7 @@ no developer-run analytics.
   ·
   <a href="https://shadowsx3.github.io/bihua/method.html"><strong>The method</strong></a>
   ·
-  <a href="https://github.com/Shadowsx3/bihua/releases/latest"><strong>Download</strong></a>
+  <a href="https://shadowsx3.github.io/bihua/#download"><strong>Download</strong></a>
 </p>
 
 ## Why it exists

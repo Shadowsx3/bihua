@@ -1,0 +1,101 @@
+character,family,category,effect,source,note
+水,water,Tides,fx_water,override,"Water itself, the source of the tides."
+火,fire,Flame,fx_fire,radical,Radical 火.
+石,stone,Ground,fx_stone,radical,Radical 石.
+土,earth,Ground,fx_earth,radical,Radical 土.
+木,wood,Ground,fx_wood,radical,Radical 木.
+雨,rain,Tides,fx_rain,radical,Radical 雨.
+雪,snow,Tides,fx_snow,override,Snow that falls soft and deep.
+冰,ice,Tides,fx_ice,radical,Radical 冫.
+风,wind,Sky,fx_wind,radical,Radical 风.
+日,sun,Sky,fx_sun,radical,Radical 日.
+月,moon,Sky,fx_moon,radical,Radical 月.
+山,mountain,Ground,fx_mountain,radical,Radical 山.
+人,person,Creatures,fx_person,radical,Radical 人.
+马,animal,Creatures,fx_horse,override,A horse. The animal family with a horse silhouette.
+犬,animal,Creatures,fx_dog,override,A dog that runs ahead.
+鸟,animal,Creatures,fx_bird,override,A bird that flies across gaps.
+鱼,animal,Creatures,fx_fish,override,A fish that swims in water.
+猫,animal,Creatures,fx_animal,radical,Radical 犭.
+树,wood,Ground,fx_tree,override,A tree whose roots hold the ground.
+花,wood,Ground,fx_flower,override,A flower that opens in warm light.
+桥,stone,Ground,fx_bridge,override,A bridge: stone span that crosses water.
+船,boat,Constructs,fx_boat,override,A boat that floats on water.
+门,stone,Ground,fx_door,override,A door that opens or blocks a path.
+刀,metal,Constructs,fx_sword,override,A blade that cuts.
+云,cloud,Sky,fx_cloud,override,A cloud that gathers and drifts.
+天,wind,Sky,fx_sky,override,The open sky above.
+星,sun,Sky,fx_star,override,A star that lights the night.
+电,lightning,Flame,fx_bolt,override,A bolt of lightning.
+金,metal,Constructs,fx_metal,radical,Radical 金.
+川,water,Tides,fx_river,override,A river that flows down the valley.
+海,water,Tides,fx_sea,override,A sea with tall waves.
+草,wood,Ground,fx_wood,radical,Radical 艹.
+龙,animal,Creatures,fx_dragon,override,A dragon that moves the weather.
+蛇,animal,Creatures,fx_animal,radical,Radical 虫.
+虫,animal,Creatures,fx_animal,radical,Radical 虫.
+牛,animal,Creatures,fx_ox,override,An ox that pulls the plough.
+羊,animal,Creatures,fx_sheep,override,A sheep that grazes the hills.
+狐,animal,Creatures,fx_animal,radical,Radical 犭.
+熊,fire,Flame,fx_fire,radical,Radical 灬.
+虎,animal,Creatures,fx_tiger,override,A tiger that prowls the ridge.
+兔,animal,Creatures,fx_rabbit,override,A rabbit that hops away.
+龟,animal,Creatures,fx_turtle,override,A turtle that carries its home.
+蛙,animal,Creatures,fx_animal,radical,Radical 虫.
+蜂,animal,Creatures,fx_animal,radical,Radical 虫.
+露,rain,Tides,fx_rain,radical,Radical 雨.
+雾,cloud,Sky,fx_fog,override,Fog that hides and then lifts.
+雷,lightning,Flame,fx_thunder,override,Thunder that cracks through the air.
+光,sun,Sky,fx_light,override,Light that shines through the dark.
+影,moon,Sky,fx_shadow,override,A shadow that hides what stands in the light.
+林,wood,Ground,fx_wood,radical,Radical 木.
+森,wood,Ground,fx_wood,radical,Radical 木.
+竹,wood,Ground,fx_bamboo,override,Bamboo that bends and springs back.
+叶,wood,Ground,fx_leaf,override,A leaf that turns in the breeze.
+根,wood,Ground,fx_wood,radical,Radical 木.
+果,wood,Ground,fx_wood,radical,Radical 木.
+米,wood,Ground,fx_grain,override,Grain that grows in the field.
+岩,mountain,Ground,fx_mountain,radical,Radical 山.
+洞,stone,Ground,fx_cave,override,A cave that goes deep.
+塔,stone,Ground,fx_tower,override,A tower that stands tall.
+城,stone,Ground,fx_castle,override,A walled city that stays put.
+路,stone,Ground,fx_path,override,A path laid across the land.
+井,water,Tides,fx_well,override,A well that holds water below.
+湖,water,Tides,fx_lake,override,A lake that fills a basin.
+泉,water,Tides,fx_spring,override,A spring that bubbles up from the ground.
+冷,ice,Tides,fx_ice,radical,Radical 冫.
+热,fire,Flame,fx_fire,radical,Radical 灬.
+暖,sun,Sky,fx_sun,radical,Radical 日.
+沙,earth,Ground,fx_sand,override,Sand that spills and piles up.
+尘,earth,Ground,fx_dust,override,Dust that drifts on the wind.
+烟,cloud,Sky,fx_smoke,override,Smoke that rises and drifts.
+焰,fire,Flame,fx_fire,radical,Radical 火.
+烧,fire,Flame,fx_fire,radical,Radical 火.
+冻,ice,Tides,fx_ice,radical,Radical 冫.
+流,water,Tides,fx_water,radical,Radical 氵.
+浪,water,Tides,fx_water,radical,Radical 氵.
+浮,water,Tides,fx_water,radical,Radical 氵.
+沉,water,Tides,fx_water,radical,Radical 氵.
+飞,wind,Sky,fx_fly,override,Flight lifting up over the ground.
+走,earth,Ground,fx_walk,override,Steady steps on the ground.
+跑,earth,Ground,fx_run,override,A quick run that kicks up dust.
+跳,earth,Ground,fx_jump,override,A jump that clears a gap.
+游,water,Tides,fx_water,radical,Radical 氵.
+爬,stone,Ground,fx_climb,override,A climb up the rock face.
+推,hand,Creatures,fx_hand,radical,Radical 扌.
+拉,hand,Creatures,fx_hand,radical,Radical 扌.
+举,hand,Creatures,fx_lift,override,Lifting something up.
+抬,hand,Creatures,fx_hand,radical,Radical 扌.
+压,stone,Ground,fx_press,override,A weight that presses down.
+切,metal,Constructs,fx_cut,override,A clean cut through.
+开,hand,Creatures,fx_open,override,A door or path that opens.
+关,stone,Ground,fx_gate,override,A gate that closes the way.
+明,sun,Sky,fx_sun,radical,Radical 日.
+暗,sun,Sky,fx_sun,radical,Radical 日.
+亮,sun,Sky,fx_bright,override,Something that starts to glow.
+黑,moon,Sky,fx_dark,override,Darkness that settles in.
+白,sun,Sky,fx_white,override,Pale light.
+红,fire,Flame,fx_red,override,A warm red glow.
+青,wood,Ground,fx_green,override,Fresh green growth.
+黄,earth,Ground,fx_yellow,override,Golden dust on the wind.
+蓝,wood,Ground,fx_wood,radical,Radical 艹.

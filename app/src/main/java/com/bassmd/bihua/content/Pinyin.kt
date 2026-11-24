@@ -85,6 +85,8 @@ object Pinyin {
         var tone = 0
         var afterTone = false
         var ending = false
+        /** "", "n", or "ng" for the syllable being read. */
+        var coda = ""
 
         fun flush() {
             if (buffer.isNotEmpty()) {
@@ -95,6 +97,7 @@ object Pinyin {
             }
             afterTone = false
             ending = false
+            coda = ""
         }
 
         fun startSyllable(char: Char) {
@@ -107,10 +110,17 @@ object Pinyin {
             val char = marked[index]
             val base = baseOf(char)
             if (base != null) {
-                buffer.append(base)
+                // A vowel after a finished coda starts a new syllable: 童年 is
+                // tong-nian, not tongn-ian.
+                if (ending) {
+                    startSyllable(base)
+                } else {
+                    buffer.append(base)
+                }
                 tone = toneOf(char)
                 afterTone = true
                 ending = false
+                coda = ""
                 index++
                 continue
             }
@@ -126,25 +136,54 @@ object Pinyin {
                 index++
                 continue
             }
-            // After the tone-marked vowel only a vowel, n/ng, or r can stay
-            // in the same syllable. Anything else begins the next one.
+            // After a tone-marked vowel only a vowel, n/ng, or r can stay in the
+            // same syllable. A second coda consonant always starts the next one.
             when {
                 letter in "aeiouü" -> {
                     if (ending) startSyllable(letter) else buffer.append(letter)
+                    coda = ""
                 }
-                letter == 'n' && !ending -> {
-                    buffer.append(letter)
-                    ending = true
+                letter == 'n' -> {
+                    when (coda) {
+                        "" -> {
+                            buffer.append(letter)
+                            coda = "n"
+                            ending = true
+                        }
+                        // ng already complete, or n already complete: 童年, 西安.
+                        else -> {
+                            startSyllable(letter)
+                            coda = "n"
+                            ending = true
+                        }
+                    }
                 }
-                letter == 'g' && ending -> {
-                    buffer.append(letter)
-                    ending = false
+                letter == 'g' -> {
+                    if (coda == "n") {
+                        buffer.append(letter)
+                        coda = "ng"
+                        ending = false
+                    } else {
+                        startSyllable(letter)
+                        coda = ""
+                        ending = false
+                    }
                 }
                 letter == 'r' -> {
-                    buffer.append(letter)
+                    if (coda.isEmpty()) {
+                        buffer.append(letter)
+                        ending = false
+                    } else {
+                        startSyllable(letter)
+                        coda = ""
+                        ending = false
+                    }
+                }
+                else -> {
+                    startSyllable(letter)
+                    coda = ""
                     ending = false
                 }
-                else -> startSyllable(letter)
             }
             index++
         }

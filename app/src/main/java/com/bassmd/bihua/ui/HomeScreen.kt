@@ -431,7 +431,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 28.dp, vertical = 20.dp),
+                    .padding(start = 28.dp, end = 28.dp, top = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(28.dp),
             ) {
                 LazyColumn(

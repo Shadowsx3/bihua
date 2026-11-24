@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bihua: learn characters by writing them</title>
-<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 decides the date; on-device ink analysis tells you what your hand did. Optional meaning checks, a guided tour with Mò, and home-screen widgets that dress for the day. Print-ready sheets when you want paper.">
+<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 or SBD decides the date; on-device ink analysis tells you what your hand did. Optional meaning checks, a guided tour with Mò, and home-screen widgets that dress for the day. Print-ready sheets when you want paper.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Bihua: learn characters by writing them">
-<meta property="og:description" content="Write characters from memory with tapered brush guides, a local dictionary, and print-ready A4 or Letter sheets. FSRS-7, offline, no account.">
+<meta property="og:description" content="Write characters from memory with tapered brush guides, a local dictionary, and print-ready A4 or Letter sheets. FSRS-7 or SBD, offline, no account.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="assets/practice-light.png?v=1.0.8">
 <link rel="icon" href="assets/icon-256.png">
@@ -75,7 +75,7 @@
     <div class="hero-copy reveal">
       <div class="kicker">Android · stylus-first · offline</div>
       <h1>Learn characters with a pen that <em>feels like a pen.</em></h1>
-      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. Write with a stylus or your finger, see the ink respond to your hand, and let FSRS-7 choose the next review date.</p>
+      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. Write with a stylus or your finger, see the ink respond to your hand, and let FSRS-7 or SBD choose the next review date.</p>
       <div class="hero-actions">
         <a class="button" href="#download">Download latest <span aria-hidden="true">↓</span></a>
         <a class="button secondary" href="#draw">Try the ink pad <span aria-hidden="true">↓</span></a>
@@ -100,7 +100,7 @@
         <div class="phone-frame">
           <img src="assets/practice-light.png?v=1.0.8" width="1080" height="2400" alt="Bihua practice screen with the character 谢, a tapered brush guide, and numbered stroke starts">
         </div>
-        <div class="tag tag-a"><b>FSRS-7</b><span>stability · difficulty · interval</span></div>
+        <div class="tag tag-a"><b>FSRS-7 · SBD</b><span>two memory models</span></div>
         <div class="tag tag-b"><b>Ink check</b><span>count · order · shape · starts</span></div>
       </div>
     </div>
@@ -144,13 +144,13 @@
         <p class="lead">A word can be recognised from context, guessed from a familiar shape, or finished by autocomplete. That hides the real question: can you write this character from memory? Bihua schedules the character because that is the smallest thing your hand can produce on its own.</p>
         <div class="philosophy-points">
           <div class="point"><b>One form at a time.</b><span>A writing recall tests the shape you can produce, not whether a word looks familiar.</span></div>
-          <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter FSRS or create review debt.</span></div>
+          <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter the scheduler or create review debt.</span></div>
           <div class="point"><b>Sound is separate.</b><span>Pronunciation is its own task, so a word can be read without pretending it was written.</span></div>
           <div class="point"><b>No hidden shortcut.</b><span>If you can write 愛 from memory, 愛情 is a reward, not a guess.</span></div>
           <div class="point"><b>Mò is your guide.</b><span>The optional tour and the widgets use the same paper-ink pet, never a second mascot.</span></div>
         </div>
         <div class="philosophy-chips">
-          <span class="chip">FSRS cards are characters</span>
+          <span class="chip">Scheduler cards are characters</span>
           <span class="chip">Words never enter the queue</span>
           <span class="chip">Free word practice</span>
         </div>
@@ -205,8 +205,8 @@
     <div class="grid three">
       <article class="card pillar accent-mint reveal">
         <div class="icon">◷</div>
-        <h3>FSRS-7 chooses the date</h3>
-        <p>Bihua contains a direct FSRS-7 implementation: long-term stability, short-term stability, item difficulty, and a target retrievability. It solves for the next interval instead of using fixed boxes.</p>
+        <h3>FSRS-7 or SBD chooses the date</h3>
+        <p>Bihua contains a direct FSRS-7 implementation and a compact SBD model. FSRS-7 keeps long-term stability, short-term stability, and difficulty. SBD keeps a stability ladder, the last grade, and a count of successful reviews in seven weights. Both solve for the next interval at your target recall; choose one in Settings → Schedule.</p>
       </article>
       <article class="card pillar accent-red reveal">
         <div class="icon">墨</div>
@@ -220,8 +220,8 @@
       </article>
     </div>
     <div class="spec-strip reveal">
-      <div><b>34</b><span>FSRS-7 parameters</span></div>
-      <div><b>2</b><span>stability curves</span></div>
+      <div><b>34 / 7</b><span>FSRS-7 / SBD weights</span></div>
+      <div><b>2</b><span>schedulers</span></div>
       <div><b>70–97%</b><span>target recall</span></div>
       <div><b>4</b><span>local ink models</span></div>
       <div><b>0</b><span>study-data uploads</span></div>
@@ -275,8 +275,8 @@
   <section id="spacing" class="wrap">
     <div class="section-head reveal">
       <div class="kicker">03 · The date</div>
-      <h2>FSRS-7 decides when the character comes back.</h2>
-      <p class="lead">Each card stores long-term stability, short-term stability, and difficulty. After a grade, the app solves for the day your recall probability reaches 90 percent. A hard review returns sooner. An easy review moves the date out.</p>
+      <h2>FSRS-7 or SBD decides when the character comes back.</h2>
+      <p class="lead">Every card keeps a current memory state. FSRS-7 stores long-term stability, short-term stability, and difficulty. SBD stores a stability ladder, the last grade index, and a count of successful reviews in seven weights. After a grade, the chosen model solves for the day your recall probability reaches 90 percent. A hard review returns sooner. An easy review moves the date out.</p>
     </div>
     <div class="srs-grid">
       <figure class="graph-card reveal">
@@ -288,7 +288,7 @@
           <div class="ladder-row"><span>4</span><div class="ladder-track"><div class="ladder-fill" style="--w:96%;--bar:var(--butter)"></div></div><b>293 d</b></div>
           <div class="ladder-row"><span>5</span><div class="ladder-track"><div class="ladder-fill" style="--w:100%;--bar:var(--vermillion)"></div></div><b>365 d</b></div>
         </div>
-        <p class="graph-note">Log scale. Published default weights, 90 percent target, 365-day cap.</p>
+        <p class="graph-note">Log scale. Published FSRS-7 default weights, 90 percent target, 365-day cap. SBD has its own seven defaults.</p>
       </figure>
       <figure class="graph-card reveal">
         <figcaption><b>Retention between reviews</b><span>90% default</span></figcaption>
@@ -319,7 +319,23 @@
       </figure>
     </div>
     <div class="compare reveal">
-      <h3>What FSRS-7 adds over FSRS-6</h3>
+      <h3>Two schedulers, one switch</h3>
+      <p class="small">Both models keep a memory state on every card. Settings → Schedule picks the model. Switching does not erase the other model's state or your review history.</p>
+      <table>
+        <thead><tr><th>Part</th><th>FSRS-7</th><th>SBD</th></tr></thead>
+        <tbody>
+          <tr><td>Memory state</td><td>long-term stability, short-term stability, difficulty</td><td>stability ladder, last grade, successful reviews</td></tr>
+          <tr><td>Weights</td><td>34</td><td>7</td></tr>
+          <tr><td>Same-day reviews</td><td>fractional days, mixed curves</td><td>fractional days, interpretable curve</td></tr>
+          <tr><td>Fitting</td><td>on-device fit with a time-based holdout</td><td>on-device fit with a time-based holdout</td></tr>
+          <tr><td>Character</td><td>the long-running default, with the richest state</td><td>smaller and easier to inspect, with published defaults that work immediately</td></tr>
+        </tbody>
+      </table>
+      <p class="small">SBD is from A. Schill's 2026 paper <i>Interpretable Memory Models for Spaced Repetition</i>. In the public benchmark it lands close to FSRS-7: slightly higher log loss, slightly lower RMSE, with a fraction of the parameters. Both are implemented locally; neither sends review history off the phone.</p>
+      <p class="small"><a href="method.html#fsrs">Read the scheduler notes →</a></p>
+    </div>
+    <div class="compare reveal">
+      <h3>Inside FSRS: what 7 adds over 6</h3>
       <p class="small">The same review history produces different dates under each model. The gain is largest on same-day reviews and cards that keep slipping.</p>
       <table>
         <thead><tr><th>Part</th><th>FSRS-6</th><th>FSRS-7</th></tr></thead>
@@ -342,7 +358,7 @@
       <div><b>113</b><span>busy-day reviews</span></div>
       <div><b>317</b><span>days to finish 3,180 characters</span></div>
     </div>
-    <p class="small note reveal">One simulated learner with a 60/30/10 Good, Hard, Again mix. Bihua ships the published default weights and does not fit a personal model from your reviews yet. The chart is an example. Your dates will differ.</p>
+    <p class="small note reveal">One simulated learner with a 60/30/10 Good, Hard, Again mix, using FSRS-7 defaults. Both schedulers ship with published defaults and can be fitted to your own reviews on the device; a time-based holdout keeps the defaults when the fit does not improve. The chart is an example. Your dates will differ.</p>
   </section>
 
   <section class="wrap">
@@ -396,6 +412,7 @@
       <span class="chip">Hour-aware widgets</span>
       <span class="chip">Pinned widget outfit</span>
       <span class="chip">Progress windows</span>
+      <span class="chip">FSRS-7 or SBD</span>
       <span class="chip">Sound effects</span>
       <span class="chip">Short labels at large text</span>
       <span class="chip">Still offline</span>
@@ -449,7 +466,7 @@
       <figure class="shot reveal"><img src="assets/detail-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Character detail with reading, meaning, a real word card, and structure"><figcaption><b>03</b> Reading, meaning, a real word</figcaption></figure>
       <figure class="shot reveal"><img src="assets/dictionary-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Dictionary entry for 爱 with stroke count, level, example words, and a direct practice link"><figcaption><b>04</b> A dictionary that teaches</figcaption></figure>
       <figure class="shot reveal"><img src="assets/review-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>05</b> Write from memory</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/schedule-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="FSRS-7 schedule settings with fitting and import controls"><figcaption><b>06</b> Fit the schedule to your reviews</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/schedule-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Schedule settings with FSRS-7 and SBD model choices, fitting, and import controls"><figcaption><b>06</b> Choose FSRS-7 or SBD, then fit it</figcaption></figure>
     </div>
     <div class="grid two gap-top">
       <figure class="shot shot-wide reveal"><img src="assets/practice-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a tapered brush guide and numbered starts for the character 谢"><figcaption><b>07</b> Guide, order, and your own ink</figcaption></figure>

@@ -391,6 +391,66 @@ that respect the learner:
 13. Local, opt-in learning experiments.
 14. Seasonal paper and ink collections.
 
+## Spellbook (proposal, not started)
+
+A free-practice game in Practice: write a character, and it casts an effect
+from its radical family (water, earth, stone, fire, and so on). It never
+creates cards, XP, or review-log rows, and it never changes the schedule.
+
+Parts:
+
+- **Spell book (reference):** one page per family. Each page shows the
+  family's characters the learner has seen, the plain meaning, and a short
+  looping effect preview. Read-only. Reviewing the book is a valid way to
+  spend time before casting.
+- **Cast:** a large canvas in Practice. The learner writes any character, or a
+  word. The handwriting recognizer returns candidates as a hint, never a grade.
+  A match plays the family effect; a miss fizzles with "The ink fizzled. Try
+  again." No penalty.
+- **Grimoire:** the book shows more than the learner knows, so there is always
+  something to aim for. Every spell's character is shown, because the grimoire
+  is a reference book, not a recall task (the Characters tab already shows the
+  same characters). Three tiers per spell:
+  - **Known:** the character, meaning, and effect. Lit up when cast.
+  - **Seen:** the character and meaning, effect dimmed until first cast.
+  - **Locked:** the character dimmed, family name shown, meaning hidden until
+    the learner meets it in a lesson. Copy says "still to learn", never
+    "missed".
+  It reads progress only and writes nothing. Mature words are never shown.
+- **Strength:** each cast scales with what the ink did, never with a penalty.
+  - Size: the drawn box sets the effect's scale.
+  - Stroke count and order: more clean strokes add particles or layers.
+  - Trace quality: the existing per-stroke evidence (`StrokeGrade`, coach)
+    picks a tier: Faint, Steady, or Bright. Any cast with at least one stroke
+    still works; the floor is "Faint", never a fizzle for imperfect strokes.
+  - Pace and pressure: optional flourish only, off by default for finger input.
+  - An effect never draws the target character, its outline, or its guide. A
+    Bright cast can use the family colour and motion, not the glyph.
+- **First cast:** a short moment the first time each family is cast.
+- **Spell of the day:** picked from learned characters, so it is always
+  something the learner can already do.
+
+Content:
+
+- Family table from the radical column in `char_meta` (4,875 characters have
+  one). Families are a design choice, not etymology; mark exceptions where a
+  radical does not match its element.
+- Signature flourishes for about 30 to 50 common characters first. The count
+  can grow toward 300 by data, not new code.
+- Kana and Hangul get per-script rune effects, since they have no radicals.
+
+Rules:
+
+- No cue that shows the target before the learner writes it. Prompts name the
+  family or meaning, never the character, as in any writing task.
+- Mature words are never spells. Only the current course counts.
+- Effects stay off the writing surface; no motion or colour under the ink.
+- Reduce motion and TalkBack get the full text with no animation.
+- No timers, lives, or "you missed" copy.
+
+Order: family table and content audit, read-only spell book, cast screen,
+then effects and the grimoire.
+
 ## 7. Anti-patterns to avoid
 
 - Showing the answer "just a little" during recall.

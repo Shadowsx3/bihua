@@ -124,13 +124,13 @@
       <p>FSRS-6 used one stability value and rounded elapsed time to whole days. FSRS-7 keeps a second, faster trace and works in fractional days, so a retry ten minutes later is not treated like a retry tomorrow. The cost is complexity: 34 weights instead of 21, and a numerical interval solver.</p>
       <p><b>SBD</b> is a newer, smaller model from A. Schill’s 2026 paper <i>Interpretable Memory Models for Spaced Repetition</i>. It keeps three numbers per card and seven weights in total: a stability ladder, a grade index, and a count of successful reviews. The published defaults work immediately, and the weights can be refitted from your own reviews on the device. In the public benchmark it lands close to FSRS-7: slightly higher log loss, slightly lower RMSE, with a fraction of the parameters.</p>
       <p>Both models keep a current memory state on every card. Choosing one does not erase your history, and switching in Settings takes effect on the next review. The target-recall slider applies to both. Lower targets mean longer gaps and fewer reviews; higher targets mean stronger recall and more work. Bihua recommends 90% for daily study.</p>
-      <p>Bihua ships the published default weights. It does not fit a personal model from your review history yet.</p>
+      <p>Both models ship with published defaults. You can fit FSRS-7 or SBD to your own review history from Settings → Schedule. A time-based holdout keeps the defaults if the fit does not improve.</p>
       <div class="callout">
         <strong>The grade is the input</strong>
         <p>Again, Hard, Good, Easy. The ink checker can suggest one, but it never submits. The scheduler only knows what you tell it. That is a feature: recognition is probabilistic, and the learner is the one who saw the attempt.</p>
       </div>
       <p>Same-day reviews use the short-term curve. A lapse lowers stability and raises difficulty; a success raises stability and adjusts difficulty. This is why pressing Again does not simply reset a box. It changes the model.</p>
-      <p>Vacation mode pauses reviews and new cards, then shifts due dates when it ends. The next seven days cap a session at ten cards. The pause is not free; FSRS is happiest without long gaps. The cap is there to make the return survivable.</p>
+      <p>Vacation mode pauses reviews and new cards, then shifts due dates when it ends. The next seven days cap a session at ten cards. The pause is not free; both models are happiest without long gaps. The cap is there to make the return survivable.</p>
 
       <h2 id="ink">The ink checker: what the hand did</h2>
       <p>There are two layers, and they answer different questions.</p>

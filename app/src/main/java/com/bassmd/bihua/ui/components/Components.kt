@@ -221,7 +221,7 @@ fun EmptyState(
 enum class MascotMood { HAPPY, NEUTRAL, CURIOUS, PROUD, THINKING, EXCITED, WINK }
 
 /** Wearable props for Mò. Widgets use matching layer-lists. */
-enum class MascotHeadwear { NONE, HAT, MONOCLE, PARTY, NIGHTCAP }
+enum class MascotHeadwear { NONE, HAT, MONOCLE, PARTY, NIGHTCAP, WITCH }
 
 @Composable
 fun InkMascot(
@@ -471,6 +471,39 @@ fun InkMascot(
                     Color(0xFFE9B96E),
                     radius = w * 0.018f,
                     center = Offset(w * 0.642f, h * 0.278f),
+                )
+            }
+            MascotHeadwear.WITCH -> {
+                // A soft pointed hat with a wide brim: the quest's storyteller.
+                val cone = Path().apply {
+                    moveTo(w * 0.53f, h * 0.005f)
+                    quadraticBezierTo(w * 0.68f, h * 0.130f, w * 0.705f, h * 0.236f)
+                    lineTo(w * 0.295f, h * 0.236f)
+                    quadraticBezierTo(w * 0.325f, h * 0.120f, w * 0.53f, h * 0.005f)
+                    close()
+                }
+                drawPath(cone, color = petInk)
+                val brim = Path().apply {
+                    moveTo(w * 0.14f, h * 0.252f)
+                    quadraticBezierTo(w * 0.50f, h * 0.196f, w * 0.86f, h * 0.252f)
+                    quadraticBezierTo(w * 0.50f, h * 0.320f, w * 0.14f, h * 0.252f)
+                    close()
+                }
+                drawPath(brim, color = petInk)
+                drawPath(
+                    brim,
+                    color = Lilac,
+                    style = Stroke(width = w * 0.014f, cap = StrokeCap.Round),
+                )
+                drawRect(
+                    color = Lilac,
+                    topLeft = Offset(w * 0.340f, h * 0.196f),
+                    size = Size(w * 0.32f, h * 0.034f),
+                )
+                drawRect(
+                    color = Color(0xFFE9B96E),
+                    topLeft = Offset(w * 0.455f, h * 0.188f),
+                    size = Size(w * 0.085f, h * 0.050f),
                 )
             }
             MascotHeadwear.MONOCLE -> {

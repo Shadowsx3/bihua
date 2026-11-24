@@ -7,9 +7,9 @@ This file is the shared context for a new chat. Read it before changing code.
 Bihua is an offline-first Android app for learning to write Simplified Chinese,
 Traditional Chinese, Japanese, and Korean. Characters are the study items;
 readings and meanings are cues. Writing is the default recall task, with an
-optional Anki-style reveal. Pronunciation is an optional, separate review task. FSRS-7 schedules each script, with optional
-sharing between identical glyphs. No streaks, no account, no ads, no
-developer-run analytics.
+optional Anki-style reveal. Pronunciation is an optional, separate review task.
+FSRS-7 or SBD schedules each script, with optional sharing between identical
+glyphs. No streak penalties, no account, no ads, no developer-run analytics.
 
 The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
@@ -228,6 +228,10 @@ some etymology quality.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
 - Current release plan: `docs/1.1.0-roadmap.md`.
+- Spellbook/Spell quest work in progress, with next tasks and traps:
+  `docs/spellbook-progress.md`. Read it first when continuing that work, and
+  update it as tasks complete so a compacted session can resume without a
+  briefing. Design intent: `docs/spellbook-game-plan.md`.
 - Screen, flow, and feature inventories: `docs/screen-inventory.md`,
   `docs/flow-inventory.md`, `docs/feature-inventory.md`.
 - Test coverage: `docs/test-matrix.md`; risk audit: `docs/user-journey-risk-audit.md`.

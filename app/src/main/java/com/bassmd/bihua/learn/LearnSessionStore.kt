@@ -2,6 +2,7 @@ package com.bassmd.bihua.learn
 
 import android.content.Context
 import com.bassmd.bihua.content.StudyMode
+import com.bassmd.bihua.settings.DayBoundary
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -18,11 +19,23 @@ class LearnSessionStore(context: Context) {
         encodeDefaults = true
     }
 
-    fun load(mode: StudyMode): LearnSessionState? {
+    fun load(
+        mode: StudyMode,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        nowMs: Long = System.currentTimeMillis(),
+    ): LearnSessionState? {
         val raw = prefs.getString(key(mode), null) ?: return null
-        return runCatching { json.decodeFromString<LearnSessionState>(raw) }
+        val state = runCatching { json.decodeFromString<LearnSessionState>(raw) }
             .getOrNull()
             ?.takeIf { it.mode == mode && it.isValid }
+        if (state == null) return null
+        val sameDay = DayBoundary.date(state.savedAtMs, dayStartHour) ==
+            DayBoundary.date(nowMs, dayStartHour)
+        if (!sameDay) {
+            clear(mode)
+            return null
+        }
+        return state
     }
 
     fun save(state: LearnSessionState) {

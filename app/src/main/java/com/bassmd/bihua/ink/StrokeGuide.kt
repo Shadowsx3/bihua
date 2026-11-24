@@ -130,7 +130,12 @@ fun rememberStrokeOrderPlayer(characterId: String?): StrokeOrderPlayer {
         guide = guide,
         progressState = progress,
         playingState = playing,
-        play = { playToken++ },
+        // Reset at the moment play is asked for, so a finished character never flashes
+        // before the first stroke starts.
+        play = {
+            progress.floatValue = 0f
+            playToken++
+        },
     )
 }
 
@@ -153,12 +158,16 @@ fun StrokeGuideLayer(
     focusColor: Color = GuideGreen,
     /** Draw every other stroke softly so the focused one reads clearly. */
     dimUnfocused: Boolean = false,
+    /** The colour of the reference strokes. Practice keeps the guide green. */
+    strokeColor: Color = GuideGreen,
+    /** A thin paper-coloured edge around finished strokes. Practice keeps it. */
+    paperGap: Boolean = true,
 ) {
     val guide = player.guide ?: return
     if (guide.strokes.isEmpty()) return
     val rendered = remember(guide) { guide.strokes.map { toRenderStroke(it, guide.source) } }
     val textMeasurer = rememberTextMeasurer()
-    val guideColor = GuideGreen
+    val guideColor = strokeColor
     val palette = LocalBihuaPalette.current
     Canvas(modifier) {
         if (!ghostCharacter.isNullOrBlank()) {
@@ -190,12 +199,13 @@ fun StrokeGuideLayer(
             }
             if (fraction > 0f) {
                 val focused = focusIndex == null || index == focusIndex
-                val strokeColor = if (focused) focusColor else guideColor
+                // Only a focused stroke takes the focus colour; otherwise the layer's own colour wins.
+                val strokeColor = if (focusIndex != null && focused) focusColor else guideColor
                 drawGuideStroke(
                     stroke = stroke,
                     fraction = fraction,
                     guideColor = strokeColor,
-                    paperColor = palette.paperWarm,
+                    paperColor = if (paperGap) palette.paperWarm else Color.Transparent,
                     kana = guide.kana,
                     muted = dimUnfocused && !focused,
                 )

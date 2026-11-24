@@ -50,6 +50,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import kotlin.math.roundToInt
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
@@ -445,7 +448,7 @@ fun BihuaApp(
         }
     }
     var resumableSession by remember(mode, sessionStore, progressVersion) {
-        mutableStateOf(sessionStore.load(mode))
+        mutableStateOf(sessionStore.load(mode, settings.dayStartHour))
     }
     var activeResume by remember { mutableStateOf<LearnSessionState?>(null) }
     var sessionCharacters by remember { mutableStateOf<Map<String, CharacterEntry>>(emptyMap()) }
@@ -514,7 +517,7 @@ fun BihuaApp(
     var paperEntries by remember { mutableStateOf<List<CharacterEntry>>(emptyList()) }
     var sessionXp by remember { mutableIntStateOf(0) }
     var sessionLevelUp by remember { mutableStateOf(false) }
-    var phoneBottomBarHeightPx by remember { mutableIntStateOf(0) }
+    var phoneBottomBarTopPx by remember { mutableIntStateOf(-1) }
     var progressRangeName by rememberSaveable {
         mutableStateOf(com.bassmd.bihua.progress.ProgressRange.MONTH.name)
     }
@@ -881,6 +884,7 @@ fun BihuaApp(
     }
     var showStudyTools by remember { mutableStateOf(false) }
     var showStudyLists by remember { mutableStateOf(false) }
+    var showQuest by remember { mutableStateOf(false) }
     val gradeMix by produceState(
         com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0),
         progressVersion,
@@ -1081,7 +1085,7 @@ fun BihuaApp(
                         inSession = false
                         sessionComplete = false
                         tab = Tab.HOME
-                        resumableSession = sessionStore.load(sessionMode)
+                        resumableSession = sessionStore.load(sessionMode, settings.dayStartHour)
                     },
                     shape = CircleShape,
                     modifier = Modifier.fillMaxWidth(),
@@ -1550,8 +1554,11 @@ fun BihuaApp(
                     }
                 }
             } else {
-                val bottomBarPadding = with(LocalDensity.current) {
-                    phoneBottomBarHeightPx.toDp()
+                val bottomBarPadding = if (phoneBottomBarTopPx < 0) {
+                    0.dp
+                } else {
+                    (maxHeight - with(LocalDensity.current) { phoneBottomBarTopPx.toDp() })
+                        .coerceAtLeast(0.dp)
                 }
                 Box(Modifier.fillMaxSize()) {
                     Column(Modifier.fillMaxSize()) {
@@ -1674,11 +1681,14 @@ fun BihuaApp(
                         onSelect = changeTab,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .onGloballyPositioned { coordinates ->
-                                phoneBottomBarHeightPx = coordinates.size.height
-                            }
                             .appNavigationBarsPadding(trim = 10.dp)
-                            .padding(horizontal = 12.dp, vertical = 2.dp),
+                            .padding(horizontal = 12.dp, vertical = 2.dp)
+                            .onGloballyPositioned { coordinates ->
+                                val parent = coordinates.parentLayoutCoordinates ?: return@onGloballyPositioned
+                                phoneBottomBarTopPx = (
+                                    coordinates.boundsInWindow().top - parent.boundsInWindow().top
+                                    ).roundToInt()
+                            },
                     )
 
                 }
@@ -1740,6 +1750,10 @@ fun BihuaApp(
                 showStudyTools = false
                 showStudyLists = true
             },
+            onOpenQuest = {
+                showStudyTools = false
+                showQuest = true
+            },
             onDismiss = { showStudyTools = false },
         )
     }
@@ -1752,6 +1766,17 @@ fun BihuaApp(
             onStudy = { ids -> startSession(ids) },
             onPracticeWords = startWordList,
             onClose = { showStudyLists = false },
+        )
+    }
+    if (showQuest) {
+        BackHandler { showQuest = false }
+        com.bassmd.bihua.practice.SpellQuestScreen(
+            mode = mode,
+            characters = characters.orEmpty(),
+            reduceMotion = settings.reduceMotion,
+            onSpeak = { text -> speak(text) },
+            onClose = { showQuest = false },
+            repository = repository,
         )
     }
     if (startingSession) BusyDialog("Preparing your session…")
