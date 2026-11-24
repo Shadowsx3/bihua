@@ -14,7 +14,7 @@ data class Spell(
 )
 
 /** Grimoire chapters, in the order the book shows them. */
-val SpellCategories: List<String> = listOf("Tides", "Flame", "Sky", "Ground", "Creatures", "Constructs")
+val SpellCategories: List<String> = listOf("Tides", "Flame", "Sky", "Ground", "Creatures", "Craft", "Mind", "Time")
 
 object Spellbook {
     private const val HEADER = "character,family,category,effect,source,note"

@@ -93,7 +93,11 @@ fun rememberSharedGuidePlayer(
 private const val STROKE_PLAY_MS = 620L
 
 @Composable
-fun rememberStrokeOrderPlayer(characterId: String?): StrokeOrderPlayer {
+fun rememberStrokeOrderPlayer(
+    characterId: String?,
+    /** Practice shows a guide complete. A gift starts empty and plays into view. */
+    startComplete: Boolean = true,
+): StrokeOrderPlayer {
     val guide = rememberStrokeGuide(characterId)
     val progress = remember(characterId) { mutableFloatStateOf(0f) }
     val playing = remember(characterId) { mutableStateOf(false) }
@@ -104,9 +108,9 @@ fun rememberStrokeOrderPlayer(characterId: String?): StrokeOrderPlayer {
         progress.floatValue = 0f
     }
     // A guide is shown complete until the learner asks to play it.
-    LaunchedEffect(guide) {
+    LaunchedEffect(guide, startComplete) {
         val count = guide?.strokes?.size ?: 0
-        if (count > 0 && !playing.value) progress.floatValue = count.toFloat()
+        if (startComplete && count > 0 && !playing.value) progress.floatValue = count.toFloat()
     }
 
     LaunchedEffect(playToken, guide) {

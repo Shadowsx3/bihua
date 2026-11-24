@@ -91,27 +91,29 @@ fun StudyToolsSheet(
             )
 
             Spacer(Modifier.height(14.dp))
-            Surface(
-                onClick = onOpenQuest,
-                shape = RoundedCornerShape(16.dp),
-                color = Mint.copy(alpha = 0.18f),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            if (mode == StudyMode.SIMPLIFIED) {
+                Surface(
+                    onClick = onOpenQuest,
+                    shape = RoundedCornerShape(16.dp),
+                    color = Mint.copy(alpha = 0.18f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(Icons.Rounded.Explore, contentDescription = null, tint = InkDark)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Spell quest", style = MaterialTheme.typography.titleSmall, color = InkDark)
-                        Text(
-                            "An endless road · write to cast, nothing graded",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Rounded.Explore, contentDescription = null, tint = InkDark)
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Spell quest", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                            Text(
+                                "An endless road · write to cast, nothing graded",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
                     }
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
                 }
             }
 

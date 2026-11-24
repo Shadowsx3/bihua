@@ -72,6 +72,8 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("progress-empty", level="standard", state={"reviews": 0, "new": 0, "goal": 0, "known": 0, "days": 0}, runner="progress_empty"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
     ScenarioSpec("spell-quest", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_quest"),
+    ScenarioSpec("spell-quest-dark", level="full", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="spell_quest"),
+    ScenarioSpec("spell-quest-calm", level="full", state={"reviews": 5, "new": 2, "days": 5, "reduce_motion": True}, runner="spell_quest"),
 ]
 
 
@@ -1574,9 +1576,12 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Study tools", timeout=8)
         journey.tap("Spell quest")
         journey.wait("The road ahead", timeout=10)
+        issues = journey.a11y_unlabeled()
+        if issues:
+            raise JourneyFailure(f"spell gate has unlabeled controls: {issues[:3]}")
         journey.screenshot("spell-gate")
     with journey.step("start the road"):
-        journey.tap("Start the road")
+        journey.tap_visible("Start the road", max_scrolls=8)
         journey.wait("Draw", timeout=10)
         journey.screenshot("spell-scene")
     with journey.step("gift from the book"):
@@ -1585,13 +1590,16 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Grimoire", timeout=8)
         journey.tap_visible("Grimoire")
         journey.wait("Close book", timeout=10)
+        issues = journey.a11y_unlabeled()
+        if issues:
+            raise JourneyFailure(f"grimoire has unlabeled controls: {issues[:3]}")
         journey.screenshot("spell-kinds")
         # The book opens on the cover; the Flame tab turns to its spells.
         journey.tap_visible("火")
         time.sleep(0.8)
         # Chapter seals sit in the tabs above the page; the spell tiles come later
         # in the tree, so take the last character on screen.
-        seals = set("水火云石马桥")
+        seals = set("水火云石马桥心时")
         glyphs = [
             text for text in journey.texts()
             if text and len(text) == 1 and "\u4e00" <= text <= "\u9fff" and text not in seals
@@ -1628,8 +1636,11 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         journey.screenshot("spell-next")
     with journey.step("draw and cast"):
         # The drawing path itself: draw in the circle with touch, then cast.
-        journey.tap("Draw")
+        journey.tap_visible("Draw", max_scrolls=8)
         journey.wait("Draw in the circle first", timeout=8)
+        issues = journey.a11y_unlabeled()
+        if issues:
+            raise JourneyFailure(f"cast overlay has unlabeled controls: {issues[:3]}")
         if not journey.draw_guide([[(0.15, 0.5), (0.85, 0.5)], [(0.5, 0.15), (0.5, 0.85)]]):
             raise JourneyFailure("no handwriting canvas to draw on")
         journey.wait("Cast the spell", timeout=8)

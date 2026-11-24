@@ -135,7 +135,8 @@ object PuzzleForge {
             .filter { it !in solvedBy }
             .associateWith { obstacle.need }
 
-        val setting = parts.settings.filter { it != previousPlace }
+        val setting = parts.settings
+            .filter { previousPlace == null || !previousPlace.startsWith(it) }
             .ifEmpty { parts.settings }
             .let { it[random.nextInt(it.size)] }
         val time = parts.times[random.nextInt(parts.times.size)]

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -128,6 +129,7 @@ fun HomeScreen(
     suspendedCount: Int = 0,
     skippedIds: Set<String> = emptySet(),
     onOpenStudyTools: () -> Unit = {},
+    onOpenQuest: () -> Unit = {},
     playerStats: com.bassmd.bihua.progress.PlayerStats,
     studyDays: Int,
     newToday: Int,
@@ -355,6 +357,7 @@ fun HomeScreen(
                     summary = studySummary,
                     entries = studyList,
                     onOpenStudyTools = onOpenStudyTools,
+                    onOpenQuest = onOpenQuest,
                     onDrill = onDrill,
                     onPaper = onPaper,
                     onStudyList = onStudyList,
@@ -565,6 +568,7 @@ fun HomeScreen(
                             summary = studySummary,
                             entries = studyList,
                             onOpenStudyTools = onOpenStudyTools,
+                            onOpenQuest = onOpenQuest,
                             onDrill = onDrill,
                             onPaper = onPaper,
                             onStudyList = onStudyList,
@@ -1211,6 +1215,7 @@ private fun StudyToolsCard(
     summary: List<String>,
     entries: List<CharacterEntry>,
     onOpenStudyTools: () -> Unit,
+    onOpenQuest: () -> Unit,
     onDrill: () -> Unit,
     onPaper: () -> Unit,
     onStudyList: () -> Unit,
@@ -1250,6 +1255,42 @@ private fun StudyToolsCard(
                         }
                     },
                 ) { Text("Manage") }
+            }
+            Surface(
+                onClick = onOpenQuest,
+                shape = RoundedCornerShape(12.dp),
+                color = Mint.copy(alpha = 0.20f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.Explore,
+                        contentDescription = null,
+                        tint = InkDark,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Spell quest",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                        )
+                        Text(
+                            "Write to cast · nothing graded",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Text(
+                        "Extra practice",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                    )
+                }
             }
             if (entries.isNotEmpty()) {
                 FlowRow(

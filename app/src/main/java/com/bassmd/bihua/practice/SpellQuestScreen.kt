@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -82,7 +85,6 @@ import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.spellbook.CastResult
 import com.bassmd.bihua.spellbook.EffectStyle
-import com.bassmd.bihua.spellbook.PuzzleBook
 import com.bassmd.bihua.spellbook.QuestGenerator
 import com.bassmd.bihua.spellbook.QuestScene
 import com.bassmd.bihua.spellbook.QuestSolver
@@ -90,6 +92,8 @@ import com.bassmd.bihua.spellbook.QuestSpell
 import com.bassmd.bihua.spellbook.Spell
 import com.bassmd.bihua.spellbook.SpellFamilies
 import com.bassmd.bihua.spellbook.Spellbook
+import com.bassmd.bihua.ui.FoldState
+import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.InkMascot
@@ -168,9 +172,8 @@ private fun SpellQuestContent(
     val spells = remember {
         context.assets.open("spellbook.csv").bufferedReader().useLines { Spellbook.parse(it) }
     }
-    // Indexed SQLite asset, built from the SQL seeds under tools/spells/.
-    val book = remember { PuzzleBook.load(context) }
-    // Fresh scenes come from the forge; the fixed library stays as the fallback.
+    // The authored obstacle and setting parts. Every scene is built fresh from
+    // these; there is no fixed puzzle library in the app.
     val parts = remember { com.bassmd.bihua.spellbook.PuzzleParts.load(context) }
     val byGlyph = remember(characters) {
         characters.associate { entry ->
@@ -182,8 +185,9 @@ private fun SpellQuestContent(
         characters.filter { it.status != StudyStatus.NEW }.map { it.character }.toSet()
     }
     val random = remember { Random(System.nanoTime()) }
-    fun makeChapter(number: Int) =
-        QuestGenerator.chapter(6, number, random, book, spells, byGlyph, known, parts)
+    fun makeChapter(number: Int) = parts?.let { loaded ->
+        QuestGenerator.chapter(6, number, random, spells, byGlyph, known, loaded)
+    }.orEmpty()
 
     var chapter by remember { mutableIntStateOf(1) }
     var scenes by remember { mutableStateOf(makeChapter(1)) }
@@ -208,12 +212,11 @@ private fun SpellQuestContent(
     val repository = com.bassmd.bihua.content.LocalContentRepository.current
     // Read the course straight from the content store, so a guide is found even
     // while the screen's own character list is still loading.
-    val idByGlyph by androidx.compose.runtime.produceState(
-        initialValue = emptyMap<String, String>(),
-        mode,
-        repository,
-    ) {
-        value = repository?.let { r ->
+    var idByGlyph by remember(mode, repository) {
+        mutableStateOf(emptyMap<String, String>())
+    }
+    LaunchedEffect(mode, repository) {
+        idByGlyph = repository?.let { r ->
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 r.characters(mode).associate { it.character to it.id }
             }
@@ -238,7 +241,7 @@ private fun SpellQuestContent(
             }
         }
     }
-    val bookPlayer = rememberStrokeOrderPlayer(bookId)
+    val bookPlayer = rememberStrokeOrderPlayer(bookId, startComplete = false)
     val bookStrokes = remember(bookGuide, bookPick) {
         if (bookPick == null) emptyList() else bookGuide?.centerlines().orEmpty()
     }
@@ -269,6 +272,44 @@ private fun SpellQuestContent(
 
 
 
+    if (scenes.isEmpty()) {
+        Box(Modifier.fillMaxSize().consumeAllInput()) {
+            SceneBackdrop(
+                place = "The quiet road",
+                family = "moon",
+                style = EffectStyle.DRIFT,
+                animate = !reduceMotion,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                InkMascot(
+                    size = 104.dp,
+                    headwear = com.bassmd.bihua.ui.components.MascotHeadwear.WITCH,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "The road is quiet",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "The puzzle pages could not load. Leave the road and try again.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = onClose, shape = CircleShape) { Text("Leave the road") }
+            }
+        }
+        return
+    }
     val scene = scenes.getOrNull(index) ?: return
     val ink = remember(index) { InkState() }
     val family = scene.spell.family
@@ -309,7 +350,7 @@ private fun SpellQuestContent(
                 }
                 badgeCharacter = castCharacter
                 scope.launch {
-                    kotlinx.coroutines.delay(if (reduceMotion) 900L else 3000L)
+                    kotlinx.coroutines.delay(resultDelayMs(reduceMotion))
                     channeling = null
                     // The character stays in its final state until "Walk on".
                     phase = QuestPhase.RESULT
@@ -381,7 +422,7 @@ private fun SpellQuestContent(
         giftTraced = false
         val strokes = bookPlayer.strokeCount
         if (strokes == 0) return@LaunchedEffect
-        kotlinx.coroutines.delay(strokes * 620L + 150L)
+        kotlinx.coroutines.delay(giftPlaybackMs(strokes))
         if (!reduceMotion) {
             // The flourish: the element plays once more after the last stroke.
             fxFamily = pick.family
@@ -408,7 +449,7 @@ private fun SpellQuestContent(
     LaunchedEffect(castStrokes) {
         if (castStrokes.isEmpty()) return@LaunchedEffect
         castTraced = false
-        kotlinx.coroutines.delay(castStrokes.size * 1220L + 600L)
+        kotlinx.coroutines.delay(castPlaybackMs(castStrokes.size))
         castTraced = true
         // The learner's own cast carries on by itself: the strokes are done, so the
         // spell plays. A gift waits for the learner to continue.
@@ -482,12 +523,20 @@ private fun SpellQuestContent(
     }
 
     // Folds and tablets get a larger circle and a shorter card; a phone keeps the stack.
-    val wideScreen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 700
     val circleActive = bookPick != null || castStrokes.isNotEmpty()
     val circleStrokes = if (bookPick != null) bookStrokes else castStrokes
     val circleCharacter = bookPick?.character ?: castCharacter
     val circleFamily = bookPick?.family ?: castFamily
+    val headerFamily = activeFamily(bookPick?.family, castFamily, family)
     val circleTraced = if (bookPick != null) giftTraced else castTraced
+    val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+    val dialogueHeight = when {
+        fontScale > 1.6f && phase == QuestPhase.HINT -> 430.dp
+        fontScale > 1.25f && phase == QuestPhase.HINT -> 400.dp
+        fontScale > 1.6f -> 300.dp
+        fontScale > 1.25f -> 330.dp
+        else -> DialogueHeight
+    }
     // The name appears as the strokes arrive: nothing until the first stroke, all of it at the end.
     val drawReveal = if (bookPick != null) {
         if (bookPlayer.strokeCount == 0) 0f else (bookPlayer.progress / bookPlayer.strokeCount).coerceIn(0f, 1f)
@@ -497,7 +546,7 @@ private fun SpellQuestContent(
 
     if (showIntro) {
         Box(Modifier.fillMaxSize().consumeAllInput()) {
-            SceneBackdrop(place = "The road ahead", family = "moon", style = EffectStyle.DRIFT)
+            SceneBackdrop(place = "The road ahead", family = "moon", style = EffectStyle.DRIFT, animate = !reduceMotion)
             if (grimoireOpen) {
                 GrimoireScreen(
                     mode = mode,
@@ -522,8 +571,11 @@ private fun SpellQuestContent(
         return
     }
 
-    Box(Modifier.fillMaxSize().consumeAllInput()) {
-        SceneBackdrop(place = scene.place, family = family, style = style)
+    BoxWithConstraints(Modifier.fillMaxSize().consumeAllInput()) {
+        val fold = LocalFoldState.current
+        val book = fold == FoldState.BOOK && maxWidth >= 700.dp
+        val wideScreen = book || maxWidth >= 700.dp
+        SceneBackdrop(place = scene.place, family = family, style = style, animate = !reduceMotion)
 
         // The circle stage: the outer ring with its runes, the drawn circle, the lead-in and
         // flourish effects, and the name scroll above. It sizes itself to the room it is given.
@@ -545,8 +597,10 @@ private fun SpellQuestContent(
                             val badge = badgeCharacter
                             if (badge.isNotEmpty() && channeling == null) {
                                 val badgeFamily = spells.firstOrNull { it.character == badge }?.family.orEmpty()
-                                val word = shortGloss(characters.firstOrNull { it.character == badge }?.meaning)
-                                    ?: SpellFamilies.name(badgeFamily)
+                                val word = badgeWord(
+                                    characters.firstOrNull { it.character == badge }?.meaning,
+                                    badgeFamily,
+                                )
                                 InvocationBadge(
                                     emoji = spellEmoji(badge, badgeFamily),
                                     word = word,
@@ -603,7 +657,7 @@ private fun SpellQuestContent(
         fun DialogueCard(modifier: Modifier) {
             Column(
                 modifier = modifier
-                    .height(DialogueHeight)
+                    .height(dialogueHeight)
                     .clip(RoundedCornerShape(24.dp))
                     .then(Modifier.oldPaper())
                     .border(1.dp, Color(0x553D2766), RoundedCornerShape(24.dp))
@@ -627,7 +681,11 @@ private fun SpellQuestContent(
                             Text(scene.speaker, style = MaterialTheme.typography.labelSmall, color = PlumSoft)
                         }
                         if (phase != QuestPhase.READ) {
-                            Text(SpellFamilies.name(family), style = MaterialTheme.typography.labelSmall, color = PlumSoft)
+                            Text(
+                                SpellFamilies.name(headerFamily),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = PlumSoft,
+                            )
                         }
                     }
 
@@ -666,12 +724,11 @@ private fun SpellQuestContent(
                         style = MaterialTheme.typography.bodyLarge,
                         color = PlumInk,
                     )
-                    if (phase == QuestPhase.CAST || phase == QuestPhase.HINT) {
-                        Text(scene.spell.reading, style = MaterialTheme.typography.labelLarge, color = PlumSoft)
-                        Text(
-                            scene.spell.meaning,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = PlumSoft,
+                    if (phase == QuestPhase.HINT || phase == QuestPhase.RESULT) {
+                        SpellTipCard(
+                            reading = scene.spell.reading,
+                            meaning = scene.spell.meaning,
+                            tint = chapterColor(SpellFamilies.chapter(headerFamily)),
                         )
                     }
                 }
@@ -804,18 +861,18 @@ private fun SpellQuestContent(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(if (book) 28.dp else 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(start = 24.dp, end = 12.dp),
+                            .padding(start = 24.dp),
                         verticalArrangement = Arrangement.Center,
                     ) {
                         DialogueCard(modifier = Modifier.fillMaxWidth())
                     }
-                    Spacer(Modifier.width(12.dp))
                     CircleStage(modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -836,6 +893,7 @@ private fun SpellQuestContent(
             CastOverlay(
                 // The scene card is hidden during a cast, so nothing shows through.
                 scene = scene,
+                reduceMotion = reduceMotion,
                 ink = ink,
                 forgotten = forgotten,
                 onOpenBook = { openBook() },
@@ -847,8 +905,7 @@ private fun SpellQuestContent(
                 busy = reading || channeling != null,
                 shape = sceneShape,
                 shapePlayer = shapePlayer,
-                gloss = characters.firstOrNull { it.character == scene.spell.character }?.meaning
-                    ?: scene.spell.meaning,
+                gloss = definitionGloss(scene.spell.character, characters, scene.spell.meaning),
                 giftReady = bookPick != null && giftTraced,
                 onSpeak = { onSpeak(scene.spell.character) },
                 writing = if (bookPick != null && bookStrokes.isNotEmpty()) bookStrokes else null,
@@ -915,63 +972,166 @@ private fun QuestGate(
     grimoireOpen: Boolean,
 ) {
     if (grimoireOpen) return
-    Box(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.55f))
             .consumeAllInput(),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 560.dp)
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            InkMascot(
-                size = 104.dp,
-                headwear = com.bassmd.bihua.ui.components.MascotHeadwear.WITCH,
-            )
-            Text(
-                "The road ahead",
-                style = MaterialTheme.typography.displaySmall,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                "Mò has a hat, a book, and a very long road.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center,
-            )
-            GateCard(
-                title = "Draw the spell",
-                body = "Write a character in the circle. Any element that truly fits the scene will work.",
-                tint = Sky,
-            )
-            GateCard(
-                title = "Or open the book",
-                body = "Choose a character from your grimoire instead.",
-                tint = Lilac,
-            )
-            GateCard(
-                title = "Ask if you are stuck",
-                body = "Mò nudges you toward an element, never the answer. Nothing is lost here.",
-                tint = Mint,
-            )
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = onStart,
-                shape = CircleShape,
+        val book = LocalFoldState.current == FoldState.BOOK && maxWidth >= 700.dp
+
+        @Composable
+        fun Intro() {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                InkMascot(
+                    size = 104.dp,
+                    headwear = com.bassmd.bihua.ui.components.MascotHeadwear.WITCH,
+                )
+                Text(
+                    "The road ahead",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "Mò has a hat, a book, and a very long road.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        @Composable
+        fun Rules() {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Start the road") }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onGrimoire, shape = CircleShape) {
-                    Text("Open the grimoire", color = Color.White)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                GateCard(
+                    title = "Draw the spell",
+                    body = "Write a character in the circle. Any element that truly fits the scene will work.",
+                    tint = Sky,
+                )
+                GateCard(
+                    title = "Or open the book",
+                    body = "Choose a character from your grimoire instead.",
+                    tint = Lilac,
+                )
+                GateCard(
+                    title = "Ask if you are stuck",
+                    body = "Mò nudges you toward an element, never the answer. Nothing is lost here.",
+                    tint = Mint,
+                )
+            }
+        }
+
+        @Composable
+        fun Actions() {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Button(
+                    onClick = onStart,
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Start the road") }
+                val compact = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.25f
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedButton(
+                        onClick = onGrimoire,
+                        shape = CircleShape,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            if (compact) "Grimoire" else "Open the grimoire",
+                            maxLines = 1,
+                            softWrap = false,
+                            color = Color.White,
+                        )
+                    }
+                    TextButton(onClick = onLeave) {
+                        Text("Leave", maxLines = 1, softWrap = false, color = Color.White.copy(alpha = 0.85f))
+                    }
                 }
-                TextButton(onClick = onLeave) { Text("Leave", color = Color.White.copy(alpha = 0.85f)) }
+            }
+        }
+
+        if (book) {
+            // The fold is the spine: the intro on the left page, the rules and
+            // start button on the right page, with clear space at the hinge.
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(28.dp),
+                horizontalArrangement = Arrangement.spacedBy(28.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) { Intro() }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+                    ) { Rules() }
+                    Spacer(Modifier.height(8.dp))
+                    Actions()
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 560.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Intro()
+                        Spacer(Modifier.height(12.dp))
+                        Rules()
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
+                ) { Actions() }
             }
         }
     }
@@ -997,6 +1157,59 @@ private fun GateCard(title: String, body: String, tint: Color) {
         Column {
             Text(title, style = MaterialTheme.typography.titleSmall, color = PlumInk)
             Text(body, style = MaterialTheme.typography.bodySmall, color = PlumSoft)
+        }
+    }
+}
+
+/** A warm little note for the reading and meaning, instead of two bare lines. */
+@Composable
+private fun SpellTipCard(reading: String, meaning: String, tint: Color) {
+    if (reading.isBlank() && meaning.isBlank()) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(tint.copy(alpha = 0.34f), PaperWarm.copy(alpha = 0.92f)),
+                ),
+            )
+            .border(1.dp, tint.copy(alpha = 0.55f), RoundedCornerShape(18.dp))
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(PaperWarm.copy(alpha = 0.9f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = PlumInk,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Spacer(Modifier.width(9.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text("Mò's note", style = MaterialTheme.typography.labelSmall, color = PlumSoft)
+            if (reading.isNotBlank()) {
+                Text(
+                    reading,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = PlumInk,
+                )
+            }
+            if (meaning.isNotBlank()) {
+                Text(
+                    meaning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PlumInk.copy(alpha = 0.86f),
+                )
+            }
         }
     }
 }
@@ -1038,7 +1251,7 @@ private fun TypewriterLine(
 
 /** The place, painted from its name and the spell's element. */
 @Composable
-private fun SceneBackdrop(place: String, family: String, style: EffectStyle) {
+private fun SceneBackdrop(place: String, family: String, style: EffectStyle, animate: Boolean = true) {
     val seed = abs(place.hashCode())
     val top = when (style) {
         EffectStyle.BURST -> Color(0xFF2E1A3E)
@@ -1058,7 +1271,11 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle) {
         else -> Dawn
     }
     var drift by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(animate) {
+        if (!animate) {
+            drift = 0.35f
+            return@LaunchedEffect
+        }
         var start = 0L
         while (true) {
             withInfiniteAnimationFrameNanos { now ->
@@ -1106,6 +1323,7 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle) {
 @Composable
 private fun CastOverlay(
     scene: QuestScene,
+    reduceMotion: Boolean,
     ink: InkState,
     forgotten: Boolean,
     onOpenBook: () -> Unit,
@@ -1135,16 +1353,6 @@ private fun CastOverlay(
     var showGuide by remember(scene.place) { mutableStateOf(false) }
     var showMeaning by remember(scene.place) { mutableStateOf(false) }
     var heard by remember(scene.place) { mutableStateOf(false) }
-    var spin by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        var start = 0L
-        while (true) {
-            withInfiniteAnimationFrameNanos { now ->
-                if (start == 0L) start = now
-                spin = ((now - start) % 16_000_000_000L) / 16_000_000_000f * 360f
-            }
-        }
-    }
     // Asking for the shape plays its strokes in the drawing circle, the same as Practice.
     // The shape is only handed to the circle once its playback has started, so the
     // complete character never flashes before the first stroke.
@@ -1170,7 +1378,9 @@ private fun CastOverlay(
     ) {
         // A fold or tablet has room for the story and the circle side by side.
         // A phone keeps them stacked, like a card you turn over.
-        val wide = maxWidth >= 760.dp
+        val fold = LocalFoldState.current
+        val book = fold == FoldState.BOOK && maxWidth >= 700.dp
+        val wide = maxWidth >= 700.dp
         val controls: @Composable (Boolean) -> Unit = { onPaper ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1192,7 +1402,7 @@ private fun CastOverlay(
                 )
             }
         }
-        val actions: @Composable (Boolean) -> Unit = { onPaper ->
+        val actions: @Composable (Boolean, Boolean) -> Unit = { onPaper, showBottom ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Button(
                     onClick = onCast,
@@ -1226,27 +1436,35 @@ private fun CastOverlay(
                         },
                     )
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Back to the dialogue. The book stays on the dialogue itself, so the
-                    // learner can pick another route from there.
+                if (showBottom) {
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                if (onPaper) Color(0x143D2766) else Color.White.copy(alpha = 0.10f),
-                            )
-                            .clickable { onClose() }
-                            .padding(horizontal = 16.dp, vertical = 9.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            "Go back",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (onPaper) Color(0xFF3D2766) else Color.White,
-                        )
+                        TextButton(onClick = onOpenBook) {
+                            Text(
+                                "Grimoire",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (onPaper) Color(0xFF3D2766) else Gilt,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (onPaper) Color(0x143D2766) else Color.White.copy(alpha = 0.10f),
+                                )
+                                .clickable { onClose() }
+                                .padding(horizontal = 16.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Go back",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (onPaper) Color(0xFF3D2766) else Color.White,
+                            )
+                        }
                     }
                 }
             }
@@ -1258,12 +1476,12 @@ private fun CastOverlay(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 26.dp, vertical = 18.dp)
+                    .padding(horizontal = if (book) 28.dp else 26.dp, vertical = 18.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color(0xFF2A1B4A))
                     .border(3.dp, Color(0xFF1C1233), RoundedCornerShape(10.dp))
                     .padding(9.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (book) 0.dp else 2.dp),
             ) {
                 Column(
                     modifier = Modifier
@@ -1293,20 +1511,24 @@ private fun CastOverlay(
                     }
                     CastNote(note = note, casting = reading)
                 }
-                Box(
-                    modifier = Modifier
-                        .width(14.dp)
-                        .fillMaxHeight()
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color.Black.copy(alpha = 0.10f),
-                                    Color.Black.copy(alpha = 0.55f),
-                                    Color.Black.copy(alpha = 0.10f),
+                if (book) {
+                    Spacer(Modifier.width(28.dp))
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .width(14.dp)
+                            .fillMaxHeight()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color.Black.copy(alpha = 0.10f),
+                                        Color.Black.copy(alpha = 0.55f),
+                                        Color.Black.copy(alpha = 0.10f),
+                                    ),
                                 ),
                             ),
-                        ),
-                )
+                    )
+                }
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -1317,6 +1539,13 @@ private fun CastOverlay(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    DefinitionCard(
+                        reading = if (heard) scene.spell.reading else null,
+                        meaning = if (showMeaning) gloss else null,
+                        modifier = Modifier
+                            .widthIn(max = 420.dp)
+                            .fillMaxWidth(),
+                    )
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -1329,22 +1558,15 @@ private fun CastOverlay(
                             showGuide = showGuide,
                             preview = preview,
                             writing = writing,
-                    shape = shape,
-                    shapePlayer = if (shapeStarted) shapePlayer else null,
+                            shape = shape,
+                            shapePlayer = if (shapeStarted) shapePlayer else null,
                             glow = glow,
-                            spin = spin,
+                            animate = !reduceMotion,
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .aspectRatio(1f),
                         )
                     }
-                    DefinitionCard(
-                        reading = if (heard) scene.spell.reading else null,
-                        meaning = if (showMeaning) gloss else null,
-                                                modifier = Modifier
-                            .widthIn(max = 420.dp)
-                            .fillMaxWidth(),
-                    )
                     ClueActions(
                         onSpeak = { heard = true; onSpeak() },
                         onMeaning = { showMeaning = !showMeaning },
@@ -1354,56 +1576,82 @@ private fun CastOverlay(
                         onPaper = true,
                     )
                     controls(true)
-                    actions(true)
+                    actions(true, true)
                 }
             }
         } else {
+            val stage = minOf(maxWidth - 20.dp, maxHeight * 0.42f).coerceAtLeast(180.dp)
             Column(
                 modifier = Modifier
+                    .fillMaxHeight()
                     .widthIn(max = 560.dp)
                     .fillMaxWidth()
-                    .padding(18.dp),
+                    .padding(horizontal = 10.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = onClose) {
+                        Text("Go back", color = Color.White)
+                    }
+                    TextButton(onClick = onOpenBook) {
+                        Text("Grimoire", color = Gilt)
+                    }
+                }
                 Text(
                     scene.castPrompt,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     textAlign = TextAlign.Center,
                 )
-                MagicCircle(
-                    scene = scene,
-                    ink = ink,
-                    showGuide = showGuide,
-                    preview = preview,
-                    writing = writing,
-                    shape = shape,
-                    shapePlayer = if (shapeStarted) shapePlayer else null,
-                    glow = glow,
-                    spin = spin,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f),
-                )
                 DefinitionCard(
                     reading = if (heard) scene.spell.reading else null,
                     meaning = if (showMeaning) gloss else null,
-                                        modifier = Modifier
+                    modifier = Modifier
                         .widthIn(max = 420.dp)
                         .fillMaxWidth(),
                 )
-                CastNote(note = note, casting = reading)
-                ClueActions(
-                    onSpeak = { heard = true; onSpeak() },
-                    onMeaning = { showMeaning = !showMeaning },
-                    meaningShown = showMeaning,
-                    onShape = { showGuide = !showGuide },
-                    shapeShown = showGuide,
-                    onPaper = false,
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MagicCircle(
+                        scene = scene,
+                        ink = ink,
+                        showGuide = showGuide,
+                        preview = preview,
+                        writing = writing,
+                        shape = shape,
+                        shapePlayer = if (shapeStarted) shapePlayer else null,
+                        glow = glow,
+                        animate = !reduceMotion,
+                        modifier = Modifier.size(stage),
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    CastNote(note = note, casting = reading)
+                    ClueActions(
+                        onSpeak = { heard = true; onSpeak() },
+                        onMeaning = { showMeaning = !showMeaning },
+                        meaningShown = showMeaning,
+                        onShape = { showGuide = !showGuide },
+                        shapeShown = showGuide,
+                        onPaper = false,
+                    )
+                }
                 controls(false)
-                actions(false)
+                actions(false, false)
             }
         }
     }
@@ -1418,6 +1666,15 @@ private fun CastOverlay(
 /** Time for one stroke to write itself, and the short rest between strokes. */
 /** One tag for everything the quest logs, so a device run can be filtered with `logcat -s`. */
 internal const val QUEST_LOG = "BihuaQuest"
+
+internal const val GIFT_STROKE_MS = 620L
+internal const val CAST_STROKE_MS = 1220L
+
+internal fun giftPlaybackMs(strokes: Int): Long = strokes * GIFT_STROKE_MS + 150L
+
+internal fun castPlaybackMs(strokes: Int): Long = strokes * CAST_STROKE_MS + 600L
+
+internal fun resultDelayMs(reduceMotion: Boolean): Long = if (reduceMotion) 900L else 3000L
 
 private const val STROKE_MS = 1000f
 private const val STROKE_GAP_MS = 220f
@@ -1605,7 +1862,7 @@ fun FamilyGlyph(family: String, tint: Color, modifier: Modifier = Modifier) {
         val stroke = 2.2.dp.toPx()
         val c = Offset(w * 0.5f, h * 0.5f)
         when (family) {
-            "water", "boat" -> {
+            "water" -> {
                 val drop = Path().apply {
                     moveTo(w * 0.5f, h * 0.08f)
                     cubicTo(w * 0.82f, h * 0.45f, w * 0.86f, h * 0.7f, w * 0.5f, h * 0.92f)
@@ -1614,6 +1871,50 @@ fun FamilyGlyph(family: String, tint: Color, modifier: Modifier = Modifier) {
                 }
                 drawPath(drop, tint)
                 drawOval(soft, topLeft = Offset(w * 0.34f, h * 0.48f), size = Size(w * 0.1f, h * 0.22f))
+            }
+            "boat" -> {
+                val hull = Path().apply {
+                    moveTo(w * 0.12f, h * 0.62f)
+                    quadraticBezierTo(w * 0.5f, h * 0.96f, w * 0.88f, h * 0.62f)
+                    close()
+                }
+                drawPath(hull, tint)
+                drawLine(tint, Offset(w * 0.5f, h * 0.14f), Offset(w * 0.5f, h * 0.62f), strokeWidth = stroke, cap = round)
+                val sail = Path().apply {
+                    moveTo(w * 0.52f, h * 0.18f)
+                    lineTo(w * 0.82f, h * 0.52f)
+                    lineTo(w * 0.52f, h * 0.52f)
+                    close()
+                }
+                drawPath(sail, soft)
+            }
+            "mind" -> {
+                drawCircle(tint, radius = w * 0.31f, center = c, style = Stroke(width = stroke))
+                drawCircle(tint, radius = w * 0.055f, center = Offset(c.x - w * 0.1f, c.y - h * 0.08f))
+                drawCircle(tint, radius = w * 0.055f, center = Offset(c.x + w * 0.1f, c.y - h * 0.08f))
+                drawArc(
+                    tint, 20f, 140f, false,
+                    topLeft = Offset(c.x - w * 0.16f, c.y + h * 0.02f),
+                    size = Size(w * 0.32f, h * 0.22f),
+                    style = Stroke(width = stroke, cap = round),
+                )
+            }
+            "sound" -> {
+                drawCircle(tint, radius = w * 0.09f, center = Offset(w * 0.3f, c.y))
+                repeat(3) { ring ->
+                    val r = w * (0.2f + ring * 0.12f)
+                    drawArc(
+                        tint, -55f, 110f, false,
+                        topLeft = Offset(c.x - r * 0.55f, c.y - r),
+                        size = Size(r * 1.1f, r * 2f),
+                        style = Stroke(width = stroke, cap = round),
+                    )
+                }
+            }
+            "time" -> {
+                drawCircle(tint, radius = w * 0.38f, center = c, style = Stroke(width = stroke))
+                drawLine(tint, c, Offset(c.x, c.y - h * 0.22f), strokeWidth = stroke, cap = round)
+                drawLine(tint, c, Offset(c.x + w * 0.18f, c.y + h * 0.08f), strokeWidth = stroke, cap = round)
             }
             "fire", "lightning" -> {
                 val flame = Path().apply {
@@ -1753,7 +2054,7 @@ private fun MagicCircle(
     shape: List<List<Offset>> = emptyList(),
     shapePlayer: StrokeOrderPlayer? = null,
     glow: Color,
-    spin: Float,
+    animate: Boolean = true,
     modifier: Modifier,
 ) {
     Box(
@@ -1762,27 +2063,16 @@ private fun MagicCircle(
             .background(Color.White.copy(alpha = 0.06f))
             .border(2.dp, glow.copy(alpha = 0.75f), CircleShape),
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val center = Offset(size.width / 2f, size.height / 2f)
-            drawCircle(
-                color = glow.copy(alpha = 0.18f),
-                radius = size.minDimension * 0.46f,
-                center = center,
-            )
-            repeat(12) { i ->
-                val angle = ((i * 30f + spin) * 3.14159f) / 180f
-                drawCircle(
-                    color = glow.copy(alpha = 0.55f),
-                    radius = 3.dp.toPx(),
-                    center = Offset(
-                        center.x + cos(angle) * size.minDimension * 0.42f,
-                        center.y + sin(angle) * size.minDimension * 0.42f,
-                    ),
-                )
-            }
-        }
+        RuneRing(color = glow, animate = animate, modifier = Modifier.fillMaxSize())
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.78f)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.04f))
+                .border(1.5.dp, glow.copy(alpha = 0.6f), CircleShape),
+        )
         if (writing != null) {
-            GuideWriting(strokes = writing, modifier = Modifier.fillMaxSize(0.74f).align(Alignment.Center))
+            GuideWriting(strokes = writing, modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center))
         } else if (preview != null) {
             WritingReveal(
                 character = preview,
@@ -1794,7 +2084,7 @@ private fun MagicCircle(
             if (shapePlayer != null && shapePlayer.guide != null) {
                 StrokeGuideLayer(
                     player = shapePlayer,
-                    modifier = Modifier.fillMaxSize(0.74f).align(Alignment.Center),
+                    modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center),
                     showNumbers = false,
                     strokeColor = glow,
                     paperGap = false,
@@ -1803,7 +2093,7 @@ private fun MagicCircle(
         }
         InkCanvas(
             state = ink,
-            modifier = Modifier.fillMaxSize(0.74f).align(Alignment.Center),
+            modifier = Modifier.fillMaxSize(0.72f).align(Alignment.Center),
             // No target in the label: the answer stays hidden from screen readers too.
             contentDescription = "Handwriting canvas, draw in the circle",
             allowFinger = true,
@@ -1944,6 +2234,7 @@ private fun GiftActions(ready: Boolean, busy: Boolean, onContinue: () -> Unit, o
 }
 
 /** The three optional clues: hear it, reveal the meaning, reveal the shape. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ClueActions(
     onSpeak: () -> Unit,
@@ -1953,9 +2244,9 @@ private fun ClueActions(
     shapeShown: Boolean,
     onPaper: Boolean,
 ) {
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         InkControl(
             label = "Hear it",

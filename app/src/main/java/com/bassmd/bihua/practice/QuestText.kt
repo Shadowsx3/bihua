@@ -1,5 +1,7 @@
 package com.bassmd.bihua.practice
 
+import com.bassmd.bihua.spellbook.SpellFamilies
+
 /**
  * The first word of a gloss, for the word on the scroll: "horse; to get on" reads
  * "horse". Blank glosses return null so the caller can fall back to the family name.
@@ -39,3 +41,18 @@ internal fun spellEmoji(character: String, family: String): String {
         else -> "✨"
     }
 }
+
+/** The word on the scroll after a cast: the first gloss, or the family name. */
+internal fun badgeWord(meaning: String?, family: String): String =
+    shortGloss(meaning) ?: SpellFamilies.family(family)?.name ?: "Spell"
+
+/** The gloss in the cast card: the current course's meaning, then the scene fallback. */
+internal fun definitionGloss(
+    character: String,
+    characters: List<com.bassmd.bihua.content.CharacterEntry>,
+    fallback: String,
+): String = characters.firstOrNull { it.character == character }?.meaning ?: fallback
+
+/** The family shown on the result card: a book pick, the cast, then the scene spell. */
+internal fun activeFamily(picked: String?, cast: String, scene: String): String =
+    picked ?: cast.ifEmpty { scene }

@@ -215,6 +215,7 @@ def build_state(
     priority: int = 0,
     mode: str = "SIMPLIFIED",
     theme: str = "SYSTEM",
+    reduce_motion: bool = False,
     shared_glyphs: bool = False,
     mature: bool = False,
     goal: int | None = None,
@@ -369,6 +370,7 @@ def build_state(
     settings = _settings(
         studyMode=mode,
         themeMode=theme.upper(),
+        reduceMotion=reduce_motion,
         pronunciationPractice=pronunciation,
         meaningPractice=meaning_practice,
         ankiWriting=anki_writing,
@@ -496,6 +498,7 @@ if __name__ == "__main__":
     parser.add_argument("--priority", type=int, default=0)
     parser.add_argument("--mode", default="SIMPLIFIED")
     parser.add_argument("--theme", default="SYSTEM")
+    parser.add_argument("--reduce-motion", action="store_true")
     parser.add_argument("--shared-glyphs", action="store_true")
     parser.add_argument("--mature", action="store_true")
     parser.add_argument("--goal", type=int)
@@ -512,7 +515,8 @@ if __name__ == "__main__":
         reviews=args.reviews, new=args.new, known=args.known, learning=args.learning,
         days=args.days, leeches=args.leeches, lapses=args.lapses, skipped=args.skipped,
         suspended=args.suspended, study_list=args.study_list, priority=args.priority,
-        mode=args.mode, theme=args.theme, shared_glyphs=args.shared_glyphs,
+        mode=args.mode, theme=args.theme, reduce_motion=args.reduce_motion,
+        shared_glyphs=args.shared_glyphs,
         mature=args.mature, goal=args.goal, vacation=args.vacation, ease_back=args.ease_back,
         pronunciation=args.pronunciation, review_order=args.review_order,
         task_mode=args.task_mode, guides_only=args.guides_only,

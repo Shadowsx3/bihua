@@ -30,8 +30,9 @@ class SpellbookTest {
     }
 
     @Test
-    fun shippedTableHasOneHundredSpells() {
-        assertEquals(100, shippedSpells().size)
+    fun shippedTableHasEveryChapter() {
+        assertEquals(104, shippedSpells().size)
+        assertEquals(8, SpellCategories.size)
     }
 
     @Test

@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,6 +56,8 @@ import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.spellbook.Spell
 import com.bassmd.bihua.spellbook.SpellCategories
 import com.bassmd.bihua.spellbook.Spellbook
+import com.bassmd.bihua.ui.FoldState
+import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
 import com.bassmd.bihua.ui.components.InkMascot
@@ -91,7 +95,10 @@ sealed class BookPage {
 /** The book's pages in reading order. Long chapters continue onto more spell pages. */
 fun bookPages(grouped: Map<String, List<Spell>>): List<BookPage> {
     val pages = mutableListOf<BookPage>(BookPage.Cover, BookPage.Contents)
-    grouped.forEach { (category, items) ->
+    // The index and the page order must agree. Read the authored category order,
+    // not the order the CSV happened to group.
+    SpellCategories.forEach { category ->
+        val items = grouped[category].orEmpty()
         if (items.isEmpty()) return@forEach
         // Each category is one spread: its name and icon on the left, every
         // character of the category on the right.
@@ -212,6 +219,8 @@ fun GrimoireScreen(
             .background(ink.desk)
             .consumeDesk(ink),
     ) {
+        val fold = LocalFoldState.current
+        val book = fold == FoldState.BOOK && maxWidth >= 700.dp
         val wide = maxWidth >= 700.dp
         val spreads = remember(pages, wide) { bookSpreads(pages, wide) }
         val current = index.coerceIn(0, spreads.lastIndex)
@@ -295,7 +304,11 @@ fun GrimoireScreen(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    Spine(ink)
+                    if (book) {
+                        Spacer(Modifier.width(28.dp))
+                    } else {
+                        Spine(ink)
+                    }
                     spread.right?.let { page ->
                         BookSheet(
                             page = page,
@@ -582,6 +595,13 @@ private fun BookSheet(
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                 SpellCategories.forEach { name ->
                     val intro = pages.filterIsInstance<BookPage.ChapterIntro>().firstOrNull { it.category == name }
                     if (intro != null) {
@@ -596,15 +616,15 @@ private fun BookSheet(
                                     shape = RoundedCornerShape(14.dp),
                                 )
                                 .background(chapterColor(name).copy(alpha = 0.26f), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             FamilyGlyph(
                                 family = chapterArt(name),
                                 tint = ink.ink,
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(28.dp),
                             )
-                            Spacer(Modifier.width(12.dp))
+                            Spacer(Modifier.width(9.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(name, style = MaterialTheme.typography.titleSmall, color = ink.ink)
                                 Text(
@@ -621,6 +641,7 @@ private fun BookSheet(
                             )
                         }
                     }
+                }
                 }
             }
             is BookPage.ChapterIntro -> {
@@ -781,7 +802,7 @@ private fun SpellTile(spell: Spell, ink: GrimoireInk, size: androidx.compose.ui.
             .background(ink.tile)
             .background(chapterColor(spell.category).copy(alpha = 0.12f))
             .border(1.dp, ink.rule.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onOpen),
+            .clickable(onClickLabel = "Open this spell", onClick = onOpen),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -809,10 +830,12 @@ fun chapterArt(category: String): String = when (category) {
 private fun chapterBlurb(category: String): String = when (category) {
     "Tides" -> "Water, ice, snow, and rain. Spells that flow, freeze, and fall."
     "Flame" -> "Fire and lightning. Quick, bright, and a little dangerous."
-    "Sky" -> "Wind, cloud, sun, and moon. What moves overhead."
+    "Sky" -> "Wind, cloud, sun, moon, light, and shadow. What moves overhead."
     "Ground" -> "Earth, stone, mountain, and wood. What holds still."
     "Creatures" -> "Animals, sparks, and gestures. Things that move on their own."
-    else -> "Vessels and metal. Things people make and use."
+    "Craft" -> "Vessels and metal. Things people make and use."
+    "Mind" -> "Mind, dream, and sound. What happens inside."
+    else -> "Time, seasons, and the long road. What moves on."
 }
 
 /** A real character from each chapter, used as the seal on its opening page. */
@@ -822,7 +845,9 @@ private fun sealGlyph(category: String): String = when (category) {
     "Sky" -> "云"
     "Ground" -> "石"
     "Creatures" -> "马"
-    else -> "桥"
+    "Craft" -> "桥"
+    "Mind" -> "心"
+    else -> "时"
 }
 
 private fun familyName(family: String): String = when (family) {
@@ -845,6 +870,12 @@ private fun familyName(family: String): String = when (family) {
     "metal" -> "Metal"
     "lightning" -> "Lightning"
     "cloud" -> "Cloud"
+    "light" -> "Light"
+    "shadow" -> "Shadow"
+    "mind" -> "Mind"
+    "dream" -> "Dream"
+    "sound" -> "Sound"
+    "time" -> "Time"
     else -> family.replaceFirstChar { it.uppercase() }
 }
 
@@ -854,5 +885,7 @@ internal fun chapterColor(category: String) = when (category) {
     "Sky" -> Lilac
     "Ground" -> Mint
     "Creatures" -> Butter
-    else -> Rose
+    "Craft" -> Rose
+    "Mind" -> Lilac
+    else -> Butter
 }

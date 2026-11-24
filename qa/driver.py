@@ -603,6 +603,10 @@ class Journey:
             if label:
                 continue
             box = bounds(node)
+            # A clipped sliver of a control is a layout artifact, not a label
+            # target. Real controls are taller than a few pixels.
+            if box and (box[3] - box[1]) < 8:
+                continue
             # Compose often puts the visible word on a child node. A clickable
             # surface with a labeled child is still understandable.
             if box and any(inside(child, box) for child in labeled):

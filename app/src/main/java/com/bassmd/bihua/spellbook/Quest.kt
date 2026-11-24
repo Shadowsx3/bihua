@@ -42,8 +42,8 @@ object QuestSolver {
 }
 
 /**
- * Builds an endless journey from the loaded [PuzzleBook]. Each scene chooses a
- * real character from [spells] (preferring ones the learner has met), then a
+ * Builds an endless journey from the authored [PuzzleParts]. Each scene chooses
+ * a real character from [spells] (preferring ones the learner has met), then a
  * puzzle that character could solve. Because every puzzle has many solutions,
  * the learner can cast any spell that fits instead of guessing the one the
  * generator had in mind.
@@ -53,26 +53,24 @@ object QuestGenerator {
         count: Int,
         chapter: Int,
         random: Random,
-        book: PuzzleBook,
         spells: List<Spell>,
         byGlyph: Map<String, QuestSpell>,
         known: Set<String>,
-        /** When present, every scene is built fresh from the parts. */
-        parts: PuzzleParts? = null,
+        parts: PuzzleParts,
     ): List<QuestScene> {
-        if (spells.isEmpty() || book.puzzles.isEmpty()) return emptyList()
+        if (spells.isEmpty() || parts.obstacles.isEmpty()) return emptyList()
         val scenes = mutableListOf<QuestScene>()
         var previousPlace: String? = null
         repeat(count) {
             val knownSpells = spells.filter { it.character in known }
             val pool = if (knownSpells.size >= 8 && random.nextInt(100) < 70) knownSpells else spells
             val row = pool[random.nextInt(pool.size)]
-            val puzzle = if (parts != null) {
-                PuzzleForge.generate(parts, random, family = row.family, previousPlace = previousPlace)
-            } else {
-                val candidates = book.forFamily(row.family).filter { it.place != previousPlace }
-                (candidates.ifEmpty { book.forFamily(row.family) }).let { it[random.nextInt(it.size)] }
-            }
+            val puzzle = PuzzleForge.generate(
+                parts,
+                random,
+                family = row.family,
+                previousPlace = previousPlace,
+            )
             previousPlace = puzzle.place
             val base = byGlyph[row.character]
             val spell = QuestSpell(

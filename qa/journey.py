@@ -294,8 +294,9 @@ def main() -> int:
                     "pm grant com.bassmd.bihua android.permission.POST_NOTIFICATIONS",
                     check=False,
                 )
-                if args.font_scale != 1.0:
-                    device.font_scale(args.font_scale)
+                # Always set the scale. Leaving a previous run's 1.5x on the AVD
+                # makes a following phone run start in the wrong layout.
+                device.font_scale(args.font_scale)
                 for spec in specs:
                     print(f"  {spec.name}", flush=True)
                     result = run_scenario(device, profile, cfg, spec, args, run_dir)
