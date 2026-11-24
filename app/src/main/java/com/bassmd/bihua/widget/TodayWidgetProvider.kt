@@ -3,6 +3,7 @@ package com.bassmd.bihua.widget
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.view.View
 import android.widget.RemoteViews
 import com.bassmd.bihua.R
 import java.time.LocalTime
@@ -27,9 +28,57 @@ class TodayWidgetProvider : AppWidgetProvider() {
                     vacation = snapshot.vacation,
                     hour = hour,
                 )
+                val dayPart = WidgetCopy.dayPart(hour)
                 val views = RemoteViews(context.packageName, R.layout.widget_today)
+                views.setInt(R.id.widget_root, "setBackgroundResource", WidgetLook.background(dayPart))
+                views.setTextColor(R.id.widget_greeting, WidgetLook.softText(dayPart))
+                views.setTextColor(R.id.widget_reviews_count, WidgetLook.text(dayPart))
+                views.setTextColor(R.id.widget_reviews_label, WidgetLook.softText(dayPart))
+                views.setTextColor(R.id.widget_lessons_count, WidgetLook.text(dayPart))
+                views.setTextColor(R.id.widget_lessons_label, WidgetLook.softText(dayPart))
+                views.setTextColor(R.id.widget_clear, WidgetLook.text(dayPart))
+                views.setTextColor(R.id.widget_detail, WidgetLook.softText(dayPart))
+                views.setTextColor(R.id.widget_action, WidgetLook.BUTTON_TEXT)
+                val showReviews = !snapshot.vacation && snapshot.due > 0
+                val showLessons = !snapshot.vacation && snapshot.newLeft > 0
+                val showClear = !showReviews && !showLessons
+                views.setViewVisibility(
+                    R.id.widget_reviews_block,
+                    if (showReviews) View.VISIBLE else View.GONE,
+                )
+                views.setViewVisibility(
+                    R.id.widget_lessons_block,
+                    if (showLessons) View.VISIBLE else View.GONE,
+                )
+                views.setViewVisibility(
+                    R.id.widget_stats,
+                    if (showClear) View.GONE else View.VISIBLE,
+                )
+                views.setViewVisibility(
+                    R.id.widget_clear,
+                    if (showClear) View.VISIBLE else View.GONE,
+                )
+                views.setTextViewText(
+                    R.id.widget_reviews_count,
+                    snapshot.due.coerceAtLeast(0).toString(),
+                )
+                views.setTextViewText(
+                    R.id.widget_reviews_label,
+                    if (snapshot.due == 1) "review" else "reviews",
+                )
+                views.setTextViewText(
+                    R.id.widget_lessons_count,
+                    snapshot.newLeft.coerceAtLeast(0).toString(),
+                )
+                views.setTextViewText(
+                    R.id.widget_lessons_label,
+                    if (snapshot.newLeft == 1) "new lesson" else "new lessons",
+                )
+                views.setTextViewText(
+                    R.id.widget_clear,
+                    if (snapshot.vacation) "Reviews paused" else "All clear",
+                )
                 views.setTextViewText(R.id.widget_greeting, copy.greeting)
-                views.setTextViewText(R.id.widget_headline, copy.headline)
                 views.setTextViewText(R.id.widget_detail, copy.detail)
                 views.setTextViewText(R.id.widget_action, copy.action)
                 views.setImageViewResource(R.id.widget_icon, WidgetLook.icon(copy.icon))
@@ -39,11 +88,14 @@ class TodayWidgetProvider : AppWidgetProvider() {
                         if (snapshot.placeholder) {
                             PetProp.HAT
                         } else {
-                            WidgetCopy.todayPet(
-                                due = snapshot.due,
-                                newLeft = snapshot.newLeft,
-                                vacation = snapshot.vacation,
-                                hour = hour,
+                            WidgetCopy.outfit(
+                                WidgetCopy.todayPet(
+                                    due = snapshot.due,
+                                    newLeft = snapshot.newLeft,
+                                    vacation = snapshot.vacation,
+                                    hour = hour,
+                                ),
+                                snapshot.outfit,
                             )
                         },
                     ),
@@ -51,7 +103,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
                 views.setInt(
                     R.id.widget_accent,
                     "setBackgroundColor",
-                    WidgetLook.accent(WidgetCopy.dayPart(hour)),
+                    WidgetLook.accent(dayPart),
                 )
                 val open = WidgetLook.openApp(context)
                 views.setOnClickPendingIntent(R.id.widget_root, open)

@@ -121,7 +121,7 @@ Hard-won test details:
   opening, completion, and guided tour. Do not fork a second mascot drawing.
   The tour adds moods, a brush swing, and small held props; the widgets add
   hats, a monocle, a witch hat, a vampire cape, a nightcap, and a party hat.
-  Still one pet.
+  Settings → Display can pin one for the widgets. Still one pet.
 - **The tour lives over the real app.** `GuidedTour.kt` uses live `TourAnchors`
   and a spotlight, not screenshots. Keep the overlay in-app so window
   coordinates match the anchors. Use one finite beat per stop; a perpetual

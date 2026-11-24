@@ -28,6 +28,16 @@ enum class MemoryModel(val label: String, val short: String) {
 }
 
 @Serializable
+enum class MascotOutfit(val label: String) {
+    AUTO("Auto"),
+    STUDY("Study cap"),
+    MONOCLE("Monocle"),
+    WITCH("Witch hat"),
+    VAMPIRE("Vampire"),
+    NIGHTCAP("Nightcap"),
+    PARTY("Party hat"),
+}
+
 enum class ThemeMode(val label: String) {
     SYSTEM("System"),
     LIGHT("Light"),
@@ -233,6 +243,8 @@ data class AppSettings(
     val studyMode: com.bassmd.bihua.content.StudyMode = com.bassmd.bihua.content.StudyMode.SIMPLIFIED,
     val reduceMotion: Boolean = false,
     val soundEffects: Boolean = true,
+    /** Auto follows the hour and celebrates a clear desk; the rest are explicit. */
+    val mascotOutfit: MascotOutfit = MascotOutfit.AUTO,
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = false,
     val pronunciationPractice: Boolean = false,

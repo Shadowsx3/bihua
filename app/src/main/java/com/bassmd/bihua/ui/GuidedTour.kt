@@ -223,44 +223,86 @@ fun TourInviteCard(
             wave.animateTo(1f, tween(1_700, easing = FastOutSlowInEasing))
         }
     }
+    val compact = LocalDensity.current.fontScale > 1.25f
     SoftCard(modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.16f)) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Box(contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.size(66.dp)) {
-                        drawCircle(mint.copy(alpha = 0.16f), radius = size.minDimension * 0.5f)
+        if (compact) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Canvas(Modifier.size(46.dp)) {
+                            drawCircle(mint.copy(alpha = 0.18f), radius = size.minDimension * 0.5f)
+                        }
+                        InkMascot(
+                            size = 38.dp,
+                            withBrush = true,
+                            sparkle = true,
+                            mood = MascotMood.HAPPY,
+                            brushSwing = sin(wave.value * 2f * PI).toFloat() * 11f,
+                        )
                     }
-                    InkMascot(
-                        size = 58.dp,
-                        withBrush = true,
-                        sparkle = true,
-                        mood = MascotMood.HAPPY,
-                        brushSwing = sin(wave.value * 2f * PI).toFloat() * 11f,
-                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Need a hand?",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                        )
+                        Text(
+                            "One minute with Mò.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
                 }
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Need a hand?",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = InkDark,
-                    )
-                    Text(
-                        "One minute with Mò: the desk, reviews, grades, and paper.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkSoft,
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    QuietAction(text = "Not now", onClick = onDismiss)
+                    Spacer(Modifier.weight(1f))
+                    PrimaryAction(
+                        text = "Show me",
+                        onClick = onStart,
+                        compact = true,
                     )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                PrimaryAction(
-                    text = "Show me",
-                    onClick = onStart,
-                    compact = true,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(6.dp))
-                QuietAction(text = "Not now", onClick = onDismiss)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Canvas(Modifier.size(66.dp)) {
+                            drawCircle(mint.copy(alpha = 0.16f), radius = size.minDimension * 0.5f)
+                        }
+                        InkMascot(
+                            size = 58.dp,
+                            withBrush = true,
+                            sparkle = true,
+                            mood = MascotMood.HAPPY,
+                            brushSwing = sin(wave.value * 2f * PI).toFloat() * 11f,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Need a hand?",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = InkDark,
+                        )
+                        Text(
+                            "One minute with Mò: the desk, reviews, grades, and paper.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PrimaryAction(
+                        text = "Show me",
+                        onClick = onStart,
+                        compact = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    QuietAction(text = "Not now", onClick = onDismiss)
+                }
             }
         }
     }
@@ -344,7 +386,7 @@ fun GuidedTourOverlay(
         onClose()
     }
     val goNext: () -> Unit = {
-        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         Sfx.play(Sfx.Effect.TOUR_NEXT)
         if (last) finishTour() else onNext()
     }
@@ -703,7 +745,7 @@ fun GuidedTourOverlay(
                                     if (last) {
                                         finishTour()
                                     } else {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         Sfx.play(Sfx.Effect.TOUR_NEXT)
                                         onNext()
                                     }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:endColor="#FFF7E5"
+                android:startColor="#FFE4C2" />
+            <corners android:radius="24dp" />
+            <stroke
+                android:width="2dp"
+                android:color="#FFD39B" />
+        </shape>
+    </item>
+    <item
+        android:width="170dp"
+        android:height="170dp"
+        android:drawable="@drawable/widget_decor_glow_warm"
+        android:gravity="top|end"
+        android:right="-18dp"
+        android:top="-18dp" />
+</layer-list>

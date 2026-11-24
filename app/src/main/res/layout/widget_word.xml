@@ -3,14 +3,14 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
+    android:background="@drawable/widget_bg_morning"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
+        android:layout_height="3dp"
         android:background="#F3C85A"
         android:importantForAccessibility="no" />
 
@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="10dp">
+        android:paddingTop="6dp">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -33,17 +33,18 @@
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/widget_word_label"
                 android:textColor="#4C5F51"
-                android:textSize="12sp" />
+                android:textSize="11dp" />
 
             <TextView
                 android:id="@+id/widget_word"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="@string/widget_word_default"
                 android:textColor="#1F2B23"
-                android:textSize="30sp" />
+                android:textSize="32dp" />
 
             <TextView
                 android:id="@+id/widget_reading"
@@ -52,40 +53,88 @@
                 android:maxLines="1"
                 android:text="@string/widget_word_reading"
                 android:textColor="#4C5F51"
-                android:textSize="13sp" />
+                android:textSize="12dp" />
 
             <TextView
                 android:id="@+id/widget_meaning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="1dp"
                 android:maxLines="2"
                 android:text="@string/widget_word_meaning"
                 android:textColor="#1F2B23"
-                android:textSize="13sp" />
+                android:textSize="12dp" />
 
             <TextView
                 android:id="@+id/widget_note"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="1dp"
+                android:maxLines="1"
                 android:text="@string/widget_word_note"
                 android:textColor="#4C5F51"
-                android:textSize="12sp" />
+                android:textSize="11dp" />
+
+            <LinearLayout
+                android:id="@+id/widget_status_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_reviews_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_chip_rose"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:text="@string/widget_word_reviews"
+                    android:textColor="#1F2B23"
+                    android:textSize="11dp" />
+
+                <TextView
+                    android:id="@+id/widget_lessons_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/widget_chip_mint"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:text="@string/widget_word_lessons"
+                    android:textColor="#1F2B23"
+                    android:textSize="11dp" />
+
+                <TextView
+                    android:id="@+id/widget_clear_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_status_bg"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:text="@string/widget_word_clear"
+                    android:textColor="#1F2B23"
+                    android:textSize="11dp"
+                    android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="70dp"
+            android:layout_width="82dp"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_pet"
-                android:layout_width="66dp"
-                android:layout_height="66dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
                 android:importantForAccessibility="no"
                 android:scaleType="fitCenter"
+                android:scaleX="1.12"
+                android:scaleY="1.12"
                 android:src="@drawable/widget_pet_monocle" />
 
             <ImageView
@@ -100,9 +149,31 @@
 
     <TextView
         android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="@string/widget_word_hint"
-        android:textColor="#4C5F51"
-        android:textSize="11sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_tip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_word_tip"
+            android:textColor="#4C5F51"
+            android:textSize="11dp" />
+
+        <TextView
+            android:id="@+id/widget_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_word_hint"
+            android:textColor="#4C5F51"
+            android:textSize="10dp" />
+    </LinearLayout>
 </LinearLayout>

@@ -127,12 +127,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Rounded.Home),
-    CHARACTERS("Characters", Icons.Rounded.GridView),
-    PROGRESS("Progress", Icons.Rounded.Insights),
-    PRACTICE("Practice", Icons.Rounded.Brush),
-    SETTINGS("Settings", Icons.Rounded.Settings),
+private enum class Tab(
+    val label: String,
+    val shortLabel: String,
+    val icon: ImageVector,
+) {
+    HOME("Home", "Home", Icons.Rounded.Home),
+    CHARACTERS("Characters", "Chars", Icons.Rounded.GridView),
+    PROGRESS("Progress", "Stats", Icons.Rounded.Insights),
+    PRACTICE("Practice", "Draw", Icons.Rounded.Brush),
+    SETTINGS("Settings", "Setup", Icons.Rounded.Settings),
 }
 
 /**
@@ -2068,6 +2072,8 @@ private fun NavigationRail(
 
 @Composable
 private fun RailItem(tab: Tab, selected: Boolean, onClick: () -> Unit) {
+    val fontScale = LocalDensity.current.fontScale
+    val label = if (fontScale > 1.15f) tab.shortLabel else tab.label
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
@@ -2091,9 +2097,12 @@ private fun RailItem(tab: Tab, selected: Boolean, onClick: () -> Unit) {
             Icon(tab.icon, contentDescription = tab.label, tint = InkDark, modifier = Modifier.size(22.dp))
             Spacer(Modifier.height(4.dp))
             Text(
-                tab.label,
+                label,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) InkDark else InkSoft,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -2150,11 +2159,7 @@ private fun BihuaBottomBar(
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            if (item == Tab.CHARACTERS && fontScale > 1.15f) {
-                                "Chars"
-                            } else {
-                                item.label
-                            },
+                            if (fontScale > 1.15f) item.shortLabel else item.label,
                             style = MaterialTheme.typography.labelSmall,
                             color = if (active) InkDark else InkSoft,
                             maxLines = 1,

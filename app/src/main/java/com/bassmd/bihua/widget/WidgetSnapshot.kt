@@ -7,6 +7,7 @@ import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.progress.ProgressStore
 import com.bassmd.bihua.settings.AppSettings
+import com.bassmd.bihua.settings.MascotOutfit
 import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.Vacation
 import java.time.LocalDate
@@ -19,6 +20,7 @@ data class WidgetSnapshot(
     val newLeft: Int,
     val word: WordContext?,
     val vacation: Boolean,
+    val outfit: MascotOutfit = MascotOutfit.AUTO,
     val placeholder: Boolean = false,
 ) {
     companion object {
@@ -53,6 +55,7 @@ data class WidgetSnapshot(
                         newLeft = newLeft,
                         word = word,
                         vacation = Vacation.isActive(settings.vacationStartedAtMs),
+                        outfit = settings.mascotOutfit,
                     )
                 } finally {
                     runCatching { repository.close() }
@@ -67,6 +70,7 @@ data class WidgetSnapshot(
             newLeft = 0,
             word = null,
             vacation = false,
+            outfit = MascotOutfit.AUTO,
             placeholder = true,
         )
     }

@@ -4,12 +4,54 @@ import com.bassmd.bihua.fsrs.Fsrs7
 import com.bassmd.bihua.fsrs.FsrsWeights
 import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.FsrsProfile
+import com.bassmd.bihua.settings.MascotOutfit
 import com.bassmd.bihua.settings.UserProfile
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsTransferTest {
+    @Test
+    fun backupCarriesMeaningTourAndSynonyms() {
+        val settings = AppSettings(
+            meaningPractice = true,
+            ankiMeaning = true,
+            meaningSynonyms = mapOf(
+                "U+611B" to listOf("affection", "love"),
+            ),
+            tourInviteDismissed = true,
+            mascotOutfit = MascotOutfit.WITCH,
+        )
+        val bundle = BackupBundle(
+            exportedAtEpochMs = 1L,
+            profile = UserProfile(displayName = "Test"),
+            settings = settings,
+        )
+        val decoded = BackupCodec.decode(BackupCodec.encode(bundle))
+        assertTrue(decoded.settings.meaningPractice)
+        assertTrue(decoded.settings.ankiMeaning)
+        assertEquals(
+            listOf("affection", "love"),
+            decoded.settings.meaningSynonyms["U+611B"],
+        )
+        assertTrue(decoded.settings.tourInviteDismissed)
+        assertEquals(MascotOutfit.WITCH, decoded.settings.mascotOutfit)
+    }
+
+    @Test
+    fun settingsFromBeforeTheNewFieldsUseSafeDefaults() {
+        val decoded = Json { ignoreUnknownKeys = true }
+            .decodeFromString(AppSettings.serializer(), """{"onboarded":true}""")
+            .sanitized()
+        assertFalse(decoded.meaningPractice)
+        assertFalse(decoded.ankiMeaning)
+        assertTrue(decoded.meaningSynonyms.isEmpty())
+        assertFalse(decoded.tourInviteDismissed)
+        assertEquals(MascotOutfit.AUTO, decoded.mascotOutfit)
+    }
+
     @Test
     fun backupCarriesDayBoundaryWeightsAndSuspensions() {
         val settings = AppSettings(

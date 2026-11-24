@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,6 +54,7 @@ import androidx.compose.material.icons.rounded.FlightTakeoff
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -244,6 +247,7 @@ fun SettingsScreen(
     var weightMoreMenu by remember { mutableStateOf(false) }
     var showFitScope by remember { mutableStateOf(false) }
     var showWeightsHelp by remember { mutableStateOf(false) }
+    var showOutfit by remember { mutableStateOf(false) }
     var confirmMature by remember { mutableStateOf(false) }
     var reminderHourMenu by remember { mutableStateOf(false) }
     val weightProfileLabel = when (weightProfile) {
@@ -2451,6 +2455,30 @@ fun SettingsScreen(
                             checked = settings.soundEffects,
                             onCheckedChange = { update(settings.copy(soundEffects = it)) },
                         )
+                        if (settings.soundEffects) {
+                            TextButton(
+                                onClick = {
+                                    com.bassmd.bihua.audio.Sfx.play(
+                                        com.bassmd.bihua.audio.Sfx.Effect.CHECK,
+                                    )
+                                },
+                            ) { Text("Play a test sound") }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        SettingTitle(
+                            icon = Icons.Rounded.Face,
+                            title = "Mò's widget outfit",
+                            subtitle = "Auto follows the hour and celebrates a clear desk.",
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                settings.mascotOutfit.label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = InkDark,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { showOutfit = true }) { Text("Change") }
+                        }
                     }
                 }
             }
@@ -3267,6 +3295,48 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showFitScope = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showOutfit) {
+        AlertDialog(
+            onDismissRequest = { showOutfit = false },
+            title = { Text("Mò's outfit") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Dress Mò on the home-screen widgets. Auto follows the hour and celebrates a clear desk.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    MascotOutfit.entries.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    update(settings.copy(mascotOutfit = option))
+                                    showOutfit = false
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = settings.mascotOutfit == option,
+                                onClick = {
+                                    update(settings.copy(mascotOutfit = option))
+                                    showOutfit = false
+                                },
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(option.label, style = MaterialTheme.typography.bodyMedium, color = InkDark)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showOutfit = false }) { Text("Close") }
             },
         )
     }

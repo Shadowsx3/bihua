@@ -36,11 +36,13 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Guided tour | Optional live overlay with Mò over real screens; spotlight, gestures, props, typewriter line, sound cues | A |
 | Tour invite | Dismissible Home card once; “Not now” goes straight to the app | A |
 | Tour replay | Settings → Help & tour → Start tour; Skip/Back/Next and final Back to app | A |
-| Grading help | Again/Hard/Good/Easy explained in plain words with colour | A |
+| Grading help | Again/Hard/Good/Easy explained in plain words with colour; “?” in the session too | P |
 | Paper and lists help | Exact Settings paths for printable sheets and saved lists | A |
 | Reduce motion + TalkBack | No typewriter, bobbing, pulse, or confetti; full line read at once | P |
 | Sound effects | Synthesised tick, check, grade, add, tour, and session cues; one Settings switch | P |
-| Widget pet costumes | Study cap or word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat when the desk is clear | P |
+| Widget pet costumes | Study cap or word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat when the desk is clear; Settings can pin one | P |
+| Widget day-part backgrounds | Warm morning, mint afternoon, lilac evening, deep night with light text and soft glows | P |
+| Widget stat blocks | Today shows review and lesson counts; Word shows two chips below the definition | P |
 | Completion party hat | Mò wears a party hat on the session-complete panel | P |
 
 ## Writing

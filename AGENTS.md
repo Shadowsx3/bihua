@@ -59,11 +59,26 @@ Keep this in mind for every screen:
 - Sound cues are optional (`soundEffects`) and synthesised in `audio/Sfx.kt`.
   Use them for meaningful feedback, not every tap.
 - The widget pet wears one tiny costume from the same Mò palette: a graduation
-  hat while work waits by day, a monocle on the Word widget by day, a witch hat
-  in the evening, a vampire at night, a nightcap on vacation, and a party hat
-  when the desk is clear. The in-app completion panel also uses the party hat.
-  Keep the widget layer-lists aligned to the 1024 art; do not draw a second
-  widget pet. Hats sit on the 1024 head line, not over the eyes.
+  hat while work waits by day, a monocle on the Word widget, a witch hat in the
+  evening, a vampire at night, a nightcap on vacation, and a party hat when the
+  desk is clear. Settings → Display → Mò's widget outfit can pin one costume;
+  Auto keeps the hour/state choice. The in-app completion panel still uses the
+  party hat. Keep the widget layer-lists aligned to the 1024 art; do not draw a
+  second widget pet. Hats sit on the 1024 head line, not over the eyes.
+- Widgets use `dp` text sizes, not `sp`, so the 2×2 and 4×2 cells do not clip at
+  1.5× launcher font scale. App screens still use `sp`.
+- Widget backgrounds follow the hour: warm morning, mint afternoon, lilac
+  evening, and deep night with light text. Decorative glows sit at the top-right
+  behind the pet. Keep text out of the motif area.
+- The Today widget shows the review and lesson counts as two big stat blocks,
+  then one flavor line and a bottom action. The Word widget keeps the word as
+  the hero on the left, the pet on the right, two review/lesson chips below the
+  definition, and the tip/footer at the bottom. Do not put a status line between
+  the reading and the definition.
+- The all-clear hero says “All done for today” once. Do not add a duplicate
+  “All caught up” pill or a decorative pet that makes the card taller.
+- The grade prompt in a session has a “?” that opens the plain-word legend.
+  Keep it out of the way of the grade buttons.
 
 ## Home and review feel
 

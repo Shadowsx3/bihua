@@ -6,6 +6,7 @@ import android.media.AudioTrack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -53,14 +54,23 @@ object Sfx {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val cache = HashMap<Effect, ShortArray>()
+    private val queue = Channel<Effect>(Channel.UNLIMITED)
     private const val SAMPLE_RATE = 44_100
+
+    init {
+        // One short cue at a time: quick taps should not stack AudioTracks.
+        scope.launch {
+            for (effect in queue) {
+                if (!enabled) continue
+                val samples = synchronized(cache) { cache.getOrPut(effect) { synthesise(effect) } }
+                runCatching { playSamples(samples) }
+            }
+        }
+    }
 
     fun play(effect: Effect) {
         if (!enabled) return
-        val samples = synchronized(cache) { cache.getOrPut(effect) { synthesise(effect) } }
-        scope.launch {
-            runCatching { playSamples(samples) }
-        }
+        queue.trySend(effect)
     }
 
     private suspend fun playSamples(samples: ShortArray) {

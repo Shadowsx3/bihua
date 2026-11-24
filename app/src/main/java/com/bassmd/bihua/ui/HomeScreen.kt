@@ -84,7 +84,7 @@ import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.ui.components.DayDetailSheet
 import com.bassmd.bihua.ui.components.Dot
 import com.bassmd.bihua.learn.LearnSessionState
-import com.bassmd.bihua.ui.components.InkMascot
+import com.bassmd.bihua.ui.components.MascotHeadwear
 import com.bassmd.bihua.ui.components.PrimaryAction
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.ProfileAvatar
@@ -825,17 +825,15 @@ private fun StudyHero(
             .padding(22.dp),
     ) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Pill(
-                    text = when {
-                        vacation -> "Vacation"
-                        due + fresh == 0 -> "All caught up"
-                        else -> "Today"
-                    },
-                    color = Color.White.copy(alpha = 0.42f),
-                )
+            if (vacation || due + fresh > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Pill(
+                        text = if (vacation) "Vacation" else "Today",
+                        color = Color.White.copy(alpha = 0.42f),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
-            Spacer(Modifier.height(16.dp))
             Text(
                 when {
                     vacation -> "Reviews are paused"

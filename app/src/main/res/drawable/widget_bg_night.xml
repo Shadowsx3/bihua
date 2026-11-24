@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:endColor="#24382C"
+                android:startColor="#0E1913" />
+            <corners android:radius="24dp" />
+            <stroke
+                android:width="2dp"
+                android:color="#3E5B49" />
+        </shape>
+    </item>
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:drawable="@drawable/widget_decor_glow_night"
+        android:gravity="top|end"
+        android:right="-18dp"
+        android:top="-18dp" />
+</layer-list>

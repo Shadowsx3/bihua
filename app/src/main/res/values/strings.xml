@@ -91,4 +91,9 @@
     <string name="widget_word_meaning" translatable="false">a smile</string>
     <string name="widget_word_note" translatable="false">A gentle start.</string>
     <string name="widget_word_hint" translatable="false">Tap to open</string>
+    <string name="widget_word_status" translatable="false">5 reviews · 2 lessons</string>
+    <string name="widget_word_tip" translatable="false">Write it once from memory.</string>
+    <string name="widget_word_reviews" translatable="false">5 reviews</string>
+    <string name="widget_word_lessons" translatable="false">2 lessons</string>
+    <string name="widget_word_clear" translatable="false">All clear</string>
 </resources>

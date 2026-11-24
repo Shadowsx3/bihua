@@ -3,14 +3,14 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
+    android:background="@drawable/widget_bg_morning"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
+        android:layout_height="3dp"
         android:background="#F3C85A"
         android:importantForAccessibility="no" />
 
@@ -19,12 +19,12 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingTop="10dp">
+        android:paddingTop="4dp">
 
         <ImageView
             android:id="@+id/widget_icon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:importantForAccessibility="no"
             android:src="@drawable/ic_widget_sun" />
 
@@ -32,53 +32,126 @@
             android:id="@+id/widget_greeting"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="4dp"
             android:layout_weight="1"
+            android:ellipsize="end"
             android:fontFamily="sans-serif-medium"
+            android:maxLines="2"
             android:text="@string/widget_today_greeting"
             android:textColor="#4C5F51"
-            android:textSize="13sp" />
+            android:textSize="11dp" />
 
         <ImageView
             android:id="@+id/widget_pet"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:importantForAccessibility="no"
             android:scaleType="fitCenter"
+            android:scaleX="1.10"
+            android:scaleY="1.10"
             android:src="@drawable/widget_pet_hat" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/widget_headline"
+    <LinearLayout
+        android:id="@+id/widget_stats"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/widget_reviews_block"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_reviews_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="5"
+                android:textColor="#1F2B23"
+                android:textSize="22dp" />
+
+            <TextView
+                android:id="@+id/widget_reviews_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="reviews"
+                android:textColor="#4C5F51"
+                android:textSize="9dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_lessons_block"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_lessons_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="2"
+                android:textColor="#1F2B23"
+                android:textSize="22dp" />
+
+            <TextView
+                android:id="@+id/widget_lessons_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="new lessons"
+                android:textColor="#4C5F51"
+                android:textSize="9dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_clear"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:fontFamily="sans-serif-medium"
+        android:gravity="center"
         android:maxLines="2"
-        android:text="@string/widget_today_headline"
+        android:text="All clear"
         android:textColor="#1F2B23"
-        android:textSize="24sp" />
+        android:textSize="19dp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_detail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:maxLines="2"
+        android:ellipsize="end"
+        android:maxLines="1"
         android:text="@string/widget_today_detail"
         android:textColor="#4C5F51"
-        android:textSize="13sp" />
+        android:textSize="10dp" />
 
     <TextView
         android:id="@+id/widget_action"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_height="28dp"
+        android:layout_marginTop="4dp"
         android:background="@drawable/widget_button"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
+        android:includeFontPadding="false"
+        android:maxLines="1"
         android:text="@string/widget_action_study"
         android:textColor="#1F2B23"
-        android:textSize="13sp" />
+        android:textSize="12dp" />
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.bassmd.bihua.widget
 
+import com.bassmd.bihua.settings.MascotOutfit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -64,6 +65,24 @@ class WidgetCopyTest {
         assertEquals(PetProp.MONOCLE, WidgetCopy.wordPet(3, 0, false, hour = 19))
         assertEquals(PetProp.MONOCLE, WidgetCopy.wordPet(3, 0, false, hour = 23))
         assertEquals(PetProp.PARTY, WidgetCopy.wordPet(0, 0, false, hour = 23))
+    }
+
+    @Test
+    fun theBigWidgetShowsReviewsAndLessons() {
+        assertEquals("5 reviews · 2 lessons", WidgetCopy.wordStatus(5, 2, false))
+        assertEquals("1 review · 1 lesson", WidgetCopy.wordStatus(1, 1, false))
+        assertEquals("5 reviews waiting", WidgetCopy.wordStatus(5, 0, false))
+        assertEquals("2 new lessons", WidgetCopy.wordStatus(0, 2, false))
+        assertEquals("1 new lesson", WidgetCopy.wordStatus(0, 1, false))
+        assertEquals("All clear", WidgetCopy.wordStatus(0, 0, false))
+        assertEquals("Reviews paused", WidgetCopy.wordStatus(5, 2, true))
+    }
+
+    @Test
+    fun anExplicitOutfitWinsButAutoKeepsTheDesk() {
+        assertEquals(PetProp.HAT, WidgetCopy.outfit(PetProp.PARTY, MascotOutfit.STUDY))
+        assertEquals(PetProp.VAMPIRE, WidgetCopy.outfit(PetProp.HAT, MascotOutfit.VAMPIRE))
+        assertEquals(PetProp.PARTY, WidgetCopy.outfit(PetProp.PARTY, MascotOutfit.AUTO))
     }
 
     @Test

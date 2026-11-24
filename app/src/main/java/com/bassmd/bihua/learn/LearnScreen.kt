@@ -136,6 +136,7 @@ import com.bassmd.bihua.ui.FoldState
 import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
 import com.bassmd.bihua.ui.appStatusBarsPadding
+import com.bassmd.bihua.ui.components.GradeHelpButton
 import com.bassmd.bihua.ui.components.HighlightedText
 import com.bassmd.bihua.ui.components.InkHistoryPlaybackBar
 import com.bassmd.bihua.ui.components.InkSeal
@@ -1835,7 +1836,7 @@ private fun GradeChoices(
             }
             Surface(
                 onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                     com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.GRADE)
                     onGrade(grade)
                 },
@@ -1975,11 +1976,18 @@ private fun AnkiWritingRecall(
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                Text(
-                    "How did that feel?",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = InkDark,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "How did that feel?",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = InkDark,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GradeHelpButton()
+                }
                 Text(
                     "Choose the grade you would have given yourself.",
                     style = MaterialTheme.typography.bodySmall,
@@ -2324,11 +2332,22 @@ private fun MeaningReview(
                     }
                 }
                 Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        if (practiceOnly) "Practice only. Schedule unchanged." else "How did that feel?",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = InkDark,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (practiceOnly) {
+                                "Practice only. Schedule unchanged."
+                            } else {
+                                "How did that feel?"
+                            },
+                            style = MaterialTheme.typography.titleLarge,
+                            color = InkDark,
+                            modifier = Modifier.weight(1f),
+                        )
+                        GradeHelpButton()
+                    }
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Choose a grade. Writing stays the core of the session.",
@@ -2652,12 +2671,18 @@ private fun PronunciationReview(
                     .fillMaxWidth()
                     .bringIntoViewRequester(gradeRequester),
             ) {
-                Text(
-                    "How did that feel?",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = InkDark,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "How did that feel?",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = InkDark,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GradeHelpButton()
+                }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "Choose a grade.",

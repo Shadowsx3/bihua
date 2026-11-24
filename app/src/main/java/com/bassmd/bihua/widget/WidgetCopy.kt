@@ -1,5 +1,7 @@
 package com.bassmd.bihua.widget
 
+import com.bassmd.bihua.settings.MascotOutfit
+
 /** Time-aware copy for the home-screen widgets. Pure, so it is easy to test. */
 enum class DayPart { MORNING, AFTERNOON, EVENING, NIGHT }
 
@@ -153,6 +155,28 @@ object WidgetCopy {
         vacation -> PetProp.NIGHTCAP
         due == 0 && newLeft == 0 -> PetProp.PARTY
         else -> PetProp.MONOCLE
+    }
+
+    /** Reviews and lessons at a glance for the larger Word widget. */
+    fun wordStatus(due: Int, newLeft: Int, vacation: Boolean): String = when {
+        vacation -> "Reviews paused"
+        due > 0 && newLeft > 0 ->
+            "$due ${if (due == 1) "review" else "reviews"} · " +
+                "$newLeft ${if (newLeft == 1) "lesson" else "lessons"}"
+        due > 0 -> "$due ${if (due == 1) "review" else "reviews"} waiting"
+        newLeft > 0 -> "$newLeft new ${if (newLeft == 1) "lesson" else "lessons"}"
+        else -> "All clear"
+    }
+
+    /** Explicit wardrobe choice wins; Auto keeps the hour/state costume. */
+    fun outfit(base: PetProp, choice: MascotOutfit): PetProp = when (choice) {
+        MascotOutfit.AUTO -> base
+        MascotOutfit.STUDY -> PetProp.HAT
+        MascotOutfit.MONOCLE -> PetProp.MONOCLE
+        MascotOutfit.WITCH -> PetProp.WITCH
+        MascotOutfit.VAMPIRE -> PetProp.VAMPIRE
+        MascotOutfit.NIGHTCAP -> PetProp.NIGHTCAP
+        MascotOutfit.PARTY -> PetProp.PARTY
     }
 
     fun word(hour: Int): WordCopy = when (dayPart(hour)) {

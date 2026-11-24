@@ -1,6 +1,7 @@
 package com.bassmd.bihua.settings
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,6 +26,7 @@ class SettingsSanitizeTest {
         assertFalse(settings.meaningPractice)
         assertTrue(settings.meaningSynonyms.isEmpty())
         assertFalse(settings.tourInviteDismissed)
+        assertEquals(com.bassmd.bihua.settings.MascotOutfit.AUTO, settings.mascotOutfit)
     }
 
     @Test

@@ -14,6 +14,40 @@ internal object WidgetLook {
         DayPart.NIGHT -> 0xFF0389C1.toInt()
     }
 
+    fun background(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.MORNING -> R.drawable.widget_bg_morning
+        DayPart.AFTERNOON -> R.drawable.widget_bg_afternoon
+        DayPart.EVENING -> R.drawable.widget_bg_evening
+        DayPart.NIGHT -> R.drawable.widget_bg_night
+    }
+
+    fun text(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> 0xFFF7F2E6.toInt()
+        else -> 0xFF1F2B23.toInt()
+    }
+
+    fun softText(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> 0xFFC8D6CC.toInt()
+        else -> 0xFF4C5F51.toInt()
+    }
+
+    fun statusBackground(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> R.drawable.widget_status_bg_night
+        else -> R.drawable.widget_status_bg
+    }
+
+    fun reviewChip(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> R.drawable.widget_chip_rose_night
+        else -> R.drawable.widget_chip_rose
+    }
+
+    fun lessonChip(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> R.drawable.widget_chip_mint_night
+        else -> R.drawable.widget_chip_mint
+    }
+
+    const val BUTTON_TEXT: Int = 0xFF1F2B23.toInt()
+
     fun icon(icon: WidgetIcon): Int = when (icon) {
         WidgetIcon.SUN -> R.drawable.ic_widget_sun
         WidgetIcon.MOON -> R.drawable.ic_widget_moon

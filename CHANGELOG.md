@@ -45,7 +45,15 @@
 - Mò now dresses for the desk: a study cap in the morning or afternoon, a
   monocle on the Word widget, a witch hat in the evening, a vampire at night, a
   nightcap on vacation, and a party hat when reviews and lessons are clear. The
-  session-complete panel uses the party hat too.
+  session-complete panel uses the party hat too. Settings → Display can pin a
+  widget outfit.
+- Home-screen widgets now have hour-aware backgrounds, review/lesson stat
+  blocks, a bigger pet, and a stable layout at 1.5× launcher text.
+- The Word widget keeps the word as the hero and moves the review/lesson chips
+  below the definition.
+- The all-clear Home card loses the duplicate “All caught up” pill and the
+  decorative pet.
+- The session grade prompt has a “?” that opens the plain-word legend.
 
 ## 1.0.9 — 2026-11-23
 
