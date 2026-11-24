@@ -915,12 +915,19 @@ class ProgressStore(private val context: Context) :
     /**
      * Grade counts for the last [days] days.
      */
-    suspend fun gradeMix(days: Int = 30): GradeMix = withContext(Dispatchers.IO) {
+    suspend fun gradeMix(days: Int = 30, mode: String? = null): GradeMix = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis() - days * 86_400_000L
         val counts = IntArray(5)
+        val modeClause = if (mode == null) "" else " AND c.mode=?"
+        val args = if (mode == null) {
+            arrayOf(start.toString())
+        } else {
+            arrayOf(start.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT grade, COUNT(*) FROM review_log WHERE reviewed_at>=? AND reverted=0 GROUP BY grade",
-            arrayOf(start.toString()),
+            "SELECT rl.grade, COUNT(*) FROM review_log rl JOIN card c ON c.id=rl.card_id " +
+                "WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause GROUP BY rl.grade",
+            args,
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val grade = cursor.getInt(0)
@@ -972,15 +979,26 @@ class ProgressStore(private val context: Context) :
         }
 
     /** Stroke-weighted writing pace over [days], ending [offsetDays] ago. */
-    suspend fun writingPace(days: Int = 30, offsetDays: Int = 0): WritingPace? = withContext(Dispatchers.IO) {
+    suspend fun writingPace(
+        days: Int = 30,
+        offsetDays: Int = 0,
+        mode: String? = null,
+    ): WritingPace? = withContext(Dispatchers.IO) {
         val day = 86_400_000L
         val end = System.currentTimeMillis() - offsetDays * day
         val start = end - days * day
+        val modeClause = if (mode == null) "" else " AND c.mode=?"
+        val args = if (mode == null) {
+            arrayOf(start.toString(), end.toString())
+        } else {
+            arrayOf(start.toString(), end.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT COALESCE(SUM(strokes), 0), COALESCE(SUM(elapsed_ms), 0) " +
-                "FROM review_log WHERE task='WRITE' AND strokes>0 AND elapsed_ms>0 " +
-                "AND reverted=0 AND reviewed_at>=? AND reviewed_at<?",
-            arrayOf(start.toString(), end.toString()),
+            "SELECT COALESCE(SUM(rl.strokes), 0), COALESCE(SUM(rl.elapsed_ms), 0) " +
+                "FROM review_log rl JOIN card c ON c.id=rl.card_id " +
+                "WHERE rl.task='WRITE' AND rl.strokes>0 AND rl.elapsed_ms>0 " +
+                "AND rl.reverted=0 AND rl.reviewed_at>=? AND rl.reviewed_at<?$modeClause",
+            args,
         ).use { cursor ->
             if (!cursor.moveToFirst()) return@use null
             val strokes = cursor.getInt(0)
@@ -1045,13 +1063,21 @@ class ProgressStore(private val context: Context) :
     }
 
     /** Total time spent writing inside graded recalls over the last [days]. */
-    suspend fun practiceTimeMs(days: Int = 30): Long = withContext(Dispatchers.IO) {
-        val start = System.currentTimeMillis() - days * 86_400_000L
-        readableDatabase.rawQuery(
-            "SELECT COALESCE(SUM(elapsed_ms), 0) FROM review_log WHERE reviewed_at>=? AND reverted=0",
-            arrayOf(start.toString()),
-        ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
-    }
+    suspend fun practiceTimeMs(days: Int = 30, mode: String? = null): Long =
+        withContext(Dispatchers.IO) {
+            val start = System.currentTimeMillis() - days * 86_400_000L
+            val modeClause = if (mode == null) "" else " AND c.mode=?"
+            val args = if (mode == null) {
+                arrayOf(start.toString())
+            } else {
+                arrayOf(start.toString(), mode)
+            }
+            readableDatabase.rawQuery(
+                "SELECT COALESCE(SUM(rl.elapsed_ms), 0) FROM review_log rl " +
+                    "JOIN card c ON c.id=rl.card_id WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause",
+                args,
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
+        }
 
     /** Every graded review as CSV, for a spreadsheet or a personal archive. */
     suspend fun reviewCsv(names: Map<String, String> = emptyMap()): String = withContext(Dispatchers.IO) {
@@ -1078,13 +1104,23 @@ class ProgressStore(private val context: Context) :
     }
 
     /** Review quality split by task over the last [days]. */
-    suspend fun taskStats(days: Int = 30): Map<String, TaskStat> = withContext(Dispatchers.IO) {
+    suspend fun taskStats(
+        days: Int = 30,
+        mode: String? = null,
+    ): Map<String, TaskStat> = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis() - days * 86_400_000L
         val result = LinkedHashMap<String, TaskStat>()
+        val modeClause = if (mode == null) "" else " AND c.mode=?"
+        val args = if (mode == null) {
+            arrayOf(start.toString())
+        } else {
+            arrayOf(start.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT task, COUNT(*), SUM(CASE WHEN grade>1 THEN 1 ELSE 0 END), AVG(grade) " +
-                "FROM review_log WHERE reviewed_at>=? AND reverted=0 GROUP BY task",
-            arrayOf(start.toString()),
+            "SELECT rl.task, COUNT(*), SUM(CASE WHEN rl.grade>1 THEN 1 ELSE 0 END), AVG(rl.grade) " +
+                "FROM review_log rl JOIN card c ON c.id=rl.card_id " +
+                "WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause GROUP BY rl.task",
+            args,
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 result[cursor.getString(0)] = TaskStat(
@@ -1129,7 +1165,11 @@ class ProgressStore(private val context: Context) :
     }
 
     /** The last [days] study dates, with review and first-learned counts. */
-    suspend fun activity(days: Int = 35, dayStartHour: Int = DayBoundary.DEFAULT_HOUR): List<DayActivity> =
+    suspend fun activity(
+        days: Int = 35,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        mode: String? = null,
+    ): List<DayActivity> =
         withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
         val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
@@ -1137,18 +1177,31 @@ class ProgressStore(private val context: Context) :
         val startMs = DayBoundary.startMs(first, dayStartHour, zone)
         val reviews = HashMap<LocalDate, Int>()
         val learned = HashMap<LocalDate, Int>()
+        val reviewMode = if (mode == null) "" else " AND c.mode=?"
+        val reviewArgs = if (mode == null) {
+            arrayOf(startMs.toString())
+        } else {
+            arrayOf(startMs.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT reviewed_at FROM review_log WHERE reviewed_at>=? AND reverted=0",
-            arrayOf(startMs.toString()),
+            "SELECT rl.reviewed_at FROM review_log rl JOIN card c ON c.id=rl.card_id " +
+                "WHERE rl.reviewed_at>=? AND rl.reverted=0$reviewMode",
+            reviewArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)
                 reviews[date] = (reviews[date] ?: 0) + 1
             }
         }
+        val learnedMode = if (mode == null) "" else " AND mode=?"
+        val learnedArgs = if (mode == null) {
+            arrayOf(startMs.toString())
+        } else {
+            arrayOf(startMs.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT introduced_at FROM card WHERE introduced_at>=?",
-            arrayOf(startMs.toString()),
+            "SELECT introduced_at FROM card WHERE introduced_at>=?$learnedMode",
+            learnedArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)
@@ -1166,20 +1219,36 @@ class ProgressStore(private val context: Context) :
     }
 
     /** Cumulative characters learned per study day, for the growth chart. */
-    suspend fun learnedHistory(days: Int = 120, dayStartHour: Int = DayBoundary.DEFAULT_HOUR): List<DayActivity> =
+    suspend fun learnedHistory(
+        days: Int = 120,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        mode: String? = null,
+    ): List<DayActivity> =
         withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
         val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
         val first = today.minusDays((days - 1).toLong())
         val startMs = DayBoundary.startMs(first, dayStartHour, zone)
         val perDay = HashMap<LocalDate, Int>()
+        val beforeMode = if (mode == null) "" else " AND mode=?"
+        val beforeArgs = if (mode == null) {
+            arrayOf(startMs.toString())
+        } else {
+            arrayOf(startMs.toString(), mode)
+        }
         val totalBefore = readableDatabase.rawQuery(
-            "SELECT COUNT(*) FROM card WHERE introduced_at<?",
-            arrayOf(startMs.toString()),
+            "SELECT COUNT(*) FROM card WHERE introduced_at<?$beforeMode",
+            beforeArgs,
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+        val sinceMode = if (mode == null) "" else " AND mode=?"
+        val sinceArgs = if (mode == null) {
+            arrayOf(startMs.toString())
+        } else {
+            arrayOf(startMs.toString(), mode)
+        }
         readableDatabase.rawQuery(
-            "SELECT introduced_at FROM card WHERE introduced_at>=?",
-            arrayOf(startMs.toString()),
+            "SELECT introduced_at FROM card WHERE introduced_at>=?$sinceMode",
+            sinceArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val date = DayBoundary.date(cursor.getLong(0), dayStartHour, zone)

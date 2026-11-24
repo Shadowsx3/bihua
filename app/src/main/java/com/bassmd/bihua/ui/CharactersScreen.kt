@@ -74,6 +74,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -1019,6 +1020,7 @@ private fun CharacterDetail(
 ) {
     val repository = LocalContentRepository.current
     val progress = LocalProgressStore.current
+    val largeText = LocalDensity.current.fontScale > 1.25f
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var words by remember(entry.id, includeMatureContent) {
         mutableStateOf(entry.words.visible(includeMatureContent))
@@ -1146,7 +1148,15 @@ private fun CharacterDetail(
                                 synonymsOpen = true
                             },
                         ) {
-                            Text(if (synonymList.isEmpty()) "Add synonym" else "Add another")
+                            Text(
+                                if (largeText) {
+                                    "Add"
+                                } else if (synonymList.isEmpty()) {
+                                    "Add synonym"
+                                } else {
+                                    "Add another"
+                                },
+                            )
                         }
                     }
                     if (synonymList.isEmpty()) {

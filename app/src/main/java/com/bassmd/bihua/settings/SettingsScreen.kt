@@ -121,6 +121,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -132,6 +133,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.bassmd.bihua.BuildConfig
@@ -3316,32 +3318,45 @@ fun SettingsScreen(
                         color = InkSoft,
                     )
                     Spacer(Modifier.height(6.dp))
-                    MascotOutfit.entries.forEach { option ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .semantics(mergeDescendants = true) {
-                                    contentDescription = option.label
-                                    role = Role.RadioButton
-                                    this.selected = settings.mascotOutfit == option
-                                }
-                                .clickable {
-                                    update(settings.copy(mascotOutfit = option))
-                                    showOutfit = false
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(
-                                selected = settings.mascotOutfit == option,
-                                onClick = {
-                                    update(settings.copy(mascotOutfit = option))
-                                    showOutfit = false
-                                },
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(option.label, style = MaterialTheme.typography.bodyMedium, color = InkDark)
+                    val outfitColumns = if (LocalDensity.current.fontScale > 1.7f) 1 else 2
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        maxItemsInEachRow = outfitColumns,
+                    ) {
+                        MascotOutfit.entries.forEach { option ->
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .semantics(mergeDescendants = true) {
+                                        contentDescription = option.label
+                                        role = Role.RadioButton
+                                        this.selected = settings.mascotOutfit == option
+                                    }
+                                    .clickable {
+                                        update(settings.copy(mascotOutfit = option))
+                                        showOutfit = false
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = settings.mascotOutfit == option,
+                                    onClick = {
+                                        update(settings.copy(mascotOutfit = option))
+                                        showOutfit = false
+                                    },
+                                    modifier = Modifier.clearAndSetSemantics { },
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    option.label,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkDark,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }

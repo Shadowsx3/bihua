@@ -532,8 +532,26 @@ fun BihuaApp(
             )
         }
     }
-    val activityDays by produceState<List<DayActivity>>(emptyList(), progressVersion, today, settings.dayStartHour) {
-        value = withContext(Dispatchers.IO) { progressStore.activity(35, settings.dayStartHour) }
+    val activityDays by produceState<List<DayActivity>>(
+        emptyList(),
+        progressVersion,
+        today,
+        settings.dayStartHour,
+        mode,
+    ) {
+        value = withContext(Dispatchers.IO) { progressStore.activity(35, settings.dayStartHour, mode.name) }
+    }
+    val streakActivity by produceState<List<DayActivity>>(
+        emptyList(),
+        progressVersion,
+        today,
+        settings.dayStartHour,
+        mode,
+    ) {
+        value = withContext(Dispatchers.IO) { progressStore.activity(366, settings.dayStartHour, mode.name) }
+    }
+    val streakDays = remember(streakActivity) {
+        com.bassmd.bihua.progress.studyStreak(streakActivity)
     }
     val dueForecast by produceState<List<DueDay>>(
         emptyList(),
@@ -572,9 +590,10 @@ fun BihuaApp(
         today,
         settings.dayStartHour,
         progressRange,
+        mode,
     ) {
         value = withContext(Dispatchers.IO) {
-            progressStore.activity(progressRange.days, settings.dayStartHour)
+            progressStore.activity(progressRange.days, settings.dayStartHour, mode.name)
         }
     }
     val progressHistory by produceState<List<DayActivity>>(
@@ -583,9 +602,10 @@ fun BihuaApp(
         today,
         settings.dayStartHour,
         progressRange,
+        mode,
     ) {
         value = withContext(Dispatchers.IO) {
-            progressStore.learnedHistory(progressRange.days, settings.dayStartHour)
+            progressStore.learnedHistory(progressRange.days, settings.dayStartHour, mode.name)
         }
     }
     val recentMistakes by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters) {
@@ -863,8 +883,9 @@ fun BihuaApp(
         com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0),
         progressVersion,
         progressRange,
+        mode,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.gradeMix(progressRange.days) }
+        value = withContext(Dispatchers.IO) { progressStore.gradeMix(progressRange.days, mode.name) }
     }
     val reviewTotals by produceState(0 to 0f, progressVersion, visibleCharacters, settings) {
         value = withContext(Dispatchers.IO) {
@@ -885,31 +906,38 @@ fun BihuaApp(
             }
         }
     }
-    val practiceTimeMs by produceState(0L, progressVersion, progressRange) {
-        value = withContext(Dispatchers.IO) { progressStore.practiceTimeMs(progressRange.days) }
+    val practiceTimeMs by produceState(0L, progressVersion, progressRange, mode) {
+        value = withContext(Dispatchers.IO) { progressStore.practiceTimeMs(progressRange.days, mode.name) }
     }
     val writingPace by produceState<com.bassmd.bihua.progress.WritingPace?>(
         null,
         progressVersion,
         progressRange,
+        mode,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.writingPace(progressRange.days) }
+        value = withContext(Dispatchers.IO) { progressStore.writingPace(progressRange.days, mode = mode.name) }
     }
     val previousWritingPace by produceState<com.bassmd.bihua.progress.WritingPace?>(
         null,
         progressVersion,
         progressRange,
+        mode,
     ) {
         value = withContext(Dispatchers.IO) {
-            progressStore.writingPace(progressRange.days, offsetDays = progressRange.days)
+            progressStore.writingPace(
+                progressRange.days,
+                offsetDays = progressRange.days,
+                mode = mode.name,
+            )
         }
     }
     val taskStats by produceState(
         emptyMap<String, com.bassmd.bihua.progress.TaskStat>(),
         progressVersion,
         progressRange,
+        mode,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.taskStats(progressRange.days) }
+        value = withContext(Dispatchers.IO) { progressStore.taskStats(progressRange.days, mode.name) }
     }
     val memoryBuckets: List<com.bassmd.bihua.progress.MemoryBucket> =
         remember(visibleCharacters, cards, settings, now) {
@@ -1453,6 +1481,7 @@ fun BihuaApp(
                                 rangeActivity = progressActivity,
                                 range = progressRange,
                                 onRangeChange = { progressRangeName = it.name },
+                                streakDays = streakDays,
                                 gradeMix = gradeMix,
                                 averageInterval = reviewTotals.second,
                                 practiceTimeMs = practiceTimeMs,
@@ -1570,6 +1599,7 @@ fun BihuaApp(
                                 rangeActivity = progressActivity,
                                 range = progressRange,
                                 onRangeChange = { progressRangeName = it.name },
+                                streakDays = streakDays,
                                 gradeMix = gradeMix,
                                 averageInterval = reviewTotals.second,
                                 practiceTimeMs = practiceTimeMs,
@@ -1772,6 +1802,7 @@ private fun AppContent(
     rangeActivity: List<DayActivity> = activity,
     range: com.bassmd.bihua.progress.ProgressRange =
         com.bassmd.bihua.progress.ProgressRange.MONTH,
+    streakDays: Int = 0,
     onRangeChange: (com.bassmd.bihua.progress.ProgressRange) -> Unit = {},
     practiceTimeMs: Long = 0,
     writingPace: com.bassmd.bihua.progress.WritingPace? = null,
@@ -1934,6 +1965,7 @@ private fun AppContent(
             rangeActivity = rangeActivity,
             range = range,
             onRangeChange = onRangeChange,
+            streakDays = streakDays,
             today = today,
             forecast = dueForecast,
             history = learnedHistory,

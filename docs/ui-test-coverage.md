@@ -7,20 +7,20 @@ journey/unit test, P = partly automated or manual visual review, G = gap.
 |---|---|---|
 | Onboarding and restore | `fresh`, `resume` | A |
 | Home counts, caught-up, learning | `day1`, `daily20`, `caught-up`, `learning` | A |
-| Progress windows and analytics | `progress-ranges`, `daily100`, `goal30` | A/P |
+| Progress windows and analytics | `progress-ranges`, `progress-empty`, `ProgressStoreModeTest`, `StudyStreakTest`, `daily100`, `goal30` | A |
 | Mixed sessions and resume | `daily20`, `resume`, `process-death` | A |
 | Writing and pronunciation review modes | `review-modes`, `review-modes-long`, `pronounce-kana` | A |
 | Anki writing and pronunciation | `anki` | A |
 | Meaning review, meaning Anki, synonyms | `meaning`, `meaning-anki`, `synonyms` | A |
 | Grade legend | `grade-help` | A |
 | Tour, invite, Help & tour | `tour`, `tour-dark`; compact 1.5× manual | A/P |
-| Large-text navigation and invite | 1.5× tour/manual screenshots | P |
+| Large-text navigation and invite | 1.5× tour, `navigation-deep`, `synonyms` | P |
 | Character grid, detail, notes, skip/suspend | `navigation-deep`, `synonyms` | A |
 | Dictionary, word practice, Word of the Day audio | `dictionary`, `word-guide`, `word-audio` | A |
 | Compare, Paper check, worksheets | `paper-compare`, `worksheet` | A |
 | Study lists | `study-lists`, `StudyListsTest`, `StudyListImportTest` | A |
 | Settings sections and back stack | `navigation-deep`, `appearance` | A |
-| Widget outfit setting | `settings-outfit` | A |
+| Widget outfit setting | `settings-outfit` at 1× and compact 1.5× | A |
 | Widgets on the launcher | `WidgetCopyTest` plus manual launcher pass | P |
 | Backup, import, sync | `SettingsTransferTest`, `BackupCodecTest`, `BackupArchiveTest`, `ProgressStoreImportTest`; file picker manual | P |
 | Reminders | `reminders`, `ReminderTimeTest`; notification visual manual | P |

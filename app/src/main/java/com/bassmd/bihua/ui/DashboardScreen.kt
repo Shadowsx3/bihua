@@ -25,7 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.School
@@ -47,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -93,6 +95,7 @@ fun DashboardScreen(
     rangeActivity: List<DayActivity> = activity,
     range: ProgressRange = ProgressRange.MONTH,
     onRangeChange: (ProgressRange) -> Unit = {},
+    streakDays: Int = 0,
     today: java.time.LocalDate = java.time.LocalDate.now(),
     forecast: List<DueDay>,
     history: List<DayActivity> = emptyList(),
@@ -140,7 +143,7 @@ fun DashboardScreen(
                         Text("Progress", style = MaterialTheme.typography.headlineLarge, color = InkDark)
                         Text(
                             if (largeText) {
-                                "$known known · ${review + learning} reviewing" +
+                                "$known known · ${review + learning} active" +
                                     if (leeches.isNotEmpty()) " · ${leeches.size} tricky" else ""
                             } else {
                                 "$known known · ${review + learning} in review" +
@@ -165,11 +168,14 @@ fun DashboardScreen(
                                     count = ProgressRange.entries.size,
                                 ),
                                 label = { Text(option.shortLabel) },
+                                modifier = Modifier.semantics {
+                                    contentDescription = option.label
+                                },
                             )
                         }
                     }
                     Text(
-                        "Reviews, growth, pace, and practice time for ${range.label.lowercase()}.",
+                        "Reviews, growth, pace, and practice time for the ${range.label.lowercase()}.",
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
@@ -181,6 +187,7 @@ fun DashboardScreen(
                     days = rangeActivity,
                     mix = gradeMix,
                     practiceTimeMs = practiceTimeMs,
+                    streakDays = streakDays,
                 )
             }
             item {
@@ -284,17 +291,11 @@ private fun RangeSummaryCard(
     days: List<DayActivity>,
     mix: com.bassmd.bihua.progress.GradeMix,
     practiceTimeMs: Long,
+    streakDays: Int,
 ) {
     val reviews = days.sumOf { it.reviewed }
     val learned = days.sumOf { it.learned }
     val practiced = days.count { it.reviewed + it.learned > 0 }
-    var cursor = days.lastIndex
-    if (cursor >= 0 && days[cursor].reviewed + days[cursor].learned == 0) cursor--
-    var streak = 0
-    while (cursor >= 0 && days[cursor].reviewed + days[cursor].learned > 0) {
-        streak++
-        cursor--
-    }
     val best = days.maxByOrNull { it.reviewed }
     val passed = (mix.passRate * 100).toInt()
 
@@ -309,7 +310,15 @@ private fun RangeSummaryCard(
                         color = InkSoft,
                     )
                 }
-                Pill("$passed% passed", Mint.copy(alpha = 0.45f))
+                val pillText = when {
+                    mix.total > 0 -> "$passed% passed"
+                    learned > 0 -> "No grades yet"
+                    else -> "New window"
+                }
+                Pill(
+                    pillText,
+                    if (mix.total == 0) Lilac.copy(alpha = 0.45f) else Mint.copy(alpha = 0.45f),
+                )
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -319,7 +328,7 @@ private fun RangeSummaryCard(
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 RangeStatTile("Practice", formatDuration(practiceTimeMs), Sky, Modifier.weight(1f))
-                RangeStatTile("Streak", if (streak == 0) "0d" else "${streak}d", Butter, Modifier.weight(1f))
+                RangeStatTile("Streak", if (streakDays == 0) "0d" else "${streakDays}d", Butter, Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
             Text(
@@ -327,7 +336,7 @@ private fun RangeSummaryCard(
                     practiced == 0 -> "No practice in this window yet. One session starts it."
                     else -> buildString {
                         append("$practiced of ${range.days} days with ink")
-                        if (streak > 0) append(" · $streak-day streak")
+                        if (streakDays > 0) append(" · $streakDays-day streak")
                         if (best != null && best.reviewed > 0) {
                             append(" · best day ${best.reviewed} reviews")
                         }
@@ -443,7 +452,7 @@ private fun ReviewQualityCard(
                         append("Average interval ${averageInterval.toInt()} days")
                         if (practiceTimeMs > 0) {
                             append(
-                                " · ${formatDuration(practiceTimeMs)} practising in " +
+                                " · ${formatDuration(practiceTimeMs)} practising in the " +
                                     range.label.lowercase(),
                             )
                         }
@@ -731,22 +740,29 @@ private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, ne
         com.bassmd.bihua.progress.MemoryLevel.FAIR to ButterInk,
         com.bassmd.bihua.progress.MemoryLevel.SHAKY to MaterialTheme.colorScheme.error,
     )
+    val total = buckets.sumOf { it.count }
     SoftCard(Modifier.fillMaxWidth()) {
         Column {
             Text("Memory", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
-                "How much is likely to stick right now.",
+                if (total == 0) {
+                    "No memory data yet. Your first review starts this map."
+                } else {
+                    "How much is likely to stick right now."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
-            Spacer(Modifier.height(12.dp))
-            buckets.sortedByDescending { it.level.stabilityDays }.forEach { bucket ->
-                MemoryRow(
-                    label = bucket.level.label,
-                    count = bucket.count,
-                    recall = bucket.averageRecall?.let { (it * 100).roundToInt() } ?: 0,
-                    color = colors[bucket.level] ?: MaterialTheme.colorScheme.error,
-                )
+            if (total > 0) {
+                Spacer(Modifier.height(12.dp))
+                buckets.sortedByDescending { it.level.stabilityDays }.forEach { bucket ->
+                    MemoryRow(
+                        label = bucket.level.label,
+                        count = bucket.count,
+                        recall = bucket.averageRecall?.let { (it * 100).roundToInt() } ?: 0,
+                        color = colors[bucket.level] ?: MaterialTheme.colorScheme.error,
+                    )
+                }
             }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -805,15 +821,24 @@ private fun TimelineCard(days: List<DayActivity>, modifier: Modifier = Modifier)
     val firstLabel = days.firstOrNull()?.date
         ?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")) ?: "Start"
     val soft = InkSoft
+    if (reviews == 0) {
+        SoftCard(modifier.fillMaxWidth()) {
+            Column {
+                Text("Daily reviews", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                Text(
+                    "No reviews in this window yet. The first session starts the chart.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            }
+        }
+        return
+    }
     SoftCard(modifier.fillMaxWidth()) {
         Column {
             Text("Daily reviews", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
-                if (reviews == 0) {
-                    "No reviews in this window yet."
-                } else {
-                    "$reviews reviews · $active days with reviews"
-                },
+                "$reviews reviews · $active days with reviews",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -894,7 +919,7 @@ private fun TroubleCard(
                                 )
                                 Text("Repeated misses · try a new note", style = MaterialTheme.typography.labelSmall, color = InkSoft)
                             }
-                            Icon(Icons.Rounded.ArrowForward, contentDescription = null, tint = InkSoft)
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = InkSoft)
                         }
                     }
                 }

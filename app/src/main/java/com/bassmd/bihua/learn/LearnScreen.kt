@@ -3102,6 +3102,7 @@ private fun StickyGradeBar(
                         color = InkSoft,
                     )
                 }
+                GradeHelpButton()
                 if (onDrawAgain != null) {
                     TextButton(
                         onClick = onDrawAgain,

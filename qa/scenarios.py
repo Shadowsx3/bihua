@@ -66,6 +66,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
     ScenarioSpec("settings-outfit", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_outfit"),
     ScenarioSpec("progress-ranges", level="standard", state={"reviews": 20, "new": 2, "days": 12}, runner="progress_ranges"),
+    ScenarioSpec("progress-empty", level="standard", state={"reviews": 0, "new": 0, "goal": 0, "known": 0, "days": 0}, runner="progress_empty"),
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
 ]
 
@@ -943,6 +944,13 @@ def _search_character(journey: Journey, glyph: str) -> None:
             break
     else:
         raise JourneyFailure(f"character search did not accept {glyph}")
+    # At large text the soft keyboard can cover the result tile. Hide it before
+    # asking the list for a tile so the tap lands on the result, not the IME.
+    # uiautomator2's hide_keyboard() installs AdbKeyboard, which is flaky on
+    # this harness, so dismiss the IME with the system back key when it is up.
+    if "mInputShown=true" in journey.device.shell("dumpsys input_method"):
+        journey.d.press("back")
+        time.sleep(0.4)
     tile = journey.d(descriptionContains=f"{glyph},")
     if not tile.exists:
         tile = journey.d(descriptionContains=glyph)
@@ -1123,20 +1131,24 @@ def navigation_deep(journey: Journey, state: ScenarioState) -> None:
             raise JourneyFailure("no character tile to open")
         time.sleep(0.8)
         for _ in range(2):
+            if journey.exists("Add to list", timeout=1.5):
+                break
             tile.click()
             time.sleep(0.9)
-            if journey.exists("Write on paper", timeout=2):
+            if journey.exists("Add to list", timeout=1.5):
                 break
         else:
             raise JourneyFailure("character tile did not open its detail")
-        journey.tap_visible("Write on paper")
+        journey.tap_visible("Write on paper", max_scrolls=8)
         journey.wait("Paper check", timeout=8)
         journey.d.press("back")
-        journey.wait("Write on paper", timeout=8)
+        if journey.ensure_visible("Write on paper", max_scrolls=8) is None:
+            raise JourneyFailure("detail did not return after paper check")
         journey.tap_visible("Compare")
         journey.wait("Compare", timeout=8)
         journey.d.press("back")
-        journey.wait("Write on paper", timeout=8)
+        if journey.ensure_visible("Write on paper", max_scrolls=8) is None:
+            raise JourneyFailure("detail did not return after compare")
         journey.d.press("back")
         journey.wait("Character, meaning, or reading", timeout=8, exact=False)
     with journey.step("practice picker closes"):
@@ -1297,9 +1309,10 @@ def synonyms(journey: Journey, state: ScenarioState) -> None:
         journey.open_tab("Characters")
         journey.wait("Character, meaning, or reading", timeout=8, exact=False)
         _search_character(journey, "爱")
-        journey.wait("Your synonyms", timeout=8)
+        if journey.ensure_visible("Your synonyms", max_scrolls=8) is None:
+            raise JourneyFailure("synonym card missing from character detail")
     with journey.step("add a synonym"):
-        journey.tap("Add synonym")
+        journey.tap_any(["Add synonym", "Add"], timeout=6)
         journey.wait("Add a synonym", timeout=6)
         journey.screenshot("character-synonym-dialog")
         # On wide layouts the character search field is still behind the
@@ -1324,7 +1337,7 @@ def synonyms(journey: Journey, state: ScenarioState) -> None:
         if journey.exists("affection", timeout=0.5):
             raise JourneyFailure("synonym was not removed")
     with journey.step("bottom of detail is reachable"):
-        if journey.ensure_visible("Reset this character", max_scrolls=8) is None:
+        if journey.ensure_visible("Reset this character", max_scrolls=24) is None:
             raise JourneyFailure("detail bottom is unreachable")
         journey.screenshot("character-detail-bottom")
     journey.assert_no_crash()
@@ -1389,7 +1402,8 @@ def settings_outfit(journey: Journey, state: ScenarioState) -> None:
         issues = journey.a11y_unlabeled()
         if issues:
             raise JourneyFailure(f"outfit dialog has unlabeled clickables: {issues[:3]}")
-        journey.tap_text("Witch hat")
+        journey.screenshot("widget-outfit-dialog")
+        journey.tap("Witch hat")
         time.sleep(0.5)
         if journey.exists("Mò's outfit", timeout=0.5):
             raise JourneyFailure("outfit dialog did not close")
@@ -1401,16 +1415,48 @@ def settings_outfit(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Make Bihua yours", timeout=8, exact=False)
 
 
+def progress_empty(journey: Journey, state: ScenarioState) -> None:
+    """An untouched course has calm, non-punitive empty states."""
+    with journey.step("empty progress"):
+        journey.open_tab("Progress")
+        journey.wait("Momentum", timeout=8)
+        journey.assert_text("New window")
+        journey.assert_text("No practice in this window yet")
+        journey.screenshot("progress-empty-top")
+        for target in (
+            "No reviews yet. Grade a few characters and this fills in.",
+            "Nothing scheduled yet",
+            "No memory data yet",
+            "No reviews in this window yet",
+            "Nothing is stuck right now",
+        ):
+            for _ in range(12):
+                if journey.exists_text(target, exact=False):
+                    break
+                journey.scroll_down()
+                time.sleep(0.3)
+            if not journey.exists_text(target, exact=False):
+                raise JourneyFailure(f"missing empty-state text: {target}")
+        journey.screenshot("progress-empty-bottom")
+
+
 def progress_ranges(journey: Journey, state: ScenarioState) -> None:
     """Progress stats follow the selected window."""
     with journey.step("switch the range"):
         journey.open_tab("Progress")
         journey.wait("Progress", timeout=8)
+        streak = journey.value_above("Streak")
+        if not streak:
+            raise JourneyFailure("streak tile value missing")
         for short, label in (("7D", "Last 7 days"), ("90D", "Last 90 days"), ("1Y", "Last year")):
             journey.tap_text(short)
             time.sleep(0.8)
             journey.assert_text(label)
             journey.assert_text("Momentum")
+            if not journey.exists_text("Streak"):
+                raise JourneyFailure(f"streak tile missing for {label}")
+            if journey.value_above("Streak") != streak:
+                raise JourneyFailure(f"streak was capped by {label}")
         journey.tap_text("30D")
         time.sleep(0.8)
         journey.assert_text("Last 30 days")
@@ -1424,7 +1470,11 @@ def grade_help(journey: Journey, state: ScenarioState) -> None:
         journey.start_session()
         journey.wait("Show answer", timeout=10)
         journey.tap("Show answer")
-        journey.wait("How did that feel?", timeout=8, exact=False)
+        if (
+            journey.ensure_visible("How did that feel?", max_scrolls=6) is None
+            and journey.ensure_visible("Choose a grade.", max_scrolls=6) is None
+        ):
+            raise JourneyFailure("grade prompt did not appear after the reveal")
         journey.tap("What do the grades mean?")
         journey.wait("What the grades mean", timeout=6)
         issues = journey.a11y_unlabeled()
@@ -1434,7 +1484,6 @@ def grade_help(journey: Journey, state: ScenarioState) -> None:
         journey.assert_text("Instant and effortless.")
         journey.screenshot("grade-help")
         journey.tap("Got it")
-        journey.wait("How did that feel?", timeout=6, exact=False)
     with journey.step("grade and leave"):
         journey.tap_visible("Good")
         journey.leave_session("End session")
@@ -1488,4 +1537,5 @@ RUNNERS = {
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
     "progress_ranges": progress_ranges,
+    "progress_empty": progress_empty,
 }

@@ -213,6 +213,25 @@ class Journey:
 
     # ---------- screen text ----------
 
+    def value_above(self, label: str, exact: bool = True) -> str | None:
+        """The text drawn directly above a label, used by stat tiles."""
+        nodes = self._hierarchy_text_nodes()
+        labels = [bounds for value, bounds in nodes if (value == label if exact else label in value)]
+        for x1, y1, x2, y2 in labels:
+            closest = None
+            for value, (cx1, cy1, cx2, cy2) in nodes:
+                if not value.strip() or value == label:
+                    continue
+                if cy2 > y1 or y1 - cy2 > 160:
+                    continue
+                if cx2 <= x1 or cx1 >= x2:
+                    continue
+                if closest is None or cy2 > closest[0]:
+                    closest = (cy2, value)
+            if closest is not None:
+                return closest[1]
+        return None
+
     def texts(self) -> list[str]:
         xml = self.d.dump_hierarchy(compressed=False)
         root = ET.fromstring(xml)
