@@ -133,4 +133,22 @@ class PuzzleForgeTest {
             assertTrue(puzzle.solutions.isNotEmpty())
         }
     }
+
+    @Test
+    fun narrowPuzzlesSayWhatTheyWant() {
+        val exact = PuzzleForge.generate(
+            parts, Random(1), family = "water", character = "水", style = PuzzleStyle.CHARACTER,
+        )
+        assertTrue(exact.lines.any { "one exact shape" in it })
+        assertTrue(exact.fallback.contains("one exact shape"))
+        assertEquals(setOf("水"), exact.solutions.single().characters)
+
+        val chapter = PuzzleForge.generate(
+            parts, Random(2), family = "water", character = "水", style = PuzzleStyle.CATEGORY,
+        )
+        assertTrue(chapter.lines.any { "whole chapter" in it })
+        assertTrue(chapter.fallback.contains("whole chapter"))
+        assertTrue(chapter.solutions.all { it.categories.isNotEmpty() })
+        assertTrue(chapter.solutions.all { it.categories.contains("Tides") })
+    }
 }

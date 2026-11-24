@@ -77,6 +77,10 @@ One harness run holds an AVD lock. A second run that needs the same AVD exits in
 
 AVDs are kept alive by default so the next run starts almost immediately. Use `--shut-down` to kill emulators the harness started. Standard and full runs work on different AVDs in parallel; `--parallel N` controls how many, with a default of two.
 
+`SpellQuestStressTest` generates 50 chapters for each of the four scripts
+(1,200 puzzles) and checks every scene, shape, hint, and chapter. It is part of
+the normal unit-test run.
+
 Guide strokes are drawn with one batched ADB motion-event command per stroke. This avoids uiautomator2's idle wait after each segment. The quick suite is about two minutes on a warm phone AVD; a 100-review drain is about two minutes including setup.
 
 ## Scenarios
@@ -124,6 +128,7 @@ Guide strokes are drawn with one batched ADB motion-event command per stroke. Th
 | `spell-quest-ko` | the same flow in Korean Hanja |
 | `spell-quest-traditional` | the same flow in Traditional characters |
 | `spell-entry-ja`, `spell-entry-ko` | the two entry points in those scripts |
+| `spell-flow` | gate copy, every draw tool label, one-way clues, all 10 grimoire chapters, and a clean leave |
 
 ## Review modes
 

@@ -33,6 +33,8 @@ harness; pure composables and physical hardware still need the device pass.
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
 | Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
 | Spell quest scripts | Same flow in Traditional, Japanese kanji, and Korean Hanja; entry from Home and Study tools | `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry-ja`, `spell-entry-ko` |
+| Spell quest flow clarity | Gate copy, every draw control label, one-way clues, grimoire chapter names, clean leave | `spell-flow` |
+| Spell quest long play | 50 chapters per script, six scenes each (1,200 puzzles); every scene solvable, all shapes and chapters seen, no repeated spell in a chapter, every unhelpful family has a hint | `SpellQuestStressTest` |
 | Spell quest theme and motion | Dark palette, reduce motion, large text, effect frames | `spell-quest-dark`, `spell-quest-calm`, `--font-scale 1.5` |
 | Spellbook data | 1,387 spells across four scripts, 35 families, 10 chapters, ≥30 choices per chapter, unique characters per script | `SpellbookTest` |
 | Puzzle shapes | Family doors, whole-chapter doors, and exact-shape puzzles; the scene spell always solves; narrow rules reject wider casts | `QuestGeneratorTest`, `PuzzleForgeTest` |

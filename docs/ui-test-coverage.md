@@ -26,6 +26,7 @@ journey/unit test, P = partly automated or manual visual review, G = gap.
 | Backup, import, sync | `SettingsTransferTest`, `BackupCodecTest`, `BackupArchiveTest`, `ProgressStoreImportTest`; file picker manual | P |
 | Reminders | `reminders`, `ReminderTimeTest`; notification visual manual | P |
 | Spell quest | `spell-quest`, `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry`, `spell-entry-ja`, `spell-entry-ko` | A |
+| Spell quest flow clarity | `spell-flow` on phone, tablet, and fold | A |
 | Spell quest theme and motion | `spell-quest-dark`, `spell-quest-calm`, `--font-scale 1.5` | A/P |
 | Spell quest progress | `ProgressStoreSpellQuestTest`; return-to-road step in `spell-quest` | A |
 | Accessibility labels | `accessibility` | P |

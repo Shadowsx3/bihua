@@ -90,6 +90,12 @@ Everything below compiles and is covered by unit tests.
 - `GrimoireSpreadsTest`: cover/index order, spread pairing, phone pairs.
 - `ProgressStoreSpellQuestTest`: met pages and chapter are per script and survive
   export/import; duplicate marks do not create a second page.
+- `SpellQuestStressTest`: 50 chapters per script, six scenes each (1,200
+  puzzles); every scene's own spell solves it, every shape and chapter appears,
+  no chapter repeats a spell, family puzzles accept every fitting family,
+  chapter puzzles accept another spell from the chapter, exact-shape puzzles
+  reject another spell from the family, and every non-solving family gets a
+  hint.
 - `SpellQuestLogicTest`: scroll word, result family, definition gloss, timing,
   emoji, tip text.
 - UIAutomator `spell-quest` checks the gate, a gift from the grimoire, the
@@ -98,6 +104,8 @@ Everything below compiles and is covered by unit tests.
   not a synthetic plus.
 - `spell-quest-ja`, `spell-quest-ko`, and `spell-quest-traditional` run the same
   flow in the other scripts; `spell-entry-ja`/`-ko` check the entry points.
+- `spell-flow` checks the gate copy, every draw-tool label, one-way clues,
+  all 10 grimoire chapter names, and a clean leave on phone, tablet, and fold.
 - `spell-quest-dark` and `spell-quest-calm` cover theme and reduce motion.
 - `scripts/journey.sh --spell` runs the whole spell suite on phone, tablet, and
   fold-inner.

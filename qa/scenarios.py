@@ -73,6 +73,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("grade-help", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "anki_writing": True}, runner="grade_help"),
     ScenarioSpec("spell-quest", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_quest"),
     ScenarioSpec("spell-entry", level="quick", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_entry"),
+    ScenarioSpec("spell-flow", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_flow"),
     ScenarioSpec("spell-quest-dark", level="full", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="spell_quest"),
     ScenarioSpec("spell-quest-calm", level="full", state={"reviews": 5, "new": 2, "days": 5, "reduce_motion": True}, runner="spell_quest"),
     ScenarioSpec("spell-quest-ja", level="full", state={"reviews": 5, "new": 2, "days": 5, "mode": "JAPANESE"}, runner="spell_quest"),
@@ -1598,6 +1599,59 @@ def spell_entry(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def spell_flow(journey: Journey, state: ScenarioState) -> None:
+    """The screen explains itself: every control is labelled, and no step is a dead end."""
+    with journey.step("read the gate"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.tap_visible("Manage study tools")
+        journey.wait("Study tools", timeout=8)
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
+        texts = journey.texts()
+        for line in ("Draw the spell", "Or open the book", "Ask if you are stuck"):
+            if line not in texts:
+                raise JourneyFailure(f"gate missing {line}: {texts}")
+        journey.tap_any(["Start the road", "Walk on"])
+        journey.wait("Draw", timeout=10)
+    with journey.step("the draw tools all say what they do"):
+        journey.tap_visible("Draw")
+        journey.wait("Draw in the circle first", timeout=8)
+        for label in (
+            "Hear it", "Meaning", "Show the shape", "Ink", "Pen", "Pencil", "Marker",
+            "Undo", "Clear", "Go back", "Grimoire", "Draw in the circle first",
+        ):
+            if not journey.exists(label, timeout=2):
+                raise JourneyFailure(f"cast overlay missing {label}")
+        journey.tap("Meaning")
+        time.sleep(0.6)
+        if "Hide meaning" in journey.texts():
+            raise JourneyFailure("Meaning became a hide toggle")
+        journey.tap("Hear it")
+        time.sleep(0.4)
+        journey.tap("Show the shape")
+        time.sleep(0.6)
+        journey.screenshot("spell-flow-tools")
+        journey.tap_visible("Go back")
+        journey.wait("Draw", timeout=8)
+    with journey.step("the grimoire names every chapter"):
+        journey.tap_visible("Grimoire")
+        journey.wait("Close book", timeout=10)
+        for name in ("Tides", "Flame", "Sky", "Ground", "Creatures", "Craft", "Mind", "Time", "Arcana", "Spirit"):
+            if not journey.exists(f"{name} chapter", timeout=2):
+                raise JourneyFailure(f"grimoire missing {name} chapter")
+        journey.screenshot("spell-flow-book")
+        journey.tap("Close book")
+        journey.wait("Draw", timeout=8)
+    with journey.step("leave cleanly"):
+        journey.tap_visible("Leave the road")
+        # Home keeps its scroll position, so the greeting may be above the
+        # viewport. The Start button is the stable anchor that the quest closed.
+        journey.open_tab("Home")
+        journey.wait("Start studying", timeout=10)
+    journey.assert_no_crash()
+
+
 def spell_quest(journey: Journey, state: ScenarioState) -> None:
     """The endless road, reached from Study tools, casting from the book."""
     with journey.step("open the spell quest"):
@@ -1799,6 +1853,7 @@ RUNNERS = {
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
     "spell_quest": spell_quest,
+    "spell_flow": spell_flow,
     "spell_entry": spell_entry,
     "progress_ranges": progress_ranges,
     "progress_empty": progress_empty,
