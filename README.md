@@ -191,11 +191,12 @@ not a public issue.
 ## Status
 
 **1.0.9 is in Play review.** The current development version is **1.1.0
-(versionCode 20)**. It adds Progress windows with course-scoped analytics and
-empty states, optional meaning reviews and synonyms, an Anki-style reveal for
-writing, pronunciation, and meaning, large-text layout fixes, safer study-list
-imports, widget count parity, loading timeouts, a phone shell that meets the
-bottom bar at every font scale, and a deep navigation pass.
+(versionCode 21)**. It adds the spell quest in all four scripts, Progress windows
+with course-scoped analytics and empty states, optional meaning reviews and
+synonyms, an Anki-style reveal for writing, pronunciation, and meaning,
+large-text layout fixes, safer study-list imports, widget count parity, loading
+timeouts, a phone shell that meets the bottom bar at every font scale, and a deep
+navigation pass.
 
 New learners start with five new characters a day, reviews are mixed with new
 lessons, and the session progress bar fills to the next lesson. The app also has
@@ -204,8 +205,8 @@ encrypted local sync, off-by-default study reminders, and foldable book layouts.
 The phone, tablet, and foldable paths are checked at normal and 1.5x text. The
 journey harness covers onboarding, daily queues, process death, fold changes,
 dictionary, worksheet export, paper/Compare, study lists, appearance,
-Word of the Day audio, Anki-style reviews, and a walk through every Settings
-section and overlay. A full TalkBack sweep at 2x and a current physical stylus
+Word of the Day audio, Anki-style reviews, the spell quest in all four scripts,
+and a walk through every Settings section and overlay. A full TalkBack sweep at 2x and a current physical stylus
 pass remain on the roadmap. The app is not a clinical intervention or a
 guarantee of literacy.
 

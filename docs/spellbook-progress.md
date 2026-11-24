@@ -142,7 +142,7 @@ Everything below compiles and is covered by unit tests.
 3. Reduce motion: effects skip, strokes still play, the scene does not drift.
 4. Re-run the standard matrix so the Home/Study tools entry, shared spell cache,
    and new data do not regress other screens.
-5. Rebuild the signed release and update the landing hash when the feature ships.
+5. Signed 1.1.0 (21) APK and AAB are built; the APK is hosted and the landing hash is updated. Play upload waits for 1.0.9 review.
 
 ## Traps
 

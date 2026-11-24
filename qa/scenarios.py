@@ -1705,13 +1705,11 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             time.sleep(0.3)
         else:
             raise JourneyFailure(f"gift produced no result. texts={journey.texts()}")
-        journey.screenshot("spell-result")
+        # Mid-effect frames are kept for the motion check, but the listing
+        # screenshot waits until the character and the flourish have finished.
         for frame in (1, 2, 3):
-            time.sleep(0.35)
+            time.sleep(0.25)
             journey.screenshot(f"spell-effect-{frame}")
-    with journey.step("continue the road"):
-        # The result appears before the guide finishes; the actions unlock
-        # only after the character has drawn itself into the circle.
         deadline = time.time() + 25
         while time.time() < deadline:
             texts = journey.texts()
@@ -1723,12 +1721,17 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             time.sleep(0.3)
         else:
             raise JourneyFailure(f"gift actions never unlocked. texts={journey.texts()}")
+        time.sleep(0.8)
+        journey.screenshot("spell-result")
+    with journey.step("continue the road"):
         if journey.exists("Walk on", timeout=2):
             journey.tap("Walk on")
         else:
             # A wrong pick shows the right answer first, then Walk on.
             journey.tap("Show me one answer")
             journey.wait("Walk on", timeout=25)
+            time.sleep(0.8)
+            journey.screenshot("spell-answer")
             journey.tap("Walk on")
         journey.wait("Draw", timeout=10)
         journey.screenshot("spell-next")
@@ -1780,9 +1783,9 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
                 time.sleep(0.4)
         if outcome is None:
             raise JourneyFailure(f"cast produced no result. texts={journey.texts()}")
-        journey.screenshot("spell-cast")
         if outcome == "unreadable":
             # A readable character that is not a spell here: back to the drawing.
+            journey.screenshot("spell-cast")
             journey.tap("Go back")
         else:
             deadline = time.time() + 25
@@ -1796,6 +1799,8 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
                 time.sleep(0.3)
             else:
                 raise JourneyFailure(f"cast actions never unlocked. texts={journey.texts()}")
+            time.sleep(0.8)
+            journey.screenshot("spell-cast")
             journey.tap("Walk on for now" if outcome == "nudge" else "Walk on")
         journey.wait("Draw", timeout=10)
     with journey.step("return to the road"):

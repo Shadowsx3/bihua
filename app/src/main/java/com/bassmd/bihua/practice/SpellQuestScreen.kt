@@ -641,9 +641,9 @@ private fun SpellQuestContent(
     val circleTraced = if (bookPick != null) giftTraced else castTraced
     val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
     val dialogueHeight = when {
-        fontScale > 1.6f && phase == QuestPhase.HINT -> 430.dp
-        fontScale > 1.25f && phase == QuestPhase.HINT -> 400.dp
-        phase == QuestPhase.HINT -> 400.dp
+        fontScale > 1.6f && phase == QuestPhase.HINT -> 460.dp
+        fontScale > 1.25f && phase == QuestPhase.HINT -> 440.dp
+        phase == QuestPhase.HINT -> 420.dp
         fontScale > 1.6f -> 300.dp
         fontScale > 1.25f -> 320.dp
         else -> DialogueHeight
@@ -865,25 +865,26 @@ private fun SpellQuestContent(
                         style = MaterialTheme.typography.bodyLarge,
                         color = PlumInk,
                     )
-                    if (phase == QuestPhase.HINT || phase == QuestPhase.RESULT) {
-                        val tipCharacter = badgeCharacter.ifEmpty { castCharacter }
-                        val tipEntry = entryByGlyph[tipCharacter]
-                        SpellTipCard(
-                            reading = tipEntry?.reading.orEmpty(),
-                            meaning = shortGloss(tipEntry?.meaning).orEmpty(),
-                            word = if (phase == QuestPhase.RESULT) tipEntry?.words?.firstOrNull() else null,
-                            newPage = newlyMet && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown)),
-                            tint = chapterColor(SpellFamilies.chapter(headerFamily)),
+                }
+
+                if (phase == QuestPhase.HINT || phase == QuestPhase.RESULT) {
+                    val tipCharacter = badgeCharacter.ifEmpty { castCharacter }
+                    val tipEntry = entryByGlyph[tipCharacter]
+                    SpellTipCard(
+                        reading = tipEntry?.reading.orEmpty(),
+                        meaning = shortGloss(tipEntry?.meaning).orEmpty(),
+                        word = if (phase == QuestPhase.RESULT) tipEntry?.words?.firstOrNull() else null,
+                        newPage = newlyMet && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown)),
+                        tint = chapterColor(SpellFamilies.chapter(headerFamily)),
+                    )
+                    if (milestone > 0 && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown))) {
+                        Text(
+                            "$milestone spells met. Your book is filling up.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PlumSoft,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
                         )
-                        if (milestone > 0 && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown))) {
-                            Text(
-                                "$milestone spells met. Your book is filling up.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PlumSoft,
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
                     }
                 }
 
@@ -953,22 +954,51 @@ private fun SpellQuestContent(
                                 onClick = { advance() },
                                 enabled = giftTraced,
                                 shape = CircleShape,
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = Gilt,
+                                    contentColor = Color(0xFF241637),
+                                ),
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text("Walk on") }
                         } else {
-                            Button(
-                                onClick = { revealAnswer() },
-                                shape = CircleShape,
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                    containerColor = Lilac,
-                                    contentColor = PlumInk,
-                                ),
+                            // Two compact rows instead of three tall ones: the
+                            // hint text and the tip card keep the room they need.
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                            ) { Text("Show me one answer") }
-                            TextButton(
-                                onClick = { advance() },
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                            ) { Text("Walk on for now", color = PlumSoft) }
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Button(
+                                    onClick = { revealAnswer() },
+                                    shape = CircleShape,
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = Lilac,
+                                        contentColor = PlumInk,
+                                    ),
+                                    modifier = Modifier.weight(1.55f),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                        horizontal = 10.dp,
+                                        vertical = 8.dp,
+                                    ),
+                                ) {
+                                    Text(
+                                        "Show me one answer",
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelLarge,
+                                    )
+                                }
+                                TextButton(
+                                    onClick = { advance() },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text(
+                                        "Walk on for now",
+                                        color = PlumSoft,
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelLarge,
+                                    )
+                                }
+                            }
                         }
                     }
                     QuestPhase.RESULT -> if (circleActive && (!circleTraced || channeling != null)) {
@@ -1033,6 +1063,8 @@ private fun SpellQuestContent(
                         .padding(end = 24.dp))
                 }
             } else {
+                // The Leave row is the top border. The circle is centred in the
+                // quiet area between that row and the dialogue card.
                 CircleStage(modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth())
