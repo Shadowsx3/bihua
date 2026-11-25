@@ -51,19 +51,23 @@ Read the full rationale in [The Bihua method](docs/method.html).
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
 | **Scheduling** | FSRS-7 or SBD, shared profile for shared glyphs, local weight fitting, a 70–97% target recall, 4 AM default day boundary, vacation mode, seven-day ease-back. |
-| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. |
+| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Each of the four tools keeps its own brush preset. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. |
+| **Guided tour** | An optional live overlay over the real screens: the desk, reviews, grades, paper, search, and the spell road. Replay it from Settings → Help & tour. |
+| **Progress** | 7-day, 30-day, 90-day, and yearly windows for reviews, characters learned, practice time, pass rate, streak, best day, and daily rhythm, with course scoping and honest empty states. |
 | **Meaning** | Optional character-to-meaning reviews: type a wording, reveal the clean gloss, see a real word, and grade. User synonyms are kept as accepted wordings. Off by default; Anki-style reveal available. |
 | **Anki-style review** | Optional writing, pronunciation, and/or meaning reviews that show **Show answer** and then grade, with no canvas, keyboard, or choices. Independent switches; off by default. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
-| **Home-screen widgets** | A Today widget with due reviews and new lessons that changes with the time of day, and a Word of the Day widget with Mò, the ink pet, plus the reading, meaning, and review/lesson counts. |
+| **Spell quest** | Optional extra practice in all four courses: 1,387 spells, 10 chapters, and 35 families. Write a character that fits the scene, or take one from the grimoire. Every scene has several fitting answers, a whole-chapter door, or a rare exact-shape door; met pages stay in the book. Nothing is graded or scheduled. |
+| **Word of the day** | One shared word per course and study day, chosen by the calendar rather than install time or a personal seed. The Home card and widget agree, and the word does not repeat inside a cycle. |
+| **Home-screen widgets** | A Today widget with due reviews and new lessons that changes with the time of day, and a Word of the Day widget with Mò, the ink pet, plus the reading, meaning, and review/lesson counts. They refresh at day boundaries, on app changes, and on clock/date changes, with a six-hour fallback instead of a half-hour poll. |
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Study lists** | Named character and word lists, presets, streaming TXT/CSV/TSV/JSON import, `.txt` export, quick add, and list-only study. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
 | **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
 | **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
-| **Foldables** | Book-style inner layout with two pages; the outer display keeps the phone layout. |
+| **Foldables and tablets** | A book-style two-page inner layout on foldables, a two-page dashboard with a navigation rail on tablets, and the phone layout on the outer display. |
 
 ## Requirements
 
@@ -77,26 +81,81 @@ The signed 1.1.1 test APK is on the [landing page](https://shadowsx3.github.io/b
 The app is a private beta; read the release notes before installing. Uninstall a
 Play copy first because the test build uses the local release key.
 
-## Build
+## Build from source
+
+### Prerequisites
+
+- JDK 17 (`java -version`)
+- Android SDK Platform 36 and Build Tools (`ANDROID_HOME` set)
+- `adb` and at least one Android 10+ device or emulator
+- Python 3.11+ for the content tools and the optional journey harness
+- macOS or Linux; the shell helpers are Bash
+
+Put `ANDROID_HOME` in `local.properties` or the environment. `scripts/env.sh`
+loads the SDK path, the Gradle wrapper, and the app's local debug/release paths.
+Do not commit `local.properties`, `keystore.properties`, or any keystore.
 
 ```bash
 source scripts/env.sh
 make check       # compile, unit tests, content audit, debug APK, verification
+make test        # unit tests only
 make lint        # Android lint
 make run         # check, install, and launch on a connected device
 make smoke       # launch/navigation smoke test on a connected device
-make journey     # quick local full-app journeys on the phone AVD
-make journey-standard  # phone, fold, and tablet core journeys
-make journey-full      # every profile and daily-state journey
-make nav-gap           # bottom bar meets content at 1x and 1.5x
-make release    # signed minified APK when keystore.properties is present
 ```
 
-The release build is signed with a local key. Keystores and
-`keystore.properties` are ignored by git.
+`make check` is the first command to run after a change. It fails on a missing
+guide, a bad content row, a broken APK, or a unit-test regression before you
+install anything.
+
+### Release build
+
+The release uses `keystore.properties` (ignored by git) with `storeFile`,
+`storePassword`, `keyAlias`, and `keyPassword`. If the file is absent, the build
+falls back to the debug key and is not a release candidate.
+
+```bash
+make release
+. scripts/env.sh && ./gradlew :app:bundleRelease
+```
+
+`make release` writes `app/build/outputs/apk/release/app-release.apk`; the bundle
+is `app/build/outputs/bundle/release/app-release.aab`. Verify the signature and
+version before hosting or uploading:
+
+```bash
+APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+"$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Copy the APK to `docs/download/`, update `docs/download/SHA256SUMS.txt`, the
+landing download hash, and `docs/1.1.1-release-checklist.md`. The hosted APK is a
+test build; Play upload waits for the current review to clear. The Play Console
+answers, data-safety notes, permissions, and pre-upload checks live in
+`docs/play-store-submission.md`.
 
 GitHub Actions runs unit tests, the content audit, and lint. It does not assemble
 or upload an APK.
+
+### Journey harness
+
+The QA harness drives the real app with UIAutomator on local emulators. It needs
+the Android SDK, `adb`, Python 3.11+, and the AVDs named in `qa/profiles.json`.
+The first run creates `.qa/venv` and installs its requirements.
+
+```bash
+scripts/journey.sh --quick --screenshots              # phone smoke matrix
+scripts/journey.sh --standard --screenshots           # phone, fold, tablet core
+scripts/journey.sh --spell --profile phone            # every spell-quest scenario
+scripts/journey.sh --full --screenshots               # every profile and state
+scripts/journey.sh --scenario spell-quest --profile phone --font-scale 1.5
+```
+
+Runs land in `.qa/runs/<timestamp>/`; each scenario has screenshots, a
+`result.json`, and on failure `failed.png`, `failed.xml`, and `logcat.txt`.
+Journeys are local, not CI: they need emulators and time. See `qa/README.md` for
+the runner, profiles, and scenario list.
 
 ## Content
 
@@ -184,19 +243,34 @@ Full attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). For security issues, use
-[private reporting](https://github.com/Shadowsx3/bihua/security/advisories/new),
-not a public issue.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) before changing
+code or content.
+
+- Branch from `main`, keep commits focused, and describe the user-visible change.
+- Run `make check` and `make lint`; run the matching journey when a screen or
+  flow changes. A fix without a test or a journey update is incomplete.
+- Keep generated content separate from authored copy. `tools/spells/parts.sql`
+  and `tools/spells/spell_catalog.py` are the authored sources; the CSV and DB
+  are built artifacts.
+- Do not commit keystores, `local.properties`, raw datasets, `.qa/runs`, or
+  `store/` assets. They are ignored on purpose.
+- Update the README, changelog, test matrix, and release checklist when a
+  feature, count, version, or flow changes.
+- For content fixes, check the source, rebuild the database, run `make audit`,
+  and keep the evidence in the commit message.
+- For security issues, use [private reporting](https://github.com/Shadowsx3/bihua/security/advisories/new),
+  not a public issue.
 
 ## Status
 
 **1.0.9 is in Play review.** The current development version is **1.1.1
-(versionCode 21)**. It adds the spell quest in all four scripts, Progress windows
-with course-scoped analytics and empty states, optional meaning reviews and
-synonyms, an Anki-style reveal for writing, pronunciation, and meaning,
-large-text layout fixes, safer study-list imports, widget count parity, loading
-timeouts, a phone shell that meets the bottom bar at every font scale, and a deep
-navigation pass.
+(versionCode 22)**. It adds the spell quest in all four scripts, a shared daily
+word per course, place-honest procedural puzzles with several fitting answers,
+Progress windows with course-scoped analytics and empty states, optional meaning
+reviews and synonyms, an Anki-style reveal for writing, pronunciation, and
+meaning, large-text layout fixes, safer study-list imports, widget count parity,
+loading timeouts, a phone shell that meets the bottom bar at every font scale,
+and a deep navigation pass.
 
 New learners start with five new characters a day, reviews are mixed with new
 lessons, and the session progress bar fills to the next lesson. The app also has

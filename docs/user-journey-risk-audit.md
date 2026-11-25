@@ -36,6 +36,13 @@ Status:
 | Meaning prompts can show blank, placeholder, or structural dictionary redirects. | Fixed | `MeaningSanitizer` filters them; a character with no teachable gloss falls back to writing. Phonetic kana/Hangul stay in pronunciation. |
 | A learner's own wording for a meaning is lost. | Fixed | Synonyms are stored per character, cleaned, deduplicated, capped, removable from the reveal and character detail, and included in backups. |
 | Anki meaning still shows a typing field. | Fixed | `meaning-anki` journey asserts no field; `Show answer` reveals the gloss and example word. |
+| A writing review with no ink, or a slow recognizer, leaves the learner stuck behind Check & grade. | Fixed | Show answer is always available in the recall step, before ink and while recognition settles. |
+| The spell quest's ambient drift keeps the screen busy on a low-end phone or with system animations removed. | Fixed | The screen honors the system animator scale, caps drift/ring motion at 30fps, and caches immutable puzzle parts. |
+| Mò's note has no visible dismissal. | Fixed | The note card has a Close button, plus outside-tap and back. |
+| The Reminders card repeats "Study reminders" twice and leaves an empty page when off. | Fixed | One title, an Enabled row with a clear On/Off status, a preview card, and the test action in both states. |
+| Changing one brush tool wipes another tool's feel. | Fixed | Each tool has its own saved preset; selecting a tool restores it and edits save as you go. |
+| A tablet gets a phone-shaped Home with a very wide hero. | Fixed | Wide screens use the navigation rail and the same two-page dashboard as the fold inner layout. |
+| Widgets poll every 30 minutes and can lag the day boundary. | Fixed | One inexact boundary alarm plus a six-hour safety net; updates on app, clock, date, and timezone changes. |
 
 ## Startup and content
 

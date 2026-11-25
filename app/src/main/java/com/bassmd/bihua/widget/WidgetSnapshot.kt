@@ -10,7 +10,6 @@ import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.MascotOutfit
 import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.Vacation
-import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -22,6 +21,7 @@ data class WidgetSnapshot(
     val vacation: Boolean,
     val outfit: MascotOutfit = MascotOutfit.AUTO,
     val placeholder: Boolean = false,
+    val dayStartHour: Int = 4,
 ) {
     companion object {
         suspend fun load(context: Context): WidgetSnapshot? = withContext(Dispatchers.IO) {
@@ -47,7 +47,7 @@ data class WidgetSnapshot(
                     val word = repository.featuredWord(
                         mode = settings.studyMode,
                         includeMature = false,
-                        seed = LocalDate.now().toEpochDay().toInt(),
+                        epochDay = settings.today().toEpochDay().toInt(),
                     )
                     WidgetSnapshot(
                         mode = settings.studyMode,
@@ -56,6 +56,7 @@ data class WidgetSnapshot(
                         word = word,
                         vacation = Vacation.isActive(settings.vacationStartedAtMs),
                         outfit = settings.mascotOutfit,
+                        dayStartHour = settings.dayStartHour,
                     )
                 } finally {
                     runCatching { repository.close() }

@@ -31,6 +31,125 @@ Keep this in mind for every screen:
 - Prefer short sentences and real verbs. Error copy says what happened and what
   to try next. It does not blame the learner.
 
+## Development loop
+
+Follow this loop for every feature, fix, and content change. It is the quality
+bar, not a suggestion. Stop only when the evidence is green.
+
+### 1. Frame the change
+
+- Write one sentence: who benefits, what changes, and which screens/data move.
+- Find the invariant it touches (schedule, script purity, content source,
+  privacy, large text, day boundary, backup compatibility).
+- Read the nearest section of this file and the matching doc before editing.
+- Decide whether it is a new feature, a bug fix, a content change, or a build
+  change. Each has a different proof (below).
+
+### 2. Reproduce or inspect before guessing
+
+- For a bug, reproduce on the emulator and capture `device.sh shot` plus
+  `device.sh ui` and `logcat`. Use `device.sh find/tap` by label, never
+  coordinates from a scaled screenshot.
+- For a UI change, screenshot the current screen at 1x and 1.5x. For a Settings
+  change, open the exact section, not just the Settings home.
+- For a content change, inspect the authored source and the shipped asset.
+  `spellbook.csv` and `puzzle_parts.db` are generated; edit `tools/spells/`.
+- For a journey failure, read `failed.png`, `failed.xml`, `error.txt`, and
+  `logcat.txt` before touching code. Classify: app bug, data bug, harness race,
+  or a real device limitation.
+
+### 3. Implement the smallest honest change
+
+- Prefer the existing pattern and component. Keep user copy warm, short, and
+  specific.
+- Keep data backward compatible: new serialized fields need defaults and a
+  `sanitized()` path; new DB columns/tables need a build path and a fallback.
+- Do not hand-edit generated files. Change the authoring source, rebuild, and
+  commit both source and artifact only where the repo already does.
+- Do not add a service, cloud account, analytics SDK, or a new dependency
+  without a strong reason.
+- For a setting: add the field with a safe default, sanitize it, render it in the
+  right Settings section, include it in backup/import, and add a test.
+- For a brush/ink setting: update both the active value and its per-tool map.
+  See `AppSettings.withTool`, `withBrush`, and `withToolBrush`.
+- For a generated puzzle: every obstacle needs 2+ fitting families, 8+ compatible
+  place kinds, a success line, and a place-kind row.
+
+### 4. Prove it with tests
+
+- Pure logic: add or extend a unit test. Run `make test` or the focused test.
+- Content: run the builder and `make audit`; add a content guard if the bug was
+  a bad row. Never let a bad gloss or empty family ship.
+- UI: add a journey step or scenario. A new screen gets a screenshot journey;
+  a new interaction gets a step that fails when it does not work.
+- Edge cases to try by default: empty/zero data, no permission, no stylus, no
+  network, large text (1.5x and 2x), dark theme, reduce motion/system animations
+  off, rotation, process death, system back, a second course, and a restored
+  backup.
+- Performance: no database, parsing, or file IO on the main thread; keep
+  ambient loops at 30fps or less; honor the system animator scale; cache
+  immutable parsed data; avoid waking the device for widgets more than a few
+  times a day.
+
+### 5. Run the gates
+
+```bash
+make check
+make lint
+```
+
+Then run the matching journey with screenshots and inspect them:
+
+```bash
+# One screen or flow
+scripts/journey.sh --scenario spell-quest --profile phone --font-scale 1.5 --screenshots
+
+# A change that touches the shell, Home, or Settings
+scripts/journey.sh --scenario nav-gap,settings-pages --profile phone,tablet --screenshots
+
+# The release gate
+scripts/journey.sh --standard --screenshots
+```
+
+- Do not run `adb ... uiautomator dump` or install another build while a journey
+  is running. It can kill the uiautomator service and create a false crash.
+- If a journey fails, fix the app first and the harness only when the harness is
+  genuinely racing. Add a regression so the same failure cannot return silently.
+- A screenshot is evidence: check new-user clarity, one clear action, no clipped
+  labels, no content under the navigation bar, and a real daily-use path.
+
+### 6. Review as two users
+
+- **New user:** can they tell what this does and what to tap next? Is the empty
+  state honest? Is the optional feature clearly optional?
+- **Daily user:** does the common path stay short? Does it remember their
+  choices? Does it avoid repeated confirmation, nudges, and motion?
+- **Low-end user:** does it stay responsive with large text, reduced motion,
+  and no network? Does it survive a small screen and a fold?
+
+### 7. Release only from a clean tree
+
+- Bump `versionCode` and `versionName` for a release; do not rebuild a version
+  that is already published.
+- `make release` and `./gradlew :app:bundleRelease`, then verify the version and
+  signature, install the signed APK, and smoke-test the main flow.
+- Update `docs/download/`, `SHA256SUMS.txt`, the landing hash/link, the release
+  checklist, roadmap, README, changelog, and `docs/play-store-submission.md`.
+- Commit the code, content, tests, docs, and hosted artifact together when they
+  describe one release. Push only after the hosted hash matches the local APK.
+
+### Definition of done
+
+- [ ] The behavior is implemented from the authored source, not a generated
+      file.
+- [ ] A unit test, content guard, or journey would fail without the fix.
+- [ ] `make check` and `make lint` are green.
+- [ ] The matching journey is green at 1x and 1.5x, on the profiles it touches.
+- [ ] Dark, reduce-motion, and low-end behavior were considered.
+- [ ] Settings screens and empty/off states are clear and not duplicated.
+- [ ] Docs, counts, screenshots, and release notes match the shipped build.
+- [ ] `git status` is clean and the release hash matches the hosted APK.
+
 ## Mò and the guided tour
 
 - The pet has one name: **Mò** (墨, "ink"). The landing page, launcher, opening,
@@ -196,13 +315,20 @@ Keep this in mind for every screen:
 - The Today copy changes by day part (morning, afternoon, evening, night) and by
   due count, new lessons, vacation, and all-clear. At night it never pushes; it
   says the reviews will keep until morning.
-- The Word widget uses the same `featuredWord` as Home. The daily word is always
+- The Word widget uses the same `featuredWord` as Home and the same study day
+  (`settings.today()`, not `LocalDate.now()`). The daily word is always
   non-mature, 2–6 characters, and filtered away from variants, surnames, place
-  names, archaic/rare/dialect words, and abbreviations. Curated words lead each
-  cycle, then a deterministic hash of the common pool. Never let mature content
-  leak into the daily word, even when the dictionary mature setting is on.
-- `WidgetUpdater.updateAll` refreshes on app resume and on stop; the widgets
-  also ask the launcher every 30 minutes. Keep the update cheap.
+  names, archaic/rare/dialect words, and abbreviations. The curated list is
+  shuffled once per course, then a deterministic hash of the common pool; the
+  cycle index is the study day only. The same day and course are shared by every
+  install and do not change with progress or the mature setting. Never let
+  mature content leak into the daily word, even when the dictionary mature
+  setting is on.
+- `WidgetUpdater.updateAll` refreshes on app resume, on stop, and when the
+  system date/time/timezone changes. `WidgetRefresh` schedules one inexact
+  alarm at the next day-part or study-day boundary (5/11/17/22 plus the
+  day-start hour); the XML `updatePeriodMillis` is a six-hour safety net, not a
+  half-hour poll. Keep the update cheap and do not add a service.
 - Widget counts must use the same hidden-character filter as Home: skipped and
   suspended cards never appear in the widget's due or new counts.
 - The widget pet is a static `layer-list`: the 1024 art plus a 1024-viewport
@@ -491,6 +617,16 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   plainer meaning exists. Dictionary furniture such as "surname", "classifier
   for", or an unmatched bracket never ships as a note. `SpellbookContentTest`
   and `ShippedPuzzlePartsTest` guard both rules.
+- The daily word is a shared calendar slot, not a personal pick: seed it from the
+  study day and course only. Never use install time, progress, or the mature
+  setting. Two fresh installs on the same day must return the same word.
+- An obstacle carries place kinds (`obstacle_place`) and a setting carries place
+  kinds (`setting_tag`); the forge only pairs settings that share a kind. Keep
+  both tables populated for every new obstacle and place.
+- Brush state is per tool. `AppSettings.brushPresets` is the saved map;
+  `brush` is the active tool's copy. Select with `withTool`, edit with
+  `withBrush`, and seed onboarding with `withToolBrush`. Do not write `brush`
+  without updating the map, or the next `sanitized()` will overwrite it.
 - Korean Hanja and Japanese kanji casts must use the Han recognizer (pass a Han
   target, or `StudyMode.TRADITIONAL` for Korean). Do not let the Hangul/kana
   model decide a Han spell.

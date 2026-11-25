@@ -257,6 +257,7 @@ fun LearnScreen(
     var learned by remember { mutableIntStateOf(resume?.learned ?: 0) }
     var revealed by remember { mutableStateOf(false) }
     var drawingRound by remember { mutableIntStateOf(0) }
+    var lastGradeAt by remember { mutableLongStateOf(0L) }
     var showOrder by remember { mutableStateOf(showStrokeNumbers) }
     val scope = rememberCoroutineScope()
     val pageScroll = rememberScrollState()
@@ -405,6 +406,10 @@ fun LearnScreen(
         }
     }
     fun advance(item: LearnItem, itemIndex: Int, grade: Grade) {
+        // A double tap on a grade must not grade the next card too.
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastGradeAt < 300L) return
+        lastGradeAt = now
         val effectiveGrade = grade
         val elapsedMs = if (recallStartedAt == 0L) {
             0L
@@ -812,6 +817,16 @@ fun LearnScreen(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = InkSoft,
                                     )
+                                    TextButton(
+                                        onClick = { revealed = true },
+                                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                                    ) {
+                                        Text(
+                                            "Show answer",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = InkSoft,
+                                        )
+                                    }
                                 } else {
                                     RevealAnswer(
                                         onDrawAgain = {
@@ -983,6 +998,18 @@ fun LearnScreen(
                             recognizing = recognizing,
                         )
                         if (recognition != null || recognizing) Spacer(Modifier.height(8.dp))
+                        if (step == Step.RECALL && !revealed) {
+                            TextButton(
+                                onClick = { revealed = true },
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                            ) {
+                                Text(
+                                    "Show answer",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = InkSoft,
+                                )
+                            }
+                        }
 
                         if (revealed) {
                             RevealAnswer(

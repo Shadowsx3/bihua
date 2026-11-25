@@ -148,6 +148,7 @@ Everything below compiles and is covered by unit tests.
 4. Re-run the standard matrix so the Home/Study tools entry, shared spell cache,
    and new data do not regress other screens.
 5. Signed 1.1.1 (22) APK and AAB are built; the APK is hosted and the landing hash is updated. Play upload waits for 1.0.9 review.
+6. The daily word is a shared date slot (same study day + course = same word; no install seed), and the puzzle forge now pairs obstacles only with place kinds that fit. The compatible parts still yield 19,607 places, 520,488 obstacle-place pairs, and about 29 million scene/style/solution combinations.
 
 ## Traps
 

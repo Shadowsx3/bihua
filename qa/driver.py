@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import uiautomator2 as u2
+from uiautomator2.exceptions import UiObjectNotFoundError
 
 from devices import Device
 
@@ -203,7 +204,11 @@ class Journey:
                 if selector is None:
                     selector = self.find(label, timeout=0.1, exact=False)
                 if selector is not None:
-                    selector.click()
+                    try:
+                        selector.click()
+                    except UiObjectNotFoundError:
+                        # The screen advanced between find and click; look again.
+                        continue
                     time.sleep(0.12)
                     return label
         raise JourneyFailure(f"none visible: {', '.join(labels)}")
@@ -362,14 +367,21 @@ class Journey:
         time.sleep(0.4)
 
     def start_session(self) -> None:
-        label = self.tap_any(
-            [
-                "Start studying",
-                "Practice instead",
-                "Learn ",
-            ],
-            timeout=10,
-        )
+        try:
+            label = self.tap_any(
+                [
+                    "Start studying",
+                    "Practice instead",
+                    "Learn ",
+                ],
+                timeout=10,
+            )
+        except JourneyFailure:
+            if self.exists("Review 1 of", timeout=0.5, exact=False):
+                return
+            if self.exists("Lesson 1 of", timeout=0.5, exact=False):
+                return
+            raise
         if label == "Practice instead":
             raise JourneyFailure("Home offered Practice instead, no study queue")
         deadline = time.time() + 12
@@ -523,6 +535,12 @@ class Journey:
         raise JourneyFailure("session drain timed out")
 
     def leave_session(self, action: str = "Resume later") -> None:
+        # A one-card scenario can finish before the leave sheet exists.
+        if self.exists("Session complete", timeout=0.4):
+            if self.exists("Back to home", timeout=1):
+                self.tap("Back to home")
+            self.assert_home()
+            return
         self.tap("Close session")
         self.wait("Leave this session?", timeout=6, exact=False)
         self.tap(action)
@@ -563,12 +581,20 @@ class Journey:
         return path
 
     def assert_no_crash(self) -> None:
-        log = self.device.logcat()
-        bad = [
-            line for line in log.splitlines()
-            if "FATAL EXCEPTION" in line
-            or ("ANR in " in line and APP_ID in line)
-        ]
+        lines = self.device.logcat().splitlines()
+        bad: list[str] = []
+        for index, line in enumerate(lines):
+            if "ANR in " in line and APP_ID in line:
+                bad.append(line)
+                continue
+            if "FATAL EXCEPTION" not in line:
+                continue
+            # The stack header does not always name the package. Check the
+            # process line that follows; a uiautomator dump crash is not an app
+            # crash, and must not fail a journey.
+            block = "\n".join(lines[index:index + 24])
+            if APP_ID in block:
+                bad.append(line)
         if bad:
             raise JourneyFailure("crash or ANR: " + " | ".join(bad[-5:]))
 

@@ -32,6 +32,12 @@ harness; pure composables and physical hardware still need the device pass.
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
 | Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, note popup, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
+| Daily word sharing | Same study day + course agree across fresh repositories; a month has no repeats; courses walk separate sequences; mature setting does not change it | `FeaturedWordTest` |
+| Puzzle place fit | Every obstacle has 8+ compatible settings; 2,000 generated scenes keep the obstacle and place kinds aligned; family puzzles have 2+ solutions; every result names the obstacle's own outcome; repeated visits reuse cached parts | `ShippedPuzzlePartsTest`, `PuzzlePartsCacheTest` |
+| Writing reveal | Show answer is available before ink, after ink, and while recognition settles; it is in both phone and wide review layouts | `writing-reveal`; `review-modes` |
+| Brush presets | Each tool restores its own values; edits save under the active tool; backup carries the map; bad keys/values are clamped | `brush-presets`, `SettingsSanitizeTest`, `SettingsTransferTest` |
+| Reminders | Enable, time, days, test notification, disable; off state is explicit and the preview stays visible | `reminders` |
+| Widget refresh | Next day-part / study-day boundary is computed; one inexact alarm; six-hour fallback | `WidgetRefreshTest` |
 | Spell quest scripts | Same flow in Traditional, Japanese kanji, and Korean Hanja; entry from Home and Study tools | `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry-ja`, `spell-entry-ko` |
 | Spell quest flow clarity | Onboarding mention, top Home link, gate copy, every draw control label, one-way clues, one-layer back, grimoire chapter names, clean leave | `spell-onboarding`, `spell-flow` |
 | Spell quest long play | 50 chapters per script, six scenes each (1,200 puzzles); every scene solvable, all shapes and chapters seen, no repeated spell in a chapter, every unhelpful family has a hint | `SpellQuestStressTest` |

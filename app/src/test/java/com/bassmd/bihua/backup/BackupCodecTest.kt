@@ -27,6 +27,7 @@ class BackupCodecTest {
             dailyNewGoal = 12,
             remindersEnabled = true,
             reminderHour = 7,
+            reminderMinute = 30,
             reminderDays = setOf(1, 3, 5),
         ),
     )
@@ -77,9 +78,11 @@ class BackupCodecTest {
         val clean = AppSettings(
             remindersEnabled = true,
             reminderHour = 99,
+            reminderMinute = 99,
             reminderDays = setOf(0, 1, 8),
         ).sanitized()
         assertEquals(23, clean.reminderHour)
+        assertEquals(59, clean.reminderMinute)
         assertEquals(setOf(1), clean.reminderDays)
         assertTrue(clean.remindersEnabled)
 

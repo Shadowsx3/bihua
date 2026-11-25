@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Undo
@@ -177,8 +177,21 @@ fun SpellQuestScreen(
     /** The resolved app theme, so the book follows the app even inside the quest. */
     dark: Boolean = false,
 ) {
+    // Respect the system "remove animations" switch as well as the app's own
+    // reduce-motion setting. The endless ambient drift is pretty on a flagship,
+    // but on a low-end phone (and in automated journeys) it steals frames from
+    // the learner's ink and never lets the screen settle.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val systemMotion = remember(context) {
+        android.provider.Settings.Global.getFloat(
+            context.contentResolver,
+            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) != 0f
+    }
+    val quiet = reduceMotion || !systemMotion
     CompositionLocalProvider(com.bassmd.bihua.content.LocalContentRepository provides repository) {
-        SpellQuestContent(mode, characters, reduceMotion, onSpeak, onClose, brush, progress, dark)
+        SpellQuestContent(mode, characters, quiet, onSpeak, onClose, brush, progress, dark)
     }
 }
 
@@ -216,6 +229,7 @@ private fun SpellQuestContent(
     var newlyMet by remember { mutableStateOf(false) }
     var milestone by remember { mutableIntStateOf(0) }
     var chapterBanner by remember { mutableIntStateOf(0) }
+    var lastAdvanceAt by remember { mutableLongStateOf(0L) }
     var roadReady by remember(mode) { mutableStateOf(progressStore == null) }
     fun makeChapter(number: Int) = parts?.let { loaded ->
         QuestGenerator.chapter(6, number, random, spells, byGlyph, known, loaded)
@@ -591,6 +605,10 @@ private fun SpellQuestContent(
     }
 
     fun advance() {
+        // A double tap on Walk on should not skip a scene.
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastAdvanceAt < 350L) return
+        lastAdvanceAt = now
         val nextChapter = index + 1 >= scenes.size
         Sfx.play(if (nextChapter) Sfx.Effect.CHAPTER else Sfx.Effect.WALK)
         answerShown = false
@@ -631,6 +649,7 @@ private fun SpellQuestContent(
 
     /** A reading gift: the page's real shape is drawn into the circle, then the spell lands. */
     fun startGift(pick: QuestSpell) {
+        if (bookPick != null) return
         Sfx.play(Sfx.Effect.GIFT)
         giftToken++
         badgeCharacter = pick.character
@@ -646,6 +665,7 @@ private fun SpellQuestContent(
 
     /** A wrong attempt is set aside: the right character plays on the circle. */
     fun revealAnswer() {
+        if (answerShown) return
         Sfx.play(Sfx.Effect.REVEAL)
         answerShown = true
         giftToken++
@@ -785,6 +805,7 @@ private fun SpellQuestContent(
                                     modifier = Modifier.fillMaxSize(0.78f),
                                     fxKey = fxKey,
                                     durationMs = fxMs,
+                                    reduceMotion = reduceMotion,
                                 )
                             }
                             GiftCircle(
@@ -881,7 +902,7 @@ private fun SpellQuestContent(
                                 scene.place,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = PlumInk,
-                                maxLines = 2,
+                                maxLines = if (fontScale > 1.25f) 3 else 2,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
                             Text(
@@ -961,19 +982,9 @@ private fun SpellQuestContent(
                     )
                 }
                 if (showNote && noteEntry != null) {
-                    // Dim the page under the note: at large text a floating
-                    // card can cover a line, and a washed page reads as an
-                    // overlay instead of a clipping bug.
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .background(PaperWarm.copy(alpha = 0.82f))
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClickLabel = "Close note",
-                            ) { showNote = false },
-                    )
+                    // The note is a small anchored card, like the text hint.
+                    // Do not wash or dim the dialogue behind it; that reads as
+                    // a strange effect on the card.
                     Popup(
                         alignment = Alignment.Center,
                         onDismissRequest = { showNote = false },
@@ -990,6 +1001,7 @@ private fun SpellQuestContent(
                             newPage = newlyMet,
                             milestone = milestone,
                             tint = noteTint,
+                            onClose = { showNote = false },
                         )
                     }
                 }
@@ -1191,6 +1203,7 @@ private fun SpellQuestContent(
                 forgotten = forgotten,
                 onOpenBook = { openBook() },
                 onCast = {
+                    if (reading || channeling != null) return@CastOverlay
                     if (bookPick != null) continueGift()
                     else scope.launch { doCast(scene, ink.strokes.toList()) }
                 },
@@ -1540,12 +1553,14 @@ private fun NotePopup(
     newPage: Boolean,
     milestone: Int,
     tint: Color,
+    onClose: () -> Unit,
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = PaperWarm,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x553D2766)),
-        shadowElevation = 10.dp,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = Modifier.widthIn(max = 320.dp),
     ) {
         Column(
@@ -1570,7 +1585,20 @@ private fun NotePopup(
                     )
                 }
                 Spacer(Modifier.width(10.dp))
-                Text("Mò's note", style = MaterialTheme.typography.labelSmall, color = PlumSoft)
+                Text(
+                    "Mò's note",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = PlumSoft,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Close note",
+                        tint = PlumSoft,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             if (reading.isNotBlank()) {
                 Text(reading, style = MaterialTheme.typography.titleSmall, color = PlumInk)
@@ -1620,7 +1648,7 @@ private fun TypewriterLine(
         revealed = 0
         Sfx.play(Sfx.Effect.TOUR_TALK)
         while (revealed < text.length) {
-            kotlinx.coroutines.delay(12L)
+            kotlinx.coroutines.delay(16L)
             revealed = (revealed + 2).coerceAtMost(text.length)
         }
     }
@@ -1662,10 +1690,16 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle, ani
             return@LaunchedEffect
         }
         var start = 0L
+        var last = 0L
         while (true) {
             withInfiniteAnimationFrameNanos { now ->
                 if (start == 0L) start = now
-                drift = ((now - start) % 12_000_000_000L) / 12_000_000_000f
+                // The hills drift slowly; 30fps is plenty and leaves the
+                // frame budget to the learner's ink on low-end phones.
+                if (now - last >= 33_000_000L) {
+                    last = now
+                    drift = ((now - start) % 12_000_000_000L) / 12_000_000_000f
+                }
             }
         }
     }
@@ -2648,10 +2682,14 @@ private fun RuneRing(
     LaunchedEffect(animate) {
         if (!animate) return@LaunchedEffect
         var start = 0L
+        var last = 0L
         while (true) {
             androidx.compose.runtime.withFrameNanos { now ->
                 if (start == 0L) start = now
-                turn = ((now - start) % 90_000_000_000L) / 90_000_000_000f
+                if (now - last >= 33_000_000L) {
+                    last = now
+                    turn = ((now - start) % 90_000_000_000L) / 90_000_000_000f
+                }
             }
         }
     }
@@ -3025,9 +3063,14 @@ private fun SpellEffectOverlay(
     modifier: Modifier = Modifier.fillMaxSize(),
     fxKey: Int = 0,
     durationMs: Long = 2600L,
+    reduceMotion: Boolean = false,
 ) {
     var frame by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(family, fxKey) {
+    LaunchedEffect(family, fxKey, reduceMotion) {
+        if (reduceMotion) {
+            frame = 1f
+            return@LaunchedEffect
+        }
         frame = 0f
         var start = 0L
         while (true) {

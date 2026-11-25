@@ -258,6 +258,7 @@ fun SettingsScreen(
     var showOutfit by remember { mutableStateOf(false) }
     var confirmMature by remember { mutableStateOf(false) }
     var reminderHourMenu by remember { mutableStateOf(false) }
+    var reminderMinuteMenu by remember { mutableStateOf(false) }
     val weightProfileLabel = when (weightProfile) {
         AppSettings.SHARED_WEIGHTS -> "Shared"
         "SIMPLIFIED" -> "Simplified"
@@ -763,7 +764,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .widthIn(max = 760.dp)
                 .fillMaxWidth(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -1913,11 +1914,23 @@ fun SettingsScreen(
                             subtitle = "A quiet nudge when reviews or a new lesson are waiting.",
                         )
                         SwitchRow(
-                            title = "Study reminders",
+                            title = "Daily reminder",
                             subtitle = if (settings.remindersEnabled) {
-                                "On at ${"%02d:00".format(settings.reminderHour)}."
+                                val days = if (settings.reminderDays.size == 7) {
+                                    "every day"
+                                } else {
+                                    settings.reminderDays.sorted().joinToString(", ") { day ->
+                                        REMINDER_DAYS.firstOrNull { it.first == day }?.second
+                                            ?: day.toString()
+                                    }
+                                }
+                                "On at %02d:%02d, %s.".format(
+                                    settings.reminderHour,
+                                    settings.reminderMinute,
+                                    days,
+                                )
                             } else {
-                                "Off. A quiet nudge on the days you choose."
+                                "Off. Nothing is scheduled."
                             },
                             checked = settings.remindersEnabled,
                             onCheckedChange = { enabled ->
@@ -1950,24 +1963,58 @@ fun SettingsScreen(
                                 color = InkDark,
                             )
                             Spacer(Modifier.height(4.dp))
-                            Box {
-                                OutlinedButton(onClick = { reminderHourMenu = true }) {
-                                    Text("%02d:00".format(settings.reminderHour))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box {
+                                    OutlinedButton(onClick = { reminderHourMenu = true }) {
+                                        Text("%02d".format(settings.reminderHour))
+                                    }
+                                    DropdownMenu(
+                                        expanded = reminderHourMenu,
+                                        onDismissRequest = { reminderHourMenu = false },
+                                    ) {
+                                        (0..23).forEach { hour ->
+                                            DropdownMenuItem(
+                                                text = { Text("%02d".format(hour)) },
+                                                onClick = {
+                                                    reminderHourMenu = false
+                                                    val next = settings.copy(reminderHour = hour)
+                                                    update(next)
+                                                    ReminderScheduler.schedule(context, next)
+                                                },
+                                            )
+                                        }
+                                    }
                                 }
-                                DropdownMenu(
-                                    expanded = reminderHourMenu,
-                                    onDismissRequest = { reminderHourMenu = false },
-                                ) {
-                                    (0..23).forEach { hour ->
-                                        DropdownMenuItem(
-                                            text = { Text("%02d:00".format(hour)) },
-                                            onClick = {
-                                                reminderHourMenu = false
-                                                val next = settings.copy(reminderHour = hour)
-                                                update(next)
-                                                ReminderScheduler.schedule(context, next)
-                                            },
-                                        )
+                                Text(
+                                    " : ",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = InkDark,
+                                )
+                                Box {
+                                    OutlinedButton(onClick = { reminderMinuteMenu = true }) {
+                                        Text("%02d".format(settings.reminderMinute))
+                                    }
+                                    DropdownMenu(
+                                        expanded = reminderMinuteMenu,
+                                        onDismissRequest = { reminderMinuteMenu = false },
+                                    ) {
+                                        val minutes = (0..55 step 5).toMutableList().apply {
+                                            if (settings.reminderMinute !in this) {
+                                                add(settings.reminderMinute)
+                                                sort()
+                                            }
+                                        }
+                                        minutes.forEach { minute ->
+                                            DropdownMenuItem(
+                                                text = { Text("%02d".format(minute)) },
+                                                onClick = {
+                                                    reminderMinuteMenu = false
+                                                    val next = settings.copy(reminderMinute = minute)
+                                                    update(next)
+                                                    ReminderScheduler.schedule(context, next)
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2012,35 +2059,69 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.error,
                                 )
                             }
+                        } else {
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Bihua checks for due reviews and a new lesson when the reminder fires. If there is nothing to study, it stays quiet. Android Settings controls the notification permission and sound.",
+                                "No notification will be sent. Turn this on to choose a time and days.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
                             )
-                            TextButton(
-                                onClick = {
-                                    if (!ReminderNotifications.canNotify(context)) {
-                                        if (Build.VERSION.SDK_INT >= 33) {
-                                            notificationPermissionLauncher.launch(
-                                                Manifest.permission.POST_NOTIFICATIONS,
-                                            )
-                                        } else {
-                                            message = "Notifications are blocked. Allow them in Android Settings."
-                                        }
-                                    } else {
-                                        ReminderNotifications.show(
-                                            context,
-                                            ReminderMessage(
-                                                title = "One character is waiting",
-                                                text = "This is how a study reminder will look.",
-                                            ),
-                                        )
-                                    }
-                                },
-                            ) {
-                                Text("Send a test notification")
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Quiet on empty days. Android controls permission and sound.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Sky.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Rounded.NotificationsNone,
+                                contentDescription = null,
+                                tint = InkDark,
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    "One character is waiting",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = InkDark,
+                                )
+                                Text(
+                                    "This is how a study reminder will look.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
                             }
+                        }
+                        TextButton(
+                            onClick = {
+                                if (!ReminderNotifications.canNotify(context)) {
+                                    if (Build.VERSION.SDK_INT >= 33) {
+                                        notificationPermissionLauncher.launch(
+                                            Manifest.permission.POST_NOTIFICATIONS,
+                                        )
+                                    } else {
+                                        message = "Notifications are blocked. Allow them in Android Settings."
+                                    }
+                                } else {
+                                    ReminderNotifications.show(
+                                        context,
+                                        ReminderMessage(
+                                            title = "One character is waiting",
+                                            text = "This is how a study reminder will look.",
+                                        ),
+                                    )
+                                }
+                            },
+                        ) {
+                            Text("Send a test notification")
                         }
                     }
                 }
@@ -2059,20 +2140,19 @@ fun SettingsScreen(
                             DrawingTool.entries.forEach { tool ->
                                 FilterChip(
                                     selected = settings.brush.tool == tool,
-                                    onClick = {
-                                        update(
-                                            settings.copy(
-                                                drawingTool = tool,
-                                                brush = com.bassmd.bihua.settings.BrushConfig.preset(tool),
-                                            )
-                                        )
-                                    },
+                                    onClick = { update(settings.withTool(tool)) },
                                     label = { Text(tool.label) },
                                     shape = CircleShape,
                                 )
                             }
                         }
                         Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Each tool keeps its own preset. Changes save as you go.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                        Spacer(Modifier.height(4.dp))
                         Text(
                             if (hasStylus) {
                                 "A stylus reports pressure, so these settings change the line while you draw."
@@ -2089,8 +2169,8 @@ fun SettingsScreen(
                             suffix = "dp",
                             onChange = { value ->
                                 update(
-                                    settings.copy(
-                                        brush = settings.brush.copy(
+                                    settings.withBrush(
+                                        settings.brush.copy(
                                             minWidthDp = value.coerceAtMost(settings.brush.maxWidthDp - 0.2f),
                                         )
                                     )
@@ -2104,8 +2184,8 @@ fun SettingsScreen(
                             suffix = "dp",
                             onChange = { value ->
                                 update(
-                                    settings.copy(
-                                        brush = settings.brush.copy(
+                                    settings.withBrush(
+                                        settings.brush.copy(
                                             maxWidthDp = value.coerceAtLeast(settings.brush.minWidthDp + 0.2f),
                                         )
                                     )
@@ -2118,7 +2198,7 @@ fun SettingsScreen(
                             range = 0.2f..1.6f,
                             suffix = "×",
                             onChange = { value ->
-                                update(settings.copy(brush = settings.brush.copy(pressureCurve = value)))
+                                update(settings.withBrush(settings.brush.copy(pressureCurve = value)))
                             },
                         )
                         BrushSlider(
@@ -2127,7 +2207,7 @@ fun SettingsScreen(
                             range = 0f..0.5f,
                             suffix = "×",
                             onChange = { value ->
-                                update(settings.copy(brush = settings.brush.copy(speedThinning = value)))
+                                update(settings.withBrush(settings.brush.copy(speedThinning = value)))
                             },
                         )
                         BrushSlider(
@@ -2136,13 +2216,22 @@ fun SettingsScreen(
                             range = 0f..0.3f,
                             suffix = "×",
                             onChange = { value ->
-                                update(settings.copy(brush = settings.brush.copy(taper = value)))
+                                update(settings.withBrush(settings.brush.copy(taper = value)))
                             },
+                        )
+                        Text(
+                            "Saved for ${settings.brush.tool.label}.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = {
-                                update(settings.copy(brush = com.bassmd.bihua.settings.BrushConfig.preset(settings.brush.tool)))
-                            }) { Text("Reset to preset") }
+                                update(
+                                    settings.withBrush(
+                                        com.bassmd.bihua.settings.BrushConfig.preset(settings.drawingTool),
+                                    )
+                                )
+                            }) { Text("Reset this preset") }
                         }
                         Spacer(Modifier.height(8.dp))
                         if (hasStylus) {

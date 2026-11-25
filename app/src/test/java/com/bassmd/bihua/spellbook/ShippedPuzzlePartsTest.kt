@@ -88,12 +88,69 @@ class ShippedPuzzlePartsTest {
     }
 
     @Test
+    fun everyObstacleHasManyPlacesThatMakeSense() {
+        parts.obstacles.forEach { obstacle ->
+            val kinds = parts.obstaclePlaces[obstacle.id].orEmpty()
+            assertTrue("${obstacle.id} has no place kinds", kinds.isNotEmpty())
+            val places = parts.settings.filter { place ->
+                parts.settingTags[place].orEmpty().any { it in kinds }
+            }
+            assertTrue(
+                "${obstacle.id} only fits ${places.size} places: $places",
+                places.size >= 8,
+            )
+        }
+    }
+
+    @Test
+    fun generatedScenesPairObstaclesWithCompatiblePlaces() {
+        repeat(2000) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed))
+            val obstacle = parts.obstacles.first { it.prompt == puzzle.prompt }
+            val setting = parts.settings.firstOrNull { puzzle.place.startsWith(it) }
+                ?: error("no known setting in ${puzzle.place}")
+            val placeKinds = parts.settingTags[setting].orEmpty()
+            val obstacleKinds = parts.obstaclePlaces[obstacle.id].orEmpty()
+            assertTrue(
+                "${obstacle.id} cannot happen in $setting (${puzzle.place})",
+                placeKinds.any { it in obstacleKinds },
+            )
+        }
+    }
+
+    @Test
+    fun everyObstacleNamesItsOwnSuccess() {
+        parts.obstacles.forEach { obstacle ->
+            assertTrue(
+                "${obstacle.id} has no success line",
+                parts.obstacleSuccess[obstacle.id].orEmpty().isNotBlank(),
+            )
+        }
+        repeat(200) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed))
+            val obstacle = parts.obstacles.first { it.prompt == puzzle.prompt }
+            val expected = parts.obstacleSuccess.getValue(obstacle.id)
+            puzzle.solutions.forEach { solution ->
+                assertEquals("${obstacle.id} solved with generic copy", expected, solution.text)
+            }
+        }
+    }
+
+    @Test
     fun theShippedLibraryHasTheExpectedShape() {
         assertEquals(35, parts.familyNames.size)
         assertTrue(parts.obstacles.size >= 40)
         assertTrue(parts.settings.size >= 30)
         assertTrue(parts.times.size >= 20)
         assertTrue(parts.weathers.size >= 15)
+        assertTrue(parts.settingTags.size >= 30)
+        assertTrue(parts.obstaclePlaces.size >= 40)
+        parts.settings.forEach { setting ->
+            assertTrue("$setting has no place kind", parts.settingTags[setting].orEmpty().isNotEmpty())
+        }
+        parts.obstacles.forEach { obstacle ->
+            assertTrue("${obstacle.id} has no place kind", parts.obstaclePlaces[obstacle.id].orEmpty().isNotEmpty())
+        }
     }
 
     @Test
@@ -114,7 +171,7 @@ class ShippedPuzzlePartsTest {
     fun generatedPuzzlesAreSolvableAndVary() {
         val puzzles = (0 until 2000).map { PuzzleForge.generate(parts, Random(it)) }
         puzzles.forEach { puzzle ->
-            assertTrue(puzzle.solutions.isNotEmpty())
+            assertTrue(puzzle.solutions.size >= 2)
             assertTrue(puzzle.lines.isNotEmpty())
         }
         val combinations = puzzles.map { it.place to it.prompt }.toSet()

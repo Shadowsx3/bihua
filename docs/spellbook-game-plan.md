@@ -15,7 +15,12 @@ built, how the game loop works, and what is still missing. The working handoff
   scene and in the hint label ("Another chapter", "Not that shape").
 - The generated copy stays plain: spell notes are short first glosses (never
   "A water spell"), time/weather pairs are checked for contradictions, and places
-  do not repeat "under" or contradict a frozen/dry setting.
+  do not repeat "under" or contradict a frozen/dry setting. Obstacles also carry
+  place kinds, so a frozen lake never appears inside a copper market. A solved
+  scene names what changed in that scene, not just the spell's element.
+- The daily word is a shared calendar slot: the same study day and course give
+  every learner the same word. It is not seeded by install time, progress, or
+  the mature-content setting.
 - Clues are optional and escalate: reading (Hear it), meaning, shape. Casting without
   clues is always possible.
 - Warm and quiet: paper, ink, soft motion, no streaks, no pressure, no ads.
@@ -38,8 +43,9 @@ built, how the game loop works, and what is still missing. The working handoff
   that course. `tools/spells/build_spellbook.py` writes the CSV.
 - `tools/spells/parts.sql`: the procedural puzzle parts (35 families and their tags,
   47 obstacles and what they accept, 18 tags with multiple outcomes, 40 settings,
-  26 times of day, 20 weathers). That is roughly 950,000 place combinations before
-  scene order, style, and cast choice. Source of truth.
+  26 times of day, 20 weathers, and the place-kind tables that keep obstacles and
+  settings honest). The compatible frames give 19,607 unique places and 520,488
+  obstacle-place pairs; each obstacle still fits 9–38 settings. Source of truth.
   `tools/spells/build_parts.py` compiles it to `app/src/main/assets/puzzle_parts.db`.
 - The fixed 1500-variant library and its seed/build files are retired. Every scene is
   built from `puzzle_parts.db`; there is no fallback puzzle database in the app.
@@ -55,8 +61,12 @@ built, how the game loop works, and what is still missing. The working handoff
 - `PuzzleForge.kt`: procedural generation. `PuzzleParts.load(context)` reads the parts;
   `PuzzleForge.generate(parts, random, family, character, style, previousPlace)` builds
   a puzzle. `PuzzleStyle` chooses a family door, a whole chapter, or one exact shape.
-  The same seed gives the same puzzle, and the combinations are far more than any
-  library holds.
+  The same seed gives the same puzzle. After place fit, the authored doors still give
+  about 29 million scene + place + style + solution combinations. Family puzzles
+  always have at least two fitting families; chapter puzzles have a whole chapter of
+  spells; exact-shape puzzles are the deliberate single-answer exception. Scenes
+  within one chapter do not repeat the same obstacle, and the result body comes from
+  the obstacle's own success line.
 - `Quest.kt`: `QuestSolver` (a cast solves when its family, chapter, or exact character
   matches a solution, otherwise it gets the hint) and `QuestGenerator` (six scenes per
   chapter, always built from the forge, with a shuffled mix of the three styles).
@@ -169,8 +179,11 @@ built, how the game loop works, and what is still missing. The working handoff
 
 - Unit tests: `GrimoireSpreadsTest` (spread rules), `PuzzleForgeTest` (solver rule,
   nudges, determinism, variety), `ShippedPuzzlePartsTest` (every obstacle has at least
-  two fitting families; 2000 seeds give 200+ distinct combinations), `QuestGeneratorTest`,
-  `SpellbookTest`, `SpellQuestLogicTest`.
+  two fitting families and eight compatible places; 2000 seeds stay place-honest and
+  give 200+ distinct combinations), `QuestGeneratorTest`, `SpellbookTest`,
+  `SpellQuestLogicTest`, and `FeaturedWordTest` (same study day and course are shared;
+  a month has no repeats; courses walk their own sequences). `ShippedPuzzlePartsTest`
+  also checks every obstacle's success line and that generated results use it.
 - UIAutomator scenario `spell-quest` (`qa/scenarios.py`): the gate, the gift from the
   grimoire, the result, a real draw and cast, the cast overlay's labels, and the
   wrong-answer path. Runs on phone, tablet, and fold-inner.
@@ -209,7 +222,7 @@ built, how the game loop works, and what is still missing. The working handoff
 ### Procedural follow-ups
 
 - More obstacles and settings in `tools/spells/parts.sql`, each with at least two
-  fitting families.
+  fitting families and a place-kind fit.
 - Tag outcomes per obstacle, so the solution text fits the obstacle more closely.
 - A difficulty curve: early chapters use obstacles with many fitting families.
 

@@ -109,6 +109,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
                 views.setOnClickPendingIntent(R.id.widget_root, open)
                 views.setOnClickPendingIntent(R.id.widget_action, open)
                 appWidgetIds.forEach { appWidgetManager.updateAppWidget(it, views) }
+                WidgetRefresh.schedule(context, snapshot.dayStartHour)
             } finally {
                 pending.finish()
             }

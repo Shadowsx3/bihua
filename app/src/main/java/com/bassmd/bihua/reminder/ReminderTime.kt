@@ -7,16 +7,18 @@ import java.time.ZonedDateTime
 object ReminderTime {
     fun nextDelayMs(
         hour: Int,
+        minute: Int = 0,
         days: Set<Int>,
         now: ZonedDateTime = ZonedDateTime.now(),
     ): Long {
         val safeHour = hour.coerceIn(0, 23)
+        val safeMinute = minute.coerceIn(0, 59)
         val safeDays = days.filter { it in 1..7 }.toSet()
         if (safeDays.isEmpty()) return Duration.ofDays(1).toMillis()
         for (offset in 0..7) {
             val date = now.toLocalDate().plusDays(offset.toLong())
             if (date.dayOfWeek.value !in safeDays) continue
-            val candidate = date.atTime(safeHour, 0).atZone(now.zone)
+            val candidate = date.atTime(safeHour, safeMinute).atZone(now.zone)
             // Ten seconds from now should still fire today. The old 30-second
             // guard silently moved a just-enabled reminder to the next day.
             if (!candidate.isBefore(now)) {

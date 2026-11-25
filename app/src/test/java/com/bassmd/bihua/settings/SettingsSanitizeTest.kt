@@ -1,7 +1,6 @@
 package com.bassmd.bihua.settings
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -89,6 +88,79 @@ class SettingsSanitizeTest {
         assertEquals(0.6f, settings.brush.speedThinning, 0.001f)
         assertEquals(0f, settings.brush.taper, 0.001f)
         assertEquals(1f, settings.brush.taperStrength, 0.001f)
+    }
+
+    @Test
+    fun eachToolKeepsItsOwnBrushPreset() {
+        val pen = BrushConfig.preset(DrawingTool.PEN).copy(
+            minWidthDp = 2.0f,
+            maxWidthDp = 5.0f,
+            pressureCurve = 0.8f,
+        )
+        val ink = BrushConfig.preset(DrawingTool.INK).copy(
+            minWidthDp = 3.0f,
+            maxWidthDp = 9.0f,
+            pressureCurve = 0.5f,
+        )
+        val settings = AppSettings(
+            drawingTool = DrawingTool.INK,
+            brush = ink,
+            brushPresets = mapOf(DrawingTool.PEN.name to pen),
+            brushWidthMigrated = true,
+        ).sanitized()
+
+        assertEquals(pen.minWidthDp, settings.brushFor(DrawingTool.PEN).minWidthDp, 0.001f)
+        assertEquals(ink.minWidthDp, settings.brushFor(DrawingTool.INK).minWidthDp, 0.001f)
+
+        val switched = settings.withTool(DrawingTool.PEN)
+        assertEquals(DrawingTool.PEN, switched.drawingTool)
+        assertEquals(pen.minWidthDp, switched.brush.minWidthDp, 0.001f)
+
+        val back = switched.withTool(DrawingTool.INK)
+        assertEquals(ink.minWidthDp, back.brush.minWidthDp, 0.001f)
+    }
+
+    @Test
+    fun brushChangesAreSavedForTheActiveTool() {
+        val tuned = BrushConfig.preset(DrawingTool.PEN).copy(
+            minWidthDp = 1.7f,
+            maxWidthDp = 4.2f,
+            pressureCurve = 0.9f,
+        )
+        val settings = AppSettings(drawingTool = DrawingTool.PEN, brushWidthMigrated = true)
+            .withBrush(tuned)
+
+        assertEquals(tuned.minWidthDp, settings.brushPresets[DrawingTool.PEN.name]?.minWidthDp ?: 0f, 0.001f)
+        assertEquals(tuned.pressureCurve, settings.brushPresets[DrawingTool.PEN.name]?.pressureCurve ?: 0f, 0.001f)
+        // The other tools keep their own factory feel.
+        assertEquals(
+            BrushConfig.preset(DrawingTool.INK).minWidthDp,
+            settings.brushFor(DrawingTool.INK).minWidthDp,
+            0.001f,
+        )
+    }
+
+    @Test
+    fun aMaliciousPresetIsClampedAndNamedForItsTool() {
+        val settings = AppSettings(
+            drawingTool = DrawingTool.MARKER,
+            brushPresets = mapOf(
+                DrawingTool.MARKER.name to BrushConfig(
+                    tool = DrawingTool.INK,
+                    minWidthDp = -4f,
+                    maxWidthDp = 99f,
+                    pressureCurve = Float.NaN,
+                ),
+                "not-a-tool" to BrushConfig(),
+            ),
+            brushWidthMigrated = true,
+        ).sanitized()
+
+        val marker = settings.brushFor(DrawingTool.MARKER)
+        assertEquals(DrawingTool.MARKER, marker.tool)
+        assertTrue(marker.minWidthDp > 0f)
+        assertTrue(marker.maxWidthDp <= 14f)
+        assertFalse(settings.brushPresets.containsKey("not-a-tool"))
     }
 
     @Test

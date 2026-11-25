@@ -2,6 +2,31 @@
 
 ## 1.1.1 (in progress)
 
+- The word of the day is now a shared calendar slot: the same study day and
+  course return the same word for every learner, with no install-time or
+  personal seed. A month of days does not repeat, and each course walks its own
+  sequence.
+- Spell-quest scenes keep their sense: obstacles and places now share place
+  kinds, so a frozen lake no longer appears inside a copper market. Every
+  obstacle still has many honest places, and family puzzles still have several
+  fitting answers. A solved scene names its own outcome, and one chapter does
+  not repeat the same obstacle.
+- Mò's note has a visible close button, so it is obvious how to return to the
+  hint at any text size.
+- A writing review always offers Show answer, even before ink or when
+  recognition is slow. A learner is never stuck behind Check & grade.
+- The spell quest honors the system remove-animations switch, caps ambient
+  motion at 30fps, and caches the immutable puzzle parts, so repeat visits do
+  not reopen and reparse the database.
+- Widgets refresh at day-part and study-day boundaries, on app changes, and on
+  clock/date changes, with a six-hour safety net instead of a half-hour poll.
+- Each drawing tool now keeps its own brush preset. Switching Ink, Pen, Pencil,
+  and Marker restores that tool's saved width, pressure, speed, and taper; the
+  presets travel in backups.
+- The Reminders page has one clear title, an explicit On/Off state, a preview
+  card, and the test notification action whether reminders are on or off.
+- Wide tablets use the navigation rail and the two-page dashboard instead of a
+  single stretched phone hero.
 - A guided tour with Mò, the paper-ink pet. It runs as a live overlay over the
   real app: a spotlight on the real control, a typewriter line, small pet
   gestures and props, and a gentle sound cue. The Home invite is optional, and

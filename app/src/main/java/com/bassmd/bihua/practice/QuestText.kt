@@ -12,6 +12,7 @@ internal fun shortGloss(meaning: String?): String? {
         ?.substringBefore(',')
         ?.substringBefore('(')
         ?.trim()
+        ?.trimEnd('.', '。', '!', '?')
         .orEmpty()
     return word.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }
 }

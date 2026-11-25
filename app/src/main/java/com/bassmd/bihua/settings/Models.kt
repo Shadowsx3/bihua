@@ -289,6 +289,8 @@ data class AppSettings(
     val remindersEnabled: Boolean = false,
     /** Local hour 0..23 for the reminder. */
     val reminderHour: Int = 20,
+    /** Local minute 0..59 for the reminder. */
+    val reminderMinute: Int = 0,
     /** ISO day numbers, Monday=1 through Sunday=7. */
     val reminderDays: Set<Int> = setOf(1, 2, 3, 4, 5, 6, 7),
     val gridStyle: GridStyle = GridStyle.MI_ZI,
@@ -296,6 +298,8 @@ data class AppSettings(
     val writingSize: WritingSize = WritingSize.COMFORTABLE,
     val inkWidth: InkWidth = InkWidth.BOLD,
     val brush: BrushConfig = BrushConfig(),
+    /** Per-tool brush feel, keyed by [DrawingTool.name]. */
+    val brushPresets: Map<String, BrushConfig> = emptyMap(),
     val drawingTool: DrawingTool = DrawingTool.INK,
     val allowFingerDrawing: Boolean = true,
     /** One-time migration: 1.0.7 shipped finger drawing off even on stylus phones. */
@@ -417,6 +421,29 @@ data class AppSettings(
     fun withDayStartHour(hour: Int) =
         copy(dayStartHour = hour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR))
 
+    /** The saved feel for a tool, or its factory preset when none was saved yet. */
+    fun brushFor(tool: DrawingTool): BrushConfig =
+        (brushPresets[tool.name] ?: if (tool == brush.tool) brush else BrushConfig.preset(tool))
+            .copy(tool = tool)
+            .sanitized()
+
+    /** Selects a tool and restores the preset saved for it. */
+    fun withTool(tool: DrawingTool): AppSettings =
+        withToolBrush(tool, brushFor(tool))
+
+    /** Saves the active brush under the active tool as it changes. */
+    fun withBrush(config: BrushConfig): AppSettings =
+        withToolBrush(drawingTool, config)
+
+    fun withToolBrush(tool: DrawingTool, config: BrushConfig): AppSettings {
+        val fixed = config.copy(tool = tool).sanitized()
+        return copy(
+            drawingTool = tool,
+            brush = fixed,
+            brushPresets = brushPresets + (tool.name to fixed),
+        )
+    }
+
     /** Keeps a restored or hand-edited settings blob inside the ranges the UI can render. */
     fun sanitized(): AppSettings {
         val shared = fsrsWeights
@@ -435,12 +462,25 @@ data class AppSettings(
         }.toMap()
         val hasShared = shared.isNotEmpty()
         val validReminderDays = reminderDays.filter { it in 1..7 }.toSet()
+        val migratedBrush = if (brushWidthMigrated) brush.sanitized() else BrushConfig.preset(brush.tool)
+        val remembered = brushPresets.mapNotNull { (key, config) ->
+            val tool = DrawingTool.entries.firstOrNull { it.name == key } ?: return@mapNotNull null
+            tool.name to config.copy(tool = tool).sanitized()
+        }.toMap()
+        val presets = DrawingTool.entries.associate { tool ->
+            tool.name to (
+                remembered[tool.name]
+                    ?: if (tool == brush.tool) migratedBrush.copy(tool = tool) else BrushConfig.preset(tool)
+                )
+        }
+        val activeBrush = presets[drawingTool.name] ?: migratedBrush.copy(tool = drawingTool)
         // 1.0.7 stored one flat study list. Convert it here so every load path
         // (including a fresh install of this version) sees a named list.
         return StudyLists.ensureMigrated(copy(
             dailyNewGoal = dailyNewGoal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL),
             dayStartHour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR),
             reminderHour = reminderHour.coerceIn(0, 23),
+            reminderMinute = reminderMinute.coerceIn(0, 59),
             reminderDays = validReminderDays,
             remindersEnabled = remindersEnabled && validReminderDays.isNotEmpty(),
             mixInterval = mixInterval.coerceIn(1, 10),
@@ -452,7 +492,8 @@ data class AppSettings(
             fsrsProfiles = profiles,
             allowFingerDrawing = if (fingerDrawingMigrated) allowFingerDrawing else true,
             fingerDrawingMigrated = true,
-            brush = if (brushWidthMigrated) brush.sanitized() else BrushConfig.preset(brush.tool),
+            brush = activeBrush.copy(tool = drawingTool),
+            brushPresets = presets,
             brushWidthMigrated = true,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
             meaningSynonyms = MeaningSanitizer.mergeSynonyms(meaningSynonyms),

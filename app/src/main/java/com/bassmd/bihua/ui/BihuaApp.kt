@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +60,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.boundsInWindow
@@ -140,7 +144,7 @@ private enum class Tab(
     CHARACTERS("Characters", "Chars", Icons.Rounded.GridView),
     PROGRESS("Progress", "Stats", Icons.Rounded.Insights),
     PRACTICE("Practice", "Draw", Icons.Rounded.Brush),
-    SETTINGS("Settings", "Setup", Icons.Rounded.Settings),
+    SETTINGS("Settings", "More", Icons.Rounded.Settings),
 }
 
 /**
@@ -176,6 +180,7 @@ fun BihuaApp(
         bootChecked,
         settings.remindersEnabled,
         settings.reminderHour,
+        settings.reminderMinute,
         settings.reminderDays,
     ) {
         if (bootChecked) ReminderScheduler.schedule(context, settings)
@@ -349,11 +354,9 @@ fun BihuaApp(
             onFinish = { chosenMode, goal, brush, share, cue, pronunciation, method, retention, allowFinger ->
                 scope.launch {
                     store.updateSettings { current ->
-                        current.copy(
+                        current.withToolBrush(brush.tool, brush).copy(
                             studyMode = chosenMode,
                             dailyNewGoal = goal,
-                            brush = brush,
-                            drawingTool = brush.tool,
                             shareIdenticalGlyphs = share,
                             recallCue = cue,
                             pronunciationPractice = pronunciation,
@@ -1438,7 +1441,10 @@ fun BihuaApp(
         ) {
             val fold = LocalFoldState.current
             val book = fold == FoldState.BOOK && maxWidth >= 700.dp
-            val wide = maxWidth >= 840.dp && !book
+            // Keep the shell rail and the Home two-column dashboard on the
+            // same breakpoint. A tablet must not get a phone bottom bar under a
+            // two-column desktop layout.
+            val wide = maxWidth >= 820.dp && !book
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(
@@ -1579,7 +1585,8 @@ fun BihuaApp(
                         Box(
                             Modifier
                                 .weight(1f)
-                                .padding(bottom = bottomBarPadding),
+                                .padding(bottom = bottomBarPadding)
+                                .clipToBounds(),
                         ) {
                             AppContent(
                                 tab = tab,
@@ -1686,6 +1693,19 @@ fun BihuaApp(
                             )
                         }
                     }
+                    // Fade the scroll under the floating bar, so a half-row at
+                    // the viewport edge reads as more content, not a cut.
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, PaperWarm.copy(alpha = 0.94f)),
+                                )
+                            ),
+                    )
                     BihuaBottomBar(
                         selected = tab,
                         onSelect = changeTab,

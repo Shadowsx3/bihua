@@ -29,24 +29,47 @@ class PuzzleParts(
     val settings: List<String>,
     val times: List<TimeOfDay>,
     val weathers: List<Weather>,
+    /** What kind of place each setting is: INDOOR, WATER, FOREST, TOWN, and so on. */
+    val settingTags: Map<String, Set<String>> = emptyMap(),
+    /** The place kinds an obstacle can honestly happen in. */
+    val obstaclePlaces: Map<String, Set<String>> = emptyMap(),
+    /** What the scene looks like once this obstacle is answered. */
+    val obstacleSuccess: Map<String, String> = emptyMap(),
 ) {
     companion object {
-        /** Copies the shipped `puzzle_parts.db` out of the assets and reads it. Null if it is missing. */
+        @Volatile
+        private var cached: PuzzleParts? = null
+
+        /**
+         * Copies the shipped `puzzle_parts.db` out of the assets and reads it.
+         * Null if it is missing. The parts are immutable for the process, so a
+         * repeat visit to the road does not reopen and reparse the database.
+         */
         fun load(context: android.content.Context): PuzzleParts? {
-            val file = java.io.File(context.filesDir, "puzzle_parts.db")
-            runCatching {
-                context.assets.open("puzzle_parts.db").use { input ->
-                    file.outputStream().use { output -> input.copyTo(output) }
+            cached?.let { return it }
+            synchronized(this) {
+                cached?.let { return it }
+                val file = java.io.File(context.filesDir, "puzzle_parts.db")
+                runCatching {
+                    context.assets.open("puzzle_parts.db").use { input ->
+                        file.outputStream().use { output -> input.copyTo(output) }
+                    }
                 }
-            }
-            if (!file.exists()) return null
-            val db = android.database.sqlite.SQLiteDatabase.openDatabase(
-                file.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
-            )
-            return try {
-                fromDatabase(db)
-            } finally {
-                db.close()
+                if (!file.exists()) return null
+                val db = android.database.sqlite.SQLiteDatabase.openDatabase(
+                    file.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
+                )
+                val loaded = try {
+                    runCatching { fromDatabase(db) }.getOrNull()
+                } finally {
+                    db.close()
+                }
+                if (loaded == null) {
+                    file.delete()
+                    return null
+                }
+                cached = loaded
+                return loaded
             }
         }
 
@@ -94,7 +117,26 @@ class PuzzleParts(
             db.rawQuery("SELECT suffix, line FROM weather ORDER BY name", null).use { c ->
                 while (c.moveToNext()) weathers += Weather(c.getString(0), c.getString(1))
             }
-            return PuzzleParts(names, tags, obstacles, outcomes, settings, times, weathers)
+            val settingTags = HashMap<String, MutableSet<String>>()
+            db.rawQuery("SELECT place, tag FROM setting_tag", null).use { c ->
+                while (c.moveToNext()) {
+                    settingTags.getOrPut(c.getString(0)) { mutableSetOf() }.add(c.getString(1))
+                }
+            }
+            val obstaclePlaces = HashMap<String, MutableSet<String>>()
+            db.rawQuery("SELECT obstacle_id, tag FROM obstacle_place", null).use { c ->
+                while (c.moveToNext()) {
+                    obstaclePlaces.getOrPut(c.getString(0)) { mutableSetOf() }.add(c.getString(1))
+                }
+            }
+            val obstacleSuccess = HashMap<String, String>()
+            db.rawQuery("SELECT obstacle_id, text FROM obstacle_success", null).use { c ->
+                while (c.moveToNext()) obstacleSuccess[c.getString(0)] = c.getString(1)
+            }
+            return PuzzleParts(
+                names, tags, obstacles, outcomes, settings, times, weathers,
+                settingTags, obstaclePlaces, obstacleSuccess,
+            )
         }
     }
 }
@@ -117,11 +159,28 @@ object PuzzleForge {
         character: String = "",
         style: PuzzleStyle = PuzzleStyle.FAMILY,
         previousPlace: String? = null,
+        excludedObstacles: Set<String> = emptySet(),
     ): Puzzle {
         require(parts.obstacles.isNotEmpty()) { "no obstacles to build a puzzle from" }
         val carried = family?.let { parts.familyTags[it] }.orEmpty()
         val fittingObstacles = parts.obstacles.filter { obstacle -> obstacle.accepts.any { it in carried } }
-        val obstacle = (fittingObstacles.ifEmpty { parts.obstacles }).let { it[random.nextInt(it.size)] }
+        val candidateObstacles = fittingObstacles.ifEmpty { parts.obstacles }
+        val baseObstacles = candidateObstacles
+            .filter { it.prompt !in excludedObstacles }
+            .ifEmpty { candidateObstacles }
+        // A family door must have more than one honest family behind it. If a
+        // narrow fixture (or a future part) has only one, prefer a wider
+        // obstacle rather than shipping a puzzle with a single answer.
+        val familyObstacles = if (style == PuzzleStyle.FAMILY) {
+            baseObstacles.filter { obstacle ->
+                parts.familyNames.keys.count { id ->
+                    parts.familyTags[id].orEmpty().any { it in obstacle.accepts }
+                } >= 2
+            }.ifEmpty { baseObstacles }
+        } else {
+            baseObstacles
+        }
+        val obstacle = familyObstacles.let { it[random.nextInt(it.size)] }
 
         val fittingFamilies = parts.familyNames.keys
             .mapNotNull { id ->
@@ -142,7 +201,8 @@ object PuzzleForge {
                     Solution(
                         families = setOf(family),
                         characters = setOf(character),
-                        text = outcome.replace("{family}", name),
+                        text = parts.obstacleSuccess[obstacle.id]
+                            ?: outcome.replace("{family}", name),
                     ),
                 )
             }
@@ -162,7 +222,7 @@ object PuzzleForge {
                     Solution(
                         families = emptySet(),
                         categories = setOf(chapter),
-                        text = categoryOutcome(chapter),
+                        text = parts.obstacleSuccess[obstacle.id] ?: categoryOutcome(chapter),
                     )
                 }
             }
@@ -170,7 +230,11 @@ object PuzzleForge {
                 val name = rawName.lowercase()
                 val outcome = parts.outcomes[matched.first()]?.random(random)
                     ?: "The {family} works, and the way opens."
-                Solution(families = setOf(id), text = outcome.replace("{family}", name))
+                Solution(
+                    families = setOf(id),
+                    text = parts.obstacleSuccess[obstacle.id]
+                        ?: outcome.replace("{family}", name),
+                )
             }
         }
 
@@ -181,9 +245,20 @@ object PuzzleForge {
             .filter { it !in solvedBy && SpellFamilies.chapter(it) !in solvedChapters }
             .associateWith { styleNeed }
 
-        val setting = parts.settings
+        // A frozen lake does not belong in a copper market. Keep the place
+        // pool to settings that share a kind with this obstacle, while still
+        // leaving every obstacle many places to happen in.
+        val obstacleKinds = parts.obstaclePlaces[obstacle.id].orEmpty()
+        val fittingSettings = if (obstacleKinds.isEmpty()) {
+            parts.settings
+        } else {
+            parts.settings.filter { place ->
+                parts.settingTags[place].orEmpty().any { it in obstacleKinds }
+            }.ifEmpty { parts.settings }
+        }
+        val setting = fittingSettings
             .filter { previousPlace == null || !previousPlace.startsWith(it) }
-            .ifEmpty { parts.settings }
+            .ifEmpty { fittingSettings }
             .let { it[random.nextInt(it.size)] }
         var time = parts.times[random.nextInt(parts.times.size)]
         var weather = parts.weathers[random.nextInt(parts.weathers.size)]

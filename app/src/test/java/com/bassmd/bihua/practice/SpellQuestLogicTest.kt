@@ -25,6 +25,7 @@ class SpellQuestLogicTest {
         assertEquals("Spell", badgeWord(null, "unknown-family"))
         assertEquals("Sparkle", badgeWord("to sparkle, to shine", "light"))
         assertEquals("Second", badgeWord("second (unit of time or angle)", "time"))
+        assertEquals("Sparkle", badgeWord("Sparkle.", "light"))
         assertEquals("Time", badgeWord("again", "time"))
     }
 

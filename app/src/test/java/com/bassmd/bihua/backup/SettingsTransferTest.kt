@@ -41,6 +41,26 @@ class SettingsTransferTest {
     }
 
     @Test
+    fun backupCarriesEveryBrushPreset() {
+        val pen = com.bassmd.bihua.settings.BrushConfig.preset(
+            com.bassmd.bihua.settings.DrawingTool.PEN,
+        ).copy(minWidthDp = 2.1f, maxWidthDp = 5.2f)
+        val settings = AppSettings(
+            drawingTool = com.bassmd.bihua.settings.DrawingTool.PEN,
+            brush = pen,
+            brushPresets = mapOf(com.bassmd.bihua.settings.DrawingTool.PEN.name to pen),
+            brushWidthMigrated = true,
+        )
+        val decoded = BackupCodec.decode(BackupCodec.encode(BackupBundle(
+            exportedAtEpochMs = 1L,
+            profile = UserProfile(displayName = "Test"),
+            settings = settings,
+        )))
+        assertEquals(2.1f, decoded.settings.brushFor(com.bassmd.bihua.settings.DrawingTool.PEN).minWidthDp, 0.001f)
+        assertEquals(5.2f, decoded.settings.brushFor(com.bassmd.bihua.settings.DrawingTool.PEN).maxWidthDp, 0.001f)
+    }
+
+    @Test
     fun settingsFromBeforeTheNewFieldsUseSafeDefaults() {
         val decoded = Json { ignoreUnknownKeys = true }
             .decodeFromString(AppSettings.serializer(), """{"onboarded":true}""")

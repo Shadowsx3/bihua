@@ -28,6 +28,24 @@ class ReminderTimeTest {
     }
 
     @Test
+    fun honorsTheMinute() {
+        val now = ZonedDateTime.of(2026, 11, 22, 19, 0, 0, 0, zone)
+        assertEquals(
+            Duration.ofMinutes(90).toMillis(),
+            ReminderTime.nextDelayMs(hour = 20, minute = 30, days = setOf(7), now = now),
+        )
+    }
+
+    @Test
+    fun clampsTheMinute() {
+        val now = ZonedDateTime.of(2026, 11, 22, 19, 0, 0, 0, zone)
+        assertEquals(
+            Duration.ofMinutes(119).toMillis(),
+            ReminderTime.nextDelayMs(hour = 20, minute = 99, days = setOf(7), now = now),
+        )
+    }
+
+    @Test
     fun rollsToTheNextSelectedDay() {
         val now = ZonedDateTime.of(2026, 11, 22, 21, 0, 0, 0, zone)
         assertEquals(

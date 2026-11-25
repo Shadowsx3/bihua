@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDate
+import kotlin.random.Random
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -21,10 +22,15 @@ interface ContentRepository {
     suspend fun find(id: String): CharacterEntry?
     suspend fun variants(character: String): Set<String>
 
+    /**
+     * The same calendar day and mode return the same word for every learner,
+     * on every install. [epochDay] is the study day (LocalDate.toEpochDay),
+     * never an install time or a random seed.
+     */
     suspend fun featuredWord(
         mode: StudyMode,
         includeMature: Boolean = false,
-        seed: Int = 0,
+        epochDay: Int = 0,
     ): WordContext?
 
     suspend fun words(characterId: String, includeMature: Boolean = false): List<WordContext>
@@ -88,7 +94,7 @@ class SqliteContentRepository(
     override suspend fun featuredWord(
         mode: StudyMode,
         includeMature: Boolean,
-        seed: Int,
+        epochDay: Int,
     ): WordContext? = withContext(Dispatchers.IO) {
         fun read(cursor: Cursor): WordContext = WordContext(
             word = cursor.getString(0),
@@ -120,6 +126,9 @@ class SqliteContentRepository(
             }
         }
 
+        // Fixed per-course order: every learner with this course sees the same
+        // sequence, and the sequence is not the authored list order.
+        val orderedCurated = curatedRows.shuffled(Random(mode.ordinal * 7919 + 13))
         val exclusion = if (curated.isEmpty()) "" else " AND w.word NOT IN ($placeholders)"
         val quality = """
             w.mode=? AND w.mature=0
@@ -142,15 +151,17 @@ class SqliteContentRepository(
             poolArgs.toTypedArray(),
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
 
-        val total = curatedRows.size + poolCount
+        val total = orderedCurated.size + poolCount
         if (total <= 0) return@withContext null
-        // Start the curated season on the 1.0.8 launch day, then walk the
-        // shuffled pool. The same word does not return until the pool cycles.
+        // The cycle starts on a fixed date and is indexed only by the study
+        // day and the course. The curated list is shuffled per course, then the
+        // pool follows, so the same date is shared by every learner and the
+        // same word does not return until the whole cycle has been met.
         val startDay = LocalDate.of(2026, 11, 23).toEpochDay().toInt()
-        val cycle = Math.floorMod(seed - startDay, total)
-        if (cycle < curatedRows.size) return@withContext curatedRows[cycle]
+        val cycle = Math.floorMod(epochDay - startDay, total)
+        if (cycle < orderedCurated.size) return@withContext orderedCurated[cycle]
 
-        val offset = cycle - curatedRows.size
+        val offset = cycle - orderedCurated.size
         val selectArgs = ArrayList<String>(poolArgs)
         selectArgs.add(offset.toString())
         database.rawQuery(

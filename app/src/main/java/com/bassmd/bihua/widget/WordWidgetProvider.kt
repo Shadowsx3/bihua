@@ -137,6 +137,7 @@ class WordWidgetProvider : AppWidgetProvider() {
                 val open = WidgetLook.openApp(context)
                 views.setOnClickPendingIntent(R.id.widget_root, open)
                 appWidgetIds.forEach { appWidgetManager.updateAppWidget(it, views) }
+                WidgetRefresh.schedule(context, snapshot.dayStartHour)
             } finally {
                 pending.finish()
             }

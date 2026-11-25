@@ -2,6 +2,7 @@ package com.bassmd.bihua.spellbook
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.random.Random
@@ -22,14 +23,14 @@ class PuzzleForgeTest {
                 prompt = "Get across the river",
                 lines = listOf("The river runs wide.", "The far bank looks like another country."),
                 need = "Something that can stand firm is needed here.",
-                accepts = setOf("FLOW", "SOLID"),
+                accepts = setOf("FLOW", "SOLID", "COLD"),
             ),
             Obstacle(
                 id = "gate",
                 prompt = "Open the gate",
                 lines = listOf("A gate with no hinge."),
                 need = "Something that can push is needed here.",
-                accepts = setOf("PUSH"),
+                accepts = setOf("PUSH", "SOLID"),
             ),
         ),
         outcomes = mapOf(
@@ -109,6 +110,37 @@ class PuzzleForgeTest {
     }
 
     @Test
+    fun excludingEveryObstacleStillFallsBackToARealPuzzle() {
+        val allPrompts = parts.obstacles.map { it.prompt }.toSet()
+        repeat(20) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed), excludedObstacles = allPrompts)
+            assertTrue(puzzle.solutions.isNotEmpty())
+            assertTrue(puzzle.place.isNotBlank())
+        }
+    }
+
+    @Test
+    fun aPreviousPlaceThatMatchesEverySettingStillReturnsAPuzzle() {
+        repeat(20) { seed ->
+            val puzzle = PuzzleForge.generate(parts, Random(seed), previousPlace = "The")
+            assertTrue(puzzle.place.isNotBlank())
+            assertTrue(puzzle.solutions.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun anExcludedObstacleIsNotRepeatedWhenAnotherFits() {
+        repeat(50) { seed ->
+            val puzzle = PuzzleForge.generate(
+                parts,
+                Random(seed),
+                excludedObstacles = setOf("Get across the river"),
+            )
+            assertNotEquals("Get across the river", puzzle.prompt)
+        }
+    }
+
+    @Test
     fun theSettingDoesNotRepeatTheLastOne() {
         repeat(100) { seed ->
             val puzzle = PuzzleForge.generate(parts, Random(seed), previousPlace = "The old gate")
@@ -127,10 +159,11 @@ class PuzzleForgeTest {
     }
 
     @Test
-    fun everyPuzzleHasAtLeastOneWayThrough() {
+    fun everyFamilyPuzzleHasSeveralHonestAnswers() {
         repeat(200) { seed ->
             val puzzle = PuzzleForge.generate(parts, Random(seed))
-            assertTrue(puzzle.solutions.isNotEmpty())
+            assertTrue("${puzzle.prompt} has ${puzzle.solutions.size} answers",
+                puzzle.solutions.size >= 2)
         }
     }
 
@@ -146,6 +179,9 @@ class PuzzleForgeTest {
             parts, Random(2), family = "water", character = "水", style = PuzzleStyle.CATEGORY,
         )
         assertTrue(chapter.lines.any { "whole chapter" in it })
+        // The exact-shape door is the deliberate single-answer exception; a
+        // chapter door still offers a whole chapter of spells.
+        assertTrue(chapter.solutions.size in 1..2)
         assertTrue(chapter.solutions.all { it.categories.isNotEmpty() })
         assertTrue(chapter.solutions.all { it.categories.contains("Tides") })
     }

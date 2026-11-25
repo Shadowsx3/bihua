@@ -20,7 +20,11 @@ def main() -> None:
     db.commit()
     counts = {
         table: db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        for table in ("family", "family_tag", "obstacle", "obstacle_accepts", "tag_outcome", "setting", "time_of_day", "weather")
+        for table in (
+            "family", "family_tag", "obstacle", "obstacle_accepts", "tag_outcome",
+            "setting", "setting_tag", "obstacle_place", "obstacle_success",
+            "time_of_day", "weather",
+        )
     }
     db.execute("VACUUM")
     db.close()

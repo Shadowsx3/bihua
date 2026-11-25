@@ -47,6 +47,9 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("dictionary", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="dictionary"),
     ScenarioSpec("word-guide", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="word_guide"),
     ScenarioSpec("stroke-coach", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="stroke_coach"),
+    ScenarioSpec("writing-reveal", level="standard", state={"reviews": 1, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="writing_reveal"),
+    ScenarioSpec("brush-presets", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="brush_presets"),
+    ScenarioSpec("settings-pages", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_pages"),
     ScenarioSpec("stroke-clean", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="stroke_clean"),
     ScenarioSpec("pronounce-kana", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "PRONOUNCE", "pronunciation": True, "mode": "JAPANESE", "review_order": "OLDEST_FIRST"}, runner="pronounce_kana"),
     ScenarioSpec("daily100", level="full", state={"reviews": 100, "new": 0, "days": 45, "known": 80, "pronunciation": True, "task_mode": "PRONOUNCE", "review_order": "OLDEST_FIRST"}, runner="drain"),
@@ -634,11 +637,15 @@ def reminders(journey: Journey, state: ScenarioState) -> None:
         journey.open_tab("Settings")
         journey.tap("Reminders")
         journey.wait("Study reminders", timeout=6)
-        journey.tap("Off. A quiet nudge", exact=False)
-        time.sleep(0.5)
-        # The test button only exists while reminders are enabled; it is a more
-        # reliable signal than matching the time string.
-        journey.wait("Send a test notification", timeout=12)
+        journey.tap("Off. Nothing is scheduled", exact=False)
+        journey.wait("On at", timeout=12, exact=False)
+        # The minute control is real, not a fixed :00.
+        journey.tap("00")
+        journey.wait("05", timeout=4)
+        journey.tap("30")
+        journey.wait("On at 20:30", timeout=6, exact=False)
+        journey.wait("Send a test notification", timeout=8)
+        journey.screenshot("reminders-on")
     with journey.step("send test notification"):
         journey.tap("Send a test notification")
         deadline = time.time() + 9
@@ -657,10 +664,8 @@ def reminders(journey: Journey, state: ScenarioState) -> None:
             raise JourneyFailure(f"test notification missing: {texts}")
     with journey.step("disable reminders"):
         journey.tap("On at", exact=False)
-        deadline = time.time() + 10
-        while time.time() < deadline and journey.exists("Send a test notification", timeout=0.4):
-            time.sleep(0.3)
-        if journey.exists("Send a test notification", timeout=0.2):
+        journey.wait("Off. Nothing is scheduled", timeout=10, exact=False)
+        if journey.exists("On at", timeout=0.5, exact=False):
             raise JourneyFailure("reminders did not turn off")
     journey.assert_no_crash()
 
@@ -801,6 +806,45 @@ def worksheet(journey: Journey, state: ScenarioState) -> None:
     with journey.step("close"):
         journey.d.press("back")
         time.sleep(0.4)
+    journey.assert_no_crash()
+
+
+def brush_presets(journey: Journey, state: ScenarioState) -> None:
+    """Each brush tool restores its own saved feel in Settings."""
+    with journey.step("open brush settings"):
+        _settings_section(journey, "Writing")
+        journey.wait("Brush", timeout=8)
+    with journey.step("each tool restores its preset"):
+        journey.tap("Pen")
+        journey.wait("1.8dp", timeout=5, exact=False)
+        journey.tap("Ink")
+        journey.wait("2.4dp", timeout=5, exact=False)
+        journey.tap("Pencil")
+        journey.wait("1.4dp", timeout=5, exact=False)
+        journey.tap("Marker")
+        journey.wait("5.0dp", timeout=5, exact=False)
+        journey.screenshot("brush-presets")
+    with journey.step("leave"):
+        journey.d.press("back")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+    journey.assert_no_crash()
+
+
+def writing_reveal(journey: Journey, state: ScenarioState) -> None:
+    """A writing review can reveal the answer before any ink, then grade."""
+    with journey.step("start writing review"):
+        journey.assert_home()
+        journey.start_session()
+        journey.wait("From memory", timeout=10)
+    with journey.step("show the answer without drawing"):
+        journey.wait("Show answer", timeout=5)
+        journey.tap("Show answer")
+        journey.wait("Good", timeout=10)
+        journey.screenshot("writing-reveal")
+        journey.tap("Good")
+    with journey.step("return home"):
+        journey.leave_session("End session")
+        journey.assert_home()
     journey.assert_no_crash()
 
 
@@ -1133,6 +1177,23 @@ SETTINGS_MARKERS = [
     ("Help & tour", "Grading"),
     ("About", "Made by Shadowsx3"),
 ]
+
+
+def settings_pages(journey: Journey, state: ScenarioState) -> None:
+    """Visual pass over every Settings section, with a stable screenshot each."""
+    with journey.step("settings home"):
+        journey.open_tab("Settings")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+        journey.screenshot("settings-home")
+    for label, marker in SETTINGS_MARKERS:
+        slug = label.lower().replace(" ", "-").replace("&", "and")
+        with journey.step(f"settings {slug}"):
+            _settings_section(journey, label)
+            journey.wait(marker, timeout=8, exact=False)
+            journey.screenshot(f"settings-{slug}")
+            journey.d.press("back")
+            journey.wait("Make Bihua yours", timeout=8, exact=False)
+    journey.assert_no_crash()
 
 
 def navigation_deep(journey: Journey, state: ScenarioState) -> None:
@@ -1694,9 +1755,11 @@ def spell_flow(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Draw", timeout=8)
     with journey.step("leave cleanly"):
         journey.tap_visible("Leave the road")
-        # Home keeps its scroll position, so the greeting may be above the
-        # viewport. The Start button is the stable anchor that the quest closed.
+        # Home keeps its scroll position, so the hero may be above the viewport.
+        # Scroll back to the top before using Start as the closed-quest anchor.
         journey.open_tab("Home")
+        for _ in range(3):
+            journey.scroll_up()
         journey.wait("Start studying", timeout=10)
     journey.assert_no_crash()
 
@@ -1776,7 +1839,11 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         journey.wait("Mò's note", timeout=8)
         time.sleep(0.5)
         journey.screenshot("spell-note")
-        journey.d.press("back")
+        try:
+            journey.tap("Close note")
+            time.sleep(0.3)
+        except JourneyFailure:
+            journey.d.press("back")
     with journey.step("one answer, then cast it"):
         mode = state.settings.get("studyMode", "SIMPLIFIED")
         worked = any("It worked" in text for text in journey.texts())
@@ -1947,6 +2014,9 @@ RUNNERS = {
     "word_guide": word_guide,
     "stroke_coach": stroke_coach,
     "stroke_clean": stroke_clean,
+    "writing_reveal": writing_reveal,
+    "brush_presets": brush_presets,
+    "settings_pages": settings_pages,
     "review_modes": review_modes,
     "pronounce_kana": pronounce_kana,
     "draw_recognition": draw_recognition,

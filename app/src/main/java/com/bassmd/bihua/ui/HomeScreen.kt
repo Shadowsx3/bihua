@@ -200,8 +200,10 @@ fun HomeScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val book = LocalFoldState.current == FoldState.BOOK && maxWidth >= 700.dp
-        val wide = maxWidth >= 720.dp
-        if (!book) {
+        // Match the shell rail breakpoint; the two-column dashboard and the
+        // rail arrive together on a tablet.
+        val wide = maxWidth >= 820.dp
+        if (!book && !wide) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -432,7 +434,9 @@ fun HomeScreen(
             }
         }
         }
-        if (book) {
+        // Folded book and wide tablet share the two-page dashboard. A single
+        // full-width hero on a 1280dp tablet reads as a stretched phone.
+        if (book || wide) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()

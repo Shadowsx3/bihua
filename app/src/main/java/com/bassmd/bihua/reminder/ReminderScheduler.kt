@@ -24,6 +24,7 @@ object ReminderScheduler {
         }
         val delay = ReminderTime.nextDelayMs(
             hour = settings.reminderHour,
+            minute = settings.reminderMinute,
             days = settings.reminderDays,
         )
         val request = OneTimeWorkRequestBuilder<ReminderWorker>()

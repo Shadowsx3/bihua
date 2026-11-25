@@ -74,6 +74,7 @@ object QuestGenerator {
         ).shuffled(random)
         var previousPlace: String? = null
         val used = mutableSetOf<String>()
+        val usedObstacles = mutableSetOf<String>()
         repeat(count) { sceneIndex ->
             val knownSpells = spells.filter { it.character in known }
             val preferred = if (knownSpells.size >= 8 && random.nextInt(100) < 70) knownSpells else spells
@@ -89,8 +90,10 @@ object QuestGenerator {
                 character = row.character,
                 style = styles[sceneIndex % styles.size],
                 previousPlace = previousPlace,
+                excludedObstacles = usedObstacles,
             )
             previousPlace = puzzle.place
+            usedObstacles += puzzle.prompt
             val base = byGlyph[row.character]
             val spell = QuestSpell(
                 character = row.character,
