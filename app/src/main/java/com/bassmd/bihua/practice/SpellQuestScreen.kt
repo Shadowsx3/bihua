@@ -476,7 +476,7 @@ private fun SpellQuestContent(
         val ready = runCatching { recognition.isModelReady(model) }.getOrDefault(false)
         modelReady = ready
         modelDownloading = false
-        if (!ready) {
+        if (!ready && com.bassmd.bihua.ai.NetworkStatus.isOnline()) {
             // The app may still be finishing the one-time model download. Keep
             // checking quietly for a short while, so a slow first download does
             // not strand an otherwise ready learner on the book path.
@@ -2129,9 +2129,9 @@ private fun CastOverlay(
             (fold == FoldState.NONE && landscape && maxWidth >= 700.dp && maxHeight >= 600.dp)
         val screenWidth = maxWidth
         val screenHeight = maxHeight
-        val controls: @Composable (Boolean) -> Unit = { onPaper ->
+        val controls: @Composable (Boolean, Boolean) -> Unit = { onPaper, compact ->
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 InkControl(
@@ -2139,7 +2139,7 @@ private fun CastOverlay(
                     icon = Icons.Rounded.Undo,
                     enabled = ink.canUndo,
                     onPaper = onPaper,
-                    compact = false,
+                    compact = compact,
                     onClick = { ink.undo() },
                 )
                 InkControl(
@@ -2147,13 +2147,23 @@ private fun CastOverlay(
                     icon = Icons.Rounded.DeleteOutline,
                     enabled = ink.canUndo,
                     onPaper = onPaper,
-                    compact = false,
+                    compact = compact,
                     onClick = { ink.clear() },
                 )
             }
         }
-        val actions: @Composable (Boolean, Boolean) -> Unit = { onPaper, showBottom ->
+        val actions: @Composable (Boolean, Boolean, Boolean) -> Unit = { onPaper, showBottom, inlineControls ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                if (inlineControls) {
+                    // Short books (fold inner, landscape tablets) keep the
+                    // third control row out of the page and inline with Cast.
+                    controls(onPaper, true)
+                }
                 Button(
                     onClick = onCast,
                     enabled = ink.canUndo && !busy,
@@ -2173,7 +2183,7 @@ private fun CastOverlay(
                             disabledContentColor = Color(0x80F8F0DC),
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text(
                         when {
@@ -2183,6 +2193,7 @@ private fun CastOverlay(
                             else -> "Cast"
                         },
                     )
+                }
                 }
                 if (showBottom) {
                     Row(
@@ -2293,15 +2304,25 @@ private fun CastOverlay(
                         .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column(
+                    // Centre the writing stack in the page when it fits, and
+                    // still scroll when large text makes it taller.
+                    BoxWithConstraints(
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxWidth(),
+                    ) {
+                    Column(
+                        modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = maxHeight)
                             .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(
+                            10.dp,
+                            Alignment.CenterVertically,
+                        ),
                     ) {
-                        val circle = minOf(screenWidth * 0.34f, screenHeight * 0.44f)
+                        val circle = minOf(screenWidth * 0.32f, screenHeight * 0.36f)
                             .coerceAtLeast(190.dp)
                         MagicCircle(
                             scene = scene,
@@ -2332,10 +2353,10 @@ private fun CastOverlay(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        controls(true)
+                    }
                     }
                     Spacer(Modifier.height(8.dp))
-                    actions(true, true)
+                    actions(true, true, true)
                 }
             }
         } else {
@@ -2415,11 +2436,11 @@ private fun CastOverlay(
                     }
                     // The third row uses the space under the tools for the
                     // named Undo and Clear controls.
-                    controls(false)
+                    controls(false, false)
                 }
                 // Always reachable: the learner can cast (or continue) no
                 // matter how large the text or how short the screen.
-                actions(false, false)
+                actions(false, false, false)
             }
         }
         if (showMeaning) {

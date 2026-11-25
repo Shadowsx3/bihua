@@ -227,20 +227,22 @@ fun BihuaApp(
     var showInkFailure by remember { mutableStateOf(false) }
     val currentInkFailure = com.bassmd.bihua.ai.ModelDownloads.failed &&
         com.bassmd.bihua.ai.ModelDownloads.failedMode == mode
+    val inkOffline = com.bassmd.bihua.ai.ModelDownloads.offline
     LaunchedEffect(
         mode,
         currentInkPreparing,
         currentInkFailure,
         com.bassmd.bihua.ai.ModelDownloads.failedRuns,
+        inkOffline,
     ) {
         if (!currentInkFailure || currentInkPreparing) {
             // A fresh attempt (or a success) supersedes an older failure.
             showInkFailure = false
             return@LaunchedEffect
         }
-        // Give a retry or a just-started download time to take over before
-        // telling the learner anything is wrong.
-        kotlinx.coroutines.delay(2_500L)
+        // An offline failure is final for now; a network failure gets a short
+        // grace period so an automatic retry can take over.
+        kotlinx.coroutines.delay(if (inkOffline) 0L else 2_500L)
         if (currentInkFailure &&
             !com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode)
         ) {
@@ -253,6 +255,19 @@ fun BihuaApp(
         if (com.bassmd.bihua.BuildConfig.DEBUG && com.bassmd.bihua.ai.QaFlags.downloadNoticeMs > 0L) {
             handwriting.simulateDownloadFor(com.bassmd.bihua.ai.QaFlags.downloadNoticeMs)
         }
+    }
+    val inkLifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(inkLifecycleOwner, mode, settings.onboarded, activeModeReady) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME &&
+                settings.onboarded &&
+                activeModeReady != true
+            ) {
+                scope.launch { handwriting.prepare(mode) }
+            }
+        }
+        inkLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { inkLifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val noVoice = {
         Toast.makeText(
@@ -446,6 +461,7 @@ fun BihuaApp(
     ModelDownloadNotice(
         visible = inkPreparingAny || showInkFailure,
         failed = showInkFailure && !inkPreparingAny,
+        offline = com.bassmd.bihua.ai.ModelDownloads.offline && !inkPreparingAny,
     )
 
     val stylus = remember(context) { hasStylus(context) }

@@ -280,7 +280,13 @@ scripts/journey.sh --standard --screenshots
   `ui/components/StrokeCoachFeedback.kt`; do not fork it.
 - Pinyin display defaults to tone marks (`nǐhǎo`). Numbers (`ni3hao3`) are an
   opt-in Settings choice. Pronunciation input accepts numbered pinyin, tone
-  marks, or plain letters regardless of the display setting.
+  marks, or plain letters regardless of the display setting. Typing practice
+  always shows and expects numbered pinyin, and printed worksheets always use
+  tone marks; the display setting changes cards and cues only.
+- One-time migration `pinyinToneMigrated` moves old installs from the 1.0.1
+  numbered default to tone marks. A choice made after the migration sticks.
+- The character grid resets its scroll when the script changes. Do not keep the
+  old index: the same index is a different character in another course.
 
 ## Reminders and foldable
 

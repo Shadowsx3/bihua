@@ -171,8 +171,15 @@ fun PracticeScreen(
         if (recognizing || strokes.isEmpty()) return
         recognitionJob?.cancel()
         recognitionJob = scope.launch {
-            recognizing = true
+            recognizing = false
             try {
+                // If the reader is not ready right now, show the local shape
+                // and order feedback instead of spending a long wait on it.
+                if (!recognitionService.canReadNow(mode)) {
+                    recognition = RecognitionResult(emptyList(), false)
+                    return@launch
+                }
+                recognizing = true
                 val result = recognitionService.recognize(
                     strokes,
                     mode,
@@ -403,10 +410,9 @@ fun PracticeScreen(
 
     val coach = orderCheck?.let { remember(it) { StrokeCoach.from(it) } }
     val closeFeedback = {
-        recognition = null
-        orderCheck = null
-        evidence = null
-        showFeedback = false
+        // Closing the sheet must also cancel the reader; it must never keep
+        // working invisibly and touch the next check.
+        cancelCheck()
     }
     if (showFeedback) {
         androidx.compose.ui.window.Dialog(onDismissRequest = closeFeedback) {

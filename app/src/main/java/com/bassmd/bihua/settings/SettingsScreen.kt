@@ -2532,7 +2532,7 @@ fun SettingsScreen(
                             color = InkDark,
                         )
                         Text(
-                            "Choose how readings look. Typing accepts ni3, nǐ, or plain letters either way.",
+                            "Shown on cards and cues. Typing always takes numbered pinyin (ni3 hao3); printed sheets use tone marks (nǐ hǎo).",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                             modifier = Modifier.padding(bottom = 8.dp),
@@ -3139,7 +3139,9 @@ fun SettingsScreen(
         WorksheetScreen(
             mode = settings.studyMode,
             studyList = settings.studyList,
-            pinyinNumbers = settings.pinyinNumbers,
+            // Paper is for a learner reading at the desk, so use tone marks
+            // even when the on-screen cards are set to numbers.
+            pinyinNumbers = false,
             onClose = { showWorksheet = false },
         )
     }

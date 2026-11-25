@@ -249,6 +249,11 @@ data class AppSettings(
     val mascotOutfit: MascotOutfit = MascotOutfit.AUTO,
     val readAloud: Boolean = true,
     val pinyinNumbers: Boolean = false,
+    /**
+     * One-time migration: 1.0.1 stored numbered pinyin as the default. Existing
+     * installs are moved to tone marks once; choosing Numbers after that sticks.
+     */
+    val pinyinToneMigrated: Boolean = false,
     val pronunciationPractice: Boolean = false,
     /** Optional meaning checks: character to meaning, with example words. */
     val meaningPractice: Boolean = false,
@@ -498,6 +503,8 @@ data class AppSettings(
             fsrsProfiles = profiles,
             allowFingerDrawing = if (fingerDrawingMigrated) allowFingerDrawing else true,
             fingerDrawingMigrated = true,
+            pinyinNumbers = if (pinyinToneMigrated) pinyinNumbers else false,
+            pinyinToneMigrated = true,
             brush = activeBrush.copy(tool = drawingTool),
             brushPresets = presets,
             brushWidthMigrated = true,

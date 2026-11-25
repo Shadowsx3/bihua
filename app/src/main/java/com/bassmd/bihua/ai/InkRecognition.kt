@@ -42,8 +42,7 @@ class InkRecognitionService {
     /** Downloads in flight. Shown as one quiet notice wherever the learner is. */
     private val downloads = DownloadTracker { active ->
         _downloading.value = active
-        ModelDownloads.active = active
-        if (!active) ModelDownloads.completed++
+        ModelDownloads.downloadState(active)
     }
     private val _downloading = MutableStateFlow(false)
     val downloading: StateFlow<Boolean> = _downloading.asStateFlow()
@@ -62,8 +61,17 @@ class InkRecognitionService {
     }
 
     suspend fun isModelReady(mode: StudyMode): Boolean {
-        if (QaFlags.noInkModel) return false
+        if (QaFlags.noInkModel || QaFlags.missingMode == mode) return false
         return requiredModelTags(mode).all { tag -> tagReady(tag) }
+    }
+
+    /** A short local check for Practice: skip the reader if it is not ready now. */
+    suspend fun canReadNow(mode: StudyMode): Boolean {
+        if (QaFlags.noInkModel || QaFlags.missingMode == mode) return false
+        if (ModelDownloads.activeModes.contains(mode)) return false
+        return runCatching {
+            kotlinx.coroutines.withTimeoutOrNull(900L) { isModelReady(mode) } ?: false
+        }.getOrDefault(false)
     }
 
     private suspend fun tagReady(tag: String): Boolean {
@@ -84,13 +92,35 @@ class InkRecognitionService {
             ModelDownloads.failed(mode)
             return false
         }
+        if (QaFlags.missingMode == mode) {
+            if (NetworkStatus.isOnline()) ModelDownloads.failed(mode)
+            else ModelDownloads.offlineFailure(mode)
+            return false
+        }
+        // A downloaded model works offline. Only a missing model needs the
+        // network, so check readiness first without starting a download.
+        if (!NetworkStatus.isOnline()) {
+            val local = runCatching { isModelReady(mode) }.getOrDefault(false)
+            if (local) {
+                ModelDownloads.succeeded(mode)
+                return true
+            }
+            ModelDownloads.offlineFailure(mode)
+            return false
+        }
         return ModelDownloads.mutexFor(mode).withLock {
             ModelDownloads.starting(mode)
             try {
                 val ready = requiredModelTags(mode)
                     .map { tag -> prepareTag(tag, wifiOnly) }
                     .all { it }
-                if (ready) ModelDownloads.succeeded(mode) else ModelDownloads.failed(mode)
+                if (ready) {
+                    ModelDownloads.succeeded(mode)
+                } else if (!NetworkStatus.isOnline()) {
+                    ModelDownloads.offlineFailure(mode)
+                } else {
+                    ModelDownloads.failed(mode)
+                }
                 ready
             } finally {
                 ModelDownloads.ending(mode)
@@ -109,6 +139,7 @@ class InkRecognitionService {
                 manager.isModelDownloaded(model).await()
             } ?: false
             if (!downloaded) {
+                if (!NetworkStatus.isOnline()) return false
                 val conditions = DownloadConditions.Builder().apply {
                     if (wifiOnly) requireWifi()
                 }.build()
@@ -257,6 +288,8 @@ class InkRecognitionService {
  * and the quest all see the same download and the same completion.
  */
 object ModelDownloads {
+    private val stateLock = Any()
+
     /** True while any model is being fetched, from any screen. */
     var active by mutableStateOf(false)
         internal set
@@ -273,6 +306,10 @@ object ModelDownloads {
     var failed by mutableStateOf(false)
         internal set
 
+    /** True when the failure was caused by no usable network. */
+    var offline by mutableStateOf(false)
+        internal set
+
     /** The script whose preparation failed, for a specific message. */
     var failedMode by mutableStateOf<StudyMode?>(null)
         internal set
@@ -286,29 +323,44 @@ object ModelDownloads {
     internal fun mutexFor(mode: StudyMode): kotlinx.coroutines.sync.Mutex =
         mutexes.getOrPut(mode) { kotlinx.coroutines.sync.Mutex() }
 
-    internal fun starting(mode: StudyMode) {
+    internal fun downloadState(active: Boolean) = synchronized(stateLock) {
+        this.active = active
+        if (!active) completed++
+    }
+
+    internal fun starting(mode: StudyMode) = synchronized(stateLock) {
         activeModes = activeModes + mode
+        offline = false
         if (failedMode == mode) {
             failed = false
             failedMode = null
         }
     }
 
-    internal fun ending(mode: StudyMode) {
+    internal fun ending(mode: StudyMode) = synchronized(stateLock) {
         activeModes = activeModes - mode
     }
 
-    internal fun succeeded(mode: StudyMode) {
+    internal fun succeeded(mode: StudyMode) = synchronized(stateLock) {
         if (failedMode == mode || failedMode == null) {
             failed = false
             failedMode = null
         }
+        offline = false
     }
 
-    internal fun failed(mode: StudyMode) {
+    internal fun failed(mode: StudyMode) = synchronized(stateLock) {
         failed = true
         failedMode = mode
         failedRuns++
+        offline = false
+    }
+
+    internal fun offlineFailure(mode: StudyMode) = synchronized(stateLock) {
+        failed = true
+        failedMode = mode
+        failedRuns++
+        offline = true
     }
 }
 

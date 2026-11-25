@@ -906,7 +906,7 @@ private fun StudyHero(
                     .fillMaxWidth()
                     .tourAnchor("home.start")
                     .clearAndSetSemantics {
-                        contentDescription = if (blocked) "Preparing the ink reader" else label
+                        contentDescription = label
                         role = Role.Button
                         if (!blocked) {
                             onClick(label = label) {
@@ -916,18 +916,10 @@ private fun StudyHero(
                         }
                     },
             ) {
-                if (blocked) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = Paper,
-                    )
-                } else {
-                    Icon(Icons.Rounded.School, contentDescription = null, modifier = Modifier.size(18.dp))
-                }
+                Icon(Icons.Rounded.School, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (blocked) "Preparing the ink reader…" else label,
+                    label,
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                 )
@@ -936,7 +928,6 @@ private fun StudyHero(
             }
             TextButton(
                 onClick = onOpenQuest,
-                enabled = !preparingInk,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .tourAnchor("home.spell"),
@@ -944,7 +935,7 @@ private fun StudyHero(
                 Text(
                     "Extra practice · Spell quest",
                     style = MaterialTheme.typography.labelLarge,
-                    color = InkDark.copy(alpha = if (preparingInk) 0.42f else 1f),
+                    color = InkDark,
                 )
             }
         }

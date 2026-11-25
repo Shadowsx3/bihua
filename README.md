@@ -14,10 +14,17 @@ FSRS-7 or SBD. A stylus adds pressure; a finger or mouse also works. Writing and
 no developer-run analytics.
 
 <p align="center">
-  <img src="docs/assets/home-light.png" width="220" alt="Bihua home screen">
-  <img src="docs/assets/practice-light.png" width="220" alt="Handwriting practice with a stroke guide">
-  <img src="docs/assets/detail-light.png" width="220" alt="Character detail">
-  <img src="docs/assets/review-light.png" width="220" alt="Review from a meaning and reading cue">
+  <img src="docs/assets/feature-graphic.png" width="100%" alt="Bihua: write the character, keep the character">
+</p>
+
+<p align="center">
+  <img src="docs/assets/home-light.png" width="31%" alt="Today's plan and the word of the day">
+  <img src="docs/assets/practice-light.png" width="31%" alt="Handwriting practice with a stroke guide and stroke order">
+  <img src="docs/assets/spell-quest.png" width="31%" alt="Spell quest: writing a character inside the ring">
+</p>
+
+<p align="center">
+  <sub><b>Plan the day</b> &nbsp;·&nbsp; <b>Write from memory</b> &nbsp;·&nbsp; <b>Cast what you remember</b></sub>
 </p>
 
 <p align="center">
@@ -27,6 +34,25 @@ no developer-run analytics.
   ·
   <a href="https://shadowsx3.github.io/bihua/#download"><strong>Download</strong></a>
 </p>
+
+## New in 1.1.1
+
+- **The ink reader can no longer strand a session.** Model and recognition
+  waits are bounded. Check always returns, with **Stop reading**, local shape and
+  stroke-order feedback, and **Show answer** still available.
+- **Downloads tell the truth.** Preparation is tracked per script, starts right
+  after setup, restore, or a language switch, detects an offline device before
+  trying, and shows one quiet notice instead of two competing spinners.
+- **A lighter spell book.** A clue card with **Hear / Info / Guide**, a clean
+  paper spread, one-step grimoire gifts, drawn vines and particles, and a fast
+  book-open. Spell quest stays open while a reader prepares.
+- **A calmer desk.** The character grid flings smoothly and returns to the top
+  when the script changes. Settings scrolls from the full pane. Watch and trace
+  dialogs use the paper style. **Mute app sounds** keeps music playing without
+  losing a deliberately tapped pronunciation.
+- **Print uses tone marks.** The worksheet PDF writes `nǐ hǎo`; typing practice
+  always answers in numbered pinyin (`ni3 hao3`). The display setting still
+  controls cards and cues.
 
 ## Why it exists
 

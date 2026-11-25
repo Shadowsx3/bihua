@@ -2505,7 +2505,9 @@ private fun PronunciationReview(
     var input by remember(item.id, round) { mutableStateOf("") }
     var result by remember(item.id, round) { mutableStateOf<ReadingCheckResult?>(null) }
     var revealed by remember(item.id, round) { mutableStateOf(false) }
-    val expected = com.bassmd.bihua.content.Pinyin.display(item.reading, mode, pinyinNumbers)
+    // Typing is pinyin entry, so its canonical hint is always numbered
+    // (ni3hao3). The display setting changes cards and cues, not the answer.
+    val expected = com.bassmd.bihua.content.Pinyin.display(item.reading, mode, true)
     // Kana and Hangul entries often describe themselves with their reading
     // ("hiragana for a", "syllable ga"). Never display that answer here.
     val safeMeaning = remember(item.meaning, expected) {

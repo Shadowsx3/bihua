@@ -1,5 +1,7 @@
 package com.bassmd.bihua.content
 
+import androidx.compose.runtime.Immutable
+
 /** Where a character sits in the learner's own writing history. */
 enum class StudyStatus(val label: String) {
     NEW("New"),
@@ -14,6 +16,7 @@ enum class StudyStatus(val label: String) {
 fun List<WordContext>.visible(includeMature: Boolean): List<WordContext> =
     if (includeMature) this else filterNot { it.mature }
 
+@Immutable
 data class WordContext(
     val word: String,
     val reading: String,
@@ -33,6 +36,7 @@ data class WordContext(
  * the learner's progress fields, which default to a fresh card.
  */
 /** A word result for dictionary search. [characterId] is one linked character. */
+@Immutable
 data class WordResult(
     val word: String,
     val reading: String,
@@ -42,6 +46,7 @@ data class WordResult(
 )
 
 /** Structure data from Make Me a Hanzi, loaded only for the detail pane. */
+@Immutable
 data class CharacterMeta(
     val radical: String,
     val decomposition: String,
@@ -52,12 +57,14 @@ data class CharacterMeta(
 )
 
 /** Characters that share a structural part, with the role that part plays. */
+@Immutable
 data class CharacterFamily(
     val part: String,
     val role: String,
     val members: List<CharacterEntry>,
 )
 
+@Immutable
 data class CharacterEntry(
     val id: String,
     val character: String,

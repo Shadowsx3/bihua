@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bassmd.bihua.ai.NetworkStatus
 import com.bassmd.bihua.ai.QaFlags
 import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.SettingsStore
@@ -51,10 +52,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NetworkStatus.init(applicationContext)
         if (BuildConfig.DEBUG) {
             QaFlags.noInkModel = intent?.getBooleanExtra("qa_no_ink_model", false) == true
             QaFlags.downloadNoticeMs = intent?.getLongExtra("qa_download_notice_ms", 0L) ?: 0L
             QaFlags.slowInkMs = intent?.getLongExtra("qa_slow_ink_ms", 0L) ?: 0L
+            QaFlags.missingMode = intent?.getStringExtra("qa_missing_mode")
+                ?.let { runCatching { com.bassmd.bihua.content.StudyMode.valueOf(it) }.getOrNull() }
         }
         setContent {
             val store = remember { SettingsStore(applicationContext) }

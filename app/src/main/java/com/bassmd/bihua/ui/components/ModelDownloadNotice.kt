@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 fun ModelDownloadNotice(
     visible: Boolean,
     failed: Boolean = false,
+    offline: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     if (!visible) return
@@ -92,7 +93,9 @@ fun ModelDownloadNotice(
                     }
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        if (failed) {
+                        if (offline) {
+                            "No connection — the ink reader will download when you're online."
+                        } else if (failed) {
                             "Ink reader unavailable — you can keep going."
                         } else {
                             "Preparing the ink reader…"

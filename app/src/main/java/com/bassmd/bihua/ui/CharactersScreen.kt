@@ -2,6 +2,7 @@
 
 package com.bassmd.bihua.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +26,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -82,12 +85,14 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
+import com.bassmd.bihua.content.Pinyin
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.content.visible
@@ -177,6 +182,15 @@ fun CharactersScreen(
     var showDictionary by remember { mutableStateOf(false) }
 
     val all = characters
+    val counts = remember(all) { all.groupingBy { it.status }.eachCount() }
+    val activeFilterCount = remember(levelFilter, frequencyLimit, writingOnly) {
+        listOfNotNull(
+            levelFilter,
+            frequencyLimit?.let { "Top $it" },
+            "Writing set".takeIf { writingOnly },
+        ).size
+    }
+    val gridState = rememberLazyGridState()
     val characterSet = remember(all) { all.mapTo(HashSet()) { it.character } }
     val allById = remember(all) { all.associateBy { it.id } }
     val filtered = remember(all, query, filter, levelFilter, frequencyLimit, writingOnly) {
@@ -199,6 +213,9 @@ fun CharactersScreen(
     val progressStore = LocalProgressStore.current
     LaunchedEffect(mode) {
         showDictionary = false
+        // The same index is a different character in another script. Return to
+        // the top so a language switch never lands the learner mid-list.
+        gridState.scrollToItem(0)
     }
     var sharedModes by remember { mutableStateOf(emptyList<StudyMode>()) }
     LaunchedEffect(selected?.id, repository) {
@@ -235,17 +252,13 @@ fun CharactersScreen(
                             onQueryChange = { query = it },
                             filter = filter,
                             onFilterChange = { filter = it },
-                            counts = all.groupingBy { it.status }.eachCount(),
+                            counts = counts,
                             total = all.size,
                             mode = mode,
                             levelFilter = levelFilter,
                             frequencyLimit = frequencyLimit,
                             writingOnly = writingOnly,
-                            activeFilters = listOfNotNull(
-                                levelFilter,
-                                frequencyLimit?.let { "Top $it" },
-                                "Writing set".takeIf { writingOnly },
-                            ).size,
+                            activeFilters = activeFilterCount,
                             onOpenFilters = { showFilters = true },
                             onDrawSearch = { showDrawSearch = true },
                             onOpenDictionary = { showDictionary = true },
@@ -256,6 +269,7 @@ fun CharactersScreen(
                             selectedId = selectedId,
                             queryActive = query.isNotBlank(),
                             onSelect = { selectedId = it.id },
+                            state = gridState,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -443,17 +457,13 @@ fun CharactersScreen(
                             onQueryChange = { query = it },
                             filter = filter,
                             onFilterChange = { filter = it },
-                            counts = all.groupingBy { it.status }.eachCount(),
+                            counts = counts,
                             total = all.size,
                             mode = mode,
                             levelFilter = levelFilter,
                             frequencyLimit = frequencyLimit,
                             writingOnly = writingOnly,
-                            activeFilters = listOfNotNull(
-                                levelFilter,
-                                frequencyLimit?.let { "Top $it" },
-                                "Writing set".takeIf { writingOnly },
-                            ).size,
+                            activeFilters = activeFilterCount,
                             onOpenFilters = { showFilters = true },
                             onDrawSearch = { showDrawSearch = true },
                             onOpenDictionary = { showDictionary = true },
@@ -464,6 +474,7 @@ fun CharactersScreen(
                             selectedId = selectedId,
                             queryActive = query.isNotBlank(),
                             onSelect = { selectedId = it.id },
+                            state = gridState,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -816,6 +827,7 @@ private fun CharacterGrid(
     selectedId: String?,
     queryActive: Boolean,
     onSelect: (CharacterEntry) -> Unit,
+    state: LazyGridState,
     modifier: Modifier = Modifier,
 ) {
     if (entries.isEmpty()) {
@@ -849,13 +861,14 @@ private fun CharacterGrid(
     val showHeaders = !queryActive && groups.size > 1
     LazyVerticalGrid(
         columns = GridCells.Adaptive(86.dp),
+        state = state,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (!showHeaders) {
-            items(entries, key = { it.id }) { entry ->
+            items(entries, key = { it.id }, contentType = { "character" }) { entry ->
                 CharacterTile(
                     entry = entry,
                     selected = entry.id == selectedId,
@@ -865,7 +878,11 @@ private fun CharacterGrid(
         } else {
             groups.forEach { (label, group) ->
                 val isCollapsed = label in collapsed
-                item(key = "category:$label", span = { GridItemSpan(maxLineSpan) }) {
+                item(
+                    key = "category:$label",
+                    span = { GridItemSpan(maxLineSpan) },
+                    contentType = "category",
+                ) {
                     CategoryHeader(
                         label = label,
                         count = group.size,
@@ -876,7 +893,7 @@ private fun CharacterGrid(
                     )
                 }
                 if (!isCollapsed) {
-                    items(group, key = { it.id }) { entry ->
+                    items(group, key = { it.id }, contentType = { "character" }) { entry ->
                         CharacterTile(
                             entry = entry,
                             selected = entry.id == selectedId,
@@ -937,18 +954,32 @@ private fun CharacterTile(
     showLevelLabel: Boolean = true,
     onClick: () -> Unit,
 ) {
-    val reading = displayReading(entry.reading, entry.mode)
-    val label =
-        "${entry.character}, $reading, ${entry.meaning}, ${entry.levelLabel.ifBlank { "level ${entry.level}" }}"
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = if (selected) Sky.copy(alpha = 0.52f) else PaperWarm,
+    // These are pure text transforms. Cache them per card so scrolling never
+    // repeats tone/romanisation work for a tile that is already on screen.
+    val pinyinNumbers = LocalPinyinNumbers.current
+    val reading = remember(entry.reading, entry.mode, pinyinNumbers) {
+        Pinyin.display(entry.reading, entry.mode, pinyinNumbers)
+    }
+    val detail = remember(entry.level, entry.levelLabel, entry.status, showLevelLabel) {
+        if (showLevelLabel) {
+            entry.levelLabel.ifBlank { "Level ${entry.level}" }
+        } else {
+            entry.status.label
+        }
+    }
+    val label = remember(entry.character, reading, entry.meaning, detail) {
+        "${entry.character}, $reading, ${entry.meaning}, $detail"
+    }
+    val shape = RoundedCornerShape(20.dp)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(shape)
+            .background(if (selected) Sky.copy(alpha = 0.52f) else PaperWarm)
+            .clickable(role = Role.Button, onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = label
-                role = androidx.compose.ui.semantics.Role.Button
+                role = Role.Button
                 onClick(label = label) {
                     onClick()
                     true
@@ -956,12 +987,14 @@ private fun CharacterTile(
             },
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(entry.character, fontSize = 30.sp, color = InkDark)
             Text(
-                displayReading(entry.reading, entry.mode),
+                reading,
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
                 maxLines = 1,
@@ -971,11 +1004,7 @@ private fun CharacterTile(
                 Dot(statusColor(entry.status), 5.dp)
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    if (showLevelLabel) {
-                        entry.levelLabel.ifBlank { "Level ${entry.level}" }
-                    } else {
-                        entry.status.label
-                    },
+                    detail,
                     style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )

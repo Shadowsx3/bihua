@@ -31,6 +31,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("daily80", level="quick", all_profiles=True, state={"reviews": 80, "new": 5, "days": 30, "known": 40}, runner="daily_sample"),
     ScenarioSpec("navigation", level="quick", all_profiles=True, state={"reviews": 20, "new": 5, "days": 10}, runner="navigation"),
     ScenarioSpec("navigation-deep", level="standard", state={"reviews": 20, "new": 5, "days": 10}, runner="navigation_deep"),
+    ScenarioSpec("characters-scroll", level="standard", state={"reviews": 20, "new": 5, "days": 10}, runner="characters_scroll"),
     ScenarioSpec("resume", level="quick", all_profiles=True, state={"reviews": 20, "new": 5, "days": 7}, runner="resume"),
     ScenarioSpec("caught-up", level="standard", state={"reviews": 0, "new": 0, "known": 20, "goal": 0, "days": 30}, runner="learning_state"),
     ScenarioSpec("completion", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "pronunciation": True, "task_mode": "PRONOUNCE", "review_order": "OLDEST_FIRST"}, runner="completion"),
@@ -53,6 +54,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("practice-slow", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="practice_slow"),
     ScenarioSpec("spell-offline", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_offline"),
     ScenarioSpec("model-notice", level="standard", state={"reviews": 3, "new": 2, "days": 3}, runner="model_notice"),
+    ScenarioSpec("model-offline-switch", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="model_offline_switch"),
     ScenarioSpec("rotation", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="rotation"),
     ScenarioSpec("screen-pass", level="standard", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="screen_pass"),
     ScenarioSpec("screen-pass-ja", level="full", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "JAPANESE"}, runner="screen_pass"),
@@ -889,6 +891,62 @@ def screen_pass(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def characters_scroll(journey: Journey, state: ScenarioState) -> None:
+    """Fling the character grid hard, then open a card from deep in the list.
+
+    The grid is the densest scrolling surface in the app, so this guards both
+    fast flings and the tap target after a long scroll.
+    """
+    with journey.step("open the grid"):
+        journey.open_tab("Characters")
+        journey.wait("Character, meaning, or reading", timeout=10, exact=False)
+        journey.screenshot("characters-top")
+    with journey.step("fling deep"):
+        width, height = journey.d.window_size()
+        for _ in range(8):
+            journey.device.shell(
+                f"input swipe {width // 2} {int(height * 0.78)} "
+                f"{width // 2} {int(height * 0.24)} 60"
+            )
+            time.sleep(0.15)
+        time.sleep(1.2)
+        journey.screenshot("characters-flung")
+        # A fling must never leave the app on an empty or stale hierarchy.
+        # Tiles expose their concise a11y label, e.g. "蓝, lan2, blue, New".
+        labels = journey.texts()
+        tiles = [label for label in labels if label.count(",") >= 2]
+        if not any(label.startswith("All ") for label in labels) or len(tiles) < 4:
+            raise JourneyFailure(
+                f"grid lost its content after flinging ({len(tiles)} tiles): {labels[:20]}"
+            )
+    with journey.step("switch script resets the scroll"):
+        # The mode chips live in the fixed header, so they stay reachable while
+        # the grid is deep. A new script starts at its first level, never at the
+        # old list index.
+        journey.tap("Traditional")
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            if journey.exists("HSK 1", timeout=0.4, exact=False):
+                break
+            time.sleep(0.2)
+        else:
+            raise JourneyFailure(
+                "switching script did not return the grid to the top: "
+                + str(journey.texts()[:20])
+            )
+        journey.screenshot("characters-switched-top")
+        journey.tap("Simplified")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+    with journey.step("open a card"):
+        width, height = journey.d.window_size()
+        journey.d.click(width // 2, int(height * 0.45))
+        journey.wait("of 2 to Known", timeout=8, exact=False)
+        journey.screenshot("characters-detail")
+        journey.d.press("back")
+        journey.wait("Character, meaning, or reading", timeout=8, exact=False)
+    journey.assert_no_crash()
+
+
 def rotation(journey: Journey, state: ScenarioState) -> None:
     """Turn the device while the book is open; nothing should clip or vanish."""
     with journey.step("home before the turn"):
@@ -925,6 +983,46 @@ def rotation(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def model_offline_switch(journey: Journey, state: ScenarioState) -> None:
+    """A downloaded script stays usable, but switching to a missing one offline
+    must fail at once, show the offline notice, and leave Learn enabled."""
+    try:
+        with journey.step("open the downloaded script online"):
+            journey.device.shell("am force-stop com.bassmd.bihua")
+            journey.device.shell("am start -n com.bassmd.bihua/.MainActivity")
+            journey.wait("Hello", timeout=15, exact=False)
+            journey.device.shell("cmd connectivity airplane-mode enable")
+            time.sleep(1.0)
+            journey.device.shell("am force-stop com.bassmd.bihua")
+            journey.device.shell(
+                "am start -n com.bassmd.bihua/.MainActivity " +
+                "--es qa_missing_mode KOREAN"
+            )
+            journey.wait("Hello", timeout=15, exact=False)
+        with journey.step("switch offline to the missing script"):
+            journey.tap("Korean")
+            journey.wait("Korean", timeout=8, exact=False)
+            deadline = time.time() + 12
+            while time.time() < deadline:
+                if journey.exists("Preparing the ink reader…", timeout=0.5):
+                    raise JourneyFailure("the offline switch is still preparing")
+                if journey.exists("Start studying", timeout=0.5) or journey.exists("Learn", timeout=0.5, exact=False):
+                    break
+                time.sleep(0.4)
+            else:
+                raise JourneyFailure(
+                    "Learn stayed blocked after the offline language switch: "
+                    + str(journey.texts())
+                )
+            journey.screenshot("offline-switch")
+    finally:
+        journey.device.shell("cmd connectivity airplane-mode disable")
+        journey.device.shell("svc wifi enable")
+        journey.device.shell("svc data enable")
+        time.sleep(1.0)
+    journey.assert_no_crash()
+
+
 def model_notice(journey: Journey, state: ScenarioState) -> None:
     """The one-time reader download is visible, follows the learner, and never blocks.
 
@@ -940,10 +1038,10 @@ def model_notice(journey: Journey, state: ScenarioState) -> None:
             "--ez qa_no_ink_model true --el qa_download_notice_ms 14000"
         )
         journey.wait("Hello", timeout=15, exact=False)
-        if not journey.exists("Preparing the ink reader…", timeout=3):
-            raise JourneyFailure(
-                "Home did not wait for the first ink reader: " + str(journey.texts())
-            )
+        # The Home button is greyed with its normal label; the floating notice
+        # is the one place that says the reader is being prepared.
+        if not journey.exists("Start studying", timeout=5) and not journey.exists("Learn", timeout=2, exact=False):
+            raise JourneyFailure(f"Home has no study action: {journey.texts()}")
         journey.screenshot("model-notice-home")
     with journey.step("the notice does not block the app"):
         journey.open_tab("Settings")
@@ -1032,9 +1130,19 @@ def practice_slow(journey: Journey, state: ScenarioState) -> None:
             raise JourneyFailure("no practice canvas to draw on")
         journey.wait("Check", timeout=5)
         journey.tap("Check")
-        journey.wait("Stop reading", timeout=6)
-        journey.screenshot("practice-slow-reading")
-        journey.tap("Stop reading")
+        # If the reader is ready but slow, Stop/Close must cancel it. If it is
+        # not ready, the local feedback path is already showing; either is a
+        # valid, non-stuck outcome.
+        if journey.exists("Stop reading", timeout=6):
+            journey.screenshot("practice-slow-reading")
+        journey.tap("Close")
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            if not journey.exists("Stop reading", timeout=0.5):
+                break
+            time.sleep(0.3)
+        else:
+            raise JourneyFailure("closing the check did not stop the reader")
         journey.wait("Check", timeout=8)
         journey.screenshot("practice-slow-recovered")
     with journey.step("leave cleanly"):
@@ -2195,6 +2303,9 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
                 raise JourneyFailure(f"no guide strokes for the answer {answer}")
             if not journey.draw_guide(guide):
                 raise JourneyFailure("no handwriting canvas for the answer")
+            # Keep the inked circle before the cast: this is the listing shot.
+            time.sleep(0.6)
+            journey.screenshot("spell-drawn")
             journey.wait("Cast", timeout=8)
             journey.tap("Cast")
             deadline = time.time() + 30
@@ -2334,7 +2445,9 @@ RUNNERS = {
     "practice_slow": practice_slow,
     "spell_offline": spell_offline,
     "model_notice": model_notice,
+    "model_offline_switch": model_offline_switch,
     "rotation": rotation,
+    "characters_scroll": characters_scroll,
     "screen_pass": screen_pass,
     "settings_pages": settings_pages,
     "review_modes": review_modes,

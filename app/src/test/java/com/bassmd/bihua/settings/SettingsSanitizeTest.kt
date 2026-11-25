@@ -183,4 +183,20 @@ class SettingsSanitizeTest {
         assertEquals(0L, profile.createdAtEpochMs)
         assertEquals("/tmp/photo.jpg", profile.photoPath)
     }
+
+
+    @Test
+    fun oldNumberedPinyinIsMovedToToneMarksOnce() {
+        val migrated = AppSettings(pinyinNumbers = true).sanitized()
+
+        assertFalse(migrated.pinyinNumbers)
+        assertTrue(migrated.pinyinToneMigrated)
+
+        // A choice made after the migration is the learner's own.
+        val chosen = AppSettings(
+            pinyinNumbers = true,
+            pinyinToneMigrated = true,
+        ).sanitized()
+        assertTrue(chosen.pinyinNumbers)
+    }
 }

@@ -116,11 +116,7 @@ fun StudyToolsSheet(
                                 color = InkDark.copy(alpha = if (preparingInk) 0.4f else 1f),
                             )
                             Text(
-                                if (preparingInk) {
-                                    "Preparing the ink reader…"
-                                } else {
-                                    "An endless road · write to cast, nothing graded"
-                                },
+                                "An endless road · write to cast, nothing graded",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = InkSoft,
                             )

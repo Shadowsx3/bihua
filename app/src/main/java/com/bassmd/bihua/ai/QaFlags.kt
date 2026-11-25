@@ -15,4 +15,8 @@ internal object QaFlags {
     /** Debug-only: make every model preparation/readiness call take this long. */
     @Volatile
     var slowInkMs: Long = 0L
+
+    /** Debug-only: pretend this script has no downloaded model. */
+    @Volatile
+    var missingMode: com.bassmd.bihua.content.StudyMode? = null
 }
