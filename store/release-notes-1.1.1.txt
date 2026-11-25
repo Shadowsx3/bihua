@@ -1,0 +1,6 @@
+Bihua 1.1.1
+- The spell road has a new light book, a clue card with Hear, Info, and Guide, one-step grimoire gifts, and a faster page open.
+- More characters fit every scene, and the wide book keeps Undo, Clear, and Cast in reach.
+- The ink reader recovers cleanly instead of waiting forever, with Stop reading and Show answer.
+- The character grid is smoother, Settings scrolls from anywhere, and you can mute app sounds.
+- Printed sheets use tone-mark pinyin; typing stays numbered.
