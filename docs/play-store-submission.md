@@ -13,8 +13,8 @@ release checklist whenever the manifest, SDKs, or data flows change.
 - ABI: `arm64-v8a` only; Play accepts a 64-bit-only app.
 - Signed with the local release key (`keystore.properties`), never committed.
 - Upload artifact: `store/play-assets/upload-1.1.1/bihua-1.1.1.aab`
-  (SHA-256 `08f6cc23…`; rebuild only if the app code changes)
-- Test APK: `docs/download/bihua-1.1.1.apk` (SHA-256 `954e0305…`)
+  (SHA-256 `192d96aa…`; rebuild only if the app code changes)
+- Test APK: `docs/download/bihua-1.1.1.apk` (SHA-256 `61425918…`)
 - Privacy policy: `https://shadowsx3.github.io/bihua/privacy.html`
 - Support: the GitHub repository and its issue tracker.
 
@@ -60,6 +60,9 @@ Bihua server.
   backups. There is nothing for the developer to delete on a server.
 - **Data collection is optional:** handwriting recognition is used for grading
   hints, never to press the grade button. The learner can grade without it.
+- The reading model is a one-time download from Google Play services. It may
+  use mobile data on a new install; after that it runs offline. No learner text
+  or stroke data is sent to a Bihua server.
 
 ## Content rating and audience
 

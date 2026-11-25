@@ -45,6 +45,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -115,6 +116,7 @@ import com.bassmd.bihua.ui.theme.SkyInk
 fun HomeScreen(
     profile: UserProfile,
     mode: StudyMode,
+    preparingInk: Boolean = false,
     resumeSession: LearnSessionState? = null,
     onResumeSession: () -> Unit = {},
     onDiscardSession: () -> Unit = {},
@@ -292,6 +294,7 @@ fun HomeScreen(
                 if (resumeSession == null || vacation) {
                     StudyHero(
                         mode = mode,
+                        preparingInk = preparingInk,
                         due = due,
                         fresh = fresh,
                         learning = learning,
@@ -526,6 +529,7 @@ fun HomeScreen(
                         if (resumeSession == null || vacation) {
                             StudyHero(
                                 mode = mode,
+                                preparingInk = preparingInk,
                                 due = due,
                                 fresh = fresh,
                                 learning = learning,
@@ -806,6 +810,7 @@ private fun WordSparkCard(
 @Composable
 private fun StudyHero(
     mode: StudyMode,
+    preparingInk: Boolean = false,
     due: Int,
     fresh: Int,
     learning: Int,
@@ -884,8 +889,12 @@ private fun StudyHero(
                 due == 0 -> "Learn ${formatCount(fresh)} new"
                 else -> "Start studying"
             }
+            // Practice, vacation, and the no-review state all work without the
+            // reader; only a real study launch waits for the first model.
+            val blocked = preparingInk && !vacation && due + fresh > 0
             Button(
                 onClick = action,
+                enabled = !blocked,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = InkDark,
                     contentColor = Paper,
@@ -897,25 +906,37 @@ private fun StudyHero(
                     .fillMaxWidth()
                     .tourAnchor("home.start")
                     .clearAndSetSemantics {
-                    contentDescription = label
-                    role = Role.Button
-                    onClick(label = label) {
-                        action()
-                        true
-                    }
-                },
+                        contentDescription = if (blocked) "Preparing the ink reader" else label
+                        role = Role.Button
+                        if (!blocked) {
+                            onClick(label = label) {
+                                action()
+                                true
+                            }
+                        }
+                    },
             ) {
-                Icon(Icons.Rounded.School, contentDescription = null, modifier = Modifier.size(18.dp))
+                if (blocked) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = Paper,
+                    )
+                } else {
+                    Icon(Icons.Rounded.School, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    label,
+                    if (blocked) "Preparing the ink reader…" else label,
                     style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }
             TextButton(
                 onClick = onOpenQuest,
+                enabled = !preparingInk,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .tourAnchor("home.spell"),
@@ -923,7 +944,7 @@ private fun StudyHero(
                 Text(
                     "Extra practice · Spell quest",
                     style = MaterialTheme.typography.labelLarge,
-                    color = InkDark,
+                    color = InkDark.copy(alpha = if (preparingInk) 0.42f else 1f),
                 )
             }
         }

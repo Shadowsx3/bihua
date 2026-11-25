@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bassmd.bihua.ai.QaFlags
 import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.SettingsStore
 import com.bassmd.bihua.settings.ThemeMode
@@ -50,6 +51,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (BuildConfig.DEBUG) {
+            QaFlags.noInkModel = intent?.getBooleanExtra("qa_no_ink_model", false) == true
+            QaFlags.downloadNoticeMs = intent?.getLongExtra("qa_download_notice_ms", 0L) ?: 0L
+            QaFlags.slowInkMs = intent?.getLongExtra("qa_slow_ink_ms", 0L) ?: 0L
+        }
         setContent {
             val store = remember { SettingsStore(applicationContext) }
             val settings by store.settings.collectAsStateWithLifecycle(initialValue = AppSettings())

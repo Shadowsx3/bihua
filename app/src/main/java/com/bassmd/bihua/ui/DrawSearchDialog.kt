@@ -156,10 +156,14 @@ fun DrawSearchDialog(
                 result?.let { outcome ->
                     if (!outcome.modelReady) {
                         Text(
-                            "The handwriting model is not ready. Prepare it in Settings.",
+                            "Reading by drawing needs the on-device model. Download it in Settings → Writing, or search by text, pinyin, or meaning instead.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
+                        Spacer(Modifier.height(4.dp))
+                        TextButton(onClick = onDismiss) {
+                            Text("Search by text instead")
+                        }
                     } else if (outcome.candidates.isEmpty()) {
                         Text(
                             "No clear reading. Try writing it larger.",

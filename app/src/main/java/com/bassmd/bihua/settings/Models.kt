@@ -243,6 +243,8 @@ data class AppSettings(
     val studyMode: com.bassmd.bihua.content.StudyMode = com.bassmd.bihua.content.StudyMode.SIMPLIFIED,
     val reduceMotion: Boolean = false,
     val soundEffects: Boolean = true,
+    /** Silences cues and read-aloud so the learner's music keeps playing. */
+    val muteAppSounds: Boolean = false,
     /** Auto follows the hour and celebrates a clear desk; the rest are explicit. */
     val mascotOutfit: MascotOutfit = MascotOutfit.AUTO,
     val readAloud: Boolean = true,
@@ -273,8 +275,6 @@ data class AppSettings(
     val onlyAgainAndGood: Boolean = false,
     /** Show the next FSRS interval on each grade button. Off by default. */
     val showGradeIntervals: Boolean = false,
-    /** Keep the ML Kit model downloads on unmetered Wi-Fi. */
-    val wifiOnlyModels: Boolean = true,
     /** Epoch millis when vacation mode started; 0 means off. */
     val vacationStartedAtMs: Long = 0L,
     /** End of the shorter-session return window after vacation. */
@@ -302,6 +302,12 @@ data class AppSettings(
     val brushPresets: Map<String, BrushConfig> = emptyMap(),
     val drawingTool: DrawingTool = DrawingTool.INK,
     val allowFingerDrawing: Boolean = true,
+    /**
+     * Kept for backup compatibility. The reading model is required for ink
+     * check, so downloads are no longer restricted to Wi-Fi. `sanitized()`
+     * always clears this old flag.
+     */
+    val wifiOnlyModels: Boolean = false,
     /** One-time migration: 1.0.7 shipped finger drawing off even on stylus phones. */
     val fingerDrawingMigrated: Boolean = false,
     /** One-time migration: 1.0.7 shipped ink thin enough to look like a hairline. */
@@ -495,6 +501,7 @@ data class AppSettings(
             brush = activeBrush.copy(tool = drawingTool),
             brushPresets = presets,
             brushWidthMigrated = true,
+            wifiOnlyModels = false,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
             meaningSynonyms = MeaningSanitizer.mergeSynonyms(meaningSynonyms),
             sbdWeights = sbd,

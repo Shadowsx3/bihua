@@ -231,6 +231,9 @@ def boot(profile: dict, headless: bool = True, keep: bool = False) -> Device:
         cmd = [
             str(emulator_path()), "-avd", name, "-port", str(port),
             "-no-audio", "-no-snapshot-save", "-no-boot-anim",
+            # The emulator's default resolver can go stale; Play Services then
+            # cannot fetch the handwriting model even though raw IPs work.
+            "-dns-server", "8.8.8.8",
         ]
         if headless:
             cmd.append("-no-window")

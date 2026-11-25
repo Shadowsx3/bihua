@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -345,13 +346,22 @@ fun SettingsScreen(
     LaunchedEffect(settings.shareIdenticalGlyphs) {
         if (settings.shareIdenticalGlyphs) weightProfile = AppSettings.SHARED_WEIGHTS
     }
-    LaunchedEffect(settingsSection, preparingHandwriting) {
+    // Re-read the models whenever a download ends (from this screen or from
+    // the app's own background warm-up), so a row that said "Not downloaded"
+    // becomes "Ready" without leaving the page.
+    LaunchedEffect(
+        settingsSection,
+        preparingHandwriting,
+        com.bassmd.bihua.ai.ModelDownloads.active,
+        com.bassmd.bihua.ai.ModelDownloads.completed,
+    ) {
         if (settingsSection == "Writing") {
             withContext(Dispatchers.IO) {
                 StudyMode.entries.forEach { mode ->
                     modelStates[mode] = inkRecognition.isModelReady(mode)
                 }
             }
+            handwritingReady = StudyMode.entries.all { modelStates[it] == true }
         }
     }
     LaunchedEffect(settingsSection, progress, settings.fsrsProfiles, settings.fsrsWeights, weightProfile, settings.shareIdenticalGlyphs) {
@@ -753,18 +763,18 @@ fun SettingsScreen(
             }
         },
     ) { inner ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner),
-            contentAlignment = Alignment.TopCenter,
         ) {
+        // The scroll surface spans the whole pane, not only the 760dp card, so
+        // a drag anywhere in the background margins moves the page too.
+        val side = ((maxWidth - 760.dp) / 2).coerceAtLeast(20.dp)
         LazyColumn(
             state = settingsListState,
-            modifier = Modifier
-                .widthIn(max = 760.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 96.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = side, end = side, top = 20.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -2356,13 +2366,10 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
-                        SwitchRow(
-                            title = "Wi-Fi only",
-                            subtitle = "Wait for unmetered Wi-Fi before downloading models.",
-                            checked = settings.wifiOnlyModels,
-                            onCheckedChange = {
-                                update(settings.copy(wifiOnlyModels = it))
-                            },
+                        Text(
+                            "The reading model downloads once on any connection, then works offline. It is needed for ink check, review evidence, draw search, and the spell road.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
                         )
                         StudyMode.entries.forEach { mode ->
                             Row(
@@ -2375,46 +2382,52 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = InkDark,
                                 )
-                                Text(
-                                    when {
-                                        preparingMode == mode -> "Downloading…"
-                                        modelStates[mode] == true -> "Ready"
-                                        modelStates[mode] == false -> "Not downloaded"
-                                        else -> "Checking…"
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = InkSoft,
-                                )
-                                if (modelStates[mode] != true) {
-                                    TextButton(
-                                        onClick = {
-                                            preparingMode = mode
-                                            scope.launch {
-                                                try {
-                                                    val ready = kotlinx.coroutines.withTimeoutOrNull(
-                                                        MODEL_DOWNLOAD_WAIT_MS,
-                                                    ) {
-                                                        inkRecognition.prepare(
-                                                            mode,
-                                                            settings.wifiOnlyModels,
-                                                        )
-                                                    } ?: false
-                                                    modelStates[mode] = ready
-                                                    handwritingReady = StudyMode.entries.all {
-                                                        modelStates[it] == true
-                                                    }
-                                                    message = if (ready) {
-                                                        "${mode.modelLabel()} model ready."
-                                                    } else {
-                                                        "The ${mode.modelLabel()} model did not arrive. Check Wi-Fi and try again."
-                                                    }
-                                                } finally {
-                                                    preparingMode = null
+                                // The button is always there, so the row does not
+                                // jump when the state changes. Ready is a quiet
+                                // disabled button in the same slot.
+                                TextButton(
+                                    onClick = {
+                                        preparingMode = mode
+                                        scope.launch {
+                                            try {
+                                                val ready = kotlinx.coroutines.withTimeoutOrNull(
+                                                    MODEL_DOWNLOAD_WAIT_MS,
+                                                ) {
+                                                    inkRecognition.prepare(
+                                                        mode,
+                                                        settings.wifiOnlyModels,
+                                                    )
+                                                } ?: false
+                                                modelStates[mode] = ready
+                                                handwritingReady = StudyMode.entries.all {
+                                                    modelStates[it] == true
                                                 }
+                                                message = if (ready) {
+                                                    "${mode.modelLabel()} model ready."
+                                                } else {
+                                                    "The ${mode.modelLabel()} model did not arrive. Check Wi-Fi and try again."
+                                                }
+                                            } finally {
+                                                preparingMode = null
                                             }
+                                        }
+                                    },
+                                    enabled = modelStates[mode] != true &&
+                                        preparingMode == null &&
+                                        !preparingHandwriting,
+                                    modifier = Modifier.widthIn(min = 108.dp),
+                                ) {
+                                    Text(
+                                        when {
+                                            modelStates[mode] == true -> "Ready"
+                                            preparingMode == mode -> "Preparing…"
+                                            com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode) ->
+                                                "Preparing…"
+                                            else -> "Download"
                                         },
-                                        enabled = preparingMode == null && !preparingHandwriting,
-                                    ) { Text("Download") }
+                                        maxLines = 1,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    )
                                 }
                             }
                         }
@@ -2552,6 +2565,12 @@ fun SettingsScreen(
                             subtitle = "A short cue when you navigate, check, grade, add, or finish.",
                             checked = settings.soundEffects,
                             onCheckedChange = { update(settings.copy(soundEffects = it)) },
+                        )
+                        SwitchRow(
+                            title = "Mute app sounds",
+                            subtitle = "Keeps your music playing: silences cues and the quest soundscape. Speaker buttons still work.",
+                            checked = settings.muteAppSounds,
+                            onCheckedChange = { update(settings.copy(muteAppSounds = it)) },
                         )
                         if (settings.soundEffects) {
                             TextButton(
@@ -4065,7 +4084,9 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
         title = { Text("Licences and sources") },
         text = {
             androidx.compose.foundation.lazy.LazyColumn(
-                modifier = Modifier.height(420.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(entries.size) { index ->
@@ -4121,7 +4142,9 @@ private fun FullNoticesDialog(onDismiss: () -> Unit) {
         title = { Text("Full licence texts") },
         text = {
             LazyColumn(
-                modifier = Modifier.height(430.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(430.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 items(files) { (title, path) ->
@@ -4159,7 +4182,9 @@ private fun StrokeRulesDialog(onDismiss: () -> Unit) {
         title = { Text("Stroke order rules") },
         text = {
             androidx.compose.foundation.lazy.LazyColumn(
-                modifier = Modifier.height(420.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(rules.size) { index ->

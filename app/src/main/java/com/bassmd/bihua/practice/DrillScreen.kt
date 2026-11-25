@@ -89,7 +89,7 @@ fun DrillScreen(
     showStrokeNumbers: Boolean,
     writingSize: WritingSize,
     allowFinger: Boolean,
-    wifiOnlyModels: Boolean = true,
+    wifiOnlyModels: Boolean = false,
     onClose: () -> Unit,
 ) {
     if (entries.isEmpty()) return

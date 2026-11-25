@@ -9,6 +9,7 @@ package com.bassmd.bihua.learn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -92,6 +93,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.IntOffset
@@ -143,6 +145,7 @@ import com.bassmd.bihua.ui.components.InkSeal
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.RecognitionResultView
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
@@ -212,7 +215,7 @@ fun LearnScreen(
     onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onlyAgainAndGood: Boolean = false,
-    wifiOnlyModels: Boolean = true,
+    wifiOnlyModels: Boolean = false,
     pinyinNumbers: Boolean = false,
     guideMode: GuideMode = GuideMode.FADE,
     guideInRecall: Boolean = false,
@@ -320,6 +323,12 @@ fun LearnScreen(
             }
         )
     }
+    // The answer is the teaching moment: show its guide immediately, even if
+    // the recall setting keeps it hidden before the reveal.
+    LaunchedEffect(revealed) {
+        if (revealed) showReference = true
+    }
+
     fun advanceFromIntro() {
         if (ankiWriting) {
             stepOrdinal = Step.RECALL.ordinal
@@ -393,15 +402,24 @@ fun LearnScreen(
         val askedRound = drawingRound
         scope.launch {
             recognizing = true
-            val result = recognitionService.recognize(
-                visible,
-                mode,
-                items.getOrNull(askedIndex)?.character,
-                wifiOnly = wifiOnlyModels,
-            )
-            recognizing = false
-            if (askedIndex == index && askedRound == drawingRound) {
-                recognition = result
+            try {
+                val result = recognitionService.recognize(
+                    visible,
+                    mode,
+                    items.getOrNull(askedIndex)?.character,
+                    wifiOnly = wifiOnlyModels,
+                )
+                if (askedIndex == index && askedRound == drawingRound) {
+                    recognition = result
+                }
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
+                if (askedIndex == index && askedRound == drawingRound) {
+                    recognition = RecognitionResult(emptyList(), false)
+                }
+            } finally {
+                recognizing = false
             }
         }
     }
@@ -750,8 +768,8 @@ fun LearnScreen(
                             IntroWords(
                                 words = introWords,
                                 mode = mode,
-                                limit = 10,
-                                maxHeight = 420.dp,
+                                limit = 20,
+                                maxHeight = 560.dp,
                             )
                         }
                         if (step != Step.INTRODUCE) {
@@ -917,29 +935,43 @@ fun LearnScreen(
                         .padding(horizontal = 20.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (!revealed) {
-                        PromptPanel(
-                            item = item,
-                            step = step,
-                            mode = mode,
-                            revealed = revealed,
-                            scaffold = scaffold,
-                            cuePrompt = cuePrompt,
-                            mnemonic = mnemonic,
-                            mnemonicLabel = mnemonicLabel,
-                            mnemonicAllowed = mnemonicAllowed,
-                            showMnemonic = showMnemonic,
-                            onToggleMnemonic = { showMnemonic = !showMnemonic },
-                            compact = shortScreen,
-                        )
-                        Spacer(Modifier.height(if (shortScreen) 4.dp else 10.dp))
-                    } else {
-                        Text(
-                            "${item.character} · ${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = InkDark,
-                        )
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = revealed,
+                        transitionSpec = {
+                            (
+                                androidx.compose.animation.fadeIn(
+                                    androidx.compose.animation.core.tween(160),
+                                ) togetherWith androidx.compose.animation.fadeOut(
+                                    androidx.compose.animation.core.tween(110),
+                                )
+                            ).using(androidx.compose.animation.SizeTransform(clip = false))
+                        },
+                        label = "answer-reveal",
+                    ) { shown ->
+                        if (!shown) {
+                            PromptPanel(
+                                item = item,
+                                step = step,
+                                mode = mode,
+                                revealed = false,
+                                scaffold = scaffold,
+                                cuePrompt = cuePrompt,
+                                mnemonic = mnemonic,
+                                mnemonicLabel = mnemonicLabel,
+                                mnemonicAllowed = mnemonicAllowed,
+                                showMnemonic = showMnemonic,
+                                onToggleMnemonic = { showMnemonic = !showMnemonic },
+                                compact = shortScreen,
+                            )
+                        } else {
+                            Text(
+                                "${item.character} · ${com.bassmd.bihua.ui.displayReading(item.reading, mode)} · ${item.meaning}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                        }
                     }
+                    Spacer(Modifier.height(if (shortScreen) 4.dp else 10.dp))
                     if (step == Step.INTRODUCE) {
                         IntroCharacter(item, mode, onSpeak, speechEnabled, introWords)
                         Spacer(Modifier.height(16.dp))
@@ -1283,11 +1315,12 @@ private fun IntroCharacter(
 private fun IntroWords(
     words: List<com.bassmd.bihua.content.WordContext>,
     mode: StudyMode,
-    limit: Int = 6,
-    maxHeight: androidx.compose.ui.unit.Dp = 236.dp,
+    limit: Int = 20,
+    maxHeight: androidx.compose.ui.unit.Dp = 560.dp,
 ) {
     val shown = words.take(limit)
     if (shown.isEmpty()) return
+    val columns = if (LocalConfiguration.current.screenWidthDp >= 720) 3 else 2
     Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -1322,7 +1355,7 @@ private fun IntroWords(
                 )
                 if (shown.size > 1) {
                     Spacer(Modifier.height(8.dp))
-                    val rows = shown.drop(1).chunked(2)
+                    val rows = shown.drop(1).chunked(columns)
                     rows.forEachIndexed { rowIndex, pair ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1934,7 +1967,7 @@ private fun AnkiWritingRecall(
         ) {
             Column(
                 modifier = Modifier
-                    .widthIn(max = 560.dp)
+                    .widthIn(max = 760.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -2097,7 +2130,7 @@ private fun MeaningReview(
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 560.dp)
+                .widthIn(max = 760.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -2543,7 +2576,7 @@ private fun PronunciationReview(
 
     Column(
         modifier = Modifier
-            .widthIn(max = 560.dp)
+            .widthIn(max = 760.dp)
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),

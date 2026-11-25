@@ -17,6 +17,8 @@ enum class FoldState {
     NONE,
     BOOK,
     TABLETOP,
+    /** A folding device that is rotated, folded, or otherwise not open as a book. */
+    FOLDABLE,
 }
 
 val LocalFoldState = staticCompositionLocalOf { FoldState.NONE }
@@ -46,7 +48,7 @@ fun rememberFoldState(): FoldState {
                         fold.orientation == FoldingFeature.Orientation.VERTICAL -> FoldState.BOOK
                     fold.state == FoldingFeature.State.HALF_OPENED &&
                         fold.orientation == FoldingFeature.Orientation.HORIZONTAL -> FoldState.TABLETOP
-                    else -> FoldState.NONE
+                    else -> FoldState.FOLDABLE
                 }
             }
     }

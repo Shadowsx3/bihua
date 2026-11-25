@@ -74,6 +74,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -149,6 +150,13 @@ fun OnboardingScreen(
     val brush = BrushConfig.preset(tool)
 
     BackHandler(enabled = step > 0) { step-- }
+
+    // Start the reading-model download as soon as the script step opens. The
+    // remaining pages give it time to arrive, and it is repeated when the
+    // learner picks a different script.
+    LaunchedEffect(step) {
+        if (step >= 1) onModePreview(mode)
+    }
 
     Box(
         Modifier

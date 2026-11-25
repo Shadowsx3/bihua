@@ -35,6 +35,8 @@ harness; pure composables and physical hardware still need the device pass.
 | Daily word sharing | Same study day + course agree across fresh repositories; a month has no repeats; courses walk separate sequences; mature setting does not change it | `FeaturedWordTest` |
 | Puzzle place fit | Every obstacle has 8+ compatible settings; 2,000 generated scenes keep the obstacle and place kinds aligned; family puzzles have 2+ solutions; every result names the obstacle's own outcome; repeated visits reuse cached parts | `ShippedPuzzlePartsTest`, `PuzzlePartsCacheTest` |
 | Writing reveal | Show answer is available before ink, after ink, and while recognition settles; it is in both phone and wide review layouts | `writing-reveal`; `review-modes` |
+| Model preparation | Tags per script (Korean needs ko + zh-Hant), overlapping downloads keep the notice until the last finishes, an extra end cannot wedge it; the shared notice follows Home → Settings; a fresh quest does the real download | `ModelPreparationTest`; `model-notice`; `spell-quest` |
+| Offline reading | No-model gate offers the book, the scene hides Draw, practice falls back to shape/order, search offers text | `spell-offline`, `practice-check` |
 | Brush presets | Each tool restores its own values; edits save under the active tool; backup carries the map; bad keys/values are clamped | `brush-presets`, `SettingsSanitizeTest`, `SettingsTransferTest` |
 | Reminders | Enable, time, days, test notification, disable; off state is explicit and the preview stays visible | `reminders` |
 | Widget refresh | Next day-part / study-day boundary is computed; one inexact alarm; six-hour fallback | `WidgetRefreshTest` |

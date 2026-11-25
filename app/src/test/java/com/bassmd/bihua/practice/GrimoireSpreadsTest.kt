@@ -48,7 +48,7 @@ class GrimoireSpreadsTest {
     }
 
     @Test
-    fun narrowSpreadsKeepTheSamePairsAsStackedPages() {
+    fun narrowSpreadsAreOneSpellPagePerChapter() {
         val spreads = bookSpreads(bookPages(grouped), wide = false)
         assertEquals(BookPage.Cover, spreads[0].left)
         assertNull(spreads[0].right)
@@ -56,9 +56,10 @@ class GrimoireSpreadsTest {
         assertNull(spreads[1].right)
         val categorySpreads = spreads.drop(2)
         assertEquals(3, categorySpreads.size)
+        val categories = categorySpreads.map { (it.left as BookPage.Spells).category }
+        assertEquals(listOf("Tides", "Flame", "Ground"), categories)
         categorySpreads.forEach { spread ->
-            assertTrue(spread.left is BookPage.ChapterIntro)
-            assertTrue(spread.right is BookPage.Spells)
+            assertNull(spread.right)
         }
     }
 

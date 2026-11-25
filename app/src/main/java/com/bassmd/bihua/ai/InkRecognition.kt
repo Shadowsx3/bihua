@@ -12,7 +12,16 @@ import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognitionModel
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizer
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizerOptions
 import com.google.mlkit.vision.digitalink.recognition.Ink
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.atomic.AtomicInteger
 
 data class RecognitionResult(
     val candidates: List<String>,
@@ -30,47 +39,107 @@ class InkRecognitionService {
     private val recognizers = mutableMapOf<String, DigitalInkRecognizer>()
     private val readyModels = mutableSetOf<String>()
 
+    /** Downloads in flight. Shown as one quiet notice wherever the learner is. */
+    private val downloads = DownloadTracker { active ->
+        _downloading.value = active
+        ModelDownloads.active = active
+        if (!active) ModelDownloads.completed++
+    }
+    private val _downloading = MutableStateFlow(false)
+    val downloading: StateFlow<Boolean> = _downloading.asStateFlow()
+
+    /** Debug-only path for the shared notice; never called in release. */
+    suspend fun simulateDownloadFor(durationMs: Long) {
+        ModelDownloads.starting(StudyMode.SIMPLIFIED)
+        downloads.begin()
+        try {
+            kotlinx.coroutines.delay(durationMs)
+        } finally {
+            downloads.end()
+            ModelDownloads.ending(StudyMode.SIMPLIFIED)
+            if (QaFlags.noInkModel) ModelDownloads.failed(StudyMode.SIMPLIFIED)
+        }
+    }
+
     suspend fun isModelReady(mode: StudyMode): Boolean {
-        val tag = languageTag(mode) ?: return false
+        if (QaFlags.noInkModel) return false
+        return requiredModelTags(mode).all { tag -> tagReady(tag) }
+    }
+
+    private suspend fun tagReady(tag: String): Boolean {
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return false
         val model = DigitalInkRecognitionModel.builder(identifier).build()
-        return runCatching { RemoteModelManager.getInstance().isModelDownloaded(model).await() }.getOrDefault(false)
+        return runCatching {
+            kotlinx.coroutines.withTimeoutOrNull(READY_WAIT_MS) {
+                RemoteModelManager.getInstance().isModelDownloaded(model).await()
+            } ?: false
+        }.getOrDefault(false)
     }
 
     suspend fun areAllModelsReady(): Boolean =
         StudyMode.entries.all { isModelReady(it) }
 
-    suspend fun prepare(mode: StudyMode, wifiOnly: Boolean = true): Boolean {
-        val tag = languageTag(mode) ?: return false
-        return prepareTag(tag, wifiOnly)
+    suspend fun prepare(mode: StudyMode, wifiOnly: Boolean = false): Boolean {
+        if (QaFlags.noInkModel) {
+            ModelDownloads.failed(mode)
+            return false
+        }
+        return ModelDownloads.mutexFor(mode).withLock {
+            ModelDownloads.starting(mode)
+            try {
+                val ready = requiredModelTags(mode)
+                    .map { tag -> prepareTag(tag, wifiOnly) }
+                    .all { it }
+                if (ready) ModelDownloads.succeeded(mode) else ModelDownloads.failed(mode)
+                ready
+            } finally {
+                ModelDownloads.ending(mode)
+            }
+        }
     }
 
-    private suspend fun prepareTag(tag: String, wifiOnly: Boolean = true): Boolean {
+    private suspend fun prepareTag(tag: String, wifiOnly: Boolean = false): Boolean {
+        if (QaFlags.noInkModel) return false
+        if (QaFlags.slowInkMs > 0L) kotlinx.coroutines.delay(QaFlags.slowInkMs)
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return false
         val model = DigitalInkRecognitionModel.builder(identifier).build()
         val manager = RemoteModelManager.getInstance()
         return runCatching {
-            val downloaded = manager.isModelDownloaded(model).await()
+            val downloaded = kotlinx.coroutines.withTimeoutOrNull(READY_WAIT_MS) {
+                manager.isModelDownloaded(model).await()
+            } ?: false
             if (!downloaded) {
                 val conditions = DownloadConditions.Builder().apply {
                     if (wifiOnly) requireWifi()
                 }.build()
-                manager.download(model, conditions).await()
+                beginDownload()
+                try {
+                    manager.download(model, conditions).await()
+                } finally {
+                    endDownload()
+                }
             }
             readyModels += tag
             true
+        }.onFailure { error ->
+            Log.w("InkRecognition", "model $tag is not available", error)
         }.getOrDefault(false)
     }
 
-    suspend fun prepareAll(wifiOnly: Boolean = true): Map<StudyMode, Boolean> =
+    private fun beginDownload() = downloads.begin()
+
+    private fun endDownload() = downloads.end()
+
+    suspend fun prepareAll(wifiOnly: Boolean = false): Map<StudyMode, Boolean> =
         StudyMode.entries.associateWith { prepare(it, wifiOnly) }
 
     suspend fun recognize(
         strokes: List<InkStroke>,
         mode: StudyMode,
         target: String? = null,
-        wifiOnly: Boolean = true,
+        wifiOnly: Boolean = false,
     ): RecognitionResult {
+        if (QaFlags.noInkModel) return RecognitionResult(emptyList(), false)
         // The Korean model reads Hangul, not Hanja. For a Han character we use
         // the Chinese model that matches the glyph tradition instead.
         val tag = targetLanguageTag(mode, target) ?: return RecognitionResult(emptyList(), false)
@@ -171,10 +240,105 @@ class InkRecognitionService {
             codePoint in 0xFF66..0xFF9D
 
     private companion object {
+        /** Longest wait for Play Services to answer a readiness check. */
+        const val READY_WAIT_MS = 4_000L
+
         /** Longest wait for a first-use model download before reporting it unavailable. */
         const val MODEL_WAIT_MS = 20_000L
 
         /** Longest wait for the recognizer itself once the model is ready. */
         const val RECOGNIZE_WAIT_MS = 10_000L
+    }
+}
+
+
+/**
+ * One place every reader instance reports to, so the shared notice, Settings,
+ * and the quest all see the same download and the same completion.
+ */
+object ModelDownloads {
+    /** True while any model is being fetched, from any screen. */
+    var active by mutableStateOf(false)
+        internal set
+
+    /** Scripts currently being prepared or checked, so each row is honest. */
+    var activeModes by mutableStateOf<Set<StudyMode>>(emptySet())
+        internal set
+
+    /** Increments whenever a download run ends, so waiting screens can re-check. */
+    var completed by mutableIntStateOf(0)
+        internal set
+
+    /** True when the last preparation could not produce a usable model. */
+    var failed by mutableStateOf(false)
+        internal set
+
+    /** The script whose preparation failed, for a specific message. */
+    var failedMode by mutableStateOf<StudyMode?>(null)
+        internal set
+
+    /** Increments on every failed run, so a retry can show the notice again. */
+    var failedRuns by mutableIntStateOf(0)
+        internal set
+
+    private val mutexes = java.util.concurrent.ConcurrentHashMap<StudyMode, kotlinx.coroutines.sync.Mutex>()
+
+    internal fun mutexFor(mode: StudyMode): kotlinx.coroutines.sync.Mutex =
+        mutexes.getOrPut(mode) { kotlinx.coroutines.sync.Mutex() }
+
+    internal fun starting(mode: StudyMode) {
+        activeModes = activeModes + mode
+        if (failedMode == mode) {
+            failed = false
+            failedMode = null
+        }
+    }
+
+    internal fun ending(mode: StudyMode) {
+        activeModes = activeModes - mode
+    }
+
+    internal fun succeeded(mode: StudyMode) {
+        if (failedMode == mode || failedMode == null) {
+            failed = false
+            failedMode = null
+        }
+    }
+
+    internal fun failed(mode: StudyMode) {
+        failed = true
+        failedMode = mode
+        failedRuns++
+    }
+}
+
+/** True only while a download is running and the active script is not ready. */
+internal fun shouldWaitForInk(active: Boolean, ready: Boolean?): Boolean =
+    active && ready != true
+
+/**
+ * Every model a script needs. Korean draws Hangul with the Korean model and
+ * Hanja with the Chinese one, so it needs two downloads.
+ */
+internal fun requiredModelTags(mode: StudyMode): List<String> = when (mode) {
+    StudyMode.SIMPLIFIED -> listOf("zh-Hans")
+    StudyMode.TRADITIONAL -> listOf("zh-Hant")
+    StudyMode.JAPANESE -> listOf("ja")
+    StudyMode.KOREAN -> listOf("ko", "zh-Hant")
+}
+
+/** Reference-counts overlapping downloads so the notice stays until all end. */
+internal class DownloadTracker(private val onChange: (Boolean) -> Unit) {
+    private val count = AtomicInteger(0)
+
+    fun begin() {
+        if (count.incrementAndGet() == 1) onChange(true)
+    }
+
+    fun end() {
+        if (count.decrementAndGet() <= 0) {
+            count.set(0)
+            onChange(false)
+        }
     }
 }

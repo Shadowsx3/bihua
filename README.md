@@ -51,7 +51,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
 | **Scheduling** | FSRS-7 or SBD, shared profile for shared glyphs, local weight fitting, a 70–97% target recall, 4 AM default day boundary, vacation mode, seven-day ease-back. |
-| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Each of the four tools keeps its own brush preset. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. |
+| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Each of the four tools keeps its own brush preset. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. The reading model downloads once automatically on any connection, then works offline. |
 | **Guided tour** | An optional live overlay over the real screens: the desk, reviews, grades, paper, search, and the spell road. Replay it from Settings → Help & tour. |
 | **Progress** | 7-day, 30-day, 90-day, and yearly windows for reviews, characters learned, practice time, pass rate, streak, best day, and daily rhythm, with course scoping and honest empty states. |
 | **Meaning** | Optional character-to-meaning reviews: type a wording, reveal the clean gloss, see a real word, and grade. User synonyms are kept as accepted wordings. Off by default; Anki-style reveal available. |

@@ -103,7 +103,7 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Theme | System/light/dark, every tab, pet fixed | P |
 | Pinyin display | Marks default, numbers optional | A |
 | Read aloud | System TTS, hidden speaker when off | P |
-| Handwriting models | Per-script download, Wi-Fi only | M |
+| Handwriting models | Per-script download, works offline after | M |
 | Backup/import | Selective settings/progress | P |
 | Sync | Encrypted local Wi-Fi | M |
 | Reset | All progress, keeps notes/lists | M |

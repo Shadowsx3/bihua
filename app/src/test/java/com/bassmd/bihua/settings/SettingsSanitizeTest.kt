@@ -19,6 +19,7 @@ class SettingsSanitizeTest {
     @Test
     fun ankiModesAreOffByDefault() {
         val settings = AppSettings()
+        assertFalse(settings.wifiOnlyModels)
         assertFalse(settings.ankiWriting)
         assertFalse(settings.ankiPronunciation)
         assertFalse(settings.ankiMeaning)

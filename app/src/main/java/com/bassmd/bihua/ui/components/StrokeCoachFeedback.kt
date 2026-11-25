@@ -1,9 +1,13 @@
 package com.bassmd.bihua.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +60,7 @@ import com.bassmd.bihua.ink.centerlines
 import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.ui.theme.Butter
+import com.bassmd.bihua.ui.theme.GridLine
 import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
@@ -270,177 +275,248 @@ private fun StrokeRepairDialog(
         currentMode == RepairMode.TRACE -> "Trace stroke $strokeNumber"
         else -> "Write stroke $strokeNumber"
     }
-    androidx.compose.material3.AlertDialog(
+    fun startTrace() {
+        currentMode = RepairMode.TRACE
+        padInk.clear()
+        outcome = null
+        replay++
+    }
+
+    fun checkStroke() {
+        val line = player.guide?.centerlines().orEmpty().getOrNull(strokeNumber - 1)
+        val drawn = padInk.strokes.map { stroke -> stroke.points.map { Offset(it.x, it.y) } }
+        outcome = if (line == null) {
+            false
+        } else {
+            val order = com.bassmd.bihua.ink.StrokeOrderGrader.assess(
+                drawn = drawn,
+                guide = listOf(line),
+            )
+            val shape = com.bassmd.bihua.ink.StrokeGrade.assess(
+                drawn = drawn,
+                guide = listOf(line),
+            )
+            order.matched == 1 &&
+                order.extra == 0 &&
+                order.reversed.isEmpty() &&
+                shape.countMatches &&
+                shape.shapeScore >= 0.55f
+        }
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column {
-                if (outcome == true) {
-                    Text(
-                        "That is the shape. The stroke is marked in mint on the whole character.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkSoft,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp),
-                        contentAlignment = Alignment.Center,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize().padding(18.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            val sheetSize = minOf(220.dp, maxHeight * 0.36f).coerceAtLeast(150.dp)
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = PaperWarm,
+                border = BorderStroke(1.dp, GridLine.copy(alpha = 0.55f)),
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .widthIn(max = 440.dp)
+                    .fillMaxWidth(0.94f),
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(11.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(Modifier.size(220.dp).writingSheet()) {
-                            WritingGrid(gridStyle, Modifier.fillMaxSize())
-                            StrokeGuideLayer(
-                                player = player,
-                                modifier = Modifier.fillMaxSize(),
-                                showNumbers = true,
-                                focusStroke = strokeNumber,
-                                focusColor = Mint,
-                                dimUnfocused = true,
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .background(Mint.copy(alpha = 0.28f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                if (currentMode == RepairMode.WATCH) {
+                                    Icons.Rounded.Visibility
+                                } else {
+                                    Icons.Rounded.Edit
+                                },
+                                contentDescription = null,
+                                tint = InkDark,
+                                modifier = Modifier.size(20.dp),
                             )
                         }
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = InkDark,
+                            )
+                            Text(
+                                "Stroke $strokeNumber of ${player.strokeCount.coerceAtLeast(1)} · " +
+                                    when {
+                                        outcome == true -> "fixed"
+                                        currentMode == RepairMode.WATCH -> "watch"
+                                        currentMode == RepairMode.TRACE -> "trace"
+                                        else -> "from memory"
+                                    },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                        TextButton(onClick = onDismiss) {
+                            Text("Close", color = InkSoft)
+                        }
                     }
-                } else {
+
                     Text(
-                        when (currentMode) {
-                            RepairMode.WATCH -> "Watch the path, then trace it when you are ready."
-                            RepairMode.TRACE -> hint ?: "Follow the pale path with your finger or stylus."
-                            RepairMode.ALONE -> "The guide is hidden. Start at the dot and write the stroke from memory."
+                        if (outcome == true) {
+                            "That is the shape. The stroke is marked in mint on the whole character."
+                        } else {
+                            when (currentMode) {
+                                RepairMode.WATCH -> "Watch the path, then trace it when you are ready."
+                                RepairMode.TRACE -> hint ?: "Follow the pale path with your finger or stylus."
+                                RepairMode.ALONE -> "The guide is hidden. Start at the dot and write the stroke from memory."
+                            }
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
-                    Spacer(Modifier.height(8.dp))
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(240.dp),
+                            .height(sheetSize + 20.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(220.dp).writingSheet()) {
+                        Box(
+                            modifier = Modifier
+                                .size(sheetSize)
+                                .writingSheet(RoundedCornerShape(22.dp)),
+                        ) {
                             WritingGrid(gridStyle, Modifier.fillMaxSize())
-                            if (currentMode == RepairMode.ALONE) {
-                                StartDotLayer(
+                            if (outcome == true) {
+                                StrokeGuideLayer(
                                     player = player,
-                                    strokeNumber = strokeNumber,
                                     modifier = Modifier.fillMaxSize(),
+                                    showNumbers = true,
+                                    focusStroke = strokeNumber,
+                                    focusColor = Mint,
+                                    dimUnfocused = true,
                                 )
                             } else {
-                                SingleStrokeGuideLayer(
-                                    player = player,
-                                    strokeIndex = strokeNumber - 1,
-                                    modifier = Modifier.fillMaxSize(),
-                                    progress = progress,
-                                )
-                            }
-                            if (currentMode != RepairMode.WATCH) {
-                                InkCanvas(
-                                    state = padInk,
-                                    modifier = Modifier.fillMaxSize(),
-                                    widthScale = widthScale,
-                                    brush = brush,
-                                    gridStyle = gridStyle,
-                                    drawingTool = drawingTool,
-                                    allowFinger = allowFinger,
-                                    drawGrid = false,
-                                    contentDescription = "Write the single missed stroke here.",
-                                )
-                            }
-                        }
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (currentMode != RepairMode.WATCH) {
-                            TextButton(
-                                onClick = {
-                                    padInk.clear()
-                                    outcome = null
+                                if (currentMode == RepairMode.ALONE) {
+                                    StartDotLayer(
+                                        player = player,
+                                        strokeNumber = strokeNumber,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                } else {
+                                    SingleStrokeGuideLayer(
+                                        player = player,
+                                        strokeIndex = strokeNumber - 1,
+                                        modifier = Modifier.fillMaxSize(),
+                                        progress = progress,
+                                    )
                                 }
-                            ) { Text("Clear") }
-                        }
-                        TextButton(onClick = { replay++ }) { Text("Show me") }
-                        if (currentMode == RepairMode.WATCH) {
-                            TextButton(
-                                onClick = {
-                                    currentMode = RepairMode.TRACE
-                                    padInk.clear()
-                                    outcome = null
-                                    replay++
-                                },
-                            ) { Text("Trace it") }
-                        } else {
-                            TextButton(
-                                onClick = {
-                                    val line = player.guide?.centerlines().orEmpty()
-                                        .getOrNull(strokeNumber - 1)
-                                    val drawn = padInk.strokes.map { stroke ->
-                                        stroke.points.map {
-                                            Offset(it.x, it.y)
-                                        }
-                                    }
-                                    outcome = if (line == null) {
-                                        false
-                                    } else {
-                                        val order = com.bassmd.bihua.ink.StrokeOrderGrader.assess(
-                                            drawn = drawn,
-                                            guide = listOf(line),
-                                        )
-                                        val shape = com.bassmd.bihua.ink.StrokeGrade.assess(
-                                            drawn = drawn,
-                                            guide = listOf(line),
-                                        )
-                                        order.matched == 1 &&
-                                            order.extra == 0 &&
-                                            order.reversed.isEmpty() &&
-                                            shape.countMatches &&
-                                            shape.shapeScore >= 0.55f
-                                    }
-                                },
-                                enabled = padInk.strokes.isNotEmpty(),
-                            ) { Text("Check stroke") }
+                                if (currentMode != RepairMode.WATCH) {
+                                    InkCanvas(
+                                        state = padInk,
+                                        modifier = Modifier.fillMaxSize(),
+                                        widthScale = widthScale,
+                                        brush = brush,
+                                        gridStyle = gridStyle,
+                                        drawingTool = drawingTool,
+                                        allowFinger = allowFinger,
+                                        drawGrid = false,
+                                        contentDescription = "Write the single missed stroke here.",
+                                    )
+                                }
+                            }
                         }
                     }
+
                     when (outcome) {
-                        true -> Unit
-                        false -> Text(
-                            "Almost. Watch it once more, then try that stroke again.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        null -> Unit
+                        false -> Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = Peach.copy(alpha = 0.24f),
+                        ) {
+                            Text(
+                                "Almost. Watch it once more, then try that stroke again.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkDark,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                        }
+                        else -> Unit
+                    }
+
+                    when {
+                        outcome == true -> {
+                            Button(
+                                onClick = onRewrite,
+                                shape = CircleShape,
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = InkDark,
+                                    contentColor = PaperWarm,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Write the whole character") }
+                            TextButton(onClick = onDismiss) { Text("Close", color = InkSoft) }
+                        }
+                        currentMode == RepairMode.WATCH -> {
+                            Button(
+                                onClick = { startTrace() },
+                                shape = CircleShape,
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = InkDark,
+                                    contentColor = PaperWarm,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Trace it") }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                TextButton(onClick = { replay++ }) { Text("Show me again") }
+                                TextButton(onClick = onDismiss) { Text("Close", color = InkSoft) }
+                            }
+                        }
+                        else -> {
+                            Button(
+                                onClick = { checkStroke() },
+                                enabled = padInk.strokes.isNotEmpty(),
+                                shape = CircleShape,
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = InkDark,
+                                    contentColor = PaperWarm,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Check stroke") }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        padInk.clear()
+                                        outcome = null
+                                    },
+                                ) { Text("Clear") }
+                                TextButton(onClick = { replay++ }) { Text("Show me") }
+                                TextButton(onClick = onDismiss) { Text("Close", color = InkSoft) }
+                            }
+                        }
                     }
                 }
             }
-        },
-        confirmButton = {
-            if (outcome == true) {
-                Button(onClick = onRewrite, shape = CircleShape) {
-                    Text("Write the whole character")
-                }
-            } else if (currentMode == RepairMode.WATCH) {
-                Button(
-                    onClick = {
-                        currentMode = RepairMode.TRACE
-                        padInk.clear()
-                        outcome = null
-                        replay++
-                    },
-                    shape = CircleShape,
-                ) {
-                    Text("Trace it")
-                }
-            } else {
-                TextButton(onClick = onDismiss) { Text("Close") }
-            }
-        },
-        dismissButton = {
-            if (outcome == true) {
-                TextButton(onClick = onDismiss) { Text("Close") }
-            }
-        },
-    )
+        }
+    }
 }
 
 @Composable

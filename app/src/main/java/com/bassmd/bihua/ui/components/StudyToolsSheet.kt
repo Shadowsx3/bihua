@@ -53,6 +53,7 @@ import com.bassmd.bihua.ui.theme.Sky
 @Composable
 fun StudyToolsSheet(
     mode: StudyMode,
+    preparingInk: Boolean = false,
     studyList: List<CharacterEntry>,
     pinned: List<CharacterEntry>,
     skipped: List<CharacterEntry>,
@@ -93,25 +94,40 @@ fun StudyToolsSheet(
             Spacer(Modifier.height(14.dp))
             Surface(
                     onClick = onOpenQuest,
+                    enabled = !preparingInk,
                     shape = RoundedCornerShape(16.dp),
-                    color = Mint.copy(alpha = 0.18f),
+                    color = Mint.copy(alpha = if (preparingInk) 0.10f else 0.18f),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Rounded.Explore, contentDescription = null, tint = InkDark)
+                        Icon(
+                            Icons.Rounded.Explore,
+                            contentDescription = null,
+                            tint = InkDark.copy(alpha = if (preparingInk) 0.4f else 1f),
+                        )
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Spell quest", style = MaterialTheme.typography.titleSmall, color = InkDark)
                             Text(
-                                "An endless road · write to cast, nothing graded",
+                                "Spell quest",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark.copy(alpha = if (preparingInk) 0.4f else 1f),
+                            )
+                            Text(
+                                if (preparingInk) {
+                                    "Preparing the ink reader…"
+                                } else {
+                                    "An endless road · write to cast, nothing graded"
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = InkSoft,
                             )
                         }
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                        if (!preparingInk) {
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                        }
                     }
                 }
 

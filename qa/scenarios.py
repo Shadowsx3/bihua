@@ -49,6 +49,15 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("stroke-coach", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="stroke_coach"),
     ScenarioSpec("writing-reveal", level="standard", state={"reviews": 1, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="writing_reveal"),
     ScenarioSpec("brush-presets", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="brush_presets"),
+    ScenarioSpec("practice-check", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="practice_check"),
+    ScenarioSpec("practice-slow", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="practice_slow"),
+    ScenarioSpec("spell-offline", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_offline"),
+    ScenarioSpec("model-notice", level="standard", state={"reviews": 3, "new": 2, "days": 3}, runner="model_notice"),
+    ScenarioSpec("rotation", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="rotation"),
+    ScenarioSpec("screen-pass", level="standard", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="screen_pass"),
+    ScenarioSpec("screen-pass-ja", level="full", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "JAPANESE"}, runner="screen_pass"),
+    ScenarioSpec("screen-pass-ko", level="full", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "KOREAN"}, runner="screen_pass"),
+    ScenarioSpec("screen-pass-traditional", level="full", state={"reviews": 3, "new": 0, "goal": 0, "days": 5, "task_mode": "WRITE", "review_order": "OLDEST_FIRST", "mode": "TRADITIONAL"}, runner="screen_pass"),
     ScenarioSpec("settings-pages", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_pages"),
     ScenarioSpec("stroke-clean", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "WRITE", "review_order": "OLDEST_FIRST"}, runner="stroke_clean"),
     ScenarioSpec("pronounce-kana", level="standard", state={"reviews": 5, "new": 0, "goal": 0, "days": 7, "task_mode": "PRONOUNCE", "pronunciation": True, "mode": "JAPANESE", "review_order": "OLDEST_FIRST"}, runner="pronounce_kana"),
@@ -809,6 +818,265 @@ def worksheet(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def screen_pass(journey: Journey, state: ScenarioState) -> None:
+    """Screenshot every main surface and dialog in the current script.
+
+    Run it across phone, phone-landscape, fold-inner, fold-outer, and tablet,
+    plus the four mode variants. The saved images are the visual review set.
+    """
+    with journey.step("home and tabs"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        # Let the one-time reader finish so its floating notice cannot swallow
+        # uiautomator's hierarchy while this pass moves between screens.
+        deadline = time.time() + 120
+        while time.time() < deadline:
+            if journey.exists("Start studying", timeout=1) or journey.exists("Learn ", timeout=1):
+                break
+            time.sleep(1)
+        journey.screenshot("screen-home")
+        for tab in ("Characters", "Progress", "Practice", "Settings"):
+            journey.open_tab(tab)
+            time.sleep(1.2)
+            journey.screenshot(f"screen-{tab.lower()}")
+    with journey.step("settings dialogs"):
+        journey.open_tab("Settings")
+        journey.tap_visible("About", max_scrolls=14)
+        journey.wait("About", timeout=6, exact=False)
+        journey.tap("Licences and sources")
+        journey.wait("Licences and sources", timeout=6)
+        journey.screenshot("screen-licences")
+        journey.tap("Full texts")
+        journey.wait("Full licence texts", timeout=6)
+        journey.screenshot("screen-full-notices")
+        journey.tap("Close")
+        journey.tap("Close")
+        journey.d.press("back")
+        time.sleep(0.5)
+        journey.tap_visible("Writing", max_scrolls=14)
+        journey.tap_visible("Stroke order rules", max_scrolls=6)
+        journey.wait("Stroke order rules", timeout=6)
+        journey.screenshot("screen-stroke-rules")
+        journey.tap("Close")
+    with journey.step("learn reveal"):
+        journey.open_tab("Home")
+        journey.start_session()
+        journey.wait("From memory", timeout=10)
+        journey.screenshot("screen-recall")
+        journey.tap("Show answer")
+        journey.wait("Good", timeout=10)
+        journey.screenshot("screen-answer")
+        journey.tap("Good")
+        journey.leave_session("End session")
+    with journey.step("game surfaces"):
+        journey.open_tab("Home")
+        open_study_tools(journey)
+        journey.wait("Study tools", timeout=8)
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("screen-gate")
+        journey.tap_any(["Start the road", "Walk on"])
+        time.sleep(1.5)
+        journey.screenshot("screen-scene")
+        journey.tap_any(["Grimoire", "Open the grimoire"])
+        journey.wait("Close book", timeout=10)
+        journey.screenshot("screen-grimoire")
+        journey.tap("Close book")
+        try:
+            journey.tap_any(["Leave the road", "Leave"])
+        except JourneyFailure:
+            journey.d.press("back")
+    journey.assert_no_crash()
+
+
+def rotation(journey: Journey, state: ScenarioState) -> None:
+    """Turn the device while the book is open; nothing should clip or vanish."""
+    with journey.step("home before the turn"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        journey.screenshot("rotation-home-a")
+    with journey.step("turn the device"):
+        journey.device.shell("settings put system accelerometer_rotation 0")
+        journey.device.shell("settings put system user_rotation 1")
+        time.sleep(2.0)
+        journey.wait("Hello", timeout=10, exact=False)
+        journey.screenshot("rotation-home-b")
+    with journey.step("the gate and grimoire reflow"):
+        open_study_tools(journey)
+        journey.wait("Study tools", timeout=8)
+        journey.tap("Spell quest")
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("rotation-gate")
+        journey.tap_any(["Start the road", "Walk on"])
+        time.sleep(1.5)
+        journey.tap_any(["Grimoire", "Open the grimoire"])
+        journey.wait("Close book", timeout=10)
+        journey.screenshot("rotation-grimoire")
+        journey.tap("Close book")
+        try:
+            journey.tap_any(["Leave the road", "Leave"])
+        except JourneyFailure:
+            journey.d.press("back")
+    with journey.step("turn back"):
+        journey.device.shell("settings put system user_rotation 0")
+        time.sleep(2.0)
+        journey.assert_home()
+        journey.screenshot("rotation-home-c")
+    journey.assert_no_crash()
+
+
+def model_notice(journey: Journey, state: ScenarioState) -> None:
+    """The one-time reader download is visible, follows the learner, and never blocks.
+
+    Compose Popups are a separate window, so uiautomator cannot reliably see the
+    pill in a hierarchy dump. The screenshots are the review artifact; the state
+    itself is covered by ModelPreparationTest, and the real download by a fresh
+    spell-quest boot.
+    """
+    with journey.step("launch while the reader downloads"):
+        journey.device.shell("am force-stop com.bassmd.bihua")
+        journey.device.shell(
+            "am start -n com.bassmd.bihua/.MainActivity " +
+            "--ez qa_no_ink_model true --el qa_download_notice_ms 14000"
+        )
+        journey.wait("Hello", timeout=15, exact=False)
+        if not journey.exists("Preparing the ink reader…", timeout=3):
+            raise JourneyFailure(
+                "Home did not wait for the first ink reader: " + str(journey.texts())
+            )
+        journey.screenshot("model-notice-home")
+    with journey.step("the notice does not block the app"):
+        journey.open_tab("Settings")
+        journey.wait("Make Bihua yours", timeout=8, exact=False)
+        journey.screenshot("model-notice-settings")
+        journey.open_tab("Home")
+        journey.assert_home()
+    with journey.step("it falls back and clears on its own"):
+        deadline = time.time() + 18
+        while time.time() < deadline:
+            if journey.exists("Start studying", timeout=1) or journey.exists("Learn ", timeout=1):
+                break
+            time.sleep(0.5)
+        else:
+            raise JourneyFailure(f"study never re-enabled. texts={journey.texts()}")
+        time.sleep(2)
+        journey.screenshot("model-notice-gone")
+        journey.assert_no_crash()
+
+
+def spell_offline(journey: Journey, state: ScenarioState) -> None:
+    """No reading model: the road is still playable through the grimoire."""
+    with journey.step("launch without a reading model"):
+        journey.device.shell("am force-stop com.bassmd.bihua")
+        journey.device.shell(
+            "am start -n com.bassmd.bihua/.MainActivity --ez qa_no_ink_model true"
+        )
+        journey.wait("Hello", timeout=15, exact=False)
+        journey.assert_home()
+    with journey.step("the gate offers the book"):
+        journey.tap_visible("Extra practice · Spell quest", max_scrolls=8)
+        journey.wait("Walk with the book", timeout=10)
+        if journey.exists("Draw the spell", timeout=1):
+            raise JourneyFailure("the gate still offers drawing without a reader")
+        journey.tap("About reading ink")
+        journey.wait("Reading the ink", timeout=6)
+        journey.screenshot("spell-offline-info")
+        journey.tap("Back to the road")
+    with journey.step("the scene hides draw"):
+        journey.tap("Start the road")
+        journey.wait("Open the grimoire", timeout=10)
+        if journey.exists("Draw", timeout=1, exact=True):
+            raise JourneyFailure("the scene still offers drawing without a reader")
+        journey.screenshot("spell-offline-scene")
+        journey.tap("Open the grimoire")
+        journey.wait("Close book", timeout=10)
+        journey.screenshot("spell-offline-book")
+        journey.tap("Close book")
+        journey.tap_visible("Leave the road", max_scrolls=8)
+    with journey.step("practice falls back"):
+        journey.open_tab("Practice")
+        journey.wait("Draw freely", timeout=8, exact=False)
+        if not journey.draw_guide([[(0.2, 0.2), (0.6, 0.7)]]):
+            raise JourneyFailure("no practice canvas for the offline check")
+        journey.tap("Check")
+        deadline = time.time() + 8
+        texts: list[str] = []
+        while time.time() < deadline:
+            texts = journey.texts()
+            if any("handwriting check is unavailable" in text for text in texts) or "Close" in texts:
+                break
+            time.sleep(0.2)
+        journey.screenshot("practice-offline")
+        if "Close" in texts:
+            journey.tap("Close")
+        journey.wait("Check", timeout=6)
+    with journey.step("restore the normal app"):
+        journey.device.shell("am force-stop com.bassmd.bihua")
+        journey.device.shell("am start -n com.bassmd.bihua/.MainActivity")
+        journey.wait("Hello", timeout=12, exact=False)
+    journey.assert_no_crash()
+
+
+def practice_slow(journey: Journey, state: ScenarioState) -> None:
+    """The 1.0.9 report: a slow reader must never leave Check spinning forever."""
+    with journey.step("open practice with a slow reader"):
+        journey.device.shell("am force-stop com.bassmd.bihua")
+        journey.device.shell(
+            "am start -n com.bassmd.bihua/.MainActivity --el qa_slow_ink_ms 60000"
+        )
+        journey.wait("Hello", timeout=15, exact=False)
+        journey.open_tab("Practice")
+        journey.wait("Draw freely", timeout=8, exact=False)
+    with journey.step("stop the check and carry on"):
+        if not journey.draw_guide([[(0.2, 0.2), (0.6, 0.7)]]):
+            raise JourneyFailure("no practice canvas to draw on")
+        journey.wait("Check", timeout=5)
+        journey.tap("Check")
+        journey.wait("Stop reading", timeout=6)
+        journey.screenshot("practice-slow-reading")
+        journey.tap("Stop reading")
+        journey.wait("Check", timeout=8)
+        journey.screenshot("practice-slow-recovered")
+    with journey.step("leave cleanly"):
+        journey.open_tab("Home")
+        journey.assert_home()
+    journey.assert_no_crash()
+
+
+def practice_check(journey: Journey, state: ScenarioState) -> None:
+    """Practice check must never trap the learner on a spinning reading state."""
+    with journey.step("open practice"):
+        journey.open_tab("Practice")
+        journey.wait("Draw freely", timeout=8, exact=False)
+    with journey.step("check and recover"):
+        if not journey.draw_guide([[(0.2, 0.2), (0.6, 0.7)]]):
+            raise JourneyFailure("no practice canvas to draw on")
+        journey.wait("Check", timeout=5)
+        journey.tap("Check")
+        deadline = time.time() + 5
+        state_texts: list[str] = []
+        while time.time() < deadline:
+            state_texts = journey.texts()
+            if "Stop reading" in state_texts or "Close" in state_texts:
+                break
+            time.sleep(0.2)
+        journey.screenshot("practice-check")
+        if "Close" in state_texts:
+            journey.tap("Close")
+            time.sleep(0.3)
+            if journey.exists("Stop reading", timeout=1):
+                journey.tap("Stop reading")
+        elif "Stop reading" in state_texts:
+            journey.tap("Stop reading")
+        else:
+            raise JourneyFailure(f"practice check never offered a way out. texts={state_texts}")
+        journey.wait("Check", timeout=8)
+    with journey.step("leave"):
+        journey.open_tab("Home")
+        journey.assert_home()
+    journey.assert_no_crash()
+
+
 def brush_presets(journey: Journey, state: ScenarioState) -> None:
     """Each brush tool restores its own saved feel in Settings."""
     with journey.step("open brush settings"):
@@ -817,9 +1085,9 @@ def brush_presets(journey: Journey, state: ScenarioState) -> None:
     with journey.step("each tool restores its preset"):
         journey.tap("Pen")
         journey.wait("1.8dp", timeout=5, exact=False)
-        journey.tap("Ink")
+        journey.tap("Ink brush")
         journey.wait("2.4dp", timeout=5, exact=False)
-        journey.tap("Pencil")
+        journey.tap("Pencil brush")
         journey.wait("1.4dp", timeout=5, exact=False)
         journey.tap("Marker")
         journey.wait("5.0dp", timeout=5, exact=False)
@@ -882,6 +1150,14 @@ def stroke_coach(journey: Journey, state: ScenarioState) -> None:
         if not coach_lines:
             raise JourneyFailure(f"stroke coach headline missing: {journey.texts()}")
         journey.screenshot("stroke-coach")
+        journey.tap_visible("Show me", max_scrolls=6)
+        journey.wait("Watch stroke", timeout=6, exact=False)
+        journey.screenshot("stroke-watch")
+        journey.tap("Trace it")
+        journey.wait("Trace stroke", timeout=6, exact=False)
+        journey.screenshot("stroke-trace")
+        journey.tap("Close")
+        time.sleep(0.4)
         _grade_feedback(journey)
     with journey.step("leave"):
         journey.leave_session("End session")
@@ -1257,7 +1533,7 @@ def navigation_deep(journey: Journey, state: ScenarioState) -> None:
         # A fresh install spends the first moment JIT-compiling the shell and
         # loading the content/progress stores. Let it settle before the tap.
         time.sleep(1.5)
-        journey.tap_visible("Manage study tools")
+        open_study_tools(journey)
         journey.wait("Pinned", timeout=8)
         journey.d.press("back")
         for _ in range(3):
@@ -1661,7 +1937,7 @@ def spell_entry(journey: Journey, state: ScenarioState) -> None:
         journey.screenshot("spell-entry")
         journey.tap_visible("Leave", max_scrolls=4)
     with journey.step("open from the Study tools sheet"):
-        journey.tap_visible("Manage study tools")
+        open_study_tools(journey)
         journey.wait("Study tools", timeout=8)
         if not journey.exists("Spell quest", timeout=3):
             raise JourneyFailure("Spell quest is missing from Study tools")
@@ -1705,7 +1981,7 @@ def spell_flow(journey: Journey, state: ScenarioState) -> None:
     with journey.step("read the gate"):
         journey.open_tab("Home")
         journey.assert_home()
-        journey.tap_visible("Manage study tools")
+        open_study_tools(journey)
         journey.wait("Study tools", timeout=8)
         journey.tap("Spell quest")
         journey.wait("The road ahead", timeout=10)
@@ -1714,34 +1990,35 @@ def spell_flow(journey: Journey, state: ScenarioState) -> None:
             if line not in texts:
                 raise JourneyFailure(f"gate missing {line}: {texts}")
         journey.tap_any(["Start the road", "Walk on"])
+        wait_for_draw_door(journey)
         journey.wait("Draw", timeout=10)
     with journey.step("the draw tools all say what they do"):
         journey.tap_visible("Draw")
-        journey.wait("Draw in the circle first", timeout=8)
+        journey.wait("Cast", timeout=8)
         for label in (
-            "Hear it", "Meaning", "Show the shape", "Ink", "Pen", "Pencil", "Marker",
-            "Undo", "Clear", "Go back", "Grimoire", "Draw in the circle first",
+            "Hear", "Info", "Guide", "Clue", "Ink brush", "Pen brush", "Pencil brush", "Marker brush",
+            "Undo", "Clear", "Go back", "Grimoire", "Cast",
         ):
             if not journey.exists(label, timeout=2):
                 raise JourneyFailure(f"cast overlay missing {label}")
-        journey.tap("Meaning")
-        time.sleep(0.6)
-        if "Hide meaning" in journey.texts():
-            raise JourneyFailure("Meaning became a hide toggle")
-        journey.tap("Hear it")
+        journey.tap("Info")
+        journey.wait("Close note", timeout=6)
+        journey.tap("Close note")
+        journey.wait("Cast", timeout=6)
+        journey.tap("Hear")
         time.sleep(0.4)
-        journey.tap("Show the shape")
+        journey.tap("Guide")
         time.sleep(0.6)
         journey.screenshot("spell-flow-tools")
         journey.d.press("back")
         journey.wait("Draw", timeout=8)
     with journey.step("back closes one layer at a time"):
         journey.tap_visible("Draw")
-        journey.wait("Draw in the circle first", timeout=8)
+        journey.wait("Cast", timeout=8)
         journey.tap_visible("Grimoire")
         journey.wait("Close book", timeout=10)
         journey.d.press("back")
-        journey.wait("Draw in the circle first", timeout=8)
+        journey.wait("Cast", timeout=8)
         journey.d.press("back")
         journey.wait("Draw", timeout=8)
     with journey.step("the grimoire names every chapter"):
@@ -1764,12 +2041,49 @@ def spell_flow(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+def open_study_tools(journey: Journey) -> None:
+    """Reach the Study tools manager on phone and wide layouts.
+
+    The wide Home labels the button "Manage"; the phone header may be below the
+    fold, so scroll instead of assuming it is already on screen.
+    """
+    for _ in range(4):
+        journey.scroll_up()
+    for label in ("Manage study tools", "Manage"):
+        try:
+            journey.tap_visible(label, max_scrolls=10)
+            return
+        except JourneyFailure:
+            continue
+    raise JourneyFailure(f"could not reach Study tools. texts={journey.texts()}")
+
+
+def wait_for_draw_door(journey: Journey, timeout: float = 90) -> None:
+    """A fresh install may still be fetching the one-time reading model.
+
+    The quest opens on the book path while the download runs. Wait for the
+    draw door rather than treating a download as a broken screen.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if journey.exists("Draw", timeout=0.5):
+            return
+        if journey.exists("Open the grimoire", timeout=0.2):
+            time.sleep(1.0)
+            continue
+        time.sleep(0.5)
+    raise JourneyFailure(
+        "the reading model did not arrive and the scene has no way forward: "
+        f"{journey.texts()}"
+    )
+
+
 def spell_quest(journey: Journey, state: ScenarioState) -> None:
     """The endless road, reached from Study tools, casting from the book."""
     with journey.step("open the spell quest"):
         journey.open_tab("Home")
         journey.assert_home()
-        journey.tap_visible("Manage study tools")
+        open_study_tools(journey)
         journey.wait("Study tools", timeout=8)
         journey.tap("Spell quest")
         journey.wait("The road ahead", timeout=10)
@@ -1779,6 +2093,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         journey.screenshot("spell-gate")
     with journey.step("start the road"):
         journey.tap_visible("Start the road", max_scrolls=8)
+        wait_for_draw_door(journey)
         journey.wait("Draw", timeout=10)
         journey.screenshot("spell-scene")
     with journey.step("gift from the book"):
@@ -1874,14 +2189,14 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             # Draw the shape the hint named: the exact same character must be
             # accepted, not just any spell in the chapter.
             journey.tap_visible("Draw", max_scrolls=8)
-            journey.wait("Draw in the circle first", timeout=8)
+            journey.wait("Cast", timeout=8)
             guide = character_guide(answer, mode)
             if not guide:
                 raise JourneyFailure(f"no guide strokes for the answer {answer}")
             if not journey.draw_guide(guide):
                 raise JourneyFailure("no handwriting canvas for the answer")
-            journey.wait("Cast the spell", timeout=8)
-            journey.tap("Cast the spell")
+            journey.wait("Cast", timeout=8)
+            journey.tap("Cast")
             deadline = time.time() + 30
             while time.time() < deadline:
                 if "It worked" in journey.texts():
@@ -1909,25 +2224,24 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
     with journey.step("draw and cast"):
         # The drawing path itself: draw in the circle with touch, then cast.
         journey.tap_visible("Draw", max_scrolls=8)
-        journey.wait("Draw in the circle first", timeout=8)
+        journey.wait("Cast", timeout=8)
         issues = journey.a11y_unlabeled()
         if issues:
             raise JourneyFailure(f"cast overlay has unlabeled controls: {issues[:3]}")
         # The quest has its own brush tray; the choice stays inside the game.
-        for tool in ("Ink", "Pen", "Pencil", "Marker"):
+        for tool in ("Ink brush", "Pen brush", "Pencil brush", "Marker brush"):
             if not journey.exists(tool, timeout=2):
                 raise JourneyFailure(f"quest brush tray missing {tool}")
-        journey.tap("Pencil")
+        journey.tap("Pencil brush")
         time.sleep(0.4)
         journey.screenshot("spell-brush")
-        journey.tap("Ink")
-        # Meaning is a reveal, not a toggle: it stays on and keeps its name,
-        # the same way Hear it leaves the pronunciation visible.
-        journey.tap("Meaning")
-        time.sleep(0.6)
-        if "Hide meaning" in journey.texts():
-            raise JourneyFailure("meaning turned into a hide toggle")
+        journey.tap("Ink brush")
+        # Info is a popup with the character's reading and meaning, the same
+        # anchored card as a highlighted word. It never edits the scene.
+        journey.tap("Info")
+        journey.wait("Close note", timeout=6)
         journey.screenshot("spell-meaning")
+        journey.tap("Close note")
         # Draw a real spell with the content database's guide strokes, the same
         # way the review journeys write. A plus can be read as 十, which is not
         # a spell in this book.
@@ -1937,9 +2251,9 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             raise JourneyFailure("no guide strokes for 水")
         if not journey.draw_guide(guide):
             raise JourneyFailure("no handwriting canvas to draw on")
-        journey.wait("Cast the spell", timeout=8)
+        journey.wait("Cast", timeout=8)
         journey.screenshot("spell-drawn")
-        journey.tap("Cast the spell")
+        journey.tap("Cast")
         deadline = time.time() + 30
         outcome = None
         while time.time() < deadline and outcome is None:
@@ -1978,7 +2292,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         # Quest progress lives in the progress database, so closing and reopening
         # should show the pages met and the saved chapter in the gate.
         journey.tap_visible("Leave the road")
-        journey.tap_visible("Manage study tools")
+        open_study_tools(journey)
         journey.wait("Study tools", timeout=8)
         journey.tap("Spell quest")
         journey.wait("The road ahead", timeout=10)
@@ -2016,6 +2330,12 @@ RUNNERS = {
     "stroke_clean": stroke_clean,
     "writing_reveal": writing_reveal,
     "brush_presets": brush_presets,
+    "practice_check": practice_check,
+    "practice_slow": practice_slow,
+    "spell_offline": spell_offline,
+    "model_notice": model_notice,
+    "rotation": rotation,
+    "screen_pass": screen_pass,
     "settings_pages": settings_pages,
     "review_modes": review_modes,
     "pronounce_kana": pronounce_kana,

@@ -18,17 +18,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
+import com.bassmd.bihua.ui.components.pageVine
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.spellbook.Spell
@@ -190,7 +199,6 @@ fun GrimoireScreen(
     }
     val grouped = remember(spells) { spells.groupBy { it.category } }
     val pages = remember(grouped) { bookPages(grouped) }
-    var index by remember { mutableIntStateOf(0) }
     var open by remember { mutableStateOf<Spell?>(null) }
     val openSpell: (Spell) -> Unit = { spell -> if (onPick != null) onPick(spell) else open = spell }
 
@@ -204,33 +212,46 @@ fun GrimoireScreen(
     ) {
         val fold = LocalFoldState.current
         val book = fold == FoldState.BOOK && maxWidth >= 700.dp
-        val wide = maxWidth >= 700.dp
+        val wide = book ||
+            (fold == FoldState.NONE && maxWidth > maxHeight && maxWidth >= 700.dp &&
+                maxHeight >= 600.dp)
+        val narrow = maxWidth < 560.dp
         val spreads = remember(pages, wide) { bookSpreads(pages, wide) }
-        val current = index.coerceIn(0, spreads.lastIndex)
+        val pager = rememberPagerState(pageCount = { spreads.size })
+        val scope = rememberCoroutineScope()
+        val current = pager.currentPage.coerceIn(0, spreads.lastIndex)
         val spread = spreads[current]
-        fun turn(by: Int) {
-            index = (current + by).coerceIn(0, spreads.lastIndex)
+        // Rapid taps should move from the page already being turned to, not
+        // from the page that happens to be settled. A bookmark is a direct
+        // jump, so it lands at once instead of animating across ten spreads.
+        val turn: (Int) -> Unit = { by ->
+            val base = pager.targetPage
+            scope.launch {
+                // A short, fixed turn keeps the book feeling immediate even on
+                // a slow phone; the default spring is far too leisurely.
+                pager.animateScrollToPage(
+                    page = (base + by).coerceIn(0, spreads.lastIndex),
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 160,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing,
+                    ),
+                )
+            }
         }
         val jump: (String) -> Unit = { name ->
-            index = spreads.indexOfFirst { (it.left as? BookPage.ChapterIntro)?.category == name }.coerceAtLeast(0)
+            val target = spreads.indexOfFirst {
+                (it.left as? BookPage.ChapterIntro)?.category == name ||
+                    (it.left as? BookPage.Spells)?.category == name ||
+                    (it.right as? BookPage.Spells)?.category == name
+            }.coerceAtLeast(0)
+            if (target != pager.currentPage || !pager.isScrollInProgress) {
+                scope.launch { pager.scrollToPage(target) }
+            }
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(spreads.size) {
-                    var drag = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { drag = 0f },
-                        onDragEnd = {
-                            when {
-                                drag < -60f -> turn(1)
-                                drag > 60f -> turn(-1)
-                            }
-                        },
-                        onHorizontalDrag = { _, amount -> drag += amount },
-                    )
-                }
                 .padding(horizontal = 18.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -241,8 +262,13 @@ fun GrimoireScreen(
             // one turns straight to its category page. A fold gets a hinge gap, so
             // no single tab is split by the physical hinge.
             val bookmark: @Composable (String, Modifier) -> Unit = { name, modifier ->
-                val target = spreads.indexOfFirst { (it.left as? BookPage.ChapterIntro)?.category == name }
+                val target = spreads.indexOfFirst {
+                    (it.left as? BookPage.ChapterIntro)?.category == name ||
+                        (it.left as? BookPage.Spells)?.category == name ||
+                        (it.right as? BookPage.Spells)?.category == name
+                }
                 val active = (spread.left as? BookPage.ChapterIntro)?.category == name ||
+                    (spread.left as? BookPage.Spells)?.category == name ||
                     (spread.right as? BookPage.Spells)?.category == name
                 Column(
                     modifier = modifier
@@ -271,6 +297,27 @@ fun GrimoireScreen(
                         bookmark(name, Modifier.weight(1f))
                     }
                 }
+            } else if (narrow) {
+                // Ten tabs across a phone would be too small to hit. Two rows
+                // of five keep every chapter visible and comfortable.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        SpellCategories.take(5).forEach { name ->
+                            bookmark(name, Modifier.weight(1f))
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        SpellCategories.drop(5).forEach { name ->
+                            bookmark(name, Modifier.weight(1f))
+                        }
+                    }
+                }
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -282,70 +329,74 @@ fun GrimoireScreen(
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Row(
+            // A real pager, so a horizontal turn never fights the vertical
+            // scroll inside a chapter page. Tapping a bookmark still jumps.
+            HorizontalPager(
+                state = pager,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-            ) {
+                pageSpacing = 12.dp,
+                beyondViewportPageCount = 1,
+            ) { pageIndex ->
+                val pageSpread = spreads[pageIndex]
                 if (wide) {
-                    spread.left?.let { page ->
-                        BookSheet(
-                            page = page,
-                            pages = pages,
-                            ink = ink,
-                            mode = mode,
-                            met = met,
-                            onOpen = openSpell,
-                            onJump = jump,
-                            edge = PageEdge.LEFT,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (book) {
-                        Spacer(Modifier.width(28.dp))
-                    } else {
-                        Spine(ink)
-                    }
-                    spread.right?.let { page ->
-                        BookSheet(
-                            page = page,
-                            pages = pages,
-                            ink = ink,
-                            mode = mode,
-                            met = met,
-                            onOpen = openSpell,
-                            onJump = jump,
-                            edge = PageEdge.RIGHT,
-                            modifier = Modifier.weight(1f),
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        pageSpread.left?.let { page ->
+                            BookSheet(
+                                page = page,
+                                pages = pages,
+                                ink = ink,
+                                mode = mode,
+                                met = met,
+                                onOpen = openSpell,
+                                onJump = jump,
+                                edge = PageEdge.LEFT,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (book) {
+                            Spacer(Modifier.width(28.dp))
+                        } else {
+                            Spine(ink)
+                        }
+                        pageSpread.right?.let { page ->
+                            BookSheet(
+                                page = page,
+                                pages = pages,
+                                ink = ink,
+                                mode = mode,
+                                met = met,
+                                onOpen = openSpell,
+                                onJump = jump,
+                                edge = PageEdge.RIGHT,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 } else {
-                    // A phone keeps the same pairing: the category card on top,
-                    // the characters to choose from below.
-                    val intro = spread.left as? BookPage.ChapterIntro
+                    // A phone opens each chapter straight onto its characters.
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        if (intro != null) {
-                            ChapterCard(intro, ink, mode)
-                        } else {
-                            spread.left?.let { page ->
-                                BookSheet(
-                                    page = page,
-                                    pages = pages,
-                                    ink = ink,
-                                    mode = mode,
-                                    met = met,
-                                    onOpen = openSpell,
-                            onJump = jump,
-                                    edge = PageEdge.BOTH,
-                                                            modifier = Modifier.weight(1f),
-                                )
-                            }
+                        pageSpread.left?.let { page ->
+                            BookSheet(
+                                page = page,
+                                pages = pages,
+                                ink = ink,
+                                mode = mode,
+                                met = met,
+                                onOpen = openSpell,
+                                onJump = jump,
+                                edge = PageEdge.BOTH,
+                                modifier = Modifier.weight(1f),
+                            )
                         }
-                        spread.right?.let { page ->
+                        pageSpread.right?.let { page ->
                             BookSheet(
                                 page = page,
                                 pages = pages,
@@ -383,27 +434,126 @@ fun GrimoireScreen(
 
     open?.let { spell ->
         val entry = byGlyph[spell.character]
-        AlertDialog(
+        val accent = chapterColor(spell.category)
+        Dialog(
             onDismissRequest = { open = null },
-            title = { Text(spell.character, style = MaterialTheme.typography.headlineMedium) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (entry != null) {
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.52f))
+                    .clickable { open = null }
+                    .padding(22.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 430.dp)
+                        .fillMaxWidth(0.94f)
+                        .heightIn(max = 620.dp)
+                        .clip(RoundedCornerShape(28.dp))
+                        .parchment(ink)
+                        .border(1.dp, accent.copy(alpha = 0.42f), RoundedCornerShape(28.dp))
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
-                            "${entry.reading} · ${entry.meaning}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            "A page from the grimoire",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ink.inkSoft,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(ink.accent.copy(alpha = 0.12f))
+                                .clickable { open = null },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Rounded.Close,
+                                contentDescription = "Close page",
+                                tint = ink.inkSoft,
+                                modifier = Modifier.size(17.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FamilyGlyph(
+                            family = chapterArt(spell.category),
+                            tint = accent,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(spell.category, style = MaterialTheme.typography.labelLarge, color = accent)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(112.dp)
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(accent.copy(alpha = 0.16f))
+                            .border(1.dp, ink.rule.copy(alpha = 0.5f), RoundedCornerShape(26.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            spell.character,
+                            fontSize = 54.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ink.ink,
                         )
                     }
+                    Spacer(Modifier.height(12.dp))
+                    entry?.reading?.takeIf { it.isNotBlank() }?.let {
+                        Text(it, style = MaterialTheme.typography.titleMedium, color = ink.inkSoft)
+                    }
+                    val meaning = (entry?.meaning?.takeIf { it.isNotBlank() } ?: spell.effect)
+                        .trim()
                     Text(
-                        "${familyName(spell.family)} · ${spell.note}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        meaning,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = ink.ink,
+                        textAlign = TextAlign.Center,
                     )
+                    val noteAddsSomething = spell.note.isNotBlank() &&
+                        !meaning.contains(spell.note.trim().trimEnd('.'), ignoreCase = true)
+                    if (noteAddsSomething) {
+                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(accent.copy(alpha = 0.28f)),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            spell.note,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ink.ink.copy(alpha = 0.88f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    if (spell.character in met) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Met on the road",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accent,
+                        )
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    PagerPill("Close page", enabled = true, ink = ink) { open = null }
                 }
-            },
-            confirmButton = { TextButton(onClick = { open = null }) { Text("Close") } },
-        )
+            }
+        }
     }
 }
 
@@ -425,43 +575,22 @@ internal fun bookSpreads(pages: List<BookPage>, wide: Boolean): List<Spread> {
     val spreads = mutableListOf<Spread>()
     if (wide) {
         spreads += Spread(pages[0], pages[1])
+        pages.filterIsInstance<BookPage.ChapterIntro>().forEach { intro ->
+            pages
+                .filter { it is BookPage.Spells && it.category == intro.category }
+                .forEach { spells -> spreads += Spread(intro, spells) }
+        }
     } else {
+        // A phone opens straight onto the chapter's characters. The tabs and
+        // the page header already name the chapter, so the extra intro card
+        // would only repeat it and steal room from the grid.
         spreads += Spread(pages[0], null)
         spreads += Spread(pages[1], null)
-    }
-    pages.filterIsInstance<BookPage.ChapterIntro>().forEach { intro ->
-        pages
-            .filter { it is BookPage.Spells && it.category == intro.category }
-            .forEach { spells -> spreads += Spread(intro, spells) }
+        pages.filterIsInstance<BookPage.Spells>().forEach { spells ->
+            spreads += Spread(spells, null)
+        }
     }
     return spreads
-}
-
-/** The category card for a phone: the same content as a left page, in one compact card. */
-@Composable
-private fun ChapterCard(intro: BookPage.ChapterIntro, ink: GrimoireInk, mode: StudyMode) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(chapterColor(intro.category).copy(alpha = 0.26f))
-            .border(1.dp, ink.rule.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Seal(sealGlyph(intro.category, mode), chapterColor(intro.category), ink, size = 52.dp)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(intro.category, style = MaterialTheme.typography.titleLarge, color = ink.ink)
-            Text(
-                chapterBlurb(intro.category),
-                style = MaterialTheme.typography.labelMedium,
-                color = ink.inkSoft,
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Pill("${intro.count} spells", chapterColor(intro.category), textColor = SealInk)
-    }
 }
 
 /** A centred pill button for the book's controls. Disabled pills fade back. */
@@ -488,50 +617,22 @@ private fun PagerPill(label: String, enabled: Boolean, ink: GrimoireInk, onClick
 private enum class PageEdge { LEFT, RIGHT, BOTH }
 
 /**
- * The gutter of an open book: pages curve down into the binding, so the centre is
- * the darkest shadow, with sewn thread across it and a silk ribbon marker.
+ * A clean gutter: one quiet rule down the binding. No heavy shadow, so the
+ * pages stay bright and the centre feels stitched rather than smudged.
  */
 @Composable
-private fun Spine(ink: GrimoireInk) {
+private fun Spine(ink: GrimoireInk, width: androidx.compose.ui.unit.Dp = 14.dp) {
     Box(
         modifier = Modifier
-            .width(22.dp)
+            .width(width)
             .fillMaxSize()
             .drawBehind {
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        listOf(
-                            Color(0x00000000),
-                            Color(0x33000000),
-                            Color(0x88000000),
-                            Color(0x33000000),
-                            Color(0x00000000),
-                        ),
-                    ),
+                drawLine(
+                    color = ink.rule.copy(alpha = 0.32f),
+                    start = Offset(size.width / 2f, 10.dp.toPx()),
+                    end = Offset(size.width / 2f, size.height - 10.dp.toPx()),
+                    strokeWidth = 1.dp.toPx(),
                 )
-                val step = 22.dp.toPx()
-                var y = step / 2
-                while (y < size.height - 40.dp.toPx()) {
-                    drawLine(
-                        color = ink.rule.copy(alpha = 0.7f),
-                        start = Offset(size.width / 2 - 5.dp.toPx(), y),
-                        end = Offset(size.width / 2 + 5.dp.toPx(), y),
-                        strokeWidth = 1.4.dp.toPx(),
-                    )
-                    y += step
-                }
-                val ribbonW = 7.dp.toPx()
-                val left = size.width / 2 - ribbonW / 2
-                val top = size.height - 46.dp.toPx()
-                val ribbon = Path().apply {
-                    moveTo(left, top)
-                    lineTo(left + ribbonW, top)
-                    lineTo(left + ribbonW, size.height)
-                    lineTo(left + ribbonW / 2, size.height - 6.dp.toPx())
-                    lineTo(left, size.height)
-                    close()
-                }
-                drawPath(ribbon, Color(0xFF8E2E3A))
             },
     )
 }
@@ -559,7 +660,24 @@ private fun BookSheet(
         modifier = modifier
             .fillMaxSize()
             .clip(shape)
-            .then(if (isCover) Modifier.leatherCover(ink) else Modifier.parchment(ink).pageBorder(ink))
+            .then(
+                if (isCover) {
+                    Modifier
+                        .leatherCover(ink)
+                        .then(
+                            if (edge == PageEdge.BOTH) Modifier
+                            else Modifier.vineMargin(ink, edge, gold = true),
+                        )
+                } else {
+                    Modifier
+                        .parchment(ink)
+                        .pageBorder(ink)
+                        .then(
+                            if (edge == PageEdge.BOTH) Modifier
+                            else Modifier.vineMargin(ink, edge),
+                        )
+                },
+            )
             .padding(horizontal = 26.dp, vertical = 22.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -656,12 +774,18 @@ private fun BookSheet(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = ink.inkSoft,
                                     maxLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
                             }
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 "${intro.count} spells",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = ink.inkSoft,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.widthIn(min = 56.dp),
+                                textAlign = TextAlign.End,
                             )
                         }
                     }
@@ -699,12 +823,30 @@ private fun BookSheet(
                 Spacer(Modifier.weight(1f))
             }
             is BookPage.Spells -> {
-                Text(
-                    "${page.category} · ${page.spells.size} spells",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = ink.inkSoft,
-                    textAlign = TextAlign.Center,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Seal(
+                        sealGlyph(page.category, mode),
+                        chapterColor(page.category),
+                        ink,
+                        size = 32.dp,
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        page.category,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = ink.ink,
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        "${page.spells.size} spells",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ink.inkSoft,
+                    )
+                }
                 // The characters fill the page: tiles size to the room left, and the
                 // grid sits in the middle both ways.
                 BoxWithConstraints(
@@ -745,27 +887,21 @@ private fun BookSheet(
     }
 }
 
-/** Aged paper: a warm centre fading to shaded edges, with a burnt rim. */
+/** Clean paper: one flat warm sheet, with the border and chapter colour carrying the page. */
 private fun Modifier.parchment(ink: GrimoireInk): Modifier = this.drawBehind {
-    drawRect(
-        brush = Brush.verticalGradient(listOf(ink.paper, ink.paperWorn)),
-    )
-    // A soft gutter shadow down the inner edge, like a real binding.
-    drawRect(
-        brush = Brush.horizontalGradient(
-            listOf(Color.Black.copy(alpha = 0.10f), Color.Transparent),
-            startX = 0f,
-            endX = size.width * 0.18f,
-        ),
-    )
-    drawRect(
-        brush = Brush.horizontalGradient(
-            listOf(Color.Transparent, Color.Black.copy(alpha = 0.10f)),
-            startX = size.width * 0.82f,
-            endX = size.width,
-        ),
-    )
+    drawRect(ink.paper)
 }
+
+private fun Modifier.vineMargin(
+    ink: GrimoireInk,
+    edge: PageEdge,
+    gold: Boolean = false,
+): Modifier = this.pageVine(
+    color = if (gold) GiltLeaf else ink.accent,
+    onLeft = edge == PageEdge.LEFT,
+    margin = if (gold) 22.dp else 11.dp,
+    alpha = if (gold) 0.9f else 1f,
+)
 
 /** The thin double rule a printed book keeps inside its margins. */
 private fun Modifier.pageBorder(ink: GrimoireInk): Modifier = this.drawBehind {

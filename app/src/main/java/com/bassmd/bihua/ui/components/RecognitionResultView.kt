@@ -98,7 +98,7 @@ fun RecognitionResultView(
 
         !result.modelReady -> SoftCard(modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
             Text(
-                "The handwriting check is unavailable right now. You can still choose a grade. Models live in Settings → Writing.",
+                "The handwriting check is unavailable right now. Shape and order feedback still work. To enable reading, download the model in Settings → Writing.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )

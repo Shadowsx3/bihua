@@ -45,6 +45,9 @@ import kotlinx.coroutines.withContext
 fun rememberStrokeGuide(characterId: String?): CharacterGuide? {
     val repository = LocalContentRepository.current
     val guide by produceState<CharacterGuide?>(initialValue = null, characterId, repository) {
+        // Clear the previous page at once. A new gift must never draw the last
+        // character while its own guide is still decoding.
+        value = null
         value = if (characterId == null || repository == null) {
             null
         } else {

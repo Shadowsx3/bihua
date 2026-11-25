@@ -121,12 +121,15 @@ import com.bassmd.bihua.settings.StudyTools
 import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.ui.components.BihuaBackground
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
+import com.bassmd.bihua.ui.components.ModelDownloadNotice
 import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.StudyToolsSheet
 import com.bassmd.bihua.ui.components.modeColor
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
+import com.bassmd.bihua.ui.theme.LightPalette
+import com.bassmd.bihua.ui.theme.LocalBihuaPalette
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Sky
 import kotlinx.coroutines.Dispatchers
@@ -171,7 +174,20 @@ fun BihuaApp(
     val activity = context as? Activity
     val repository = remember { SqliteContentRepository(context.applicationContext) }
     val scope = rememberCoroutineScope()
-    val mode = settings.studyMode
+    // Select the script optimistically: the chips and every screen switch on
+    // the tap, while the settings write and the course load happen behind it.
+    var selectedMode by remember { mutableStateOf(settings.studyMode) }
+    var pendingMode by remember { mutableStateOf<StudyMode?>(null) }
+    LaunchedEffect(settings.studyMode) {
+        when {
+            pendingMode == null -> selectedMode = settings.studyMode
+            settings.studyMode == pendingMode -> {
+                selectedMode = settings.studyMode
+                pendingMode = null
+            }
+        }
+    }
+    val mode = selectedMode
     var showOnboarding by remember { mutableStateOf(false) }
     var bootChecked by remember { mutableStateOf(false) }
     // Wait for the first real settings read. Scheduling with the initial default
@@ -195,6 +211,49 @@ fun BihuaApp(
     }
     val speech = remember { Speech(context.applicationContext) }
     val handwriting = remember { InkRecognitionService() }
+    val modelDownloading = com.bassmd.bihua.ai.ModelDownloads.active
+    var activeModeReady by remember { mutableStateOf<Boolean?>(null) }
+    val currentInkPreparing = com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode)
+    LaunchedEffect(
+        mode,
+        modelDownloading,
+        currentInkPreparing,
+        com.bassmd.bihua.ai.ModelDownloads.completed,
+    ) {
+        activeModeReady = runCatching { handwriting.isModelReady(mode) }.getOrDefault(false)
+    }
+    val preparingInk = com.bassmd.bihua.ai.shouldWaitForInk(currentInkPreparing, activeModeReady)
+    val inkPreparingAny = com.bassmd.bihua.ai.ModelDownloads.activeModes.isNotEmpty()
+    var showInkFailure by remember { mutableStateOf(false) }
+    val currentInkFailure = com.bassmd.bihua.ai.ModelDownloads.failed &&
+        com.bassmd.bihua.ai.ModelDownloads.failedMode == mode
+    LaunchedEffect(
+        mode,
+        currentInkPreparing,
+        currentInkFailure,
+        com.bassmd.bihua.ai.ModelDownloads.failedRuns,
+    ) {
+        if (!currentInkFailure || currentInkPreparing) {
+            // A fresh attempt (or a success) supersedes an older failure.
+            showInkFailure = false
+            return@LaunchedEffect
+        }
+        // Give a retry or a just-started download time to take over before
+        // telling the learner anything is wrong.
+        kotlinx.coroutines.delay(2_500L)
+        if (currentInkFailure &&
+            !com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode)
+        ) {
+            showInkFailure = true
+            kotlinx.coroutines.delay(4_500L)
+            showInkFailure = false
+        }
+    }
+    LaunchedEffect(Unit) {
+        if (com.bassmd.bihua.BuildConfig.DEBUG && com.bassmd.bihua.ai.QaFlags.downloadNoticeMs > 0L) {
+            handwriting.simulateDownloadFor(com.bassmd.bihua.ai.QaFlags.downloadNoticeMs)
+        }
+    }
     val noVoice = {
         Toast.makeText(
             context,
@@ -240,8 +299,8 @@ fun BihuaApp(
     }
     LaunchedEffect(preloadMode, settings.readAloud) {
         val target = preloadMode ?: return@LaunchedEffect
-        // Give a quick script change time to settle before starting a download.
-        kotlinx.coroutines.delay(350)
+        // Start at once: the Home button and the notice must agree from the
+        // first frame after a skip, restore, or language switch.
         withContext(Dispatchers.IO) { handwriting.prepare(target, settings.wifiOnlyModels) }
         if (settings.readAloud) speech.prepare(target)
     }
@@ -327,6 +386,9 @@ fun BihuaApp(
                             }
                             if (bundle != null) store.restore(bundle)
                             store.updateSettings { it.copy(onboarded = true) }
+                            // A restored learner should not wait for a language pick.
+                            val restoredMode = bundle?.settings?.studyMode ?: StudyMode.SIMPLIFIED
+                            scope.launch { handwriting.prepare(restoredMode) }
                             LearnSessionStore(context).clearAll()
                             progressVersion++
                         }
@@ -371,11 +433,21 @@ fun BihuaApp(
                         )
                     }
                 }
+                // Skip and normal finish both start the one-time reader now,
+                // not after the next screen happens to load.
+                scope.launch { handwriting.prepare(chosenMode) }
                 showOnboarding = false
             },
         )
         return
     }
+    // One notice for the whole app. It floats above the quest and the special
+    // practice pages too; onboarding is already behind us here.
+    ModelDownloadNotice(
+        visible = inkPreparingAny || showInkFailure,
+        failed = showInkFailure && !inkPreparingAny,
+    )
+
     val stylus = remember(context) { hasStylus(context) }
     val allowFinger = settings.allowFingerDrawing || !stylus
 
@@ -394,9 +466,15 @@ fun BihuaApp(
     }
 
     val changeMode: (StudyMode) -> Unit = { next ->
-        // Do not let a reading in the old script continue over the new course.
-        speech.stop()
-        scope.launch { store.updateSettings { current -> current.copy(studyMode = next) } }
+        if (next != selectedMode) {
+            // Do not let a reading in the old script continue over the new course.
+            speech.stop()
+            pendingMode = next
+            selectedMode = next
+            scope.launch {
+                store.updateSettings { current -> current.copy(studyMode = next) }
+            }
+        }
     }
     val changeTab: (Tab) -> Unit = { next ->
         if (next != tab) {
@@ -984,8 +1062,9 @@ fun BihuaApp(
     }.toMap()
     }
 
-    LaunchedEffect(settings.soundEffects) {
-        com.bassmd.bihua.audio.Sfx.enabled = settings.soundEffects
+    LaunchedEffect(settings.soundEffects, settings.muteAppSounds) {
+        com.bassmd.bihua.audio.Sfx.enabled = settings.soundEffects && !settings.muteAppSounds
+        if (settings.muteAppSounds) com.bassmd.bihua.audio.Ambient.stop()
     }
 
     // A skip is a one-day tool. Remove entries that no longer hide anything so
@@ -1467,6 +1546,7 @@ fun BihuaApp(
                                 settings = settings,
                                 profile = profile,
                                 mode = mode,
+                                preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
                                 practiceCharacterId = practiceCharacterId,
@@ -1593,6 +1673,7 @@ fun BihuaApp(
                                 settings = settings,
                                 profile = profile,
                                 mode = mode,
+                                preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
                                 practiceCharacterId = practiceCharacterId,
@@ -1732,6 +1813,7 @@ fun BihuaApp(
     if (showStudyTools) {
         StudyToolsSheet(
             mode = mode,
+            preparingInk = preparingInk,
             studyList = studyEntries,
             pinned = pinnedEntries,
             skipped = skippedEntries,
@@ -1800,21 +1882,24 @@ fun BihuaApp(
     }
     if (showQuest) {
         BackHandler { showQuest = false }
-        com.bassmd.bihua.practice.SpellQuestScreen(
-            mode = mode,
-            characters = characters.orEmpty(),
-            reduceMotion = settings.reduceMotion,
-            onSpeak = { text -> speak(text) },
-            onClose = { showQuest = false },
-            repository = repository,
-            // A starting tool; the quest keeps its own copy and never writes back.
-            brush = settings.brush,
-            // Quest pages and the chapter are part of the progress database.
-            progress = progressStore,
-            // The quest is drawn over the app; pass the resolved palette choice
-            // so the grimoire does not fall back to light paper behind a dark app.
-            dark = darkTheme,
-        )
+        // The quest is a storybook: it keeps its own light paper even when the
+        // app around it is dark, so every card, circle, and page reads the same.
+        CompositionLocalProvider(LocalBihuaPalette provides LightPalette) {
+            com.bassmd.bihua.practice.SpellQuestScreen(
+                mode = mode,
+                characters = characters.orEmpty(),
+                reduceMotion = settings.reduceMotion,
+                onSpeak = { text -> speak(text) },
+                onClose = { showQuest = false },
+                repository = repository,
+                // A starting tool; the quest keeps its own copy and never writes back.
+                brush = settings.brush,
+                // Quest pages and the chapter are part of the progress database.
+                progress = progressStore,
+                dark = false,
+                recognitionService = handwriting,
+            )
+        }
     }
     if (startingSession) BusyDialog("Preparing your session…")
     if (showTour) {
@@ -1844,6 +1929,7 @@ private fun AppContent(
     settings: AppSettings,
     profile: UserProfile,
     mode: StudyMode,
+    preparingInk: Boolean = false,
     characters: List<CharacterEntry>?,
     characterId: String?,
     practiceCharacterId: String?,
@@ -1960,6 +2046,7 @@ private fun AppContent(
         Tab.HOME -> HomeScreen(
             profile = profile,
             mode = mode,
+            preparingInk = preparingInk,
             resumeSession = resumeSession,
             onResumeSession = onResumeSession,
             onDiscardSession = onDiscardSession,

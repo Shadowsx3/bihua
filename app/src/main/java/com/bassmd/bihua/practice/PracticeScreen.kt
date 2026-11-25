@@ -106,6 +106,8 @@ import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -126,7 +128,7 @@ fun PracticeScreen(
     allowFinger: Boolean,
     pinyinNumbers: Boolean = false,
     guideMode: com.bassmd.bihua.settings.GuideMode = com.bassmd.bihua.settings.GuideMode.FADE,
-    wifiOnlyModels: Boolean = true,
+    wifiOnlyModels: Boolean = false,
     initialCharacter: CharacterEntry? = null,
 ) {
     var selectedId by rememberSaveable { mutableStateOf(initialCharacter?.id) }
@@ -145,8 +147,10 @@ fun PracticeScreen(
     val scope = rememberCoroutineScope()
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
     var recognizing by remember { mutableStateOf(false) }
+    var recognitionJob by remember { mutableStateOf<Job?>(null) }
     var orderCheck by remember { mutableStateOf<OrderAssessment?>(null) }
     var evidence by remember { mutableStateOf<StrokeEvidence?>(null) }
+    var showFeedback by remember { mutableStateOf(false) }
 
     fun visibleInk(): List<InkStroke> {
         if (!playback.isManualCursor && !playback.isPlaying) return ink.strokes.toList()
@@ -165,23 +169,42 @@ fun PracticeScreen(
 
     fun checkWriting(entry: CharacterEntry?, strokes: List<InkStroke>) {
         if (recognizing || strokes.isEmpty()) return
-        scope.launch {
+        recognitionJob?.cancel()
+        recognitionJob = scope.launch {
             recognizing = true
-            val result = recognitionService.recognize(
-                strokes,
-                mode,
-                entry?.character,
-                wifiOnly = wifiOnlyModels,
-            )
-            recognition = result
-            recognizing = false
-            val read = result.candidates.firstOrNull()
-            val targetId = entry?.id
-            val readEntry = read?.let { glyph -> characters.firstOrNull { it.character == glyph } }
-            if (targetId != null && readEntry != null && readEntry.id != targetId) {
-                runCatching { progress?.recordConfusion(targetId, readEntry.id) }
+            try {
+                val result = recognitionService.recognize(
+                    strokes,
+                    mode,
+                    entry?.character,
+                    wifiOnly = wifiOnlyModels,
+                )
+                recognition = result
+                val read = result.candidates.firstOrNull()
+                val targetId = entry?.id
+                val readEntry = read?.let { glyph -> characters.firstOrNull { it.character == glyph } }
+                if (targetId != null && readEntry != null && readEntry.id != targetId) {
+                    runCatching { progress?.recordConfusion(targetId, readEntry.id) }
+                }
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
+                recognition = RecognitionResult(emptyList(), false)
+            } finally {
+                recognizing = false
+                recognitionJob = null
             }
         }
+    }
+
+    fun cancelCheck() {
+        recognitionJob?.cancel()
+        recognitionJob = null
+        recognizing = false
+        recognition = null
+        orderCheck = null
+        evidence = null
+        showFeedback = false
     }
 
     DisposableEffect(Unit) {
@@ -192,6 +215,7 @@ fun PracticeScreen(
             recognition = null
             orderCheck = null
             evidence = null
+            showFeedback = false
         }
     }
 
@@ -213,6 +237,7 @@ fun PracticeScreen(
         val drawn = strokes.map { stroke -> stroke.points.map { Offset(it.x, it.y) } }
         orderCheck = if (guide.isEmpty()) null else StrokeOrderGrader.assess(drawn, guide)
         evidence = if (guide.isEmpty()) null else StrokeGrade.assess(drawn, guide)
+        showFeedback = true
         checkWriting(selected, strokes)
     }
 
@@ -220,6 +245,7 @@ fun PracticeScreen(
         recognition = null
         orderCheck = null
         evidence = null
+        showFeedback = false
         // A new target starts with a clean sheet, even when it was chosen from
         // another screen rather than the picker.
         ink.clear()
@@ -305,6 +331,7 @@ fun PracticeScreen(
                             onToggleOrder = { showOrder = it },
                             orderAvailable = player.strokeCount > 0,
                             checking = recognizing,
+                            onCancel = { cancelCheck() },
                             onCheck = {
                                 com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                                 checkAll()
@@ -364,6 +391,7 @@ fun PracticeScreen(
                     onToggleOrder = { showOrder = it },
                     orderAvailable = player.strokeCount > 0,
                     checking = recognizing,
+                    onCancel = { cancelCheck() },
                     onCheck = {
                         com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
                         checkAll()
@@ -378,8 +406,9 @@ fun PracticeScreen(
         recognition = null
         orderCheck = null
         evidence = null
+        showFeedback = false
     }
-    if (recognition != null || coach != null) {
+    if (showFeedback) {
         androidx.compose.ui.window.Dialog(onDismissRequest = closeFeedback) {
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -394,15 +423,13 @@ fun PracticeScreen(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (recognition != null) {
-                        RecognitionResultView(
-                            result = recognition,
-                            target = selected?.character,
-                            recognizing = false,
-                            practiceOnly = true,
-                            compact = true,
-                        )
-                    }
+                    RecognitionResultView(
+                        result = recognition,
+                        target = selected?.character,
+                        recognizing = recognizing,
+                        practiceOnly = true,
+                        compact = true,
+                    )
                     coach?.let {
                         StrokeCoachFeedback(
                             coach = it,
@@ -426,17 +453,17 @@ fun PracticeScreen(
                             color = InkSoft,
                         )
                     }
-                    if (recognizing) {
-                        Text(
-                            "Reading the ink…",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = InkSoft,
-                        )
-                    }
-                    TextButton(
-                        onClick = closeFeedback,
+                    Row(
                         modifier = Modifier.align(Alignment.End),
-                    ) { Text("Close") }
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (recognizing) {
+                            TextButton(onClick = { cancelCheck() }) {
+                                Text("Stop reading")
+                            }
+                        }
+                        TextButton(onClick = closeFeedback) { Text("Close") }
+                    }
                 }
             }
         }
@@ -528,6 +555,7 @@ private fun PracticeTools(
     onToggleOrder: (Boolean) -> Unit,
     orderAvailable: Boolean,
     checking: Boolean,
+    onCancel: () -> Unit,
     onCheck: () -> Unit,
 ) {
     val hasInk = ink.strokes.isNotEmpty()
@@ -580,13 +608,13 @@ private fun PracticeTools(
         Spacer(Modifier.height(2.dp))
         com.bassmd.bihua.ui.components.PrimaryAction(
             text = when {
-                checking -> "Reading…"
+                checking -> "Stop reading"
                 !hasInk -> "Draw first"
                 else -> "Check"
             },
-            onClick = onCheck,
-            enabled = hasInk && !checking,
-            icon = Icons.Rounded.CheckCircle,
+            onClick = if (checking) onCancel else onCheck,
+            enabled = checking || hasInk,
+            icon = if (checking) Icons.Rounded.Cancel else Icons.Rounded.CheckCircle,
             accent = Sky.copy(alpha = 0.85f),
             modifier = Modifier.fillMaxWidth(),
         )
