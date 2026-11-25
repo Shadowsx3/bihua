@@ -64,11 +64,15 @@ Bihua server.
 
 - Target audience: **13+**. The app is not designed for children under 13 and
   has no child-directed ads, purchases, or social features.
-- Content rating questionnaire: learning tool; no graphic violence, sexual
-  content, profanity, gambling, controlled substances, or user-generated public
-  content. Fantasy vocabulary includes words such as "blood", "death", or
-  "poison" as dictionary meanings; there are no graphic depictions.
-- Mature dictionary examples are **off by default** and require a confirmation.
+- Content rating questionnaire: learning tool; no graphic violence or
+  depictions, no user-generated public content, no gambling. Fantasy vocabulary
+  includes words such as "blood", "death", or "poison" as dictionary meanings;
+  there are no graphic scenes. If the mature dictionary's examples include
+  sexual or explicit language, declare **Mature/suggestive themes** and the
+  appropriate language category in the IARC questionnaire; do not select
+  "Everyone" just because the toggle is off. The default experience is
+  non-mature, and the opt-in is behind a confirmation dialog.
+- The app is **13+**. Do not opt into the Families program.
 - No ads, no in-app purchases, no subscriptions, no loot boxes.
 - No user-to-user chat, public profiles, or content sharing. Study lists and
   backups stay local or go to the learner's own file provider.
@@ -84,7 +88,10 @@ Bihua server.
   no polling service.
 - If Play asks about foreground-service use, answer that the app does not run a
   long-running foreground service; the permission is a transitive WorkManager
-  declaration.
+  declaration. If the Console refuses the upload because of the permission,
+  remove the unused declaration and service with a manifest override rather
+  than adding a service type. Do not add a data-sync FGS just to silence the
+  prompt.
 - Do not add a background location, media playback, camera, microphone, or
   data-sync foreground service without a policy review.
 

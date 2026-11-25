@@ -279,6 +279,8 @@ NOTE_OVERRIDES = {
     "陣": "Array.",
     "拜": "Greet.",
     "等": "Equal.",
+    "钥": "Key.",
+    "月": "Moon.",
     "涼": "Cool.",
     "米": "Rice.",
     "符": "Talisman.",

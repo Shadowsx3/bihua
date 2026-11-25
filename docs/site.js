@@ -260,3 +260,105 @@
   resize();
   updateStatus();
 })();
+
+/* Interactive grimoire sample: chapter tabs, spell pages, one detail card. */
+(() => {
+  const root = document.getElementById("grimoire");
+  if (!root) return;
+  const tabs = root.querySelector(".grimoire-tabs");
+  const grid = root.querySelector("#grimoire-grid");
+  const chapterLabel = root.querySelector("#grimoire-chapter");
+  const countLabel = root.querySelector("#grimoire-count");
+  const detail = root.querySelector("#grimoire-detail");
+  if (!tabs || !grid || !chapterLabel || !detail) return;
+
+  let chapters = [];
+  let active = 0;
+
+  function renderDetail(spell) {
+    if (!spell) return;
+    detail.innerHTML = "";
+    const glyph = document.createElement("div");
+    glyph.className = "grimoire-glyph";
+    glyph.textContent = spell.c;
+    const copy = document.createElement("div");
+    copy.className = "grimoire-copy";
+    const reading = document.createElement("div");
+    reading.className = "grimoire-reading";
+    reading.textContent = spell.r;
+    const meaning = document.createElement("div");
+    meaning.className = "grimoire-meaning";
+    meaning.textContent = spell.m;
+    const stamp = document.createElement("div");
+    stamp.className = "grimoire-stamp";
+    stamp.textContent = "A met page";
+    copy.append(reading, meaning, stamp);
+    detail.append(glyph, copy);
+  }
+
+  function render(index, selected = 0) {
+    const chapter = chapters[index];
+    if (!chapter) return;
+    active = index;
+    chapterLabel.textContent = chapter.name;
+    countLabel.textContent = `${chapter.spells.length} pages`;
+    Array.from(tabs.children).forEach((tab, i) => {
+      tab.setAttribute("aria-selected", String(i === index));
+      tab.tabIndex = i === index ? 0 : -1;
+    });
+    grid.innerHTML = "";
+    chapter.spells.forEach((spell, i) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "grimoire-spell";
+      button.setAttribute("aria-label", `${spell.c}, ${spell.m}`);
+      button.setAttribute("aria-pressed", String(i === selected));
+      const glyph = document.createElement("span");
+      glyph.textContent = spell.c;
+      const hint = document.createElement("small");
+      hint.textContent = spell.m;
+      button.append(glyph, hint);
+      button.addEventListener("click", () => {
+        Array.from(grid.children).forEach((item) => item.setAttribute("aria-pressed", "false"));
+        button.setAttribute("aria-pressed", "true");
+        renderDetail(spell);
+      });
+      grid.append(button);
+    });
+    renderDetail(chapter.spells[selected] || chapter.spells[0]);
+  }
+
+  fetch(root.dataset.src || "assets/grimoire.json")
+    .then((response) => {
+      if (!response.ok) throw new Error("grimoire unavailable");
+      return response.json();
+    })
+    .then((data) => {
+      chapters = Array.isArray(data.chapters) ? data.chapters : [];
+      if (!chapters.length) return;
+      chapters.forEach((chapter, index) => {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "grimoire-tab";
+        tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-controls", "grimoire-panel");
+        tab.setAttribute("aria-selected", String(index === 0));
+        tab.tabIndex = index === 0 ? 0 : -1;
+        tab.textContent = chapter.name;
+        tab.addEventListener("click", () => render(index));
+        tab.addEventListener("keydown", (event) => {
+          const delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+          if (!delta) return;
+          event.preventDefault();
+          const next = (index + delta + chapters.length) % chapters.length;
+          render(next);
+          tabs.children[next]?.focus();
+        });
+        tabs.append(tab);
+      });
+      render(0);
+    })
+    .catch(() => {
+      // Leave the static fallback detail in place; the rest of the page works.
+    });
+})();

@@ -86,7 +86,7 @@ SIMPLIFIED,晴,sun,Sky,fx_sun,override,Clear.
 SIMPLIFIED,晒,sun,Sky,fx_sun,override,Sun-dry.
 SIMPLIFIED,照,sun,Sky,fx_sun,override,Shine.
 SIMPLIFIED,晨,sun,Sky,fx_sun,override,Dawn.
-SIMPLIFIED,月,moon,Sky,fx_moon,override,Month.
+SIMPLIFIED,月,moon,Sky,fx_moon,override,Moon.
 SIMPLIFIED,夜,moon,Sky,fx_moon,override,Night.
 SIMPLIFIED,夕,moon,Sky,fx_moon,override,Evening.
 SIMPLIFIED,暮,moon,Sky,fx_moon,override,Dusk.
@@ -291,7 +291,7 @@ SIMPLIFIED,复,mirror,Arcana,fx_mirror,override,Again.
 SIMPLIFIED,双,mirror,Arcana,fx_mirror,override,Two.
 SIMPLIFIED,对,mirror,Arcana,fx_mirror,override,Correct.
 SIMPLIFIED,像,mirror,Arcana,fx_mirror,override,Alike.
-SIMPLIFIED,钥,key,Arcana,fx_key,override,Lock.
+SIMPLIFIED,钥,key,Arcana,fx_key,override,Key.
 SIMPLIFIED,匙,key,Arcana,fx_key,override,Spoon.
 SIMPLIFIED,码,key,Arcana,fx_key,override,Number.
 SIMPLIFIED,禁,key,Arcana,fx_key,override,Restrict.
@@ -436,7 +436,7 @@ TRADITIONAL,晴,sun,Sky,fx_sun,override,Clear.
 TRADITIONAL,曬,sun,Sky,fx_sun,variant,Shine on.
 TRADITIONAL,照,sun,Sky,fx_sun,override,Shine.
 TRADITIONAL,晨,sun,Sky,fx_sun,override,Dawn.
-TRADITIONAL,月,moon,Sky,fx_moon,override,Month.
+TRADITIONAL,月,moon,Sky,fx_moon,override,Moon.
 TRADITIONAL,夜,moon,Sky,fx_moon,override,Night.
 TRADITIONAL,夕,moon,Sky,fx_moon,override,Evening.
 TRADITIONAL,暮,moon,Sky,fx_moon,override,Dusk.
@@ -784,7 +784,7 @@ JAPANESE,陽,sun,Sky,fx_sun,variant,Sunshine.
 JAPANESE,晴,sun,Sky,fx_sun,override,Clear up.
 JAPANESE,照,sun,Sky,fx_sun,override,Illuminate.
 JAPANESE,旦,sun,Sky,fx_sun,override,Daybreak.
-JAPANESE,月,moon,Sky,fx_moon,override,Month.
+JAPANESE,月,moon,Sky,fx_moon,override,Moon.
 JAPANESE,夜,moon,Sky,fx_moon,override,Night.
 JAPANESE,夕,moon,Sky,fx_moon,override,Evening.
 JAPANESE,暮,moon,Sky,fx_moon,override,Evening.

@@ -10,7 +10,7 @@
 <meta property="og:title" content="Bihua: learn characters by writing them">
 <meta property="og:description" content="Write characters from memory with tapered brush guides, a local dictionary, and print-ready A4 or Letter sheets. FSRS-7 or SBD, offline, no account.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="assets/practice-light.png?v=1.0.8">
+<meta property="og:image" content="assets/practice-light.png?v=1.1.1">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -20,15 +20,15 @@
     document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
   } catch (_) {}
 </script>
-<link rel="stylesheet" href="style.css">
-<script src="site.js" defer></script>
+<link rel="stylesheet" href="style.css?v=1.1.1">
+<script src="site.js?v=1.1.1" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site">
   <div class="wrap nav">
     <a class="brand" href="index.html">
-      <img src="assets/icon-256.png?v=1.0.8" alt="">
+      <img src="assets/icon-256.png?v=1.1.1" alt="">
       <div><strong>Bihua 筆畫</strong><span>Write it. Keep it.</span></div>
     </a>
     <nav class="links" aria-label="Primary">
@@ -100,13 +100,32 @@
       <div class="phone-stage">
         <div class="seal" aria-hidden="true">筆</div>
         <div class="phone-frame">
-          <img src="assets/practice-light.png?v=1.0.8" width="1080" height="2400" alt="Bihua practice screen with the character 谢, a tapered brush guide, and numbered stroke starts">
+          <img src="assets/practice-light.png?v=1.1.1" width="1080" height="2400" alt="Bihua practice screen with the character 谢, a tapered brush guide, and numbered stroke starts">
         </div>
         <div class="tag tag-a"><b>FSRS-7 · SBD</b><span>two memory models</span></div>
         <div class="tag tag-b"><b>Ink check</b><span>count · order · shape · starts</span></div>
       </div>
     </div>
   </div>
+
+  <section id="contents" class="wrap contents reveal" aria-labelledby="contents-title">
+    <div class="contents-head">
+      <div class="kicker" id="contents-title">Index</div>
+      <p>Start with the ink pad, or jump straight to the part you came for.</p>
+    </div>
+    <nav class="contents-links" aria-label="On this page">
+      <a href="#draw">Try the pad</a>
+      <a href="#philosophy">Why characters</a>
+      <a href="#stylus">Stylus and ink</a>
+      <a href="#engines">Scheduling</a>
+      <a href="#print">Paper</a>
+      <a href="#screens">Screens</a>
+      <a href="#spell">Spell road</a>
+      <a href="#fold">Foldables</a>
+      <a href="#scripts">Four courses</a>
+      <a href="#download">Download</a>
+    </nav>
+  </section>
 
   <section id="draw" class="wrap">
     <div class="pad-panel reveal">
@@ -158,7 +177,7 @@
         </div>
       </div>
       <div class="pet-stage">
-        <img src="assets/pet.png?v=1.0.8" alt="Mò, Bihua's ink pet, holding a brush">
+        <img src="assets/pet.png?v=1.1.1" alt="Mò, Bihua's ink pet, holding a brush">
         <div class="pet-bubble">One character at a time.</div>
         <div class="pet-name">Mò · the ink pet</div>
       </div>
@@ -436,7 +455,7 @@
     <div class="grid two gap-top">
       <div class="figure reveal">
         <div class="frame">
-          <img src="assets/worksheet-page.png?v=1.0.8" width="1240" height="1754" loading="lazy" decoding="async" alt="A printed practice page with dark models, pale trace cells, numbered stroke starts, and blank Mi zi ge boxes">
+          <img src="assets/worksheet-page.png?v=1.1.1" width="1240" height="1754" loading="lazy" decoding="async" alt="A printed practice page with dark models, pale trace cells, numbered stroke starts, and blank Mi zi ge boxes">
         </div>
         <figcaption>Model, trace, then write. The PDF is generated on the phone and saved through the system file picker.</figcaption>
       </div>
@@ -468,16 +487,16 @@
       <p class="lead">Real screens in the light theme. The canvas, the dictionary, and the printed sheet sit where you need them.</p>
     </div>
     <div class="screens">
-      <figure class="shot reveal"><img src="assets/home-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Home screen with today's plan, word of the day, stat cards, and practice calendar"><figcaption><b>01</b> Your day, ready</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/characters-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Character browser with search and script filters"><figcaption><b>02</b> Find a character or a word</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/detail-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Character detail with reading, meaning, a real word card, and structure"><figcaption><b>03</b> Reading, meaning, a real word</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/dictionary-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Dictionary entry for 爱 with stroke count, level, example words, and a direct practice link"><figcaption><b>04</b> A dictionary that teaches</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/review-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>05</b> Write from memory</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/schedule-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Schedule settings with FSRS-7 and SBD model choices, fitting, and import controls"><figcaption><b>06</b> Choose FSRS-7 or SBD, then fit it</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/home-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Home screen with today's plan, word of the day, stat cards, and practice calendar"><figcaption><b>01</b> Your day, ready</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/characters-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Character browser with search and script filters"><figcaption><b>02</b> Find a character or a word</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/detail-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Character detail with reading, meaning, a real word card, and structure"><figcaption><b>03</b> Reading, meaning, a real word</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/dictionary-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Dictionary entry for 爱 with stroke count, level, example words, and a direct practice link"><figcaption><b>04</b> A dictionary that teaches</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/review-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>05</b> Write from memory</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/schedule-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Schedule settings with FSRS-7 and SBD model choices, fitting, and import controls"><figcaption><b>06</b> Choose FSRS-7 or SBD, then fit it</figcaption></figure>
     </div>
     <div class="grid two gap-top">
-      <figure class="shot shot-wide reveal"><img src="assets/practice-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a tapered brush guide and numbered starts for the character 谢"><figcaption><b>07</b> Guide, order, and your own ink</figcaption></figure>
-      <figure class="shot shot-wide reveal"><img src="assets/grade-light.png?v=1.0.8" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and four grade buttons with next intervals"><figcaption><b>08</b> The answer stays. You grade.</figcaption></figure>
+      <figure class="shot shot-wide reveal"><img src="assets/practice-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a tapered brush guide and numbered starts for the character 谢"><figcaption><b>07</b> Guide, order, and your own ink</figcaption></figure>
+      <figure class="shot shot-wide reveal"><img src="assets/grade-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and four grade buttons with next intervals"><figcaption><b>08</b> The answer stays. You grade.</figcaption></figure>
     </div>
   </section>
 
@@ -487,17 +506,71 @@
       <h2>A quiet spell road.</h2>
       <p class="lead">An optional quest in all four courses. Write a character that fits the scene, or take one from the grimoire. Every puzzle has several honest solutions, and met pages stay in your book. Mò keeps a short note for each page; nothing is graded or scheduled.</p>
     </div>
-    <div class="grid three">
+    <div class="grid two">
       <figure class="shot reveal"><img src="assets/spell-gate.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Spell quest gate with Mò, the rules, and Start the road"><figcaption><b>01</b> The road ahead</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/spell-answer.png?v=1.1.1-2" width="1080" height="2400" loading="lazy" decoding="async" alt="Spell quest result with a finished sparkle character in the magic circle, a new page, and the Walk on button"><figcaption><b>02</b> It worked</figcaption></figure>
-      <figure class="shot reveal"><img src="assets/spell-book.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Grimoire cover showing ten chapter tabs and the pages met count"><figcaption><b>03</b> Pages you have met</figcaption></figure>
+      <figure class="shot reveal"><img src="assets/spell-answer.png?v=1.1.1-3-2" width="1080" height="2400" loading="lazy" decoding="async" alt="Spell quest result with a finished sparkle character in the magic circle, a new page, and the Walk on button"><figcaption><b>02</b> It worked</figcaption></figure>
+    </div>
+    <div class="grimoire reveal" id="grimoire" data-src="assets/grimoire.json?v=1.1.1">
+      <div class="grimoire-intro">
+        <div class="kicker">Inside the book</div>
+        <h3>Turn a chapter. Meet a page.</h3>
+        <p>Ten chapters, each a shelf of real characters. Pick a tab and a page; the reading and meaning come from the same course data as the app. This is a small sample, not the whole grimoire.</p>
+      </div>
+      <div class="grimoire-tabs" role="tablist" aria-label="Grimoire chapters"></div>
+      <div class="grimoire-page" id="grimoire-panel" role="tabpanel" aria-live="polite">
+        <div class="grimoire-page-head">
+          <strong id="grimoire-chapter">Tides</strong>
+          <span id="grimoire-count">6 pages</span>
+        </div>
+        <div class="grimoire-grid" id="grimoire-grid"></div>
+        <div class="grimoire-detail" id="grimoire-detail">
+          <div class="grimoire-glyph">水</div>
+          <div class="grimoire-copy">
+            <div class="grimoire-reading">shuǐ</div>
+            <div class="grimoire-meaning">Water</div>
+            <div class="grimoire-stamp">A met page</div>
+          </div>
+        </div>
+      </div>
+      <noscript>
+        <img src="assets/spell-book.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Grimoire cover showing ten chapter tabs and the pages met count">
+      </noscript>
     </div>
     <p class="small note reveal">1,387 spells across 10 chapters, including Arcana and Spirit. A family door, a whole chapter, or one exact shape; Japanese uses kanji and Korean uses Hanja. Results stay readable at large text, and Mò's note is always one tap away.</p>
   </section>
 
+  <section id="fold" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">08 · Made for the device</div>
+      <h2>A book when it opens. A desk when it does not.</h2>
+      <p class="lead">The same screen, designed for the shape it is in. A foldable gets two pages and a compact bar; a tablet gets a navigation rail and the same two-page dashboard. The outer display falls back to the phone layout without squeezing the canvas.</p>
+    </div>
+    <div class="device-grid">
+      <figure class="shot reveal">
+        <img src="assets/fold-inner.png?v=1.1.1" width="2208" height="1840" loading="lazy" decoding="async" alt="Bihua on a foldable inner display with two pages, a hero on the left, and the calendar and study tools on the right">
+        <figcaption><b>Inner</b> Two pages, thumb-sized actions</figcaption>
+      </figure>
+      <figure class="shot reveal">
+        <img src="assets/fold-outer.png?v=1.1.1" width="1080" height="2092" loading="lazy" decoding="async" alt="Bihua on a foldable outer display with the phone bottom bar and the same course">
+        <figcaption><b>Outer</b> The phone layout, unchanged</figcaption>
+      </figure>
+      <figure class="shot reveal">
+        <img src="assets/tablet.png?v=1.1.1" width="2560" height="1600" loading="lazy" decoding="async" alt="Bihua on a tablet with a navigation rail and a two-page dashboard">
+        <figcaption><b>Tablet</b> Rail and two pages</figcaption>
+      </figure>
+    </div>
+    <div class="license-chips reveal">
+      <span class="chip">Book-style inner layout</span>
+      <span class="chip">Navigation rail on tablets</span>
+      <span class="chip">Wrist-sized writing square</span>
+      <span class="chip">No squeezed canvas</span>
+      <span class="chip">Same progress on every posture</span>
+    </div>
+  </section>
+
   <section id="scripts" class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">08 · Four courses</div>
+      <div class="kicker">09 · Four courses</div>
       <h2>Four courses, kept separate.</h2>
       <p class="lead">Simplified and Traditional are separate courses. Shared glyphs stay shared. Traditional words come from CEDICT word pairs, not a character-by-character converter. Korean starts with Hangul, then Hanja.</p>
     </div>
@@ -518,7 +591,7 @@
 
   <section class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">09 · Sources</div>
+      <div class="kicker">10 · Sources</div>
       <h2>Where the data comes from.</h2>
       <p class="lead">The content database is generated from open sources and shipped with checksums. The app code is MIT. The data keeps its own licences.</p>
     </div>
@@ -543,7 +616,7 @@
         <h2>Install Bihua.</h2>
         <p>This is the signed 1.1.1 build for testing on your phone. It includes the guided tour, optional meaning checks, the spell quest and its met-page collection, widget costumes, Progress windows, and the latest UI polish. 1.0.9 is still in Play review; 1.1.1 will follow after it clears.</p>
         <div class="hero-actions">
-          <a class="button" href="download/bihua-1.1.1.apk?v=e933ea38" download>Download 1.1.1 APK</a>
+          <a class="button" href="download/bihua-1.1.1.apk?v=ebcbae00" download>Download 1.1.1 APK</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">Read the source</a>
         </div>
         <p class="small">APK 1.1.1 · signed test build · Android 10+ · content version 34 · no account</p>
@@ -551,7 +624,7 @@
       </div>
       <div class="download-side">
         <p class="small">SHA-256</p>
-        <code>e933ea383652d8fabd5684bf09ec9f1592fa34c823aa1bc8e92c8b43485b8a37</code>
+        <code>ebcbae00b53e7f15f87b083b89973bbac7abe07d10c40deba58638212237d68f</code>
         <p class="small"><a href="download/SHA256SUMS.txt">Checksum file</a></p>
       </div>
     </div>
