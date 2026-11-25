@@ -12,8 +12,9 @@ release checklist whenever the manifest, SDKs, or data flows change.
 - Target SDK: 36 (Android 16)
 - ABI: `arm64-v8a` only; Play accepts a 64-bit-only app.
 - Signed with the local release key (`keystore.properties`), never committed.
-- Upload artifact: `app/build/outputs/bundle/release/app-release.aab`
-- Test APK: `docs/download/bihua-1.1.1.apk`
+- Upload artifact: `store/play-assets/upload-1.1.1/bihua-1.1.1.aab`
+  (SHA-256 `08f6cc23…`; rebuild only if the app code changes)
+- Test APK: `docs/download/bihua-1.1.1.apk` (SHA-256 `954e0305…`)
 - Privacy policy: `https://shadowsx3.github.io/bihua/privacy.html`
 - Support: the GitHub repository and its issue tracker.
 
