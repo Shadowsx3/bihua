@@ -46,8 +46,8 @@ layout can differ. Landscape and large font scale are separate passes.
 
 | Screen / surface | Entry | Main states | A |
 |---|---|---|---|
-| Tour overlay | Home invite, Settings → Help & tour | 9 stops, spotlight hole, Mò gesture and prop, typewriter, Back/Next/Skip, final confetti | A |
-| Tour stops | Overlay | Home desk, new character, reviews, search, practice, grades, show answer, paper/lists, About | A |
+| Tour overlay | Home invite, Settings → Help & tour | 10 stops, spotlight hole, Mò gesture and prop, typewriter, Back/Next/Skip, final confetti | A |
+| Tour stops | Overlay | Home desk, new character, why things return, spell road, search, practice, grades, no pen, paper/lists, About | A |
 | Tour accessibility | Overlay | 1.5x, dark, tablet, reduce motion, TalkBack full-line | P |
 | Grade legend | Session grade prompt | “?” opens the four plain-word grades | A |
 | Widget outfit | Settings → Display | Auto or a pinned study/monocle/witch/vampire/nightcap/party costume | P |

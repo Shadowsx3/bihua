@@ -1,8 +1,10 @@
 package com.bassmd.bihua.practice
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,11 +38,12 @@ import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Undo
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VolumeUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -75,6 +78,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.bassmd.bihua.audio.Sfx
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
@@ -139,6 +144,12 @@ private val DialogueHeight = 340.dp
 
 /** The definition card's height is fixed too, so reveals never move the layout. */
 private val DefinitionHeight = 120.dp
+
+/** The scene ring and the circle inside it share one line weight. */
+private val CircleLine = 1.5.dp
+
+/** The cast ring and its paper share one, slightly heavier weight on the ink. */
+private val CastCircleLine = 2.5.dp
 private val Dusk = Color(0xFF2A2240)
 private val Dawn = Color(0xFF5B4A6B)
 private val Gilt = Color(0xFFE6C47A)
@@ -307,6 +318,23 @@ private fun SpellQuestContent(
     // The grimoire, opened from the quest. Choosing a spell here starts the gift.
     var showBook by remember { mutableStateOf(false) }
 
+    // One step back at a time: close the book, leave the drawing, then leave
+    // the road. The outer shell only closes the quest when nothing is open.
+    BackHandler {
+        when {
+            showBook -> showBook = false
+            grimoireOpen -> grimoireOpen = false
+            phase == QuestPhase.CAST -> {
+                bookPick = null
+                giftTraced = false
+                castStrokes = emptyList()
+                castTraced = false
+                phase = QuestPhase.READ
+            }
+            else -> onClose()
+        }
+    }
+
     // The road lives in the progress database, so export/import and sync carry it.
     LaunchedEffect(chapterBanner) {
         if (chapterBanner == 0) return@LaunchedEffect
@@ -317,11 +345,15 @@ private fun SpellQuestContent(
     LaunchedEffect(mode, progressStore) {
         android.util.Log.d(QUEST_LOG, "quest progress store=${progressStore != null}")
         if (progressStore != null) {
-            val savedChapter = progressStore.spellQuestChapter(mode.name)
-            val savedMet = progressStore.spellQuestMet(mode.name)
-            chapter = savedChapter
-            if (savedChapter != 1) scenes = makeChapter(savedChapter)
-            met = savedMet
+            runCatching {
+                val savedChapter = progressStore.spellQuestChapter(mode.name)
+                val savedMet = progressStore.spellQuestMet(mode.name)
+                chapter = savedChapter
+                if (savedChapter != 1) scenes = makeChapter(savedChapter)
+                met = savedMet
+            }.onFailure {
+                android.util.Log.w(QUEST_LOG, "spell road could not be restored", it)
+            }
         }
         roadReady = true
     }
@@ -399,7 +431,10 @@ private fun SpellQuestContent(
         newlyMet = true
         met = met + character
         milestone = if (met.size % 10 == 0) met.size else 0
-        scope.launch { progressStore?.markSpellQuestMet(mode.name, character) }
+        scope.launch {
+            runCatching { progressStore?.markSpellQuestMet(mode.name, character) }
+                .onFailure { android.util.Log.w(QUEST_LOG, "spell page could not be saved", it) }
+        }
     }
 
     /**
@@ -572,7 +607,10 @@ private fun SpellQuestContent(
             chapter += 1
             scenes = makeChapter(chapter)
             chapterBanner = chapter
-            scope.launch { progressStore?.saveSpellQuestChapter(mode.name, chapter) }
+            scope.launch {
+                runCatching { progressStore?.saveSpellQuestChapter(mode.name, chapter) }
+                    .onFailure { android.util.Log.w(QUEST_LOG, "spell chapter could not be saved", it) }
+            }
             index = 0
         }
         phase = QuestPhase.READ
@@ -641,8 +679,8 @@ private fun SpellQuestContent(
     val circleTraced = if (bookPick != null) giftTraced else castTraced
     val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
     val dialogueHeight = when {
-        fontScale > 1.6f && phase == QuestPhase.HINT -> 460.dp
-        fontScale > 1.25f && phase == QuestPhase.HINT -> 440.dp
+        fontScale > 1.6f && phase == QuestPhase.HINT -> 520.dp
+        fontScale > 1.25f && phase == QuestPhase.HINT -> 500.dp
         phase == QuestPhase.HINT -> 420.dp
         fontScale > 1.6f -> 300.dp
         fontScale > 1.25f -> 320.dp
@@ -697,15 +735,31 @@ private fun SpellQuestContent(
         // flourish effects, and the name scroll above. It sizes itself to the room it is given.
         @Composable
         fun CircleStage(modifier: Modifier) {
-            BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+            val stageDescription = when {
+                phase == QuestPhase.HINT && answerShown && badgeCharacter.isNotEmpty() ->
+                    "One answer: $badgeCharacter"
+                phase == QuestPhase.RESULT && badgeCharacter.isNotEmpty() ->
+                    "Your spell: $badgeCharacter"
+                phase == QuestPhase.READ && badgeCharacter.isNotEmpty() ->
+                    "Mò drew: $badgeCharacter"
+                else -> null
+            }
+            BoxWithConstraints(
+                modifier = modifier.semantics {
+                    if (stageDescription != null) contentDescription = stageDescription
+                },
+                contentAlignment = Alignment.Center,
+            ) {
                 if (circleActive && phase != QuestPhase.CAST) {
                     val ring = chapterColor(SpellFamilies.chapter(circleFamily))
                     // The circle is the centre of the result screen; the word ribbon
                     // sits on its top edge instead of pushing it down.
-                    val ringSize = minOf(
-                        if (wideScreen) 440.dp else 300.dp,
-                        maxHeight * 0.84f,
-                    ).coerceAtLeast(120.dp)
+                    val ringMax = when {
+                        wideScreen -> 440.dp
+                        fontScale > 1.25f -> 280.dp
+                        else -> 300.dp
+                    }
+                    val ringSize = minOf(ringMax, maxHeight * 0.84f).coerceAtLeast(120.dp)
                     Box(
                         modifier = Modifier
                             .size(ringSize)
@@ -718,7 +772,7 @@ private fun SpellQuestContent(
                                     .fillMaxSize()
                                     .clip(CircleShape)
                                     .background(Color.White.copy(alpha = 0.04f))
-                                    .border(1.5.dp, ring.copy(alpha = 0.5f), CircleShape),
+                                    .border(CircleLine, ring.copy(alpha = 0.5f), CircleShape),
                             )
                             RuneRing(color = ring, animate = !reduceMotion, modifier = Modifier.fillMaxSize())
                             // The effect plays around the character, never on top
@@ -742,24 +796,28 @@ private fun SpellQuestContent(
                                 reduceMotion = reduceMotion,
                                 modifier = Modifier.fillMaxSize(0.78f),
                             )
-                            // After the invocation, the emoji and the word name what landed.
-                            val badge = badgeCharacter
-                            if (badge.isNotEmpty() && channeling == null) {
-                                val badgeFamily = spellByGlyph[badge]?.family.orEmpty()
-                                val word = badgeWord(
-                                    entryByGlyph[badge]?.meaning,
-                                    badgeFamily,
-                                )
-                                InvocationBadge(
-                                    emoji = spellEmoji(badge, badgeFamily),
-                                    word = word,
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .offset(y = (-54).dp),
-                                    reduceMotion = reduceMotion,
-                                    reveal = drawReveal,
-                                )
-                            }
+                    }
+                    // The ribbon belongs to the stage, not to the circle box:
+                    // the Leave row is the top border, so the title can never
+                    // ride over it at large text.
+                    val badge = badgeCharacter
+                    if (badge.isNotEmpty() && channeling == null) {
+                        val badgeFamily = spellByGlyph[badge]?.family.orEmpty()
+                        val word = badgeWord(
+                            spellByGlyph[badge]?.note,
+                            badgeFamily,
+                        )
+                        val ringTop = ((maxHeight - ringSize) / 2).coerceAtLeast(0.dp)
+                        val badgeTop = (ringTop - 54.dp).coerceAtLeast(8.dp)
+                        InvocationBadge(
+                            emoji = spellEmoji(badge, badgeFamily),
+                            word = word,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .offset(y = badgeTop),
+                            reduceMotion = reduceMotion,
+                            reveal = drawReveal,
+                        )
                     }
                 } else if (phase != QuestPhase.CAST) {
                     // An idle circle keeps the stage from feeling like empty
@@ -792,6 +850,10 @@ private fun SpellQuestContent(
         // The visual-novel card: a fixed size, so the circle never resizes. Text scrolls inside it.
         @Composable
         fun DialogueCard(modifier: Modifier) {
+            var showNote by remember(scene.place) { mutableStateOf(false) }
+            val noteCharacter = badgeCharacter.ifEmpty { castCharacter }
+            val noteEntry = entryByGlyph[noteCharacter]
+            val noteTint = chapterColor(SpellFamilies.chapter(headerFamily))
             Column(
                 modifier = modifier
                     .height(dialogueHeight)
@@ -801,9 +863,10 @@ private fun SpellQuestContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Box(Modifier.weight(1f)) {
                 Column(
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxSize()
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -814,14 +877,23 @@ private fun SpellQuestContent(
                         )
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(scene.place, style = MaterialTheme.typography.titleMedium, color = PlumInk)
-                            Text(scene.speaker, style = MaterialTheme.typography.labelSmall, color = PlumSoft)
-                        }
-                        if (phase != QuestPhase.READ) {
                             Text(
-                                SpellFamilies.name(headerFamily),
+                                scene.place,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = PlumInk,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                if (phase != QuestPhase.READ) {
+                                    "${scene.speaker} · ${SpellFamilies.name(headerFamily)}"
+                                } else {
+                                    scene.speaker
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = PlumSoft,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
                         }
                     }
@@ -840,13 +912,22 @@ private fun SpellQuestContent(
                         } else {
                             hint
                         }
-                        QuestPhase.RESULT -> listOf(solvedText, scene.lines.first()).joinToString("\n")
+                        QuestPhase.RESULT -> solvedText
                     }
                     // Every block says what it is, in a colour that matches its meaning.
                     val label = when (phase) {
                         QuestPhase.READ -> if (bookPick != null) "A gift" else if (castStrokes.isNotEmpty()) "Your spell" else "Problem"
                         QuestPhase.CAST -> "Problem"
-                        QuestPhase.HINT -> if (answerShown) "One way through" else "A different way"
+                        QuestPhase.HINT -> if (answerShown) {
+                            "One way through"
+                        } else {
+                            val solutions = scene.puzzle.solutions
+                            when {
+                                solutions.any { it.characters.isNotEmpty() } -> "Not that shape"
+                                solutions.any { it.categories.isNotEmpty() } -> "Another chapter"
+                                else -> "A different way"
+                            }
+                        }
                         QuestPhase.RESULT -> "It worked"
                     }
                     val labelTint = when (phase) {
@@ -856,6 +937,19 @@ private fun SpellQuestContent(
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.bassmd.bihua.ui.components.Pill(label, labelTint)
+                        Spacer(Modifier.weight(1f))
+                        if ((phase == QuestPhase.HINT || phase == QuestPhase.RESULT) && noteEntry != null) {
+                            TextButton(onClick = { showNote = !showNote }) {
+                                Icon(
+                                    Icons.Rounded.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = noteTint,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Note", style = MaterialTheme.typography.labelLarge, color = noteTint)
+                            }
+                        }
                     }
                     val speakKey = "${scene.place}-${phase}-${hint.length}-${solvedText.length}"
                     TypewriterLine(
@@ -866,26 +960,39 @@ private fun SpellQuestContent(
                         color = PlumInk,
                     )
                 }
-
-                if (phase == QuestPhase.HINT || phase == QuestPhase.RESULT) {
-                    val tipCharacter = badgeCharacter.ifEmpty { castCharacter }
-                    val tipEntry = entryByGlyph[tipCharacter]
-                    SpellTipCard(
-                        reading = tipEntry?.reading.orEmpty(),
-                        meaning = shortGloss(tipEntry?.meaning).orEmpty(),
-                        word = if (phase == QuestPhase.RESULT) tipEntry?.words?.firstOrNull() else null,
-                        newPage = newlyMet && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown)),
-                        tint = chapterColor(SpellFamilies.chapter(headerFamily)),
+                if (showNote && noteEntry != null) {
+                    // Dim the page under the note: at large text a floating
+                    // card can cover a line, and a washed page reads as an
+                    // overlay instead of a clipping bug.
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .background(PaperWarm.copy(alpha = 0.82f))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClickLabel = "Close note",
+                            ) { showNote = false },
                     )
-                    if (milestone > 0 && (phase == QuestPhase.RESULT || (phase == QuestPhase.HINT && answerShown))) {
-                        Text(
-                            "$milestone spells met. Your book is filling up.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = PlumSoft,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
+                    Popup(
+                        alignment = Alignment.Center,
+                        onDismissRequest = { showNote = false },
+                        properties = PopupProperties(focusable = true),
+                    ) {
+                        NotePopup(
+                            reading = noteEntry.reading,
+                            meaning = noteEntry.meaning,
+                            word = if (phase == QuestPhase.RESULT) {
+                                noteEntry.words.firstOrNull()
+                            } else {
+                                null
+                            },
+                            newPage = newlyMet,
+                            milestone = milestone,
+                            tint = noteTint,
                         )
                     }
+                }
                 }
 
                 when (phase) {
@@ -982,7 +1089,7 @@ private fun SpellQuestContent(
                                     ),
                                 ) {
                                     Text(
-                                        "Show me one answer",
+                                        if (fontScale > 1.25f) "One answer" else "Show me one answer",
                                         maxLines = 1,
                                         style = MaterialTheme.typography.labelLarge,
                                     )
@@ -992,7 +1099,7 @@ private fun SpellQuestContent(
                                     modifier = Modifier.weight(1f),
                                 ) {
                                     Text(
-                                        "Walk on for now",
+                                        if (fontScale > 1.25f) "Walk on" else "Walk on for now",
                                         color = PlumSoft,
                                         maxLines = 1,
                                         style = MaterialTheme.typography.labelLarge,
@@ -1424,57 +1531,49 @@ private fun GateCard(title: String, body: String, tint: Color) {
     }
 }
 
-/** A warm little note for the reading and meaning, instead of two bare lines. */
+/** The same small anchored card as the text highlighter, for Mò's note. */
 @Composable
-private fun SpellTipCard(
+private fun NotePopup(
     reading: String,
     meaning: String,
-    word: com.bassmd.bihua.content.WordContext? = null,
-    newPage: Boolean = false,
+    word: com.bassmd.bihua.content.WordContext?,
+    newPage: Boolean,
+    milestone: Int,
     tint: Color,
 ) {
-    if (reading.isBlank() && meaning.isBlank() && word == null) return
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(tint.copy(alpha = 0.34f), PaperWarm.copy(alpha = 0.92f)),
-                ),
-            )
-            .border(1.dp, tint.copy(alpha = 0.55f), RoundedCornerShape(18.dp))
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = PaperWarm,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x553D2766)),
+        shadowElevation = 10.dp,
+        modifier = Modifier.widthIn(max = 320.dp),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(PaperWarm.copy(alpha = 0.9f)),
-            contentAlignment = Alignment.Center,
+                .heightIn(max = 260.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(
-                Icons.Rounded.AutoAwesome,
-                contentDescription = null,
-                tint = PlumInk,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.width(9.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(
-                if (newPage) "Mò's note · a new page" else "Mò's note",
-                style = MaterialTheme.typography.labelSmall,
-                color = PlumSoft,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(tint.copy(alpha = 0.20f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text("Mò's note", style = MaterialTheme.typography.labelSmall, color = PlumSoft)
+            }
             if (reading.isNotBlank()) {
-                Text(
-                    reading,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = PlumInk,
-                )
+                Text(reading, style = MaterialTheme.typography.titleSmall, color = PlumInk)
             }
             if (meaning.isNotBlank()) {
                 Text(
@@ -1483,13 +1582,18 @@ private fun SpellTipCard(
                     color = PlumInk.copy(alpha = 0.86f),
                 )
             }
-            if (word != null) {
+            word?.let {
                 Text(
-                    "In a word: ${word.word} · ${word.reading} · ${word.meaning}",
+                    "In a word: ${it.word} · ${it.reading} · ${it.meaning}",
                     style = MaterialTheme.typography.labelSmall,
                     color = PlumSoft,
-                    maxLines = 2,
                 )
+            }
+            if (newPage) {
+                Text("A new page in your book.", style = MaterialTheme.typography.labelSmall, color = Mint)
+            }
+            if (milestone > 0) {
+                Text("$milestone spells met.", style = MaterialTheme.typography.labelSmall, color = PlumSoft)
             }
         }
     }
@@ -2460,7 +2564,7 @@ private fun MagicCircle(
         modifier = modifier
             .clip(CircleShape)
             .background(glow.copy(alpha = 0.10f))
-            .border(2.5.dp, Color(0xFF141414), CircleShape),
+            .border(CastCircleLine, Color(0xFF141414), CircleShape),
     ) {
         RuneRing(
             color = glow,
@@ -2477,7 +2581,7 @@ private fun MagicCircle(
                 .align(Alignment.Center)
                 .clip(CircleShape)
                 .background(PaperWarm)
-                .border(2.dp, Color(0xFF141414), CircleShape),
+                .border(CastCircleLine, Color(0xFF141414), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (writing != null) {
@@ -2609,7 +2713,7 @@ private fun GiftCircle(
             .aspectRatio(1f)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.06f))
-            .border(2.dp, glow.copy(alpha = 0.75f), CircleShape),
+            .border(CircleLine, glow.copy(alpha = 0.75f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (player != null && player.guide != null) {
@@ -2867,6 +2971,7 @@ private fun InvocationBadge(
         )
         Row(
             modifier = Modifier
+                .widthIn(max = 236.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .background(paper)
                 .border(1.dp, Color(0x553D2766), RoundedCornerShape(4.dp))
@@ -2880,6 +2985,8 @@ private fun InvocationBadge(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = ink,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
         Box(

@@ -917,6 +917,17 @@ private fun RecallPage(
             }
         }
         Spacer(Modifier.height(12.dp))
+        SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.18f)) {
+            Column {
+                Text("Extra practice", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                Text(
+                    "The optional spell quest lives in Study tools on Home. It is separate from reviews, and nothing you cast changes your schedule.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
         SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
             Column {
                 Text("Before you write", style = MaterialTheme.typography.titleSmall, color = InkDark)

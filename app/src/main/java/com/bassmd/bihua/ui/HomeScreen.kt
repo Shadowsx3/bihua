@@ -298,6 +298,7 @@ fun HomeScreen(
                         onStudy = onStudy,
                         onPractice = onPractice,
                         onEndVacation = { showEndVacation = true },
+                        onOpenQuest = onOpenQuest,
                     )
                 }
             }
@@ -529,6 +530,7 @@ fun HomeScreen(
                                 onStudy = onStudy,
                                 onPractice = onPractice,
                                 onEndVacation = { showEndVacation = true },
+                                onOpenQuest = onOpenQuest,
                             )
                         }
                     }
@@ -808,6 +810,7 @@ private fun StudyHero(
     onStudy: () -> Unit,
     onPractice: () -> Unit,
     onEndVacation: () -> Unit,
+    onOpenQuest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -906,6 +909,18 @@ private fun StudyHero(
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+            TextButton(
+                onClick = onOpenQuest,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .tourAnchor("home.spell"),
+            ) {
+                Text(
+                    "Extra practice · Spell quest",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = InkDark,
+                )
             }
         }
     }

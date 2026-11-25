@@ -171,7 +171,7 @@ def main() -> None:
                     "category": category,
                     "effect": f"fx_{family}",
                     "source": source,
-                    "note": _note(family, entry["meaning"]),
+                    "note": _note(family, entry["meaning"], character),
                 })
             report.setdefault(mode, Counter())[category] = min(len(selected), PER_CATEGORY)
 
@@ -255,11 +255,82 @@ def _family_for(category: str, meaning: str, families: tuple[str, ...]) -> str |
     return None
 
 
-def _note(family: str, meaning: str) -> str:
-    first = (meaning or "").split(";")[0].strip()
+# A few dictionary glosses are adult, clinical, or simply not a spell. Keep the
+# page readable and kind without changing what the character actually means.
+NOTE_OVERRIDES = {
+    "煙": "Smoke.",
+    "爆": "Burst.",
+    "炮": "Firecracker.",
+    "藥": "Remedy.",
+    "飲": "Drink.",
+    "歲": "Year.",
+    "慢": "Slow.",
+    "問": "Ask.",
+    "秒": "Second.",
+    "呼": "Breathe.",
+    "凝": "Freeze.",
+    "反": "Reverse.",
+    "固": "Solid.",
+    "浪": "Wave.",
+    "龍": "Dragon.",
+    "琴": "Lute.",
+    "尺": "Ruler.",
+    "杯": "Cup.",
+    "陣": "Array.",
+    "拜": "Greet.",
+    "等": "Equal.",
+    "涼": "Cool.",
+    "米": "Rice.",
+    "符": "Talisman.",
+    "園": "Garden.",
+    "場": "Field.",
+    "掌": "Palm.",
+    "晒": "Sun-dry.",
+    "提": "Lift.",
+    "初": "First.",
+    "布": "Cloth.",
+    "江": "River.",
+    "綱": "Rope.",
+    "環": "Ring.",
+    "蛍": "Firefly.",
+    "卜": "Fortune-telling.",
+    "識": "Discern.",
+    "推": "Guess.",
+    "恒": "Steady.",
+    "療": "Healing.",
+    "疗": "Healing.",
+    "久": "Long.",
+}
+
+
+def _first_segment(meaning: str) -> str:
+    """The first gloss, without splitting inside parentheses or a qualifier."""
+    text = (meaning or "").split(";")[0]
+    depth = 0
+    for index, char in enumerate(text):
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth = max(0, depth - 1)
+        elif char == "," and depth == 0:
+            text = text[:index]
+            break
+    # Register and domain labels ("(bound form)", "(literary)", "(of the sun)")
+    # are dictionary furniture, not the page's meaning. Units and chemical
+    # notes are clutter too.
+    text = re.sub(r"^\s*\([^)]*\)\s*", "", text)
+    text = re.sub(r"\s*\([^)]*\)", "", text)
+    return text.split("(", 1)[0].strip()
+
+
+def _note(family: str, meaning: str, character: str = "") -> str:
+    first = NOTE_OVERRIDES.get(character, _first_segment(meaning)).rstrip(".").strip()
+    first = first.removeprefix("to ").removeprefix("a ").removeprefix("an ").removeprefix("the ")
+    if not first or first.lower().startswith(("surname ", "classifier for ")):
+        first = family.replace("-", " ")
     if first:
-        return f"{first[0].upper() + first[1:]}. A {family} spell."
-    return f"A {family} spell."
+        return f"{first[0].upper() + first[1:]}."
+    return f"A {family} page."
 
 
 if __name__ == "__main__":

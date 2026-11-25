@@ -47,6 +47,47 @@ class ShippedPuzzlePartsTest {
     }
 
     @Test
+    fun needsSoundLikeAWorldNotARuleList() {
+        parts.obstacles.forEach { obstacle ->
+            assertTrue("${obstacle.id} need is blank", obstacle.need.isNotBlank())
+            assertTrue(
+                "${obstacle.id} still says 'is needed here': ${obstacle.need}",
+                !obstacle.need.contains("is needed here"),
+            )
+            assertTrue(
+                "${obstacle.id} has doubled spaces: ${obstacle.need}",
+                !obstacle.need.contains("  "),
+            )
+        }
+    }
+
+    @Test
+    fun shippedCopyAvoidsGenderedAndAdultTropes() {
+        val copy = buildList {
+            parts.obstacles.forEach {
+                add(it.prompt)
+                add(it.need)
+                addAll(it.lines)
+            }
+            addAll(parts.settings)
+            addAll(parts.times.map { it.line })
+            addAll(parts.weathers.map { it.line })
+            addAll(parts.familyNames.values)
+            addAll(parts.outcomes.values.flatten())
+        }
+        val banned = listOf(
+            "woman", "women", "man", "men", "girl", "boy", "wife", "husband",
+            "prostitute", "naked", "sex", "rape", "drug", "tobacco",
+            "cigarette", "bomb",
+        )
+        val pattern = Regex("\\b(${banned.joinToString("|")})\\b", RegexOption.IGNORE_CASE)
+        copy.forEach { text ->
+            val match = pattern.find(text)
+            assertTrue("scene copy has an inappropriate word: $text", match == null)
+        }
+    }
+
+    @Test
     fun theShippedLibraryHasTheExpectedShape() {
         assertEquals(35, parts.familyNames.size)
         assertTrue(parts.obstacles.size >= 40)

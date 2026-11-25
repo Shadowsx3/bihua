@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from driver import Journey, JourneyFailure
 from state import ScenarioState, character_guide, character_reading, character_variants
 
+RESULT_LABELS = ("It worked", "A different way", "Not that shape", "Another chapter")
+
 
 @dataclass
 class ScenarioSpec:
@@ -74,6 +76,7 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("spell-quest", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_quest"),
     ScenarioSpec("spell-entry", level="quick", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_entry"),
     ScenarioSpec("spell-flow", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="spell_flow"),
+    ScenarioSpec("spell-onboarding", level="standard", state={"onboarded": False, "reviews": 5, "new": 2, "days": 5}, runner="spell_onboarding"),
     ScenarioSpec("spell-quest-dark", level="full", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="spell_quest"),
     ScenarioSpec("spell-quest-calm", level="full", state={"reviews": 5, "new": 2, "days": 5, "reduce_motion": True}, runner="spell_quest"),
     ScenarioSpec("spell-quest-ja", level="full", state={"reviews": 5, "new": 2, "days": 5, "mode": "JAPANESE"}, runner="spell_quest"),
@@ -1393,6 +1396,7 @@ def tour(journey: Journey, state: ScenarioState) -> None:
         journey.screenshot("tour-2")
     steps = [
         ("Why things come back", "hard means sooner"),
+        ("A quiet spell road", "never changes your reviews"),
         ("Look anything up", "strokes and words"),
         ("Practice without pressure", "exactly where they are"),
         ("The four buttons", "Easy: instant"),
@@ -1579,6 +1583,14 @@ def _spell_character_for(label: str) -> str | None:
 
 def spell_entry(journey: Journey, state: ScenarioState) -> None:
     """The spell quest is one tap from Home, and also in Study tools, in every script."""
+    with journey.step("open from the top extra-practice link"):
+        journey.open_tab("Home")
+        journey.assert_home()
+        time.sleep(1.2)
+        journey.tap_visible("Extra practice · Spell quest", max_scrolls=8)
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("spell-entry-top")
+        journey.tap_visible("Leave", max_scrolls=4)
     with journey.step("open from the Home study tools card"):
         journey.open_tab("Home")
         journey.assert_home()
@@ -1596,6 +1608,34 @@ def spell_entry(journey: Journey, state: ScenarioState) -> None:
         journey.tap("Spell quest")
         journey.wait("The road ahead", timeout=10)
         journey.tap_visible("Leave", max_scrolls=4)
+    journey.assert_no_crash()
+
+
+def spell_onboarding(journey: Journey, state: ScenarioState) -> None:
+    """First run explains the optional spell quest, and the top Home link opens it."""
+    with journey.step("finish onboarding"):
+        journey.wait("Write characters that stay", timeout=15)
+        for _ in range(4):
+            journey.tap_visible("Continue")
+            time.sleep(0.6)
+        journey.wait("Set up your reviews", timeout=8)
+        for _ in range(3):
+            if journey.exists_text("Extra practice"):
+                break
+            journey.scroll_down()
+            time.sleep(0.3)
+        if not journey.exists_text("Extra practice"):
+            raise JourneyFailure(f"onboarding never mentions extra practice. texts={journey.texts()}")
+        journey.assert_text("spell quest")
+        journey.screenshot("spell-onboarding")
+        journey.tap_visible("Start writing")
+        journey.assert_home()
+    with journey.step("open from the top Home link"):
+        time.sleep(0.8)
+        journey.tap_visible("Extra practice · Spell quest", max_scrolls=8)
+        journey.wait("The road ahead", timeout=10)
+        journey.screenshot("spell-onboarding-gate")
+        journey.tap_visible("Leave")
     journey.assert_no_crash()
 
 
@@ -1632,7 +1672,16 @@ def spell_flow(journey: Journey, state: ScenarioState) -> None:
         journey.tap("Show the shape")
         time.sleep(0.6)
         journey.screenshot("spell-flow-tools")
-        journey.tap_visible("Go back")
+        journey.d.press("back")
+        journey.wait("Draw", timeout=8)
+    with journey.step("back closes one layer at a time"):
+        journey.tap_visible("Draw")
+        journey.wait("Draw in the circle first", timeout=8)
+        journey.tap_visible("Grimoire")
+        journey.wait("Close book", timeout=10)
+        journey.d.press("back")
+        journey.wait("Draw in the circle first", timeout=8)
+        journey.d.press("back")
         journey.wait("Draw", timeout=8)
     with journey.step("the grimoire names every chapter"):
         journey.tap_visible("Grimoire")
@@ -1700,7 +1749,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         deadline = time.time() + 25
         while time.time() < deadline:
             texts = journey.texts()
-            if any("It worked" in text or "A different way" in text for text in texts):
+            if any(any(label in text for label in RESULT_LABELS) for text in texts):
                 break
             time.sleep(0.3)
         else:
@@ -1721,18 +1770,73 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
             time.sleep(0.3)
         else:
             raise JourneyFailure(f"gift actions never unlocked. texts={journey.texts()}")
-        time.sleep(0.8)
+        time.sleep(1.6)
         journey.screenshot("spell-result")
-    with journey.step("continue the road"):
-        if journey.exists("Walk on", timeout=2):
-            journey.tap("Walk on")
-        else:
-            # A wrong pick shows the right answer first, then Walk on.
-            journey.tap("Show me one answer")
-            journey.wait("Walk on", timeout=25)
-            time.sleep(0.8)
+        journey.tap("Note")
+        journey.wait("Mò's note", timeout=8)
+        time.sleep(0.5)
+        journey.screenshot("spell-note")
+        journey.d.press("back")
+    with journey.step("one answer, then cast it"):
+        mode = state.settings.get("studyMode", "SIMPLIFIED")
+        worked = any("It worked" in text for text in journey.texts())
+        if not worked:
+            answer_button = next(
+                (label for label in ("Show me one answer", "One answer") if journey.exists(label, timeout=1)),
+                None,
+            )
+            if answer_button is None:
+                raise JourneyFailure(f"no answer action after a nudge. texts={journey.texts()}")
+            journey.tap(answer_button)
+            deadline = time.time() + 25
+            answer = None
+            while time.time() < deadline and answer is None:
+                answer = next(
+                    (
+                        text.split(": ", 1)[1]
+                        for text in journey.texts()
+                        if text.startswith("One answer: ")
+                    ),
+                    None,
+                )
+                time.sleep(0.3)
+            if not answer:
+                raise JourneyFailure(f"the answer was not named. texts={journey.texts()}")
+            time.sleep(1.2)
             journey.screenshot("spell-answer")
-            journey.tap("Walk on")
+            # Draw the shape the hint named: the exact same character must be
+            # accepted, not just any spell in the chapter.
+            journey.tap_visible("Draw", max_scrolls=8)
+            journey.wait("Draw in the circle first", timeout=8)
+            guide = character_guide(answer, mode)
+            if not guide:
+                raise JourneyFailure(f"no guide strokes for the answer {answer}")
+            if not journey.draw_guide(guide):
+                raise JourneyFailure("no handwriting canvas for the answer")
+            journey.wait("Cast the spell", timeout=8)
+            journey.tap("Cast the spell")
+            deadline = time.time() + 30
+            while time.time() < deadline:
+                if "It worked" in journey.texts():
+                    break
+                time.sleep(0.4)
+            else:
+                raise JourneyFailure(f"the named answer did not solve it. texts={journey.texts()}")
+            # The result line appears before the circle finishes. The listing
+            # screenshot waits for the flourish and the result actions.
+            deadline = time.time() + 25
+            while time.time() < deadline:
+                if any(
+                    label in journey.texts()
+                    for label in ("Walk on", "Walk on for now")
+                ):
+                    break
+                time.sleep(0.3)
+            else:
+                raise JourneyFailure(f"success actions never unlocked. texts={journey.texts()}")
+        time.sleep(1.2)
+        journey.screenshot("spell-success")
+        journey.tap_any(["Walk on", "Walk on for now"])
         journey.wait("Draw", timeout=10)
         journey.screenshot("spell-next")
     with journey.step("draw and cast"):
@@ -1773,7 +1877,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
         outcome = None
         while time.time() < deadline and outcome is None:
             texts = journey.texts()
-            if any("A different way" in text for text in texts):
+            if any(any(label in text for label in RESULT_LABELS[1:]) for text in texts):
                 outcome = "nudge"
             elif any("It worked" in text for text in texts):
                 outcome = "worked"
@@ -1801,7 +1905,7 @@ def spell_quest(journey: Journey, state: ScenarioState) -> None:
                 raise JourneyFailure(f"cast actions never unlocked. texts={journey.texts()}")
             time.sleep(0.8)
             journey.screenshot("spell-cast")
-            journey.tap("Walk on for now" if outcome == "nudge" else "Walk on")
+            journey.tap_any(["Walk on for now", "Walk on"])
         journey.wait("Draw", timeout=10)
     with journey.step("return to the road"):
         # Quest progress lives in the progress database, so closing and reopening
@@ -1859,6 +1963,7 @@ RUNNERS = {
     "grade_help": grade_help,
     "spell_quest": spell_quest,
     "spell_flow": spell_flow,
+    "spell_onboarding": spell_onboarding,
     "spell_entry": spell_entry,
     "progress_ranges": progress_ranges,
     "progress_empty": progress_empty,

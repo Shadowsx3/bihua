@@ -10,6 +10,7 @@ internal fun shortGloss(meaning: String?): String? {
     val word = meaning
         ?.substringBefore(';')
         ?.substringBefore(',')
+        ?.substringBefore('(')
         ?.trim()
         .orEmpty()
     return word.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }
@@ -33,7 +34,7 @@ private val AnimalEmoji = mapOf(
 internal fun spellEmoji(character: String, family: String): String {
     AnimalEmoji[character]?.let { return it }
     return when (family) {
-        "water", "boat" -> "💧"
+        "water" -> "💧"
         "ice", "snow" -> "❄️"
         "fire" -> "🔥"
         "lightning" -> "⚡"
@@ -62,8 +63,27 @@ internal fun spellEmoji(character: String, family: String): String {
 }
 
 /** The word on the scroll after a cast: the first gloss, or the family name. */
-internal fun badgeWord(meaning: String?, family: String): String =
-    shortGloss(meaning) ?: SpellFamilies.family(family)?.name ?: "Spell"
+internal fun badgeWord(meaning: String?, family: String): String {
+    val gloss = shortGloss(meaning)
+        ?.removePrefix("To ")
+        ?.removePrefix("A ")
+        ?.removePrefix("An ")
+        ?.removePrefix("The ")
+        ?.trim()
+        ?.replaceFirstChar { it.uppercase() }
+    val weak = setOf(
+        "again", "also", "and", "be", "been", "but", "can", "come", "do", "does",
+        "get", "give", "go", "have", "he", "her", "here", "him", "his", "how",
+        "if", "in", "is", "it", "know", "leave", "make", "more", "not", "of",
+        "on", "one", "or", "put", "say", "see", "she", "so", "tell", "that",
+        "the", "then", "there", "they", "this", "to", "try", "up", "use", "very",
+        "want", "was", "we", "were", "what", "when", "where", "which", "who",
+        "will", "with", "work", "you",
+    )
+    return gloss?.takeIf { it.isNotBlank() && it.lowercase() !in weak }
+        ?: SpellFamilies.family(family)?.name
+        ?: "Spell"
+}
 
 /** The gloss in the cast card: the current course's meaning, then the scene fallback. */
 internal fun definitionGloss(

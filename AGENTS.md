@@ -481,6 +481,16 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Spell rows are script-scoped (`SIMPLIFIED`, `TRADITIONAL`, `JAPANESE`,
   `KOREAN`). Never mix script rows in a grimoire or quest; readings and stroke
   guides come from the same course. Spellbook parsing is cached per process.
+- Generated copy must stay plain and authored-feeling: short first-gloss notes,
+  no "A water spell" formulas, no contradictory time/weather places, and the
+  result body only says what happened. Keep the note in the small anchored
+  popup, never as a tall card that eats the result line. The scene ring and its
+  inner circle share one line weight; the cast ring and its paper share another.
+- Spell-quest copy stays kind and neutral. No gendered roles or stereotypes in
+  places, obstacles, or outcomes; no adult, substance, or weapon glosses where a
+  plainer meaning exists. Dictionary furniture such as "surname", "classifier
+  for", or an unmatched bracket never ships as a note. `SpellbookContentTest`
+  and `ShippedPuzzlePartsTest` guard both rules.
 - Korean Hanja and Japanese kanji casts must use the Han recognizer (pass a Han
   target, or `StudyMode.TRADITIONAL` for Korean). Do not let the Hangul/kana
   model decide a Han spell.

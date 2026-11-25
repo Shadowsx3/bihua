@@ -142,6 +142,15 @@ val TOUR_STEPS = listOf(
         prop = MoProp.CLOCK,
     ),
     TourStep(
+        anchor = "home.spell",
+        title = "A quiet spell road",
+        body = "This is the spell quest: optional extra practice in all four scripts. Casting never changes your reviews or schedule. It also lives in Study tools.",
+        destination = TourDestination.HOME,
+        mood = MascotMood.EXCITED,
+        gesture = MoGesture.POINT,
+        prop = MoProp.STAR,
+    ),
+    TourStep(
         anchor = "characters.search",
         title = "Look anything up",
         body = "Search by character, meaning, or reading, or just tap a tile. Open one to add it to a list, print it, or see its strokes and words.",

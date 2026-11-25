@@ -43,10 +43,12 @@ Everything below compiles and is covered by unit tests.
     clues reveal once, stay revealed for the scene, and keep their names; a
     quest-only brush tray changes this game's ink without touching the app-wide
     brush;
-  - hint/result tip card with the attempted character's reading, meaning, and a
-    real word after a success;
-  - wrong answers use Mò's need hint and the tip card shows what was actually
-    drawn, not the scene answer;
+  - a small note button opens the same anchored card as the text highlighter,
+    with the attempted character's reading, meaning, real word, new-page, and
+    milestone news; the old tall tip card is gone, so the result body stays
+    legible at 1.5x and 2x;
+  - wrong answers use Mò's need hint with a "Not that shape"/"Another chapter"
+    label, and the note popup shows what was actually drawn, not the scene answer;
   - guided drawing and learner playback use a roughly fixed total time; learner
     ink is flat and takes the detected family colour, with no glow;
   - a cast or gift goes straight to the result; the strokes draw there and the
@@ -104,7 +106,10 @@ Everything below compiles and is covered by unit tests.
   not a synthetic plus.
 - `spell-quest-ja`, `spell-quest-ko`, and `spell-quest-traditional` run the same
   flow in the other scripts; `spell-entry-ja`/`-ko` check the entry points.
+- `spell-onboarding` starts a first run, reaches the extra-practice card, starts,
+  and opens the quest from the top Home link.
 - `spell-flow` checks the gate copy, every draw-tool label, one-way clues,
+  one-layer system back, and the grimoire chapters;
   all 10 grimoire chapter names, and a clean leave on phone, tablet, and fold.
 - `spell-quest-dark` and `spell-quest-calm` cover theme and reduce motion.
 - `scripts/journey.sh --spell` runs the whole spell suite on phone, tablet, and

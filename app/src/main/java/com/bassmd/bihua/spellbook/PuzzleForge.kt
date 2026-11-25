@@ -176,11 +176,7 @@ object PuzzleForge {
 
         val solvedBy = solutionList.flatMap { it.families }.toSet()
         val solvedChapters = solutionList.flatMap { it.categories }.toSet()
-        val styleNeed = when (style) {
-            PuzzleStyle.CHARACTER -> "Only one exact shape will do here. ${obstacle.need}"
-            PuzzleStyle.CATEGORY -> "This one wants a whole chapter of magic, not one narrow family. ${obstacle.need}"
-            else -> obstacle.need
-        }
+        val styleNeed = obstacle.need
         val hints = parts.familyNames.keys
             .filter { it !in solvedBy && SpellFamilies.chapter(it) !in solvedChapters }
             .associateWith { styleNeed }
@@ -189,12 +185,27 @@ object PuzzleForge {
             .filter { previousPlace == null || !previousPlace.startsWith(it) }
             .ifEmpty { parts.settings }
             .let { it[random.nextInt(it.size)] }
-        val time = parts.times[random.nextInt(parts.times.size)]
-        val weather = parts.weathers[random.nextInt(parts.weathers.size)]
-        val place = listOf(setting, time.suffix, weather.suffix).filter { it.isNotBlank() }.joinToString(" ")
+        var time = parts.times[random.nextInt(parts.times.size)]
+        var weather = parts.weathers[random.nextInt(parts.weathers.size)]
+        repeat(12) {
+            if (compatible(setting, time, weather)) return@repeat
+            weather = parts.weathers[random.nextInt(parts.weathers.size)]
+        }
+        if (!compatible(setting, time, weather)) {
+            time = parts.times.firstOrNull { it.suffix.isBlank() } ?: time
+            weather = parts.weathers.firstOrNull { it.suffix.isBlank() } ?: weather
+        }
+        // Avoid two "under ..." clauses or a repeated suffix in one place.
+        if (time.suffix.startsWith("under") && weather.suffix.startsWith("under")) {
+            weather = parts.weathers.firstOrNull { !it.suffix.startsWith("under") } ?: weather
+        }
+        val partsOfPlace = listOf(setting, time.suffix, weather.suffix)
+            .filter { it.isNotBlank() }
+            .distinct()
+        val place = partsOfPlace.joinToString(" ")
         val styleLine = when {
-            style == PuzzleStyle.CHARACTER -> "It wants one exact shape, not just the right kind of magic."
-            style == PuzzleStyle.CATEGORY -> "It answers to a whole chapter, not one narrow family."
+            style == PuzzleStyle.CHARACTER -> "It wants one exact shape."
+            style == PuzzleStyle.CATEGORY -> "It answers to a whole chapter, not one family."
             else -> ""
         }
         val lines = listOf(time.line, weather.line).filter { it.isNotBlank() } +
@@ -211,7 +222,32 @@ object PuzzleForge {
         )
     }
 
-/** The result line when a whole chapter answers, not one family. */
+    /** Keeps the mechanical time/weather combinations from contradicting each other. */
+    private fun compatible(setting: String, time: TimeOfDay, weather: Weather): Boolean {
+        val s = setting.lowercase()
+        val t = (time.suffix + " " + time.line).lowercase()
+        val w = (weather.suffix + " " + weather.line).lowercase()
+        if ((s.contains("frozen") || s.contains("ice cave")) &&
+            ("heat" in w || "warm" in w || "summer" in t || "heat" in t)
+        ) return false
+        if (s.contains("fog") && "clear" in w) return false
+        if ((s.contains("dry field") || s.contains("salt flat")) &&
+            ("rain" in w || "drizzle" in w || "snow" in w)
+        ) return false
+        val clashes = listOf(
+            "moon" to "moonless",
+            "snow" to "heat", "snow" to "warm", "snow" to "summer",
+            "snow" to "drizzle", "snow" to "rain",
+            "frost" to "heat", "frost" to "warm", "ice" to "heat",
+            "frozen" to "heat", "winter" to "heat", "winter" to "summer",
+            "summer" to "frost", "rain" to "dry", "rain" to "drought",
+            "storm" to "still", "gale" to "still", "fog" to "clear",
+            "mist" to "clear", "rain" to "clear",
+        )
+        return clashes.none { (a, b) -> (a in t && b in w) || (b in t && a in w) }
+    }
+
+    /** The result line when a whole chapter answers, not one family. */
     private fun categoryOutcome(chapter: String): String = when (chapter) {
         "Tides" -> "The tide turns for you, and the way opens through the water."
         "Flame" -> "A warm light answers, and the way clears."

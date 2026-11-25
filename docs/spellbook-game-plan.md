@@ -11,7 +11,11 @@ built, how the game loop works, and what is still missing. The working handoff
   shows the right answer if asked, and offers another try.
 - Every puzzle has several honest solutions. An obstacle accepts tags, and any spell
   whose family or chapter carries one of those tags can solve it. Some puzzles widen
-  the door to a whole chapter; a few ask for one exact shape, and say so.
+  the door to a whole chapter; a few ask for one exact shape, and say so in the
+  scene and in the hint label ("Another chapter", "Not that shape").
+- The generated copy stays plain: spell notes are short first glosses (never
+  "A water spell"), time/weather pairs are checked for contradictions, and places
+  do not repeat "under" or contradict a frozen/dry setting.
 - Clues are optional and escalate: reading (Hear it), meaning, shape. Casting without
   clues is always possible.
 - Warm and quiet: paper, ink, soft motion, no streaks, no pressure, no ads.
@@ -87,8 +91,11 @@ built, how the game loop works, and what is still missing. The working handoff
   definition card sits above the circle; on a tablet or fold it sits on the story
   page, where it fills the page and leaves the circle more room. The Cast button
   stays pinned. Clues and ink controls scroll below.
-- **Tip card**: readings and meanings appear in a tinted card with a small spark icon,
-  not as bare text.
+- **Mò's note**: a small spark button on the result/hint opens a compact card
+  over the open middle of the dialogue card, like the text highlighter. It holds
+  the reading, meaning, a real word, and new-page/milestone news in a scrollable
+  body. The note no longer takes the result line's space, which fixed
+  large-text clipping.
 - **Home entry**: the Study tools card has a direct "Spell quest" row, so the game is
   one tap from Home but still framed as extra practice.
 
@@ -113,7 +120,8 @@ built, how the game loop works, and what is still missing. The working handoff
    says that a whole chapter or one exact shape is wanted. Actions: See the right
    answer (plays the correct character, then Walk on), Walk on without it, Draw,
    Grimoire.
-6. Walk on clears the circle and moves to the next scene. Every tenth new page
+6. Walk on clears the circle and moves to the next scene. The result body is only
+   the thing that happened, not a second unrelated scene line. Every tenth new page
    gets a small milestone line, and crossing the sixth scene opens a short
    "Chapter N — the road goes on" banner.
 7. The pages met and the chapter are stored in the progress database

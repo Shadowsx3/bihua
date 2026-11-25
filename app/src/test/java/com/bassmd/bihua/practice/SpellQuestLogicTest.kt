@@ -23,6 +23,9 @@ class SpellQuestLogicTest {
         assertEquals("Fire", badgeWord("", "fire"))
         assertEquals("Fire", badgeWord(null, "fire"))
         assertEquals("Spell", badgeWord(null, "unknown-family"))
+        assertEquals("Sparkle", badgeWord("to sparkle, to shine", "light"))
+        assertEquals("Second", badgeWord("second (unit of time or angle)", "time"))
+        assertEquals("Time", badgeWord("again", "time"))
     }
 
     @Test
@@ -55,6 +58,7 @@ class SpellQuestLogicTest {
         assertEquals("🐴", spellEmoji("马", "animal"))
         assertEquals("🔥", spellEmoji("红", "fire"))
         assertEquals("💧", spellEmoji("水", "water"))
+        assertEquals("⛵", spellEmoji("舟", "boat"))
         assertEquals("✨", spellEmoji("未", "unknown-family"))
     }
 }

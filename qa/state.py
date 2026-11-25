@@ -233,6 +233,7 @@ def build_state(
     meaning_synonyms: dict | None = None,
     task_mode: str = "BOTH",
     guides_only: bool = False,
+    onboarded: bool = True,
     seed: int = 7,
 ) -> ScenarioState:
     QA.mkdir(exist_ok=True)
@@ -383,6 +384,7 @@ def build_state(
         sessionOrder=session_order.upper(),
         sessionProgress=session_progress.upper(),
         mixInterval=mix_interval,
+        onboarded=onboarded,
         reviewOrder=review_order.upper(),
         suspendedIds=suspended_ids,
         skippedUntil=skipped_until,

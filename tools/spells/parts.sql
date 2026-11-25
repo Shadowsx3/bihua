@@ -246,13 +246,13 @@ INSERT INTO tag_outcome(tag, text) VALUES ('TURN','The {family} gives the world 
 -- Each obstacle asks for something. The need text is also the nudge when a
 -- cast cannot help. It names the need, never the answer.
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('river','Get across the river','The river runs wide and unhurried.|The far bank looks like another country.','Something that can float, or stand firm enough to walk on, is needed here.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('river','Get across the river','The river runs wide and unhurried.|The far bank looks like another country.','Something that can float, or stand firm enough to walk on, will do.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('river','FLOAT');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('river','SOLID');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('gate','Open the gate','A gate with no hinge and no key guards the orchard.|The orchard smells like it knows something.','Something that can push, turn, or hold the gate open is needed here.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('gate','Open the gate','A gate with no hinge and no key guards the orchard.|The orchard smells like it knows something.','Something that can push, turn, or hold the gate open will do.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('gate','PUSH');
 
@@ -642,7 +642,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('hollow-moon','RING');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('hollow-moon','TURN');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('salt-flats','Cross the salt flats','The salt flats shine like water and are not water.|The horizon is doing something unkind with distance.','The flats need water, dryness, or solid footing.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('salt-flats','Cross the salt flats','The salt flats shine like water and are not water.|The horizon is doing something unkind with distance.','The flats need water, dry air, or a firm line to follow.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('salt-flats','WET');
 
@@ -650,7 +650,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('salt-flats','DRY');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('salt-flats','SOLID');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('glass-storm','Weather the glass storm','The storm is raining small pieces of glass.|The shelter has a window and no roof.','The storm needs light, solid shelter, or moving air.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('glass-storm','Weather the glass storm','The storm is raining small pieces of glass.|The shelter has a window and no roof.','A solid roof, light, or moving air will do.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('glass-storm','LIGHT');
 

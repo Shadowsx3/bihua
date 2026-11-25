@@ -31,9 +31,9 @@ harness; pure composables and physical hardware still need the device pass.
 | Caught-up copy | “All done for today” appears without a duplicate “All caught up” | `caught-up` journey |
 | Import resilience | UTF-8 BOM and nested JSON names | `StudyListImportTest` |
 | List name uniqueness | Long names keep their numeric suffix | `StudyListsTest` |
-| Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
+| Spell quest | Gate, scene, reading gift, real draw/cast, brush tray, one-way clues, effect frames, note popup, wrong-answer path; phone, tablet, fold | `spell-quest` journey |
 | Spell quest scripts | Same flow in Traditional, Japanese kanji, and Korean Hanja; entry from Home and Study tools | `spell-quest-ja`, `spell-quest-ko`, `spell-quest-traditional`, `spell-entry-ja`, `spell-entry-ko` |
-| Spell quest flow clarity | Gate copy, every draw control label, one-way clues, grimoire chapter names, clean leave | `spell-flow` |
+| Spell quest flow clarity | Onboarding mention, top Home link, gate copy, every draw control label, one-way clues, one-layer back, grimoire chapter names, clean leave | `spell-onboarding`, `spell-flow` |
 | Spell quest long play | 50 chapters per script, six scenes each (1,200 puzzles); every scene solvable, all shapes and chapters seen, no repeated spell in a chapter, every unhelpful family has a hint | `SpellQuestStressTest` |
 | Spell quest theme and motion | Dark palette, reduce motion, large text, effect frames | `spell-quest-dark`, `spell-quest-calm`, `--font-scale 1.5` |
 | Spellbook data | 1,387 spells across four scripts, 35 families, 10 chapters, ≥30 choices per chapter, unique characters per script | `SpellbookTest` |
@@ -42,7 +42,7 @@ harness; pure composables and physical hardware still need the device pass.
 | Gift playback | Starts empty, plays the real guide (or a readable fallback) in the circle, actions wait for the stroke end | `spell-quest` journey, screenshots |
 | Spell quest copy and logic | Scroll word, family label, definition gloss, fixed pacing, tip card, emoji | `SpellQuestLogicTest` |
 | Spell quest audio | Ambient bed and cast/wrong/gift/reveal/walk/chapter cues; quiet, no buzzer | manual audio pass |
-| Guided tour | Invite dismiss, replay from Settings, tap and Next through all nine stops, Back to app | `tour` journey |
+| Guided tour | Invite dismiss, replay from Settings, tap and Next through all ten stops, Back to app | `tour` journey |
 | Tour dark theme | Same tour with the dark palette; card, spotlight, and pet stay legible | `tour-dark` journey |
 | Tour copy and anchors | Every stop has a live anchor; copy explains reviews and grades without SRS jargon | `GuidedTour` review plus `tour` journey |
 | Tour motion and sound | Reduce motion, TalkBack full line, optional sound cues | manual phone/fold/tablet pass |

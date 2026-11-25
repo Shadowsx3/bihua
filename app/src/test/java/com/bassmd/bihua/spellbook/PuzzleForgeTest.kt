@@ -139,16 +139,36 @@ class PuzzleForgeTest {
         val exact = PuzzleForge.generate(
             parts, Random(1), family = "water", character = "水", style = PuzzleStyle.CHARACTER,
         )
-        assertTrue(exact.lines.any { "one exact shape" in it })
-        assertTrue(exact.fallback.contains("one exact shape"))
+        assertTrue(exact.lines.any { "exact shape" in it })
         assertEquals(setOf("水"), exact.solutions.single().characters)
 
         val chapter = PuzzleForge.generate(
             parts, Random(2), family = "water", character = "水", style = PuzzleStyle.CATEGORY,
         )
         assertTrue(chapter.lines.any { "whole chapter" in it })
-        assertTrue(chapter.fallback.contains("whole chapter"))
         assertTrue(chapter.solutions.all { it.categories.isNotEmpty() })
         assertTrue(chapter.solutions.all { it.categories.contains("Tides") })
+    }
+
+    @Test
+    fun placesStayNatural() {
+        val clashes = listOf(
+            "moon" to "moonless", "snow" to "heat", "snow" to "warm",
+            "snow" to "summer", "frost" to "heat", "frost" to "warm",
+            "ice" to "heat", "frozen" to "heat", "winter" to "heat",
+            "winter" to "summer", "summer" to "frost", "rain" to "dry",
+            "rain" to "drought", "storm" to "still", "gale" to "still",
+            "fog" to "clear", "mist" to "clear", "rain" to "clear",
+        )
+        repeat(500) { seed ->
+            val place = PuzzleForge.generate(parts, Random(seed)).place
+            assertTrue("double under: $place", !place.lowercase().contains("under") ||
+                place.lowercase().indexOf("under") == place.lowercase().lastIndexOf("under"))
+            val words = place.lowercase().split(" ").filter { it.isNotBlank() }
+            words.zipWithNext().forEach { (a, b) -> assertTrue("repeat in $place", a != b) }
+            clashes.forEach { (a, b) ->
+                assertTrue("$a/$b in $place", !(a in place.lowercase() && b in place.lowercase()))
+            }
+        }
     }
 }

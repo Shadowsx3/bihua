@@ -1,1388 +1,1388 @@
 script,character,family,category,effect,source,note
-SIMPLIFIED,水,water,Tides,fx_water,override,Water. A water spell.
-SIMPLIFIED,河,water,Tides,fx_water,override,"River, stream. A water spell."
-SIMPLIFIED,江,water,Tides,fx_water,override,Large river. A water spell.
-SIMPLIFIED,海,water,Tides,fx_water,override,"Sea, ocean. A water spell."
-SIMPLIFIED,湖,water,Tides,fx_water,override,Lake. A water spell.
-SIMPLIFIED,泉,water,Tides,fx_water,override,"Spring, fountain. A water spell."
-SIMPLIFIED,池,water,Tides,fx_water,override,"Pool, pond. A water spell."
-SIMPLIFIED,洋,water,Tides,fx_water,override,"Sea, ocean. A water spell."
-SIMPLIFIED,浪,water,Tides,fx_water,override,"Breaker, wave. A water spell."
-SIMPLIFIED,流,water,Tides,fx_water,override,"To flow, to drift, to circulate. A water spell."
-SIMPLIFIED,潮,water,Tides,fx_water,override,"Tide, current. A water spell."
-SIMPLIFIED,滴,water,Tides,fx_water,override,To drip. A water spell.
-SIMPLIFIED,汗,water,Tides,fx_water,override,Sweat. A water spell.
-SIMPLIFIED,泪,water,Tides,fx_water,override,Tears. A water spell.
-SIMPLIFIED,洗,water,Tides,fx_water,override,To wash. A water spell.
-SIMPLIFIED,喝,water,Tides,fx_water,override,Drink. A water spell.
-SIMPLIFIED,饮,water,Tides,fx_water,override,"To swallow, to drink. A water spell."
-SIMPLIFIED,汤,water,Tides,fx_water,override,Soup. A water spell.
-SIMPLIFIED,冰,ice,Tides,fx_ice,override,Ice. A ice spell.
-SIMPLIFIED,冻,ice,Tides,fx_ice,override,Cold. A ice spell.
-SIMPLIFIED,寒,ice,Tides,fx_ice,override,"Chilly, cold. A ice spell."
-SIMPLIFIED,冷,ice,Tides,fx_ice,override,Cold. A ice spell.
-SIMPLIFIED,霜,ice,Tides,fx_ice,override,Frost. A ice spell.
-SIMPLIFIED,凉,ice,Tides,fx_ice,override,"Cool, cold. A ice spell."
-SIMPLIFIED,凝,ice,Tides,fx_ice,override,"To coagulate, to congeal. A ice spell."
-SIMPLIFIED,澈,ice,Tides,fx_ice,override,"Limpid, clear. A ice spell."
-SIMPLIFIED,雪,snow,Tides,fx_snow,override,Snow. A snow spell.
-SIMPLIFIED,雹,snow,Tides,fx_snow,override,Hail. A snow spell.
-SIMPLIFIED,雨,rain,Tides,fx_rain,override,Rain. A rain spell.
-SIMPLIFIED,露,rain,Tides,fx_rain,override,Dew. A rain spell.
-SIMPLIFIED,淋,rain,Tides,fx_rain,override,"To drench, to drip, to soak. A rain spell."
-SIMPLIFIED,伞,rain,Tides,fx_rain,override,Umbrella. A rain spell.
-SIMPLIFIED,阵,rain,Tides,fx_rain,override,"Row, column. A rain spell."
-SIMPLIFIED,雷,rain,Tides,fx_rain,override,Thunder. A rain spell.
-SIMPLIFIED,雾,rain,Tides,fx_rain,override,"Fog, mist, vapor, fine spray. A rain spell."
-SIMPLIFIED,火,fire,Flame,fx_fire,override,Fire. A fire spell.
-SIMPLIFIED,炎,fire,Flame,fx_fire,override,"Flame, blaze. A fire spell."
-SIMPLIFIED,焰,fire,Flame,fx_fire,override,"Flame, blaze. A fire spell."
-SIMPLIFIED,烧,fire,Flame,fx_fire,override,"To burn, to bake. A fire spell."
-SIMPLIFIED,燃,fire,Flame,fx_fire,override,"To ignite, to burn. A fire spell."
-SIMPLIFIED,热,fire,Flame,fx_fire,override,Hot. A fire spell.
-SIMPLIFIED,暖,fire,Flame,fx_fire,override,"Warm, genial. A fire spell."
-SIMPLIFIED,烤,fire,Flame,fx_fire,override,"To bake, to cook, to roast, to toast. A fire spell."
-SIMPLIFIED,炒,fire,Flame,fx_fire,override,"To boil, to fry, to roast, to sauté. A fire spell."
-SIMPLIFIED,煮,fire,Flame,fx_fire,override,"To boil, to cook. A fire spell."
-SIMPLIFIED,灯,fire,Flame,fx_fire,override,Lamp. A fire spell.
-SIMPLIFIED,烛,fire,Flame,fx_fire,override,"Candle, taper. A fire spell."
-SIMPLIFIED,炉,fire,Flame,fx_fire,override,"Fireplace, furnace, oven, stove. A fire spell."
-SIMPLIFIED,灰,fire,Flame,fx_fire,override,Ashes. A fire spell.
-SIMPLIFIED,燥,fire,Flame,fx_fire,override,"Arid, dry, parched. A fire spell."
-SIMPLIFIED,烫,fire,Flame,fx_fire,override,To scald. A fire spell.
-SIMPLIFIED,烈,fire,Flame,fx_fire,override,"Fiery, violent. A fire spell."
-SIMPLIFIED,爆,fire,Flame,fx_fire,override,"Crackle, pop. A fire spell."
-SIMPLIFIED,炮,fire,Flame,fx_fire,override,"Cannon, artillery. A fire spell."
-SIMPLIFIED,炸,fire,Flame,fx_fire,override,To explode. A fire spell.
-SIMPLIFIED,焦,fire,Flame,fx_fire,override,"Burned, scorched. A fire spell."
-SIMPLIFIED,煤,fire,Flame,fx_fire,override,"Carbon, charcoal, coal, coke. A fire spell."
-SIMPLIFIED,炭,fire,Flame,fx_fire,override,"Carbon, charcoal, coal. A fire spell."
-SIMPLIFIED,烘,fire,Flame,fx_fire,override,"To bake, to roast. A fire spell."
-SIMPLIFIED,焙,fire,Flame,fx_fire,override,"To bake, to roast. A fire spell."
-SIMPLIFIED,炊,fire,Flame,fx_fire,override,Meal. A fire spell.
-SIMPLIFIED,炖,fire,Flame,fx_fire,override,Stew. A fire spell.
-SIMPLIFIED,焚,fire,Flame,fx_fire,override,To burn. A fire spell.
-SIMPLIFIED,电,lightning,Flame,fx_lightning,override,Electricity. A lightning spell.
-SIMPLIFIED,闪,lightning,Flame,fx_lightning,override,"Flash, lightning. A lightning spell."
-SIMPLIFIED,震,lightning,Flame,fx_lightning,override,"Shake, quake, tremor. A lightning spell."
-SIMPLIFIED,弧,lightning,Flame,fx_lightning,override,Arc. A lightning spell.
-SIMPLIFIED,烁,lightning,Flame,fx_lightning,override,"To sparkle, to shine, to glitter. A lightning spell."
-SIMPLIFIED,辉,lightning,Flame,fx_lightning,override,"Brightness, luster. A lightning spell."
-SIMPLIFIED,耀,lightning,Flame,fx_lightning,override,"To sparkle, to shine, to dazzle. A lightning spell."
-SIMPLIFIED,风,wind,Sky,fx_wind,override,Wind. A wind spell.
-SIMPLIFIED,吹,wind,Sky,fx_wind,override,"To blow, to puff. A wind spell."
-SIMPLIFIED,刮,wind,Sky,fx_wind,override,To shave. A wind spell.
-SIMPLIFIED,飘,wind,Sky,fx_wind,override,"To drift, to float, to flutter. A wind spell."
-SIMPLIFIED,飞,wind,Sky,fx_wind,override,"To fly, to dart. A wind spell."
-SIMPLIFIED,气,wind,Sky,fx_wind,override,"Air, gas. A wind spell."
-SIMPLIFIED,空,wind,Sky,fx_wind,override,Empty. A wind spell.
-SIMPLIFIED,云,cloud,Sky,fx_cloud,override,Cloud. A cloud spell.
-SIMPLIFIED,烟,cloud,Sky,fx_cloud,override,"Smoke, soot. A cloud spell."
-SIMPLIFIED,阴,cloud,Sky,fx_cloud,override,Cloudy (weather). A cloud spell.
-SIMPLIFIED,霞,cloud,Sky,fx_cloud,override,Rosy clouds. A cloud spell.
-SIMPLIFIED,日,sun,Sky,fx_sun,override,Sun. A sun spell.
-SIMPLIFIED,阳,sun,Sky,fx_sun,override,The male principle. A sun spell.
-SIMPLIFIED,晴,sun,Sky,fx_sun,override,Clear. A sun spell.
-SIMPLIFIED,晒,sun,Sky,fx_sun,override,To dry in the sun. A sun spell.
-SIMPLIFIED,照,sun,Sky,fx_sun,override,To shine. A sun spell.
-SIMPLIFIED,晨,sun,Sky,fx_sun,override,"Dawn, early morning. A sun spell."
-SIMPLIFIED,月,moon,Sky,fx_moon,override,"Month, the moon. A moon spell."
-SIMPLIFIED,夜,moon,Sky,fx_moon,override,"Night, dark. A moon spell."
-SIMPLIFIED,夕,moon,Sky,fx_moon,override,"Evening, night, dusk. A moon spell."
-SIMPLIFIED,暮,moon,Sky,fx_moon,override,"Dusk, evening, sunset. A moon spell."
-SIMPLIFIED,晚,moon,Sky,fx_moon,override,"Night, evening. A moon spell."
-SIMPLIFIED,银,moon,Sky,fx_moon,override,Silver. A moon spell.
-SIMPLIFIED,光,light,Sky,fx_light,override,Light. A light spell.
-SIMPLIFIED,明,light,Sky,fx_light,override,"Bright, clear. A light spell."
-SIMPLIFIED,亮,light,Sky,fx_light,override,"Bright, brilliant, radiant, light. A light spell."
-SIMPLIFIED,星,light,Sky,fx_light,override,"Star, planet. A light spell."
-SIMPLIFIED,晶,light,Sky,fx_light,override,Crystal. A light spell.
-SIMPLIFIED,珠,light,Sky,fx_light,override,"Gem, jewel, pearl, precious stone. A light spell."
-SIMPLIFIED,影,shadow,Sky,fx_shadow,override,Shadow. A shadow spell.
-SIMPLIFIED,黑,shadow,Sky,fx_shadow,override,Black. A shadow spell.
-SIMPLIFIED,暗,shadow,Sky,fx_shadow,override,"Dark, gloomy. A shadow spell."
-SIMPLIFIED,幽,shadow,Sky,fx_shadow,override,"Quiet, secluded, tranquil. A shadow spell."
-SIMPLIFIED,墨,shadow,Sky,fx_shadow,override,Ink. A shadow spell.
-SIMPLIFIED,玄,shadow,Sky,fx_shadow,override,"Deep, profound, abstruse. A shadow spell."
-SIMPLIFIED,土,earth,Ground,fx_earth,override,"Soil, earth. A earth spell."
-SIMPLIFIED,地,earth,Ground,fx_earth,override,Earth. A earth spell.
-SIMPLIFIED,田,earth,Ground,fx_earth,override,"Field, farm, arable land. A earth spell."
-SIMPLIFIED,场,earth,Ground,fx_earth,override,Courtyard. A earth spell.
-SIMPLIFIED,园,earth,Ground,fx_earth,override,"Garden, park. A earth spell."
-SIMPLIFIED,沙,earth,Ground,fx_earth,override,"Sand, gravel, pebbles. A earth spell."
-SIMPLIFIED,尘,earth,Ground,fx_earth,override,"Cinders, ashes, dust, dirt. A earth spell."
-SIMPLIFIED,泥,earth,Ground,fx_earth,override,"Mud, earth, clay. A earth spell."
-SIMPLIFIED,石,stone,Ground,fx_stone,override,"Stone, rock, mineral. A stone spell."
-SIMPLIFIED,岩,stone,Ground,fx_stone,override,Cliff. A stone spell.
-SIMPLIFIED,峰,stone,Ground,fx_stone,override,"Peak, summit. A stone spell."
-SIMPLIFIED,坡,stone,Ground,fx_stone,override,"Slope, hillside, embankment. A stone spell."
-SIMPLIFIED,洞,stone,Ground,fx_stone,override,"Cave, grotto, hole, ravine. A stone spell."
-SIMPLIFIED,矿,stone,Ground,fx_stone,override,Mine. A stone spell.
-SIMPLIFIED,砖,stone,Ground,fx_stone,override,"Tile, brick. A stone spell."
-SIMPLIFIED,山,mountain,Ground,fx_mountain,override,"Mountain, hill, peak. A mountain spell."
-SIMPLIFIED,岭,mountain,Ground,fx_mountain,override,"Mountain ridge, mountain peak. A mountain spell."
-SIMPLIFIED,岳,mountain,Ground,fx_mountain,override,Mountain peak. A mountain spell.
-SIMPLIFIED,巅,mountain,Ground,fx_mountain,override,"Mountain peak, mountain top. A mountain spell."
-SIMPLIFIED,丘,mountain,Ground,fx_mountain,override,"Mound, hill. A mountain spell."
-SIMPLIFIED,陵,mountain,Ground,fx_mountain,override,"Hill, mound. A mountain spell."
-SIMPLIFIED,木,wood,Ground,fx_wood,override,Tree. A wood spell.
-SIMPLIFIED,林,wood,Ground,fx_wood,override,"Forest, grove. A wood spell."
-SIMPLIFIED,森,wood,Ground,fx_wood,override,Forest. A wood spell.
-SIMPLIFIED,树,wood,Ground,fx_wood,override,Tree. A wood spell.
-SIMPLIFIED,草,wood,Ground,fx_wood,override,Grass. A wood spell.
-SIMPLIFIED,花,wood,Ground,fx_wood,override,Flower. A wood spell.
-SIMPLIFIED,叶,wood,Ground,fx_wood,override,"Leaf, page. A wood spell."
-SIMPLIFIED,金,metal,Ground,fx_metal,override,"Gold, metal. A metal spell."
-SIMPLIFIED,铁,metal,Ground,fx_metal,override,Iron. A metal spell.
-SIMPLIFIED,钢,metal,Ground,fx_metal,override,Steel. A metal spell.
-SIMPLIFIED,铜,metal,Ground,fx_metal,override,"Copper, bronze. A metal spell."
-SIMPLIFIED,玉,metal,Ground,fx_metal,override,"Jade, gem, precious stone. A metal spell."
-SIMPLIFIED,宝,metal,Ground,fx_metal,override,"Treasure, jewel. A metal spell."
-SIMPLIFIED,钱,metal,Ground,fx_metal,override,Money. A metal spell.
-SIMPLIFIED,马,animal,Creatures,fx_animal,override,Horse. A animal spell.
-SIMPLIFIED,牛,animal,Creatures,fx_animal,override,"Ox, cow, bull. A animal spell."
-SIMPLIFIED,羊,animal,Creatures,fx_animal,override,"Sheep, goat. A animal spell."
-SIMPLIFIED,狗,animal,Creatures,fx_animal,override,Dog. A animal spell.
-SIMPLIFIED,猫,animal,Creatures,fx_animal,override,Cat. A animal spell.
-SIMPLIFIED,鸟,animal,Creatures,fx_animal,override,Bird. A animal spell.
-SIMPLIFIED,鱼,animal,Creatures,fx_animal,override,Fish. A animal spell.
-SIMPLIFIED,龙,animal,Creatures,fx_animal,override,Dragon. A animal spell.
-SIMPLIFIED,虎,animal,Creatures,fx_animal,override,Tiger. A animal spell.
-SIMPLIFIED,兔,animal,Creatures,fx_animal,override,"Rabbit, hare. A animal spell."
-SIMPLIFIED,龟,animal,Creatures,fx_animal,override,"Turtle, tortoise. A animal spell."
-SIMPLIFIED,蛙,animal,Creatures,fx_animal,override,Frog. A animal spell.
-SIMPLIFIED,人,person,Creatures,fx_person,override,"People, person, man, human being, personality, folk. A person spell."
-SIMPLIFIED,男,person,Creatures,fx_person,override,Male. A person spell.
-SIMPLIFIED,女,person,Creatures,fx_person,override,Woman. A person spell.
-SIMPLIFIED,儿,person,Creatures,fx_person,override,"Son, child. A person spell."
-SIMPLIFIED,孩,person,Creatures,fx_person,override,"Baby, child. A person spell."
-SIMPLIFIED,子,person,Creatures,fx_person,override,"Son, child. A person spell."
-SIMPLIFIED,母,person,Creatures,fx_person,override,Mother. A person spell.
-SIMPLIFIED,父,person,Creatures,fx_person,override,"Father, dad. A person spell."
-SIMPLIFIED,友,person,Creatures,fx_person,override,"Friend, companion. A person spell."
-SIMPLIFIED,朋,person,Creatures,fx_person,override,"Friend, pal, acquaintance. A person spell."
-SIMPLIFIED,师,person,Creatures,fx_person,override,"Teacher, professional, master. A person spell."
-SIMPLIFIED,生,person,Creatures,fx_person,override,"Life, lifetime. A person spell."
-SIMPLIFIED,手,hand,Creatures,fx_hand,override,Hand. A hand spell.
-SIMPLIFIED,指,hand,Creatures,fx_hand,override,Finger. A hand spell.
-SIMPLIFIED,掌,hand,Creatures,fx_hand,override,In charge. A hand spell.
-SIMPLIFIED,拿,hand,Creatures,fx_hand,override,Hold. A hand spell.
-SIMPLIFIED,持,hand,Creatures,fx_hand,override,"To hold, to support, to sustain. A hand spell."
-SIMPLIFIED,打,hand,Creatures,fx_hand,override,"To attack, to beat, to hit, to strike. A hand spell."
-SIMPLIFIED,推,hand,Creatures,fx_hand,override,To push. A hand spell.
-SIMPLIFIED,拉,hand,Creatures,fx_hand,override,To pull. A hand spell.
-SIMPLIFIED,提,hand,Creatures,fx_hand,override,To carry. A hand spell.
-SIMPLIFIED,抬,hand,Creatures,fx_hand,override,To lift. A hand spell.
-SIMPLIFIED,举,hand,Creatures,fx_hand,override,Lift. A hand spell.
-SIMPLIFIED,船,boat,Craft,fx_boat,override,A boat. A boat spell.
-SIMPLIFIED,舟,boat,Craft,fx_boat,override,"Boat, ship. A boat spell."
-SIMPLIFIED,帆,boat,Craft,fx_boat,override,Boat. A boat spell.
-SIMPLIFIED,桨,boat,Craft,fx_boat,override,"Paddle, oar. A boat spell."
-SIMPLIFIED,港,boat,Craft,fx_boat,override,"Port, harbor, bay. A boat spell."
-SIMPLIFIED,航,boat,Craft,fx_boat,override,"Vessel, craft. A boat spell."
-SIMPLIFIED,泊,boat,Craft,fx_boat,override,To anchor. A boat spell.
-SIMPLIFIED,浮,boat,Craft,fx_boat,override,"To drift, to float. A boat spell."
-SIMPLIFIED,漂,boat,Craft,fx_boat,override,"To drift, to float. A boat spell."
-SIMPLIFIED,桥,boat,Craft,fx_boat,override,Bridge. A boat spell.
-SIMPLIFIED,车,tool,Craft,fx_tool,override,"Cart, vehicle. A tool spell."
-SIMPLIFIED,门,tool,Craft,fx_tool,override,Door. A tool spell.
-SIMPLIFIED,窗,tool,Craft,fx_tool,override,Window. A tool spell.
-SIMPLIFIED,房,tool,Craft,fx_tool,override,"Building, house, room. A tool spell."
-SIMPLIFIED,屋,tool,Craft,fx_tool,override,"Building, house, shelter. A tool spell."
-SIMPLIFIED,室,tool,Craft,fx_tool,override,"House, home. A tool spell."
-SIMPLIFIED,城,tool,Craft,fx_tool,override,"Castle, city, town. A tool spell."
-SIMPLIFIED,市,tool,Craft,fx_tool,override,"City, town. A tool spell."
-SIMPLIFIED,街,tool,Craft,fx_tool,override,"Street, road, thoroughfare. A tool spell."
-SIMPLIFIED,路,tool,Craft,fx_tool,override,Road. A tool spell.
-SIMPLIFIED,塔,tool,Craft,fx_tool,override,"Tower, spire, tall building. A tool spell."
-SIMPLIFIED,书,tool,Craft,fx_tool,override,Book. A tool spell.
-SIMPLIFIED,纸,tool,Craft,fx_tool,override,Paper. A tool spell.
-SIMPLIFIED,笔,tool,Craft,fx_tool,override,"Pen, pencil, writing brush. A tool spell."
-SIMPLIFIED,刀,tool,Craft,fx_tool,override,Knife. A tool spell.
-SIMPLIFIED,线,tool,Craft,fx_tool,override,"Line, thread, wire. A tool spell."
-SIMPLIFIED,布,tool,Craft,fx_tool,override,"Cotton, linen, textiles. A tool spell."
-SIMPLIFIED,衣,tool,Craft,fx_tool,override,Cloth. A tool spell.
-SIMPLIFIED,帽,tool,Craft,fx_tool,override,"Hat, cap. A tool spell."
-SIMPLIFIED,鞋,tool,Craft,fx_tool,override,"Shoes, footwear in general. A tool spell."
-SIMPLIFIED,杯,tool,Craft,fx_tool,override,"Cup, glass. A tool spell."
-SIMPLIFIED,碗,tool,Craft,fx_tool,override,Bowl. A tool spell.
-SIMPLIFIED,瓶,tool,Craft,fx_tool,override,"Bottle, jug, pitcher, vase. A tool spell."
-SIMPLIFIED,箱,tool,Craft,fx_tool,override,"Box, case. A tool spell."
-SIMPLIFIED,盒,tool,Craft,fx_tool,override,Small box or case. A tool spell.
-SIMPLIFIED,心,mind,Mind,fx_mind,override,Heart. A mind spell.
-SIMPLIFIED,想,mind,Mind,fx_mind,override,To want. A mind spell.
-SIMPLIFIED,思,mind,Mind,fx_mind,override,"To think, to ponder, to consider. A mind spell."
-SIMPLIFIED,念,mind,Mind,fx_mind,override,"To think of, to recall. A mind spell."
-SIMPLIFIED,意,mind,Mind,fx_mind,override,"Thought, idea, opinion. A mind spell."
-SIMPLIFIED,知,mind,Mind,fx_mind,override,"To know, to perceive, to comprehend. A mind spell."
-SIMPLIFIED,识,mind,Mind,fx_mind,override,Knowledge. A mind spell.
-SIMPLIFIED,学,mind,Mind,fx_mind,override,"Learning, knowledge, science. A mind spell."
-SIMPLIFIED,问,mind,Mind,fx_mind,override,Ask. A mind spell.
-SIMPLIFIED,懂,mind,Mind,fx_mind,override,Understand. A mind spell.
-SIMPLIFIED,记,mind,Mind,fx_mind,override,"Mark, sign. A mind spell."
-SIMPLIFIED,忘,mind,Mind,fx_mind,override,"To forget, to miss, to neglect, to overlook. A mind spell."
-SIMPLIFIED,怕,mind,Mind,fx_mind,override,"To fear, to be afraid of. A mind spell."
-SIMPLIFIED,爱,mind,Mind,fx_mind,override,To love. A mind spell.
-SIMPLIFIED,恨,mind,Mind,fx_mind,override,"To dislike, to hate, to resent. A mind spell."
-SIMPLIFIED,梦,dream,Mind,fx_dream,override,To dream. A dream spell.
-SIMPLIFIED,睡,dream,Mind,fx_dream,override,"To sleep, to doze. A dream spell."
-SIMPLIFIED,醒,dream,Mind,fx_dream,override,Wake up. A dream spell.
-SIMPLIFIED,眠,dream,Mind,fx_dream,override,"Sleep, shut-eye, hibernatation. A dream spell."
-SIMPLIFIED,幻,dream,Mind,fx_dream,override,"Fantasy, illusion, mirage. A dream spell."
-SIMPLIFIED,醉,dream,Mind,fx_dream,override,"Intoxicated, drunk. A dream spell."
-SIMPLIFIED,声,sound,Mind,fx_sound,override,"Sound, noise. A sound spell."
-SIMPLIFIED,音,sound,Mind,fx_sound,override,"Sound, tone, pitch, pronunciation. A sound spell."
-SIMPLIFIED,听,sound,Mind,fx_sound,override,"To listen, to hear. A sound spell."
-SIMPLIFIED,闻,sound,Mind,fx_sound,override,News. A sound spell.
-SIMPLIFIED,语,sound,Mind,fx_sound,override,"Words, language. A sound spell."
-SIMPLIFIED,言,sound,Mind,fx_sound,override,"Words, speech. A sound spell."
-SIMPLIFIED,话,sound,Mind,fx_sound,override,"Talk, speech. A sound spell."
-SIMPLIFIED,说,sound,Mind,fx_sound,override,"To say, to speak, to tell. A sound spell."
-SIMPLIFIED,讲,sound,Mind,fx_sound,override,To talk. A sound spell.
-SIMPLIFIED,读,sound,Mind,fx_sound,override,To read. A sound spell.
-SIMPLIFIED,写,sound,Mind,fx_sound,override,To write. A sound spell.
-SIMPLIFIED,唱,sound,Mind,fx_sound,override,"To sing, to chant, to call. A sound spell."
-SIMPLIFIED,歌,sound,Mind,fx_sound,override,"Song, lyrics. A sound spell."
-SIMPLIFIED,答,sound,Mind,fx_sound,override,"Answer, reply. A sound spell."
-SIMPLIFIED,时,time,Time,fx_time,override,"Time, season. A time spell."
-SIMPLIFIED,间,time,Time,fx_time,override,"Between, among. A time spell."
-SIMPLIFIED,年,time,Time,fx_time,override,Year. A time spell.
-SIMPLIFIED,分,time,Time,fx_time,override,Divide. A time spell.
-SIMPLIFIED,秒,time,Time,fx_time,override,Second (unit of time or angle). A time spell.
-SIMPLIFIED,刻,time,Time,fx_time,override,Quarter (hour). A time spell.
-SIMPLIFIED,早,time,Time,fx_time,override,Early. A time spell.
-SIMPLIFIED,今,time,Time,fx_time,override,"Modern, current. A time spell."
-SIMPLIFIED,昨,time,Time,fx_time,override,Yesterday. A time spell.
-SIMPLIFIED,春,time,Time,fx_time,override,Spring (season). A time spell.
-SIMPLIFIED,夏,time,Time,fx_time,override,Summer. A time spell.
-SIMPLIFIED,秋,time,Time,fx_time,override,Autumn. A time spell.
-SIMPLIFIED,冬,time,Time,fx_time,override,Winter. A time spell.
-SIMPLIFIED,季,time,Time,fx_time,override,"A quarter-year, a season. A time spell."
-SIMPLIFIED,节,time,Time,fx_time,override,Section. A time spell.
-SIMPLIFIED,岁,time,Time,fx_time,override,Years (of age). A time spell.
-SIMPLIFIED,老,time,Time,fx_time,override,Old. A time spell.
-SIMPLIFIED,新,time,Time,fx_time,override,New. A time spell.
-SIMPLIFIED,旧,time,Time,fx_time,override,Old. A time spell.
-SIMPLIFIED,先,time,Time,fx_time,override,First. A time spell.
-SIMPLIFIED,初,time,Time,fx_time,override,"Beginning, initial, primary. A time spell."
-SIMPLIFIED,终,time,Time,fx_time,override,End. A time spell.
-SIMPLIFIED,始,time,Time,fx_time,override,"To begin, to start. A time spell."
-SIMPLIFIED,末,time,Time,fx_time,override,"End, final, last. A time spell."
-SIMPLIFIED,久,time,Time,fx_time,override,Long (time). A time spell.
-SIMPLIFIED,暂,time,Time,fx_time,override,Temporary. A time spell.
-SIMPLIFIED,永,time,Time,fx_time,override,Long. A time spell.
-SIMPLIFIED,恒,time,Time,fx_time,override,"Constant, persistent, regular. A time spell."
-SIMPLIFIED,期,time,Time,fx_time,override,A period of time. A time spell.
-SIMPLIFIED,候,time,Time,fx_time,override,"To wait, to expect. A time spell."
-SIMPLIFIED,等,time,Time,fx_time,override,To wait. A time spell.
-SIMPLIFIED,待,time,Time,fx_time,override,"To entertain, to receive, to treat. A time spell."
-SIMPLIFIED,快,time,Time,fx_time,override,Fast. A time spell.
-SIMPLIFIED,慢,time,Time,fx_time,override,Slow. A time spell.
-SIMPLIFIED,长,time,Time,fx_time,override,Long. A time spell.
-SIMPLIFIED,魔,rune,Arcana,fx_rune,override,"Demon, evil spirit. A rune spell."
-SIMPLIFIED,法,rune,Arcana,fx_rune,override,"Law, rule, statute. A rune spell."
-SIMPLIFIED,术,rune,Arcana,fx_rune,override,"Skill, art. A rune spell."
-SIMPLIFIED,符,rune,Arcana,fx_rune,override,"Amulet, charm. A rune spell."
-SIMPLIFIED,咒,rune,Arcana,fx_rune,override,Incantation. A rune spell.
-SIMPLIFIED,祝,rune,Arcana,fx_rune,override,To pray. A rune spell.
-SIMPLIFIED,映,mirror,Arcana,fx_mirror,override,To project. A mirror spell.
-SIMPLIFIED,反,mirror,Arcana,fx_mirror,override,"Reverse, opposite. A mirror spell."
-SIMPLIFIED,复,mirror,Arcana,fx_mirror,override,"Again, repeatedly. A mirror spell."
-SIMPLIFIED,双,mirror,Arcana,fx_mirror,override,Two. A mirror spell.
-SIMPLIFIED,对,mirror,Arcana,fx_mirror,override,Correct. A mirror spell.
-SIMPLIFIED,像,mirror,Arcana,fx_mirror,override,"Alike, be like. A mirror spell."
-SIMPLIFIED,钥,key,Arcana,fx_key,override,"Lock, key. A key spell."
-SIMPLIFIED,匙,key,Arcana,fx_key,override,Spoon. A key spell.
-SIMPLIFIED,码,key,Arcana,fx_key,override,"Number, numeral, symbol. A key spell."
-SIMPLIFIED,禁,key,Arcana,fx_key,override,"To restrict, to prohibit, to forbid. A key spell."
-SIMPLIFIED,解,key,Arcana,fx_key,override,To explain. A key spell.
-SIMPLIFIED,通,key,Arcana,fx_key,override,"To pass through, to open, to connect. A key spell."
-SIMPLIFIED,药,potion,Arcana,fx_potion,override,Medicine. A potion spell.
-SIMPLIFIED,病,potion,Arcana,fx_potion,override,"Sickness, illness, disease. A potion spell."
-SIMPLIFIED,康,potion,Arcana,fx_potion,override,Health. A potion spell.
-SIMPLIFIED,毒,potion,Arcana,fx_potion,override,"Poison, venom. A potion spell."
-SIMPLIFIED,疗,potion,Arcana,fx_potion,override,"Cured, healed. A potion spell."
-SIMPLIFIED,炼,potion,Arcana,fx_potion,override,"To smelt, to refine. A potion spell."
-SIMPLIFIED,变,illusion,Arcana,fx_illusion,override,"To change, to transform, to alter. A illusion spell."
-SIMPLIFIED,隐,illusion,Arcana,fx_illusion,override,"To hide, to conceal. A illusion spell."
-SIMPLIFIED,藏,illusion,Arcana,fx_illusion,override,"To conceal, to hide. A illusion spell."
-SIMPLIFIED,骗,illusion,Arcana,fx_illusion,override,To cheat. A illusion spell.
-SIMPLIFIED,迷,illusion,Arcana,fx_illusion,override,"To bewitch, to charm. A illusion spell."
-SIMPLIFIED,惑,illusion,Arcana,fx_illusion,override,"To confuse, to mislead. A illusion spell."
-SIMPLIFIED,卜,oracle,Arcana,fx_oracle,override,"Divination, fortune-telling. A oracle spell."
-SIMPLIFIED,占,oracle,Arcana,fx_oracle,override,To divine. A oracle spell.
-SIMPLIFIED,命,oracle,Arcana,fx_oracle,override,Life. A oracle spell.
-SIMPLIFIED,运,oracle,Arcana,fx_oracle,override,To run. A oracle spell.
-SIMPLIFIED,福,oracle,Arcana,fx_oracle,override,"Happiness, good fortune, blessings. A oracle spell."
-SIMPLIFIED,灵,spirit,Spirit,fx_spirit,override,"Spirit, soul. A spirit spell."
-SIMPLIFIED,魂,spirit,Spirit,fx_spirit,override,"Soul, spirit. A spirit spell."
-SIMPLIFIED,神,spirit,Spirit,fx_spirit,override,"God, spirit. A spirit spell."
-SIMPLIFIED,仙,spirit,Spirit,fx_spirit,override,God. A spirit spell.
-SIMPLIFIED,佛,spirit,Spirit,fx_spirit,override,Buddha. A spirit spell.
-SIMPLIFIED,圣,spirit,Spirit,fx_spirit,override,"Holy, sacred. A spirit spell."
-SIMPLIFIED,庙,spirit,Spirit,fx_spirit,override,"Temple, shrine. A spirit spell."
-SIMPLIFIED,寺,spirit,Spirit,fx_spirit,override,"Court, office. A spirit spell."
-SIMPLIFIED,祖,spirit,Spirit,fx_spirit,override,"Ancestor, forefather. A spirit spell."
-SIMPLIFIED,拜,spirit,Spirit,fx_spirit,override,"To bow, to salute. A spirit spell."
-SIMPLIFIED,祭,spirit,Spirit,fx_spirit,override,"To sacrifice to, to worship. A spirit spell."
-SIMPLIFIED,供,spirit,Spirit,fx_spirit,override,"To supply, to provide for. A spirit spell."
-SIMPLIFIED,死,spirit,Spirit,fx_spirit,override,To die. A spirit spell.
-SIMPLIFIED,亡,spirit,Spirit,fx_spirit,override,"Death, destruction. A spirit spell."
-SIMPLIFIED,血,spirit,Spirit,fx_spirit,override,Blood. A spirit spell.
-SIMPLIFIED,精,spirit,Spirit,fx_spirit,override,"Essence, germ, spirit. A spirit spell."
-SIMPLIFIED,天,spirit,Spirit,fx_spirit,override,"Sky, heaven. A spirit spell."
-SIMPLIFIED,堂,spirit,Spirit,fx_spirit,override,"Hall, large room. A spirit spell."
-SIMPLIFIED,墓,spirit,Spirit,fx_spirit,override,"Grave, tomb. A spirit spell."
-SIMPLIFIED,坟,spirit,Spirit,fx_spirit,override,"Grave, mound, bulge. A spirit spell."
-SIMPLIFIED,骨,spirit,Spirit,fx_spirit,override,Bone. A spirit spell.
-SIMPLIFIED,肉,soul,Spirit,fx_soul,override,Meat. A soul spell.
-SIMPLIFIED,护,ward,Spirit,fx_ward,override,"To defend, to guard, to protect. A ward spell."
-SIMPLIFIED,卫,ward,Spirit,fx_ward,override,"To guard, to protect, to defend. A ward spell."
-SIMPLIFIED,守,ward,Spirit,fx_ward,override,"To defend, to guard, to protect. A ward spell."
-SIMPLIFIED,保,ward,Spirit,fx_ward,override,"To safeguard, to protect, to defend, to care for. A ward spell."
-SIMPLIFIED,防,ward,Spirit,fx_ward,override,"To protect, to defend, to guard against. A ward spell."
-SIMPLIFIED,盾,ward,Spirit,fx_ward,override,Shield. A ward spell.
-SIMPLIFIED,障,ward,Spirit,fx_ward,override,To separate. A ward spell.
-SIMPLIFIED,安,ward,Spirit,fx_ward,override,"Peaceful, tranquil, quiet. A ward spell."
-SIMPLIFIED,全,ward,Spirit,fx_ward,override,"Whole, entire, complete. A ward spell."
-SIMPLIFIED,平,ward,Spirit,fx_ward,override,"Flat, level, even. A ward spell."
-SIMPLIFIED,稳,ward,Spirit,fx_ward,override,"Steady, stable. A ward spell."
-SIMPLIFIED,固,ward,Spirit,fx_ward,override,To solidify. A ward spell.
-SIMPLIFIED,坚,ward,Spirit,fx_ward,override,"Hard, strong. A ward spell."
-TRADITIONAL,水,water,Tides,fx_water,override,Water. A water spell.
-TRADITIONAL,河,water,Tides,fx_water,override,"River, stream. A water spell."
-TRADITIONAL,江,water,Tides,fx_water,override,Large river. A water spell.
-TRADITIONAL,海,water,Tides,fx_water,override,"Sea, ocean. A water spell."
-TRADITIONAL,湖,water,Tides,fx_water,override,Lake. A water spell.
-TRADITIONAL,泉,water,Tides,fx_water,override,"Spring, fountain. A water spell."
-TRADITIONAL,池,water,Tides,fx_water,override,"Pool, pond. A water spell."
-TRADITIONAL,洋,water,Tides,fx_water,override,"Sea, ocean. A water spell."
-TRADITIONAL,浪,water,Tides,fx_water,override,"Breaker, wave. A water spell."
-TRADITIONAL,流,water,Tides,fx_water,override,"To flow, to drift, to circulate. A water spell."
-TRADITIONAL,潮,water,Tides,fx_water,override,"Tide, current. A water spell."
-TRADITIONAL,滴,water,Tides,fx_water,override,To drip. A water spell.
-TRADITIONAL,汗,water,Tides,fx_water,override,Sweat. A water spell.
-TRADITIONAL,淚,water,Tides,fx_water,variant,(bound form) tears. A water spell.
-TRADITIONAL,洗,water,Tides,fx_water,override,To wash. A water spell.
-TRADITIONAL,喝,water,Tides,fx_water,override,Drink. A water spell.
-TRADITIONAL,飲,water,Tides,fx_water,variant,To give (animals) water to drink. A water spell.
-TRADITIONAL,湯,water,Tides,fx_water,variant,Soup. A water spell.
-TRADITIONAL,冰,ice,Tides,fx_ice,override,Ice. A ice spell.
-TRADITIONAL,凍,ice,Tides,fx_ice,variant,To freeze. A ice spell.
-TRADITIONAL,寒,ice,Tides,fx_ice,override,"Chilly, cold. A ice spell."
-TRADITIONAL,冷,ice,Tides,fx_ice,override,Cold. A ice spell.
-TRADITIONAL,霜,ice,Tides,fx_ice,override,Frost. A ice spell.
-TRADITIONAL,涼,ice,Tides,fx_ice,variant,"The five Liang of the Sixteen Kingdoms, namely: Former Liang 前涼 (314-376), Later Liang 後涼 (386-403), Northern Liang 北涼 (398-439). A ice spell."
-TRADITIONAL,凝,ice,Tides,fx_ice,override,"To coagulate, to congeal. A ice spell."
-TRADITIONAL,澈,ice,Tides,fx_ice,override,"Limpid, clear. A ice spell."
-TRADITIONAL,雪,snow,Tides,fx_snow,override,Snow. A snow spell.
-TRADITIONAL,雹,snow,Tides,fx_snow,override,Hail. A snow spell.
-TRADITIONAL,雨,rain,Tides,fx_rain,override,Rain. A rain spell.
-TRADITIONAL,露,rain,Tides,fx_rain,override,Dew. A rain spell.
-TRADITIONAL,淋,rain,Tides,fx_rain,override,"To drench, to drip, to soak. A rain spell."
-TRADITIONAL,傘,rain,Tides,fx_rain,variant,Umbrella. A rain spell.
-TRADITIONAL,陣,rain,Tides,fx_rain,variant,Disposition of troops. A rain spell.
-TRADITIONAL,雷,rain,Tides,fx_rain,override,Thunder. A rain spell.
-TRADITIONAL,霧,rain,Tides,fx_rain,variant,Fog. A rain spell.
-TRADITIONAL,火,fire,Flame,fx_fire,override,Fire. A fire spell.
-TRADITIONAL,炎,fire,Flame,fx_fire,override,"Flame, blaze. A fire spell."
-TRADITIONAL,焰,fire,Flame,fx_fire,override,"Flame, blaze. A fire spell."
-TRADITIONAL,燒,fire,Flame,fx_fire,variant,To burn. A fire spell.
-TRADITIONAL,燃,fire,Flame,fx_fire,override,"To ignite, to burn. A fire spell."
-TRADITIONAL,熱,fire,Flame,fx_fire,variant,To warm up. A fire spell.
-TRADITIONAL,暖,fire,Flame,fx_fire,override,"Warm, genial. A fire spell."
-TRADITIONAL,烤,fire,Flame,fx_fire,override,"To bake, to cook, to roast, to toast. A fire spell."
-TRADITIONAL,炒,fire,Flame,fx_fire,override,"To boil, to fry, to roast, to sauté. A fire spell."
-TRADITIONAL,煮,fire,Flame,fx_fire,override,"To boil, to cook. A fire spell."
-TRADITIONAL,燈,fire,Flame,fx_fire,variant,Lamp. A fire spell.
-TRADITIONAL,燭,fire,Flame,fx_fire,variant,Candle. A fire spell.
-TRADITIONAL,爐,fire,Flame,fx_fire,variant,Stove. A fire spell.
-TRADITIONAL,灰,fire,Flame,fx_fire,override,Ashes. A fire spell.
-TRADITIONAL,燥,fire,Flame,fx_fire,override,"Arid, dry, parched. A fire spell."
-TRADITIONAL,燙,fire,Flame,fx_fire,variant,To scald. A fire spell.
-TRADITIONAL,烈,fire,Flame,fx_fire,override,"Fiery, violent. A fire spell."
-TRADITIONAL,爆,fire,Flame,fx_fire,override,"Crackle, pop. A fire spell."
-TRADITIONAL,炸,fire,Flame,fx_fire,override,To explode. A fire spell.
-TRADITIONAL,焦,fire,Flame,fx_fire,override,"Burned, scorched. A fire spell."
-TRADITIONAL,煤,fire,Flame,fx_fire,override,"Carbon, charcoal, coal, coke. A fire spell."
-TRADITIONAL,炭,fire,Flame,fx_fire,override,"Carbon, charcoal, coal. A fire spell."
-TRADITIONAL,烘,fire,Flame,fx_fire,override,"To bake, to roast. A fire spell."
-TRADITIONAL,焙,fire,Flame,fx_fire,override,"To bake, to roast. A fire spell."
-TRADITIONAL,炊,fire,Flame,fx_fire,override,Meal. A fire spell.
-TRADITIONAL,燉,fire,Flame,fx_fire,variant,To stew. A fire spell.
-TRADITIONAL,焚,fire,Flame,fx_fire,override,To burn. A fire spell.
-TRADITIONAL,赤,fire,Flame,fx_fire,override,"Red, scarlet. A fire spell."
-TRADITIONAL,紅,fire,Flame,fx_fire,variant,Red. A fire spell.
-TRADITIONAL,電,lightning,Flame,fx_lightning,variant,Lightning. A lightning spell.
-TRADITIONAL,閃,lightning,Flame,fx_lightning,variant,To dodge. A lightning spell.
-TRADITIONAL,震,lightning,Flame,fx_lightning,override,"Shake, quake, tremor. A lightning spell."
-TRADITIONAL,爍,lightning,Flame,fx_lightning,variant,Bright. A lightning spell.
-TRADITIONAL,輝,lightning,Flame,fx_lightning,variant,(bound form) radiance. A lightning spell.
-TRADITIONAL,耀,lightning,Flame,fx_lightning,override,"To sparkle, to shine, to dazzle. A lightning spell."
-TRADITIONAL,風,wind,Sky,fx_wind,variant,Wind. A wind spell.
-TRADITIONAL,吹,wind,Sky,fx_wind,override,"To blow, to puff. A wind spell."
-TRADITIONAL,飄,wind,Sky,fx_wind,variant,To float (in the air). A wind spell.
-TRADITIONAL,飛,wind,Sky,fx_wind,variant,To fly. A wind spell.
-TRADITIONAL,氣,wind,Sky,fx_wind,variant,Gas. A wind spell.
-TRADITIONAL,空,wind,Sky,fx_wind,override,Empty. A wind spell.
-TRADITIONAL,輕,wind,Sky,fx_wind,variant,Light. A wind spell.
-TRADITIONAL,雲,cloud,Sky,fx_cloud,variant,Surname Yun. A cloud spell.
-TRADITIONAL,煙,cloud,Sky,fx_cloud,variant,Cigarette or pipe tobacco. A cloud spell.
-TRADITIONAL,陰,cloud,Sky,fx_cloud,variant,Overcast (weather). A cloud spell.
-TRADITIONAL,霞,cloud,Sky,fx_cloud,override,Rosy clouds. A cloud spell.
-TRADITIONAL,日,sun,Sky,fx_sun,override,Sun. A sun spell.
-TRADITIONAL,陽,sun,Sky,fx_sun,variant,Positive (electric.). A sun spell.
-TRADITIONAL,晴,sun,Sky,fx_sun,override,Clear. A sun spell.
-TRADITIONAL,曬,sun,Sky,fx_sun,variant,(of the sun) to shine on. A sun spell.
-TRADITIONAL,照,sun,Sky,fx_sun,override,To shine. A sun spell.
-TRADITIONAL,晨,sun,Sky,fx_sun,override,"Dawn, early morning. A sun spell."
-TRADITIONAL,月,moon,Sky,fx_moon,override,"Month, the moon. A moon spell."
-TRADITIONAL,夜,moon,Sky,fx_moon,override,"Night, dark. A moon spell."
-TRADITIONAL,夕,moon,Sky,fx_moon,override,"Evening, night, dusk. A moon spell."
-TRADITIONAL,暮,moon,Sky,fx_moon,override,"Dusk, evening, sunset. A moon spell."
-TRADITIONAL,晚,moon,Sky,fx_moon,override,"Night, evening. A moon spell."
-TRADITIONAL,銀,moon,Sky,fx_moon,variant,Silver. A moon spell.
-TRADITIONAL,光,light,Sky,fx_light,override,Light. A light spell.
-TRADITIONAL,明,light,Sky,fx_light,override,"Bright, clear. A light spell."
-TRADITIONAL,亮,light,Sky,fx_light,override,"Bright, brilliant, radiant, light. A light spell."
-TRADITIONAL,星,light,Sky,fx_light,override,"Star, planet. A light spell."
-TRADITIONAL,晶,light,Sky,fx_light,override,Crystal. A light spell.
-TRADITIONAL,珠,light,Sky,fx_light,override,"Gem, jewel, pearl, precious stone. A light spell."
-TRADITIONAL,影,shadow,Sky,fx_shadow,override,Shadow. A shadow spell.
-TRADITIONAL,黑,shadow,Sky,fx_shadow,override,Black. A shadow spell.
-TRADITIONAL,暗,shadow,Sky,fx_shadow,override,"Dark, gloomy. A shadow spell."
-TRADITIONAL,幽,shadow,Sky,fx_shadow,override,"Quiet, secluded, tranquil. A shadow spell."
-TRADITIONAL,墨,shadow,Sky,fx_shadow,override,Ink. A shadow spell.
-TRADITIONAL,玄,shadow,Sky,fx_shadow,override,"Deep, profound, abstruse. A shadow spell."
-TRADITIONAL,土,earth,Ground,fx_earth,override,"Soil, earth. A earth spell."
-TRADITIONAL,地,earth,Ground,fx_earth,override,Earth. A earth spell.
-TRADITIONAL,田,earth,Ground,fx_earth,override,"Field, farm, arable land. A earth spell."
-TRADITIONAL,場,earth,Ground,fx_earth,variant,Large place used for a specific purpose. A earth spell.
-TRADITIONAL,園,earth,Ground,fx_earth,variant,Land used for growing plants. A earth spell.
-TRADITIONAL,沙,earth,Ground,fx_earth,override,"Sand, gravel, pebbles. A earth spell."
-TRADITIONAL,塵,earth,Ground,fx_earth,variant,Dust. A earth spell.
-TRADITIONAL,泥,earth,Ground,fx_earth,override,"Mud, earth, clay. A earth spell."
-TRADITIONAL,石,stone,Ground,fx_stone,override,"Stone, rock, mineral. A stone spell."
-TRADITIONAL,岩,stone,Ground,fx_stone,override,Cliff. A stone spell.
-TRADITIONAL,峰,stone,Ground,fx_stone,override,"Peak, summit. A stone spell."
-TRADITIONAL,坡,stone,Ground,fx_stone,override,"Slope, hillside, embankment. A stone spell."
-TRADITIONAL,洞,stone,Ground,fx_stone,override,"Cave, grotto, hole, ravine. A stone spell."
-TRADITIONAL,礦,stone,Ground,fx_stone,variant,Mineral deposit. A stone spell.
-TRADITIONAL,磚,stone,Ground,fx_stone,variant,Brick. A stone spell.
-TRADITIONAL,山,mountain,Ground,fx_mountain,override,"Mountain, hill, peak. A mountain spell."
-TRADITIONAL,嶺,mountain,Ground,fx_mountain,variant,Mountain range. A mountain spell.
-TRADITIONAL,岳,mountain,Ground,fx_mountain,override,Mountain peak. A mountain spell.
-TRADITIONAL,巔,mountain,Ground,fx_mountain,variant,Summit. A mountain spell.
-TRADITIONAL,丘,mountain,Ground,fx_mountain,override,"Mound, hill. A mountain spell."
-TRADITIONAL,陵,mountain,Ground,fx_mountain,override,"Hill, mound. A mountain spell."
-TRADITIONAL,木,wood,Ground,fx_wood,override,Tree. A wood spell.
-TRADITIONAL,林,wood,Ground,fx_wood,override,"Forest, grove. A wood spell."
-TRADITIONAL,森,wood,Ground,fx_wood,override,Forest. A wood spell.
-TRADITIONAL,樹,wood,Ground,fx_wood,variant,Tree. A wood spell.
-TRADITIONAL,草,wood,Ground,fx_wood,override,Grass. A wood spell.
-TRADITIONAL,花,wood,Ground,fx_wood,override,Flower. A wood spell.
-TRADITIONAL,葉,wood,Ground,fx_wood,variant,Leaf. A wood spell.
-TRADITIONAL,金,metal,Ground,fx_metal,override,"Gold, metal. A metal spell."
-TRADITIONAL,鐵,metal,Ground,fx_metal,variant,Iron (metal). A metal spell.
-TRADITIONAL,鋼,metal,Ground,fx_metal,variant,Steel. A metal spell.
-TRADITIONAL,銅,metal,Ground,fx_metal,variant,Copper (chemistry). A metal spell.
-TRADITIONAL,玉,metal,Ground,fx_metal,override,"Jade, gem, precious stone. A metal spell."
-TRADITIONAL,寶,metal,Ground,fx_metal,variant,Jewel. A metal spell.
-TRADITIONAL,錢,metal,Ground,fx_metal,variant,Coin. A metal spell.
-TRADITIONAL,馬,animal,Creatures,fx_animal,variant,Horse. A animal spell.
-TRADITIONAL,牛,animal,Creatures,fx_animal,override,"Ox, cow, bull. A animal spell."
-TRADITIONAL,羊,animal,Creatures,fx_animal,override,"Sheep, goat. A animal spell."
-TRADITIONAL,狗,animal,Creatures,fx_animal,override,Dog. A animal spell.
-TRADITIONAL,貓,animal,Creatures,fx_animal,variant,Cat. A animal spell.
-TRADITIONAL,鳥,animal,Creatures,fx_animal,variant,Bird. A animal spell.
-TRADITIONAL,魚,animal,Creatures,fx_animal,variant,Fish. A animal spell.
-TRADITIONAL,龍,animal,Creatures,fx_animal,variant,Chinese dragon. A animal spell.
-TRADITIONAL,虎,animal,Creatures,fx_animal,override,Tiger. A animal spell.
-TRADITIONAL,兔,animal,Creatures,fx_animal,override,"Rabbit, hare. A animal spell."
-TRADITIONAL,龜,animal,Creatures,fx_animal,variant,Tortoise. A animal spell.
-TRADITIONAL,蛙,animal,Creatures,fx_animal,override,Frog. A animal spell.
-TRADITIONAL,人,person,Creatures,fx_person,override,"People, person, man, human being, personality, folk. A person spell."
-TRADITIONAL,男,person,Creatures,fx_person,override,Male. A person spell.
-TRADITIONAL,女,person,Creatures,fx_person,override,Woman. A person spell.
-TRADITIONAL,兒,person,Creatures,fx_person,variant,Non-syllabic diminutive suffix. A person spell.
-TRADITIONAL,孩,person,Creatures,fx_person,override,"Baby, child. A person spell."
-TRADITIONAL,子,person,Creatures,fx_person,override,"Son, child. A person spell."
-TRADITIONAL,母,person,Creatures,fx_person,override,Mother. A person spell.
-TRADITIONAL,父,person,Creatures,fx_person,override,"Father, dad. A person spell."
-TRADITIONAL,友,person,Creatures,fx_person,override,"Friend, companion. A person spell."
-TRADITIONAL,朋,person,Creatures,fx_person,override,"Friend, pal, acquaintance. A person spell."
-TRADITIONAL,師,person,Creatures,fx_person,variant,Teacher. A person spell.
-TRADITIONAL,生,person,Creatures,fx_person,override,"Life, lifetime. A person spell."
-TRADITIONAL,手,hand,Creatures,fx_hand,override,Hand. A hand spell.
-TRADITIONAL,指,hand,Creatures,fx_hand,override,Finger. A hand spell.
-TRADITIONAL,掌,hand,Creatures,fx_hand,override,In charge. A hand spell.
-TRADITIONAL,拿,hand,Creatures,fx_hand,override,Hold. A hand spell.
-TRADITIONAL,持,hand,Creatures,fx_hand,override,"To hold, to support, to sustain. A hand spell."
-TRADITIONAL,打,hand,Creatures,fx_hand,override,"To attack, to beat, to hit, to strike. A hand spell."
-TRADITIONAL,推,hand,Creatures,fx_hand,override,To push. A hand spell.
-TRADITIONAL,拉,hand,Creatures,fx_hand,override,To pull. A hand spell.
-TRADITIONAL,提,hand,Creatures,fx_hand,override,To carry. A hand spell.
-TRADITIONAL,抬,hand,Creatures,fx_hand,override,To lift. A hand spell.
-TRADITIONAL,舉,hand,Creatures,fx_hand,variant,To lift. A hand spell.
-TRADITIONAL,船,boat,Craft,fx_boat,override,A boat. A boat spell.
-TRADITIONAL,舟,boat,Craft,fx_boat,override,"Boat, ship. A boat spell."
-TRADITIONAL,槳,boat,Craft,fx_boat,variant,Oar. A boat spell.
-TRADITIONAL,港,boat,Craft,fx_boat,override,"Port, harbor, bay. A boat spell."
-TRADITIONAL,航,boat,Craft,fx_boat,override,"Vessel, craft. A boat spell."
-TRADITIONAL,泊,boat,Craft,fx_boat,override,To anchor. A boat spell.
-TRADITIONAL,浮,boat,Craft,fx_boat,override,"To drift, to float. A boat spell."
-TRADITIONAL,漂,boat,Craft,fx_boat,override,"To drift, to float. A boat spell."
-TRADITIONAL,橋,boat,Craft,fx_boat,variant,Bridge. A boat spell.
-TRADITIONAL,車,tool,Craft,fx_tool,variant,Car. A tool spell.
-TRADITIONAL,門,tool,Craft,fx_tool,variant,Gate. A tool spell.
-TRADITIONAL,窗,tool,Craft,fx_tool,override,Window. A tool spell.
-TRADITIONAL,房,tool,Craft,fx_tool,override,"Building, house, room. A tool spell."
-TRADITIONAL,屋,tool,Craft,fx_tool,override,"Building, house, shelter. A tool spell."
-TRADITIONAL,室,tool,Craft,fx_tool,override,"House, home. A tool spell."
-TRADITIONAL,城,tool,Craft,fx_tool,override,"Castle, city, town. A tool spell."
-TRADITIONAL,市,tool,Craft,fx_tool,override,"City, town. A tool spell."
-TRADITIONAL,街,tool,Craft,fx_tool,override,"Street, road, thoroughfare. A tool spell."
-TRADITIONAL,路,tool,Craft,fx_tool,override,Road. A tool spell.
-TRADITIONAL,塔,tool,Craft,fx_tool,override,"Tower, spire, tall building. A tool spell."
-TRADITIONAL,書,tool,Craft,fx_tool,variant,Book. A tool spell.
-TRADITIONAL,紙,tool,Craft,fx_tool,variant,Paper. A tool spell.
-TRADITIONAL,筆,tool,Craft,fx_tool,variant,Writing brush. A tool spell.
-TRADITIONAL,刀,tool,Craft,fx_tool,override,Knife. A tool spell.
-TRADITIONAL,線,tool,Craft,fx_tool,variant,Thread. A tool spell.
-TRADITIONAL,衣,tool,Craft,fx_tool,override,Cloth. A tool spell.
-TRADITIONAL,帽,tool,Craft,fx_tool,override,"Hat, cap. A tool spell."
-TRADITIONAL,鞋,tool,Craft,fx_tool,override,"Shoes, footwear in general. A tool spell."
-TRADITIONAL,杯,tool,Craft,fx_tool,override,"Cup, glass. A tool spell."
-TRADITIONAL,碗,tool,Craft,fx_tool,override,Bowl. A tool spell.
-TRADITIONAL,瓶,tool,Craft,fx_tool,override,"Bottle, jug, pitcher, vase. A tool spell."
-TRADITIONAL,箱,tool,Craft,fx_tool,override,"Box, case. A tool spell."
-TRADITIONAL,盒,tool,Craft,fx_tool,override,Small box or case. A tool spell.
-TRADITIONAL,網,tool,Craft,fx_tool,variant,Net. A tool spell.
-TRADITIONAL,繩,tool,Craft,fx_tool,variant,Rope. A tool spell.
-TRADITIONAL,心,mind,Mind,fx_mind,override,Heart. A mind spell.
-TRADITIONAL,想,mind,Mind,fx_mind,override,To want. A mind spell.
-TRADITIONAL,思,mind,Mind,fx_mind,override,"To think, to ponder, to consider. A mind spell."
-TRADITIONAL,念,mind,Mind,fx_mind,override,"To think of, to recall. A mind spell."
-TRADITIONAL,意,mind,Mind,fx_mind,override,"Thought, idea, opinion. A mind spell."
-TRADITIONAL,知,mind,Mind,fx_mind,override,"To know, to perceive, to comprehend. A mind spell."
-TRADITIONAL,識,mind,Mind,fx_mind,variant,To know. A mind spell.
-TRADITIONAL,學,mind,Mind,fx_mind,variant,To learn. A mind spell.
-TRADITIONAL,問,mind,Mind,fx_mind,variant,To ask. A mind spell.
-TRADITIONAL,懂,mind,Mind,fx_mind,override,Understand. A mind spell.
-TRADITIONAL,記,mind,Mind,fx_mind,variant,To record. A mind spell.
-TRADITIONAL,忘,mind,Mind,fx_mind,override,"To forget, to miss, to neglect, to overlook. A mind spell."
-TRADITIONAL,怕,mind,Mind,fx_mind,override,"To fear, to be afraid of. A mind spell."
-TRADITIONAL,愛,mind,Mind,fx_mind,variant,To love. A mind spell.
-TRADITIONAL,恨,mind,Mind,fx_mind,override,"To dislike, to hate, to resent. A mind spell."
-TRADITIONAL,夢,dream,Mind,fx_dream,variant,Dream. A dream spell.
-TRADITIONAL,睡,dream,Mind,fx_dream,override,"To sleep, to doze. A dream spell."
-TRADITIONAL,醒,dream,Mind,fx_dream,override,Wake up. A dream spell.
-TRADITIONAL,眠,dream,Mind,fx_dream,override,"Sleep, shut-eye, hibernatation. A dream spell."
-TRADITIONAL,幻,dream,Mind,fx_dream,override,"Fantasy, illusion, mirage. A dream spell."
-TRADITIONAL,醉,dream,Mind,fx_dream,override,"Intoxicated, drunk. A dream spell."
-TRADITIONAL,聲,sound,Mind,fx_sound,variant,Sound. A sound spell.
-TRADITIONAL,音,sound,Mind,fx_sound,override,"Sound, tone, pitch, pronunciation. A sound spell."
-TRADITIONAL,聽,sound,Mind,fx_sound,variant,To listen to. A sound spell.
-TRADITIONAL,聞,sound,Mind,fx_sound,variant,To hear. A sound spell.
-TRADITIONAL,語,sound,Mind,fx_sound,variant,(literary) to tell. A sound spell.
-TRADITIONAL,言,sound,Mind,fx_sound,override,"Words, speech. A sound spell."
-TRADITIONAL,話,sound,Mind,fx_sound,variant,Dialect. A sound spell.
-TRADITIONAL,說,sound,Mind,fx_sound,variant,To speak. A sound spell.
-TRADITIONAL,講,sound,Mind,fx_sound,variant,To speak. A sound spell.
-TRADITIONAL,讀,sound,Mind,fx_sound,variant,To read out. A sound spell.
-TRADITIONAL,寫,sound,Mind,fx_sound,variant,To write. A sound spell.
-TRADITIONAL,唱,sound,Mind,fx_sound,override,"To sing, to chant, to call. A sound spell."
-TRADITIONAL,歌,sound,Mind,fx_sound,override,"Song, lyrics. A sound spell."
-TRADITIONAL,答,sound,Mind,fx_sound,override,"Answer, reply. A sound spell."
-TRADITIONAL,時,time,Time,fx_time,variant,(bound form) time. A time spell.
-TRADITIONAL,間,time,Time,fx_time,variant,Between. A time spell.
-TRADITIONAL,年,time,Time,fx_time,override,Year. A time spell.
-TRADITIONAL,分,time,Time,fx_time,override,Divide. A time spell.
-TRADITIONAL,秒,time,Time,fx_time,override,Second (unit of time or angle). A time spell.
-TRADITIONAL,刻,time,Time,fx_time,override,Quarter (hour). A time spell.
-TRADITIONAL,早,time,Time,fx_time,override,Early. A time spell.
-TRADITIONAL,今,time,Time,fx_time,override,"Modern, current. A time spell."
-TRADITIONAL,昨,time,Time,fx_time,override,Yesterday. A time spell.
-TRADITIONAL,春,time,Time,fx_time,override,Spring (season). A time spell.
-TRADITIONAL,夏,time,Time,fx_time,override,Summer. A time spell.
-TRADITIONAL,季,time,Time,fx_time,override,"A quarter-year, a season. A time spell."
-TRADITIONAL,節,time,Time,fx_time,variant,Joint. A time spell.
-TRADITIONAL,歲,time,Time,fx_time,variant,Classifier for years (of age). A time spell.
-TRADITIONAL,老,time,Time,fx_time,override,Old. A time spell.
-TRADITIONAL,新,time,Time,fx_time,override,New. A time spell.
-TRADITIONAL,舊,time,Time,fx_time,variant,Old. A time spell.
-TRADITIONAL,先,time,Time,fx_time,override,First. A time spell.
-TRADITIONAL,初,time,Time,fx_time,override,"Beginning, initial, primary. A time spell."
-TRADITIONAL,終,time,Time,fx_time,variant,End. A time spell.
-TRADITIONAL,始,time,Time,fx_time,override,"To begin, to start. A time spell."
-TRADITIONAL,末,time,Time,fx_time,override,"End, final, last. A time spell."
-TRADITIONAL,久,time,Time,fx_time,override,Long (time). A time spell.
-TRADITIONAL,暫,time,Time,fx_time,variant,Temporary. A time spell.
-TRADITIONAL,永,time,Time,fx_time,override,Long. A time spell.
-TRADITIONAL,恆,time,Time,fx_time,variant,Permanent. A time spell.
-TRADITIONAL,期,time,Time,fx_time,override,A period of time. A time spell.
-TRADITIONAL,候,time,Time,fx_time,override,"To wait, to expect. A time spell."
-TRADITIONAL,等,time,Time,fx_time,override,To wait. A time spell.
-TRADITIONAL,待,time,Time,fx_time,override,"To entertain, to receive, to treat. A time spell."
-TRADITIONAL,快,time,Time,fx_time,override,Fast. A time spell.
-TRADITIONAL,慢,time,Time,fx_time,override,Slow. A time spell.
-TRADITIONAL,長,time,Time,fx_time,variant,Long. A time spell.
-TRADITIONAL,短,time,Time,fx_time,override,Short (opposite of 长 cháng). A time spell.
-TRADITIONAL,古,time,Time,fx_time,override,"Old, classic, ancient. A time spell."
-TRADITIONAL,魔,rune,Arcana,fx_rune,override,"Demon, evil spirit. A rune spell."
-TRADITIONAL,法,rune,Arcana,fx_rune,override,"Law, rule, statute. A rune spell."
-TRADITIONAL,術,rune,Arcana,fx_rune,variant,(bound form) art. A rune spell.
-TRADITIONAL,符,rune,Arcana,fx_rune,override,"Amulet, charm. A rune spell."
-TRADITIONAL,祝,rune,Arcana,fx_rune,override,To pray. A rune spell.
-TRADITIONAL,祈,rune,Arcana,fx_rune,override,"To pray, to entreat, to beseech. A rune spell."
-TRADITIONAL,映,mirror,Arcana,fx_mirror,override,To project. A mirror spell.
-TRADITIONAL,反,mirror,Arcana,fx_mirror,override,"Reverse, opposite. A mirror spell."
-TRADITIONAL,複,mirror,Arcana,fx_mirror,variant,To repeat. A mirror spell.
-TRADITIONAL,雙,mirror,Arcana,fx_mirror,variant,Two. A mirror spell.
-TRADITIONAL,對,mirror,Arcana,fx_mirror,variant,Right. A mirror spell.
-TRADITIONAL,像,mirror,Arcana,fx_mirror,override,"Alike, be like. A mirror spell."
-TRADITIONAL,鑰,key,Arcana,fx_key,variant,Key. A key spell.
-TRADITIONAL,匙,key,Arcana,fx_key,override,Spoon. A key spell.
-TRADITIONAL,碼,key,Arcana,fx_key,variant,(archaic) agate. A key spell.
-TRADITIONAL,禁,key,Arcana,fx_key,override,"To restrict, to prohibit, to forbid. A key spell."
-TRADITIONAL,解,key,Arcana,fx_key,override,To explain. A key spell.
-TRADITIONAL,通,key,Arcana,fx_key,override,"To pass through, to open, to connect. A key spell."
-TRADITIONAL,藥,potion,Arcana,fx_potion,variant,Medicine. A potion spell.
-TRADITIONAL,病,potion,Arcana,fx_potion,override,"Sickness, illness, disease. A potion spell."
-TRADITIONAL,康,potion,Arcana,fx_potion,override,Health. A potion spell.
-TRADITIONAL,毒,potion,Arcana,fx_potion,override,"Poison, venom. A potion spell."
-TRADITIONAL,療,potion,Arcana,fx_potion,variant,To treat. A potion spell.
-TRADITIONAL,鍊,potion,Arcana,fx_potion,variant,(bound form) chain. A potion spell.
-TRADITIONAL,變,illusion,Arcana,fx_illusion,variant,To change. A illusion spell.
-TRADITIONAL,隱,illusion,Arcana,fx_illusion,variant,(bound form) secret. A illusion spell.
-TRADITIONAL,藏,illusion,Arcana,fx_illusion,override,"To conceal, to hide. A illusion spell."
-TRADITIONAL,騙,illusion,Arcana,fx_illusion,variant,To cheat. A illusion spell.
-TRADITIONAL,迷,illusion,Arcana,fx_illusion,override,"To bewitch, to charm. A illusion spell."
-TRADITIONAL,惑,illusion,Arcana,fx_illusion,override,"To confuse, to mislead. A illusion spell."
-TRADITIONAL,蔔,oracle,Arcana,fx_oracle,variant,"Divination, fortune-telling. A oracle spell."
-TRADITIONAL,命,oracle,Arcana,fx_oracle,override,Life. A oracle spell.
-TRADITIONAL,運,oracle,Arcana,fx_oracle,variant,To move. A oracle spell.
-TRADITIONAL,福,oracle,Arcana,fx_oracle,override,"Happiness, good fortune, blessings. A oracle spell."
-TRADITIONAL,禍,oracle,Arcana,fx_oracle,variant,Disaster. A oracle spell.
-TRADITIONAL,靈,spirit,Spirit,fx_spirit,variant,Quick. A spirit spell.
-TRADITIONAL,魂,spirit,Spirit,fx_spirit,override,"Soul, spirit. A spirit spell."
-TRADITIONAL,神,spirit,Spirit,fx_spirit,override,"God, spirit. A spirit spell."
-TRADITIONAL,仙,spirit,Spirit,fx_spirit,override,God. A spirit spell.
-TRADITIONAL,彿,spirit,Spirit,fx_spirit,variant,Buddha. A spirit spell.
-TRADITIONAL,聖,spirit,Spirit,fx_spirit,variant,"(bound form) peerless (in wisdom, moral virtue, skill etc). A spirit spell."
-TRADITIONAL,廟,spirit,Spirit,fx_spirit,variant,Temple. A spirit spell.
-TRADITIONAL,寺,spirit,Spirit,fx_spirit,override,"Court, office. A spirit spell."
-TRADITIONAL,祖,spirit,Spirit,fx_spirit,override,"Ancestor, forefather. A spirit spell."
-TRADITIONAL,拜,spirit,Spirit,fx_spirit,override,"To bow, to salute. A spirit spell."
-TRADITIONAL,祭,spirit,Spirit,fx_spirit,override,"To sacrifice to, to worship. A spirit spell."
-TRADITIONAL,供,spirit,Spirit,fx_spirit,override,"To supply, to provide for. A spirit spell."
-TRADITIONAL,死,spirit,Spirit,fx_spirit,override,To die. A spirit spell.
-TRADITIONAL,亡,spirit,Spirit,fx_spirit,override,"Death, destruction. A spirit spell."
-TRADITIONAL,血,spirit,Spirit,fx_spirit,override,Blood. A spirit spell.
-TRADITIONAL,精,spirit,Spirit,fx_spirit,override,"Essence, germ, spirit. A spirit spell."
-TRADITIONAL,天,spirit,Spirit,fx_spirit,override,"Sky, heaven. A spirit spell."
-TRADITIONAL,堂,spirit,Spirit,fx_spirit,override,"Hall, large room. A spirit spell."
-TRADITIONAL,墓,spirit,Spirit,fx_spirit,override,"Grave, tomb. A spirit spell."
-TRADITIONAL,墳,spirit,Spirit,fx_spirit,variant,Grave. A spirit spell.
-TRADITIONAL,骨,spirit,Spirit,fx_spirit,override,Bone. A spirit spell.
-TRADITIONAL,肉,soul,Spirit,fx_soul,override,Meat. A soul spell.
-TRADITIONAL,護,ward,Spirit,fx_ward,variant,(bound form) to protect. A ward spell.
-TRADITIONAL,衛,ward,Spirit,fx_ward,variant,Surname Wei. A ward spell.
-TRADITIONAL,守,ward,Spirit,fx_ward,override,"To defend, to guard, to protect. A ward spell."
-TRADITIONAL,保,ward,Spirit,fx_ward,override,"To safeguard, to protect, to defend, to care for. A ward spell."
-TRADITIONAL,防,ward,Spirit,fx_ward,override,"To protect, to defend, to guard against. A ward spell."
-TRADITIONAL,盾,ward,Spirit,fx_ward,override,Shield. A ward spell.
-TRADITIONAL,障,ward,Spirit,fx_ward,override,To separate. A ward spell.
-TRADITIONAL,安,ward,Spirit,fx_ward,override,"Peaceful, tranquil, quiet. A ward spell."
-TRADITIONAL,全,ward,Spirit,fx_ward,override,"Whole, entire, complete. A ward spell."
-TRADITIONAL,平,ward,Spirit,fx_ward,override,"Flat, level, even. A ward spell."
-TRADITIONAL,穩,ward,Spirit,fx_ward,variant,Settled. A ward spell.
-TRADITIONAL,固,ward,Spirit,fx_ward,override,To solidify. A ward spell.
-TRADITIONAL,堅,ward,Spirit,fx_ward,variant,Strong. A ward spell.
-JAPANESE,水,water,Tides,fx_water,override,Water. A water spell.
-JAPANESE,河,water,Tides,fx_water,override,River. A water spell.
-JAPANESE,江,water,Tides,fx_water,override,Creek. A water spell.
-JAPANESE,海,water,Tides,fx_water,override,Sea. A water spell.
-JAPANESE,湖,water,Tides,fx_water,override,Lake. A water spell.
-JAPANESE,泉,water,Tides,fx_water,override,Spring. A water spell.
-JAPANESE,池,water,Tides,fx_water,override,Pond. A water spell.
-JAPANESE,洋,water,Tides,fx_water,override,Ocean. A water spell.
-JAPANESE,浪,water,Tides,fx_water,override,Wandering. A water spell.
-JAPANESE,流,water,Tides,fx_water,override,Current. A water spell.
-JAPANESE,潮,water,Tides,fx_water,override,Tide. A water spell.
-JAPANESE,滴,water,Tides,fx_water,override,Drip. A water spell.
-JAPANESE,汗,water,Tides,fx_water,override,Sweat. A water spell.
-JAPANESE,洗,water,Tides,fx_water,override,Wash. A water spell.
-JAPANESE,喝,water,Tides,fx_water,override,Hoarse. A water spell.
-JAPANESE,飲,water,Tides,fx_water,variant,Drink. A water spell.
-JAPANESE,湯,water,Tides,fx_water,variant,Hot water. A water spell.
-JAPANESE,汁,water,Tides,fx_water,override,Soup. A water spell.
-JAPANESE,遊,water,Tides,fx_water,variant,Play. A water spell.
-JAPANESE,泳,water,Tides,fx_water,override,Swim. A water spell.
-JAPANESE,湿,water,Tides,fx_water,override,Damp. A water spell.
-JAPANESE,深,water,Tides,fx_water,override,Deep. A water spell.
-JAPANESE,凍,ice,Tides,fx_ice,variant,Frozen. A ice spell.
-JAPANESE,寒,ice,Tides,fx_ice,override,Cold. A ice spell.
-JAPANESE,冷,ice,Tides,fx_ice,override,Cool. A ice spell.
-JAPANESE,霜,ice,Tides,fx_ice,override,Frost. A ice spell.
-JAPANESE,涼,ice,Tides,fx_ice,variant,Refreshing. A ice spell.
-JAPANESE,凝,ice,Tides,fx_ice,override,Congeal. A ice spell.
-JAPANESE,雪,snow,Tides,fx_snow,override,Snow. A snow spell.
-JAPANESE,雨,rain,Tides,fx_rain,override,Rain. A rain spell.
-JAPANESE,露,rain,Tides,fx_rain,override,Dew. A rain spell.
-JAPANESE,傘,rain,Tides,fx_rain,variant,Umbrella. A rain spell.
-JAPANESE,陣,rain,Tides,fx_rain,variant,Camp. A rain spell.
-JAPANESE,雷,rain,Tides,fx_rain,override,Thunder. A rain spell.
-JAPANESE,霧,rain,Tides,fx_rain,variant,Fog. A rain spell.
-JAPANESE,火,fire,Flame,fx_fire,override,Fire. A fire spell.
-JAPANESE,炎,fire,Flame,fx_fire,override,Inflammation. A fire spell.
-JAPANESE,燃,fire,Flame,fx_fire,override,Burn. A fire spell.
-JAPANESE,熱,fire,Flame,fx_fire,variant,Heat. A fire spell.
-JAPANESE,暖,fire,Flame,fx_fire,override,Warmth. A fire spell.
-JAPANESE,煮,fire,Flame,fx_fire,override,Boil. A fire spell.
-JAPANESE,灯,fire,Flame,fx_fire,override,Lamp. A fire spell.
-JAPANESE,炉,fire,Flame,fx_fire,override,Hearth. A fire spell.
-JAPANESE,灰,fire,Flame,fx_fire,override,Ashes. A fire spell.
-JAPANESE,燥,fire,Flame,fx_fire,override,Parch. A fire spell.
-JAPANESE,烈,fire,Flame,fx_fire,override,Ardent. A fire spell.
-JAPANESE,爆,fire,Flame,fx_fire,override,Bomb. A fire spell.
-JAPANESE,焦,fire,Flame,fx_fire,override,Char. A fire spell.
-JAPANESE,炭,fire,Flame,fx_fire,override,Charcoal. A fire spell.
-JAPANESE,炊,fire,Flame,fx_fire,override,Cook. A fire spell.
-JAPANESE,赤,fire,Flame,fx_fire,override,Red. A fire spell.
-JAPANESE,紅,fire,Flame,fx_fire,variant,Crimson. A fire spell.
-JAPANESE,丹,fire,Flame,fx_fire,override,Rust-colored. A fire spell.
-JAPANESE,暑,fire,Flame,fx_fire,override,Sultry. A fire spell.
-JAPANESE,温,fire,Flame,fx_fire,override,Warm. A fire spell.
-JAPANESE,電,lightning,Flame,fx_lightning,variant,Electricity. A lightning spell.
-JAPANESE,震,lightning,Flame,fx_lightning,override,Quake. A lightning spell.
-JAPANESE,弧,lightning,Flame,fx_lightning,override,Arc. A lightning spell.
-JAPANESE,輝,lightning,Flame,fx_lightning,variant,Radiance. A lightning spell.
-JAPANESE,焼,fire,Flame,fx_fire,fill,Bake. A fire spell.
-JAPANESE,災,fire,Flame,fx_fire,fill,Disaster. A fire spell.
-JAPANESE,熟,fire,Flame,fx_fire,fill,Mellow. A fire spell.
-JAPANESE,窯,fire,Flame,fx_fire,fill,Kiln. A fire spell.
-JAPANESE,辛,fire,Flame,fx_fire,fill,Spicy. A fire spell.
-JAPANESE,蛍,lightning,Flame,fx_lightning,fill,Lightning-bug. A lightning spell.
-JAPANESE,煎,fire,Flame,fx_fire,fill,Broil. A fire spell.
-JAPANESE,鍛,fire,Flame,fx_fire,fill,Forge. A fire spell.
-JAPANESE,風,wind,Sky,fx_wind,variant,Wind. A wind spell.
-JAPANESE,吹,wind,Sky,fx_wind,override,Blow. A wind spell.
-JAPANESE,飛,wind,Sky,fx_wind,variant,Fly. A wind spell.
-JAPANESE,空,wind,Sky,fx_wind,override,Empty. A wind spell.
-JAPANESE,扇,wind,Sky,fx_wind,override,Fan. A wind spell.
-JAPANESE,汽,wind,Sky,fx_wind,override,Vapor. A wind spell.
-JAPANESE,蒸,wind,Sky,fx_wind,override,Steam. A wind spell.
-JAPANESE,噴,wind,Sky,fx_wind,variant,Erupt. A wind spell.
-JAPANESE,呼,wind,Sky,fx_wind,override,Call. A wind spell.
-JAPANESE,吸,wind,Sky,fx_wind,override,Suck. A wind spell.
-JAPANESE,雲,cloud,Sky,fx_cloud,variant,Cloud. A cloud spell.
-JAPANESE,煙,cloud,Sky,fx_cloud,variant,Smoke. A cloud spell.
-JAPANESE,陰,cloud,Sky,fx_cloud,variant,Shade. A cloud spell.
-JAPANESE,日,sun,Sky,fx_sun,override,Day. A sun spell.
-JAPANESE,陽,sun,Sky,fx_sun,variant,Sunshine. A sun spell.
-JAPANESE,晴,sun,Sky,fx_sun,override,Clear up. A sun spell.
-JAPANESE,照,sun,Sky,fx_sun,override,Illuminate. A sun spell.
-JAPANESE,旦,sun,Sky,fx_sun,override,Daybreak. A sun spell.
-JAPANESE,月,moon,Sky,fx_moon,override,Month. A moon spell.
-JAPANESE,夜,moon,Sky,fx_moon,override,Night. A moon spell.
-JAPANESE,夕,moon,Sky,fx_moon,override,Evening. A moon spell.
-JAPANESE,暮,moon,Sky,fx_moon,override,Evening. A moon spell.
-JAPANESE,銀,moon,Sky,fx_moon,variant,Silver. A moon spell.
-JAPANESE,盤,moon,Sky,fx_moon,variant,Tray. A moon spell.
-JAPANESE,光,light,Sky,fx_light,override,Ray. A light spell.
-JAPANESE,明,light,Sky,fx_light,override,Bright. A light spell.
-JAPANESE,星,light,Sky,fx_light,override,Star. A light spell.
-JAPANESE,晶,light,Sky,fx_light,override,Sparkle. A light spell.
-JAPANESE,珠,light,Sky,fx_light,override,Pearl. A light spell.
-JAPANESE,鏡,light,Sky,fx_light,variant,Mirror. A light spell.
-JAPANESE,影,shadow,Sky,fx_shadow,override,Shadow. A shadow spell.
-JAPANESE,暗,shadow,Sky,fx_shadow,override,Darkness. A shadow spell.
-JAPANESE,幽,shadow,Sky,fx_shadow,override,Seclude. A shadow spell.
-JAPANESE,墨,shadow,Sky,fx_shadow,override,Black ink. A shadow spell.
-JAPANESE,玄,shadow,Sky,fx_shadow,override,Mysterious. A shadow spell.
-JAPANESE,土,earth,Ground,fx_earth,override,Soil. A earth spell.
-JAPANESE,地,earth,Ground,fx_earth,override,Ground. A earth spell.
-JAPANESE,田,earth,Ground,fx_earth,override,Rice field. A earth spell.
-JAPANESE,場,earth,Ground,fx_earth,variant,Location. A earth spell.
-JAPANESE,園,earth,Ground,fx_earth,variant,Park. A earth spell.
-JAPANESE,沙,earth,Ground,fx_earth,override,Sand. A earth spell.
-JAPANESE,泥,earth,Ground,fx_earth,override,Mud. A earth spell.
-JAPANESE,島,earth,Ground,fx_earth,variant,Island. A earth spell.
-JAPANESE,石,stone,Ground,fx_stone,override,Stone. A stone spell.
-JAPANESE,岩,stone,Ground,fx_stone,override,Boulder. A stone spell.
-JAPANESE,峰,stone,Ground,fx_stone,override,Summit. A stone spell.
-JAPANESE,洞,stone,Ground,fx_stone,override,Den. A stone spell.
-JAPANESE,崖,stone,Ground,fx_stone,override,Cliff. A stone spell.
-JAPANESE,壁,stone,Ground,fx_stone,override,Wall. A stone spell.
-JAPANESE,碑,stone,Ground,fx_stone,override,Tombstone. A stone spell.
-JAPANESE,山,mountain,Ground,fx_mountain,override,Mountain. A mountain spell.
-JAPANESE,岳,mountain,Ground,fx_mountain,override,Point. A mountain spell.
-JAPANESE,丘,mountain,Ground,fx_mountain,override,Hill. A mountain spell.
-JAPANESE,陵,mountain,Ground,fx_mountain,override,Mausoleum. A mountain spell.
-JAPANESE,木,wood,Ground,fx_wood,override,Tree. A wood spell.
-JAPANESE,林,wood,Ground,fx_wood,override,Grove. A wood spell.
-JAPANESE,森,wood,Ground,fx_wood,override,Forest. A wood spell.
-JAPANESE,樹,wood,Ground,fx_wood,variant,Timber. A wood spell.
-JAPANESE,草,wood,Ground,fx_wood,override,Grass. A wood spell.
-JAPANESE,花,wood,Ground,fx_wood,override,Flower. A wood spell.
-JAPANESE,葉,wood,Ground,fx_wood,variant,Leaf. A wood spell.
-JAPANESE,根,wood,Ground,fx_wood,override,Root. A wood spell.
-JAPANESE,金,metal,Ground,fx_metal,override,Gold. A metal spell.
-JAPANESE,鋼,metal,Ground,fx_metal,variant,Steel. A metal spell.
-JAPANESE,銅,metal,Ground,fx_metal,variant,Copper. A metal spell.
-JAPANESE,玉,metal,Ground,fx_metal,override,Jewel. A metal spell.
-JAPANESE,宝,metal,Ground,fx_metal,override,Treasure. A metal spell.
-JAPANESE,鉛,metal,Ground,fx_metal,variant,Lead. A metal spell.
-JAPANESE,鎖,metal,Ground,fx_metal,variant,Chain. A metal spell.
-JAPANESE,針,metal,Ground,fx_metal,variant,Needle. A metal spell.
-JAPANESE,馬,animal,Creatures,fx_animal,variant,Horse. A animal spell.
-JAPANESE,牛,animal,Creatures,fx_animal,override,Cow. A animal spell.
-JAPANESE,羊,animal,Creatures,fx_animal,override,Sheep. A animal spell.
-JAPANESE,猫,animal,Creatures,fx_animal,override,Cat. A animal spell.
-JAPANESE,鳥,animal,Creatures,fx_animal,variant,Bird. A animal spell.
-JAPANESE,魚,animal,Creatures,fx_animal,variant,Fish. A animal spell.
-JAPANESE,虎,animal,Creatures,fx_animal,override,Tiger. A animal spell.
-JAPANESE,蜂,animal,Creatures,fx_animal,override,Bee. A animal spell.
-JAPANESE,蛇,animal,Creatures,fx_animal,override,Snake. A animal spell.
-JAPANESE,虫,animal,Creatures,fx_animal,override,Insect. A animal spell.
-JAPANESE,熊,animal,Creatures,fx_animal,override,Bear. A animal spell.
-JAPANESE,鹿,animal,Creatures,fx_animal,override,Deer. A animal spell.
-JAPANESE,人,person,Creatures,fx_person,override,Person. A person spell.
-JAPANESE,男,person,Creatures,fx_person,override,Male. A person spell.
-JAPANESE,女,person,Creatures,fx_person,override,Woman. A person spell.
-JAPANESE,子,person,Creatures,fx_person,override,Child. A person spell.
-JAPANESE,母,person,Creatures,fx_person,override,Mother. A person spell.
-JAPANESE,父,person,Creatures,fx_person,override,Father. A person spell.
-JAPANESE,友,person,Creatures,fx_person,override,Friend. A person spell.
-JAPANESE,師,person,Creatures,fx_person,variant,Expert. A person spell.
-JAPANESE,生,person,Creatures,fx_person,override,Life. A person spell.
-JAPANESE,医,person,Creatures,fx_person,override,Doctor. A person spell.
-JAPANESE,王,person,Creatures,fx_person,override,King. A person spell.
-JAPANESE,后,person,Creatures,fx_person,override,Empress. A person spell.
-JAPANESE,手,hand,Creatures,fx_hand,override,Hand. A hand spell.
-JAPANESE,指,hand,Creatures,fx_hand,override,Finger. A hand spell.
-JAPANESE,掌,hand,Creatures,fx_hand,override,Palm of hand. A hand spell.
-JAPANESE,持,hand,Creatures,fx_hand,override,Hold. A hand spell.
-JAPANESE,打,hand,Creatures,fx_hand,override,Strike. A hand spell.
-JAPANESE,推,hand,Creatures,fx_hand,override,Conjecture. A hand spell.
-JAPANESE,拉,hand,Creatures,fx_hand,override,Latin. A hand spell.
-JAPANESE,提,hand,Creatures,fx_hand,override,Propose. A hand spell.
-JAPANESE,抱,hand,Creatures,fx_hand,override,Embrace. A hand spell.
-JAPANESE,握,hand,Creatures,fx_hand,override,Grip. A hand spell.
-JAPANESE,投,hand,Creatures,fx_hand,override,Throw. A hand spell.
-JAPANESE,船,boat,Craft,fx_boat,override,Ship. A boat spell.
-JAPANESE,舟,boat,Craft,fx_boat,override,Boat. A boat spell.
-JAPANESE,帆,boat,Craft,fx_boat,override,Sail. A boat spell.
-JAPANESE,港,boat,Craft,fx_boat,override,Harbor. A boat spell.
-JAPANESE,航,boat,Craft,fx_boat,override,Navigate. A boat spell.
-JAPANESE,泊,boat,Craft,fx_boat,override,Overnight stay. A boat spell.
-JAPANESE,浮,boat,Craft,fx_boat,override,Floating. A boat spell.
-JAPANESE,漂,boat,Craft,fx_boat,override,Drift. A boat spell.
-JAPANESE,橋,boat,Craft,fx_boat,variant,Bridge. A boat spell.
-JAPANESE,車,tool,Craft,fx_tool,variant,Car. A tool spell.
-JAPANESE,門,tool,Craft,fx_tool,variant,Gate. A tool spell.
-JAPANESE,房,tool,Craft,fx_tool,override,Tassel. A tool spell.
-JAPANESE,屋,tool,Craft,fx_tool,override,Roof. A tool spell.
-JAPANESE,室,tool,Craft,fx_tool,override,Room. A tool spell.
-JAPANESE,城,tool,Craft,fx_tool,override,Castle. A tool spell.
-JAPANESE,市,tool,Craft,fx_tool,override,Market. A tool spell.
-JAPANESE,街,tool,Craft,fx_tool,override,Boulevard. A tool spell.
-JAPANESE,路,tool,Craft,fx_tool,override,Path. A tool spell.
-JAPANESE,塔,tool,Craft,fx_tool,override,Pagoda. A tool spell.
-JAPANESE,書,tool,Craft,fx_tool,variant,Write. A tool spell.
-JAPANESE,紙,tool,Craft,fx_tool,variant,Paper. A tool spell.
-JAPANESE,筆,tool,Craft,fx_tool,variant,Writing brush. A tool spell.
-JAPANESE,刀,tool,Craft,fx_tool,override,Sword. A tool spell.
-JAPANESE,線,tool,Craft,fx_tool,variant,Line. A tool spell.
-JAPANESE,布,tool,Craft,fx_tool,override,Linen. A tool spell.
-JAPANESE,衣,tool,Craft,fx_tool,override,Garment. A tool spell.
-JAPANESE,帽,tool,Craft,fx_tool,override,Cap. A tool spell.
-JAPANESE,杯,tool,Craft,fx_tool,override,Counter for cupfuls. A tool spell.
-JAPANESE,瓶,tool,Craft,fx_tool,override,Bottle. A tool spell.
-JAPANESE,箱,tool,Craft,fx_tool,override,Box. A tool spell.
-JAPANESE,網,tool,Craft,fx_tool,variant,Netting. A tool spell.
-JAPANESE,板,tool,Craft,fx_tool,override,Plank. A tool spell.
-JAPANESE,椅,tool,Craft,fx_tool,override,Chair. A tool spell.
-JAPANESE,鐘,tool,Craft,fx_tool,variant,Bell. A tool spell.
-JAPANESE,琴,tool,Craft,fx_tool,override,Harp. A tool spell.
-JAPANESE,心,mind,Mind,fx_mind,override,Heart. A mind spell.
-JAPANESE,想,mind,Mind,fx_mind,override,Idea. A mind spell.
-JAPANESE,思,mind,Mind,fx_mind,override,Think. A mind spell.
-JAPANESE,念,mind,Mind,fx_mind,override,Wish. A mind spell.
-JAPANESE,意,mind,Mind,fx_mind,override,Idea. A mind spell.
-JAPANESE,知,mind,Mind,fx_mind,override,Know. A mind spell.
-JAPANESE,識,mind,Mind,fx_mind,variant,Discriminating. A mind spell.
-JAPANESE,学,mind,Mind,fx_mind,override,Study. A mind spell.
-JAPANESE,問,mind,Mind,fx_mind,variant,Question. A mind spell.
-JAPANESE,記,mind,Mind,fx_mind,variant,Scribe. A mind spell.
-JAPANESE,忘,mind,Mind,fx_mind,override,Forget. A mind spell.
-JAPANESE,愛,mind,Mind,fx_mind,variant,Love. A mind spell.
-JAPANESE,恨,mind,Mind,fx_mind,override,Regret. A mind spell.
-JAPANESE,喜,mind,Mind,fx_mind,override,Rejoice. A mind spell.
-JAPANESE,怒,mind,Mind,fx_mind,override,Angry. A mind spell.
-JAPANESE,夢,dream,Mind,fx_dream,variant,Dream. A dream spell.
-JAPANESE,睡,dream,Mind,fx_dream,override,Drowsy. A dream spell.
-JAPANESE,醒,dream,Mind,fx_dream,override,Awake. A dream spell.
-JAPANESE,眠,dream,Mind,fx_dream,override,Sleep. A dream spell.
-JAPANESE,幻,dream,Mind,fx_dream,override,Phantasm. A dream spell.
-JAPANESE,声,sound,Mind,fx_sound,override,Voice. A sound spell.
-JAPANESE,音,sound,Mind,fx_sound,override,Sound. A sound spell.
-JAPANESE,聞,sound,Mind,fx_sound,variant,Hear. A sound spell.
-JAPANESE,語,sound,Mind,fx_sound,variant,Word. A sound spell.
-JAPANESE,言,sound,Mind,fx_sound,override,Say. A sound spell.
-JAPANESE,話,sound,Mind,fx_sound,variant,Tale. A sound spell.
-JAPANESE,講,sound,Mind,fx_sound,variant,Lecture. A sound spell.
-JAPANESE,写,sound,Mind,fx_sound,override,Copy. A sound spell.
-JAPANESE,唱,sound,Mind,fx_sound,override,Chant. A sound spell.
-JAPANESE,歌,sound,Mind,fx_sound,override,Song. A sound spell.
-JAPANESE,答,sound,Mind,fx_sound,override,Solution. A sound spell.
-JAPANESE,叫,sound,Mind,fx_sound,override,Shout. A sound spell.
-JAPANESE,笑,sound,Mind,fx_sound,override,Laugh. A sound spell.
-JAPANESE,鈴,sound,Mind,fx_sound,variant,Small bell. A sound spell.
-JAPANESE,響,sound,Mind,fx_sound,variant,Echo. A sound spell.
-JAPANESE,時,time,Time,fx_time,variant,Time. A time spell.
-JAPANESE,間,time,Time,fx_time,variant,Interval. A time spell.
-JAPANESE,年,time,Time,fx_time,override,Year. A time spell.
-JAPANESE,分,time,Time,fx_time,override,Part. A time spell.
-JAPANESE,秒,time,Time,fx_time,override,Second (1/60 minute). A time spell.
-JAPANESE,刻,time,Time,fx_time,override,Engrave. A time spell.
-JAPANESE,早,time,Time,fx_time,override,Early. A time spell.
-JAPANESE,今,time,Time,fx_time,override,Now. A time spell.
-JAPANESE,昨,time,Time,fx_time,override,Yesterday. A time spell.
-JAPANESE,春,time,Time,fx_time,override,Springtime. A time spell.
-JAPANESE,夏,time,Time,fx_time,override,Summer. A time spell.
-JAPANESE,秋,time,Time,fx_time,override,Autumn. A time spell.
-JAPANESE,冬,time,Time,fx_time,override,Winter. A time spell.
-JAPANESE,季,time,Time,fx_time,override,Seasons. A time spell.
-JAPANESE,節,time,Time,fx_time,variant,Node. A time spell.
-JAPANESE,老,time,Time,fx_time,override,Old man. A time spell.
-JAPANESE,新,time,Time,fx_time,override,New. A time spell.
-JAPANESE,旧,time,Time,fx_time,override,Old times. A time spell.
-JAPANESE,先,time,Time,fx_time,override,Before. A time spell.
-JAPANESE,初,time,Time,fx_time,override,First time. A time spell.
-JAPANESE,終,time,Time,fx_time,variant,End. A time spell.
-JAPANESE,始,time,Time,fx_time,override,Commence. A time spell.
-JAPANESE,末,time,Time,fx_time,override,End. A time spell.
-JAPANESE,久,time,Time,fx_time,override,Long time. A time spell.
-JAPANESE,暫,time,Time,fx_time,variant,Temporarily. A time spell.
-JAPANESE,永,time,Time,fx_time,override,Eternity. A time spell.
-JAPANESE,恒,time,Time,fx_time,override,Constancy. A time spell.
-JAPANESE,期,time,Time,fx_time,override,Period. A time spell.
-JAPANESE,候,time,Time,fx_time,override,Climate. A time spell.
-JAPANESE,等,time,Time,fx_time,override,Etc.. A time spell.
-JAPANESE,待,time,Time,fx_time,override,Wait. A time spell.
-JAPANESE,快,time,Time,fx_time,override,Cheerful. A time spell.
-JAPANESE,慢,time,Time,fx_time,override,Ridicule. A time spell.
-JAPANESE,長,time,Time,fx_time,variant,Long. A time spell.
-JAPANESE,短,time,Time,fx_time,override,Short. A time spell.
-JAPANESE,魔,rune,Arcana,fx_rune,override,Witch. A rune spell.
-JAPANESE,法,rune,Arcana,fx_rune,override,Method. A rune spell.
-JAPANESE,術,rune,Arcana,fx_rune,variant,Art. A rune spell.
-JAPANESE,符,rune,Arcana,fx_rune,override,Token. A rune spell.
-JAPANESE,祝,rune,Arcana,fx_rune,override,Celebrate. A rune spell.
-JAPANESE,祈,rune,Arcana,fx_rune,override,Pray. A rune spell.
-JAPANESE,環,rune,Arcana,fx_rune,variant,Ring. A rune spell.
-JAPANESE,映,mirror,Arcana,fx_mirror,override,Reflect. A mirror spell.
-JAPANESE,反,mirror,Arcana,fx_mirror,override,Anti-. A mirror spell.
-JAPANESE,複,mirror,Arcana,fx_mirror,variant,Duplicate. A mirror spell.
-JAPANESE,双,mirror,Arcana,fx_mirror,override,Pair. A mirror spell.
-JAPANESE,像,mirror,Arcana,fx_mirror,override,Statue. A mirror spell.
-JAPANESE,形,mirror,Arcana,fx_mirror,override,Shape. A mirror spell.
-JAPANESE,貌,mirror,Arcana,fx_mirror,override,Form. A mirror spell.
-JAPANESE,禁,key,Arcana,fx_key,override,Prohibition. A key spell.
-JAPANESE,解,key,Arcana,fx_key,override,Unravel. A key spell.
-JAPANESE,通,key,Arcana,fx_key,override,Traffic. A key spell.
-JAPANESE,病,potion,Arcana,fx_potion,override,Ill. A potion spell.
-JAPANESE,康,potion,Arcana,fx_potion,override,Ease. A potion spell.
-JAPANESE,毒,potion,Arcana,fx_potion,override,Poison. A potion spell.
-JAPANESE,療,potion,Arcana,fx_potion,variant,Heal. A potion spell.
-JAPANESE,香,potion,Arcana,fx_potion,override,Incense. A potion spell.
-JAPANESE,苦,potion,Arcana,fx_potion,override,Suffering. A potion spell.
-JAPANESE,酸,potion,Arcana,fx_potion,override,Acid. A potion spell.
-JAPANESE,迷,illusion,Arcana,fx_illusion,override,Astray. A illusion spell.
-JAPANESE,惑,illusion,Arcana,fx_illusion,override,Beguile. A illusion spell.
-JAPANESE,鬼,illusion,Arcana,fx_illusion,override,Ghost. A illusion spell.
-JAPANESE,怪,illusion,Arcana,fx_illusion,override,Suspicious. A illusion spell.
-JAPANESE,占,oracle,Arcana,fx_oracle,override,Fortune-telling. A oracle spell.
-JAPANESE,命,oracle,Arcana,fx_oracle,override,Fate. A oracle spell.
-JAPANESE,運,oracle,Arcana,fx_oracle,variant,Carry. A oracle spell.
-JAPANESE,福,oracle,Arcana,fx_oracle,override,Blessing. A oracle spell.
-JAPANESE,禍,oracle,Arcana,fx_oracle,variant,Calamity. A oracle spell.
-JAPANESE,吉,oracle,Arcana,fx_oracle,override,Good luck. A oracle spell.
-JAPANESE,凶,oracle,Arcana,fx_oracle,override,Villain. A oracle spell.
-JAPANESE,魂,spirit,Spirit,fx_spirit,override,Soul. A spirit spell.
-JAPANESE,神,spirit,Spirit,fx_spirit,override,Gods. A spirit spell.
-JAPANESE,仙,spirit,Spirit,fx_spirit,override,Hermit. A spirit spell.
-JAPANESE,聖,spirit,Spirit,fx_spirit,variant,Holy. A spirit spell.
-JAPANESE,寺,spirit,Spirit,fx_spirit,override,Buddhist temple. A spirit spell.
-JAPANESE,祖,spirit,Spirit,fx_spirit,override,Ancestor. A spirit spell.
-JAPANESE,祭,spirit,Spirit,fx_spirit,override,Ritual. A spirit spell.
-JAPANESE,供,spirit,Spirit,fx_spirit,override,Submit. A spirit spell.
-JAPANESE,死,spirit,Spirit,fx_spirit,override,Death. A spirit spell.
-JAPANESE,亡,spirit,Spirit,fx_spirit,override,Deceased. A spirit spell.
-JAPANESE,血,spirit,Spirit,fx_spirit,override,Blood. A spirit spell.
-JAPANESE,精,spirit,Spirit,fx_spirit,override,Refined. A spirit spell.
-JAPANESE,天,spirit,Spirit,fx_spirit,override,Heavens. A spirit spell.
-JAPANESE,堂,spirit,Spirit,fx_spirit,override,Public chamber. A spirit spell.
-JAPANESE,墓,spirit,Spirit,fx_spirit,override,Grave. A spirit spell.
-JAPANESE,墳,spirit,Spirit,fx_spirit,variant,Tomb. A spirit spell.
-JAPANESE,骨,spirit,Spirit,fx_spirit,override,Skeleton. A spirit spell.
-JAPANESE,息,spirit,Spirit,fx_spirit,override,Breath. A spirit spell.
-JAPANESE,道,spirit,Spirit,fx_spirit,override,Road-way. A spirit spell.
-JAPANESE,肉,soul,Spirit,fx_soul,override,Meat. A soul spell.
-JAPANESE,護,ward,Spirit,fx_ward,variant,Safeguard. A ward spell.
-JAPANESE,衛,ward,Spirit,fx_ward,variant,Defense. A ward spell.
-JAPANESE,守,ward,Spirit,fx_ward,override,Guard. A ward spell.
-JAPANESE,保,ward,Spirit,fx_ward,override,Protect. A ward spell.
-JAPANESE,防,ward,Spirit,fx_ward,override,Ward off. A ward spell.
-JAPANESE,盾,ward,Spirit,fx_ward,override,Shield. A ward spell.
-JAPANESE,障,ward,Spirit,fx_ward,override,Hinder. A ward spell.
-JAPANESE,安,ward,Spirit,fx_ward,override,Relax. A ward spell.
-JAPANESE,全,ward,Spirit,fx_ward,override,Whole. A ward spell.
-JAPANESE,平,ward,Spirit,fx_ward,override,Even. A ward spell.
-JAPANESE,固,ward,Spirit,fx_ward,override,Harden. A ward spell.
-JAPANESE,堅,ward,Spirit,fx_ward,variant,Strict. A ward spell.
-JAPANESE,気,spirit,Spirit,fx_spirit,fill,Spirit. A spirit spell.
-JAPANESE,丁,ward,Spirit,fx_ward,fill,Street. A ward spell.
-JAPANESE,区,ward,Spirit,fx_ward,fill,Ward. A ward spell.
-KOREAN,水,water,Tides,fx_water,override,"Water, liquid, lotion, juice. A water spell."
-KOREAN,河,water,Tides,fx_water,override,River. A water spell.
-KOREAN,江,water,Tides,fx_water,override,Large river. A water spell.
-KOREAN,海,water,Tides,fx_water,override,"Sea, ocean. A water spell."
-KOREAN,湖,water,Tides,fx_water,override,A lake. A water spell.
-KOREAN,泉,water,Tides,fx_water,override,"Spring, fountain. A water spell."
-KOREAN,池,water,Tides,fx_water,override,"Pool, pond. A water spell."
-KOREAN,洋,water,Tides,fx_water,override,"Ocean, sea. A water spell."
-KOREAN,浪,water,Tides,fx_water,override,Wave. A water spell.
-KOREAN,流,water,Tides,fx_water,override,"Flow, circulate, drift. A water spell."
-KOREAN,潮,water,Tides,fx_water,override,Tide. A water spell.
-KOREAN,滴,water,Tides,fx_water,override,Drip. A water spell.
-KOREAN,汗,water,Tides,fx_water,override,"Perspiration, sweat. A water spell."
-KOREAN,淚,water,Tides,fx_water,variant,Tears. A water spell.
-KOREAN,洗,water,Tides,fx_water,override,"Wash, rinse. A water spell."
-KOREAN,湯,water,Tides,fx_water,variant,Hot water. A water spell.
-KOREAN,遊,water,Tides,fx_water,variant,"Wander, roam, travel. A water spell."
-KOREAN,泳,water,Tides,fx_water,override,Dive. A water spell.
-KOREAN,濕,water,Tides,fx_water,variant,"Wet, moist, humid, damp. A water spell."
-KOREAN,深,water,Tides,fx_water,override,Deep. A water spell.
-KOREAN,波,water,Tides,fx_water,override,"Waves, breakers. A water spell."
-KOREAN,溪,water,Tides,fx_water,override,"Mountain stream, creek. A water spell."
-KOREAN,滿,water,Tides,fx_water,variant,Fill. A water spell.
-KOREAN,凍,ice,Tides,fx_ice,variant,Freeze. A ice spell.
-KOREAN,寒,ice,Tides,fx_ice,override,"Cold, wintry, chilly. A ice spell."
-KOREAN,冷,ice,Tides,fx_ice,override,"Cold, cool. A ice spell."
-KOREAN,霜,ice,Tides,fx_ice,override,Frost. A ice spell.
-KOREAN,涼,ice,Tides,fx_ice,variant,"Cool, cold. A ice spell."
-KOREAN,凝,ice,Tides,fx_ice,override,Coagulate. A ice spell.
-KOREAN,雪,snow,Tides,fx_snow,override,Snow. A snow spell.
-KOREAN,雨,rain,Tides,fx_rain,override,Rain. A rain spell.
-KOREAN,露,rain,Tides,fx_rain,override,Dew. A rain spell.
-KOREAN,陣,rain,Tides,fx_rain,variant,"Column, row or file of troops. A rain spell."
-KOREAN,雷,rain,Tides,fx_rain,override,Thunder. A rain spell.
-KOREAN,霧,rain,Tides,fx_rain,variant,"Fog, mist, vapor, fine spray. A rain spell."
-KOREAN,火,fire,Flame,fx_fire,override,"Fire, flame. A fire spell."
-KOREAN,炎,fire,Flame,fx_fire,override,"Flame, blaze. A fire spell."
-KOREAN,燒,fire,Flame,fx_fire,variant,Burn. A fire spell.
-KOREAN,燃,fire,Flame,fx_fire,override,Burn. A fire spell.
-KOREAN,熱,fire,Flame,fx_fire,variant,Hot. A fire spell.
-KOREAN,暖,fire,Flame,fx_fire,override,"Warm, genial. A fire spell."
-KOREAN,燈,fire,Flame,fx_fire,variant,"Lantern, lamp. A fire spell."
-KOREAN,燭,fire,Flame,fx_fire,variant,"Candle, taper. A fire spell."
-KOREAN,爐,fire,Flame,fx_fire,variant,"Fireplace, stove, oven, furnace. A fire spell."
-KOREAN,燥,fire,Flame,fx_fire,override,"Dry, parched, arid. A fire spell."
-KOREAN,烈,fire,Flame,fx_fire,override,"Fiery, violent, vehement, ardent. A fire spell."
-KOREAN,爆,fire,Flame,fx_fire,override,"Crackle, pop, burst, explode. A fire spell."
-KOREAN,炭,fire,Flame,fx_fire,override,Charcoal. A fire spell.
-KOREAN,赤,fire,Flame,fx_fire,override,Red. A fire spell.
-KOREAN,紅,fire,Flame,fx_fire,variant,"Red, vermillion. A fire spell."
-KOREAN,丹,fire,Flame,fx_fire,override,Cinnabar (native HgS). A fire spell.
-KOREAN,暑,fire,Flame,fx_fire,override,Hot. A fire spell.
-KOREAN,溫,fire,Flame,fx_fire,variant,"Lukewarm, warm. A fire spell."
-KOREAN,電,lightning,Flame,fx_lightning,variant,"Electricity, electric. A lightning spell."
-KOREAN,震,lightning,Flame,fx_lightning,override,"Shake, quake, tremor. A lightning spell."
-KOREAN,輝,lightning,Flame,fx_lightning,variant,"Brightness, luster, brilliance. A lightning spell."
-KOREAN,災,fire,Flame,fx_fire,fill,"Calamity, disaster, catastrophe. A fire spell."
-KOREAN,熟,fire,Flame,fx_fire,fill,Well-cooked. A fire spell.
-KOREAN,螢,fire,Flame,fx_fire,fill,"Glowworm, luminous insect. A fire spell."
-KOREAN,辛,fire,Flame,fx_fire,fill,Bitter. A fire spell.
-KOREAN,風,wind,Sky,fx_wind,variant,Wind. A wind spell.
-KOREAN,吹,wind,Sky,fx_wind,override,Blow. A wind spell.
-KOREAN,飛,wind,Sky,fx_wind,variant,Fly. A wind spell.
-KOREAN,氣,wind,Sky,fx_wind,variant,"Air, gas, steam, vapor. A wind spell."
-KOREAN,空,wind,Sky,fx_wind,override,"Empty, hollow, bare, deserted. A wind spell."
-KOREAN,輕,wind,Sky,fx_wind,variant,Light. A wind spell.
-KOREAN,蒸,wind,Sky,fx_wind,override,Steam. A wind spell.
-KOREAN,呼,wind,Sky,fx_wind,override,"Breathe sigh, exhale. A wind spell."
-KOREAN,雲,cloud,Sky,fx_cloud,variant,Clouds. A cloud spell.
-KOREAN,煙,cloud,Sky,fx_cloud,variant,"Smoke, soot. A cloud spell."
-KOREAN,陰,cloud,Sky,fx_cloud,variant,"The passive, female principle in Chinese philosophy (yin). A cloud spell."
-KOREAN,日,sun,Sky,fx_sun,override,Sun. A sun spell.
-KOREAN,陽,sun,Sky,fx_sun,variant,"The active, male principle in Chinese philosophy (yang). A sun spell."
-KOREAN,晴,sun,Sky,fx_sun,override,"Clear weather, fine weather. A sun spell."
-KOREAN,照,sun,Sky,fx_sun,override,"Shine, illumine, reflect. A sun spell."
-KOREAN,晨,sun,Sky,fx_sun,override,"Early morning, daybreak. A sun spell."
-KOREAN,旦,sun,Sky,fx_sun,override,Dawn. A sun spell.
-KOREAN,月,moon,Sky,fx_moon,override,Moon. A moon spell.
-KOREAN,夜,moon,Sky,fx_moon,override,"Night, dark. A moon spell."
-KOREAN,夕,moon,Sky,fx_moon,override,"Evening, night, dusk. A moon spell."
-KOREAN,暮,moon,Sky,fx_moon,override,"Evening, dusk, sunset. A moon spell."
-KOREAN,晚,moon,Sky,fx_moon,override,"Night, evening. A moon spell."
-KOREAN,銀,moon,Sky,fx_moon,variant,"Silver (element 47, Ag). A moon spell."
-KOREAN,盤,moon,Sky,fx_moon,variant,"Tray, plate, dish. A moon spell."
-KOREAN,光,light,Sky,fx_light,override,"Light, brilliant, shine. A light spell."
-KOREAN,明,light,Sky,fx_light,override,"Bright, light, brilliant. A light spell."
-KOREAN,星,light,Sky,fx_light,override,"A star, planet. A light spell."
-KOREAN,珠,light,Sky,fx_light,override,"Precious stone, gem, jewel, pearl. A light spell."
-KOREAN,鏡,light,Sky,fx_light,variant,Mirror. A light spell.
-KOREAN,影,shadow,Sky,fx_shadow,override,Shadow. A shadow spell.
-KOREAN,黑,shadow,Sky,fx_shadow,override,Black. A shadow spell.
-KOREAN,暗,shadow,Sky,fx_shadow,override,Dark. A shadow spell.
-KOREAN,幽,shadow,Sky,fx_shadow,override,"Quiet, secluded, tranquil. A shadow spell."
-KOREAN,墨,shadow,Sky,fx_shadow,override,Ink. A shadow spell.
-KOREAN,玄,shadow,Sky,fx_shadow,override,"Deep, profound, abstruse. A shadow spell."
-KOREAN,土,earth,Ground,fx_earth,override,"Soil, earth. A earth spell."
-KOREAN,地,earth,Ground,fx_earth,override,Earth. A earth spell.
-KOREAN,田,earth,Ground,fx_earth,override,"Field, arable land, cultivated. A earth spell."
-KOREAN,場,earth,Ground,fx_earth,variant,"Open space, field, market. A earth spell."
-KOREAN,園,earth,Ground,fx_earth,variant,Garden. A earth spell.
-KOREAN,沙,earth,Ground,fx_earth,override,"Sand, gravel, pebbles. A earth spell."
-KOREAN,泥,earth,Ground,fx_earth,override,"Mud, mire. A earth spell."
-KOREAN,島,earth,Ground,fx_earth,variant,Island. A earth spell.
-KOREAN,岸,earth,Ground,fx_earth,override,"Bank, shore. A earth spell."
-KOREAN,石,stone,Ground,fx_stone,override,"Stone, rock, mineral. A stone spell."
-KOREAN,洞,stone,Ground,fx_stone,override,"Cave, grotto. A stone spell."
-KOREAN,壁,stone,Ground,fx_stone,override,Partition wall. A stone spell.
-KOREAN,碑,stone,Ground,fx_stone,override,Stone tablet. A stone spell.
-KOREAN,山,mountain,Ground,fx_mountain,override,"Mountain, hill, peak. A mountain spell."
-KOREAN,嶺,mountain,Ground,fx_mountain,variant,"Mountain ridge, mountain peak. A mountain spell."
-KOREAN,岳,mountain,Ground,fx_mountain,override,Mountain peak. A mountain spell.
-KOREAN,丘,mountain,Ground,fx_mountain,override,Hill. A mountain spell.
-KOREAN,陵,mountain,Ground,fx_mountain,override,"Hill, mound. A mountain spell."
-KOREAN,木,wood,Ground,fx_wood,override,Tree. A wood spell.
-KOREAN,林,wood,Ground,fx_wood,override,"Forest, grove. A wood spell."
-KOREAN,樹,wood,Ground,fx_wood,variant,Tree. A wood spell.
-KOREAN,草,wood,Ground,fx_wood,override,"Grass, straw, thatch, herbs. A wood spell."
-KOREAN,花,wood,Ground,fx_wood,override,Flower. A wood spell.
-KOREAN,葉,wood,Ground,fx_wood,variant,"Leaf, petal. A wood spell."
-KOREAN,根,wood,Ground,fx_wood,override,"Root, base(d on). A wood spell."
-KOREAN,竹,wood,Ground,fx_wood,override,Bamboo. A wood spell.
-KOREAN,米,wood,Ground,fx_wood,override,Hulled or husked uncooked rice. A wood spell.
-KOREAN,金,metal,Ground,fx_metal,override,Gold. A metal spell.
-KOREAN,鐵,metal,Ground,fx_metal,variant,"Iron (element 26, Fe). A metal spell."
-KOREAN,鋼,metal,Ground,fx_metal,variant,Steel. A metal spell.
-KOREAN,銅,metal,Ground,fx_metal,variant,"Copper (element 29, Cu). A metal spell."
-KOREAN,玉,metal,Ground,fx_metal,override,"Jade, precious stone, gem. A metal spell."
-KOREAN,寶,metal,Ground,fx_metal,variant,"Treasure, jewel. A metal spell."
-KOREAN,錢,metal,Ground,fx_metal,variant,"Money, currency, coins. A metal spell."
-KOREAN,鉛,metal,Ground,fx_metal,variant,"Lead (element 82, Pb). A metal spell."
-KOREAN,馬,animal,Creatures,fx_animal,variant,Horse. A animal spell.
-KOREAN,牛,animal,Creatures,fx_animal,override,"Cow, ox, bull. A animal spell."
-KOREAN,羊,animal,Creatures,fx_animal,override,"Sheep, goat. A animal spell."
-KOREAN,狗,animal,Creatures,fx_animal,override,"Dog, Canis familiaris. A animal spell."
-KOREAN,鳥,animal,Creatures,fx_animal,variant,Bird. A animal spell.
-KOREAN,魚,animal,Creatures,fx_animal,variant,Fish. A animal spell.
-KOREAN,龍,animal,Creatures,fx_animal,variant,Dragon. A animal spell.
-KOREAN,虎,animal,Creatures,fx_animal,override,Tiger. A animal spell.
-KOREAN,龜,animal,Creatures,fx_animal,variant,Turtle or tortoise. A animal spell.
-KOREAN,蜂,animal,Creatures,fx_animal,override,"Bee, wasp, hornet. A animal spell."
-KOREAN,蝶,animal,Creatures,fx_animal,override,Butterfly. A animal spell.
-KOREAN,蛇,animal,Creatures,fx_animal,override,Snake. A animal spell.
-KOREAN,人,person,Creatures,fx_person,override,Man. A person spell.
-KOREAN,男,person,Creatures,fx_person,override,"Male, man. A person spell."
-KOREAN,女,person,Creatures,fx_person,override,"Woman, girl. A person spell."
-KOREAN,兒,person,Creatures,fx_person,variant,"Son, child, oneself. A person spell."
-KOREAN,子,person,Creatures,fx_person,override,"Offspring, child. A person spell."
-KOREAN,母,person,Creatures,fx_person,override,Mother. A person spell.
-KOREAN,父,person,Creatures,fx_person,override,Father. A person spell.
-KOREAN,友,person,Creatures,fx_person,override,"Friend, companion. A person spell."
-KOREAN,朋,person,Creatures,fx_person,override,"Friend, pal, acquaintance. A person spell."
-KOREAN,師,person,Creatures,fx_person,variant,"Teacher, master, specialist. A person spell."
-KOREAN,生,person,Creatures,fx_person,override,"Life, living, lifetime. A person spell."
-KOREAN,醫,person,Creatures,fx_person,variant,Medicine. A person spell.
-KOREAN,手,hand,Creatures,fx_hand,override,Hand. A hand spell.
-KOREAN,指,hand,Creatures,fx_hand,override,"Finger, toe. A hand spell."
-KOREAN,掌,hand,Creatures,fx_hand,override,"Palm of hand, sole of foot, paw. A hand spell."
-KOREAN,持,hand,Creatures,fx_hand,override,"Sustain, support. A hand spell."
-KOREAN,打,hand,Creatures,fx_hand,override,"Strike, hit, beat. A hand spell."
-KOREAN,推,hand,Creatures,fx_hand,override,"Push, expel. A hand spell."
-KOREAN,提,hand,Creatures,fx_hand,override,Hold in hand. A hand spell.
-KOREAN,抱,hand,Creatures,fx_hand,override,"Embrace, hold in arms, enfold. A hand spell."
-KOREAN,投,hand,Creatures,fx_hand,override,"Throw, cast, fling, pitch. A hand spell."
-KOREAN,接,hand,Creatures,fx_hand,override,Receive. A hand spell.
-KOREAN,拍,hand,Creatures,fx_hand,override,"Clap, tap, beat. A hand spell."
-KOREAN,船,boat,Craft,fx_boat,override,"Ship, boat, vessel. A boat spell."
-KOREAN,舟,boat,Craft,fx_boat,override,"Boat, ship. A boat spell."
-KOREAN,港,boat,Craft,fx_boat,override,"Port, harbor. A boat spell."
-KOREAN,航,boat,Craft,fx_boat,override,Sail. A boat spell.
-KOREAN,泊,boat,Craft,fx_boat,override,Anchor vessel. A boat spell.
-KOREAN,浮,boat,Craft,fx_boat,override,"To float, drift, waft. A boat spell."
-KOREAN,漂,boat,Craft,fx_boat,override,"Float, drift. A boat spell."
-KOREAN,橋,boat,Craft,fx_boat,variant,Bridge. A boat spell.
-KOREAN,車,tool,Craft,fx_tool,variant,"Cart, vehicle. A tool spell."
-KOREAN,門,tool,Craft,fx_tool,variant,"Gate, door, entrance, opening. A tool spell."
-KOREAN,房,tool,Craft,fx_tool,override,"House, building. A tool spell."
-KOREAN,屋,tool,Craft,fx_tool,override,House. A tool spell.
-KOREAN,室,tool,Craft,fx_tool,override,"Room, home, house, chamber. A tool spell."
-KOREAN,城,tool,Craft,fx_tool,override,Castle. A tool spell.
-KOREAN,市,tool,Craft,fx_tool,override,"Market, fair. A tool spell."
-KOREAN,街,tool,Craft,fx_tool,override,"Street, road, thoroughfare. A tool spell."
-KOREAN,路,tool,Craft,fx_tool,override,"Road, path, street. A tool spell."
-KOREAN,塔,tool,Craft,fx_tool,override,"Tower, spire, tall building. A tool spell."
-KOREAN,書,tool,Craft,fx_tool,variant,"Book, letter, document. A tool spell."
-KOREAN,紙,tool,Craft,fx_tool,variant,Paper. A tool spell.
-KOREAN,筆,tool,Craft,fx_tool,variant,Writing brush. A tool spell.
-KOREAN,刀,tool,Craft,fx_tool,override,Knife. A tool spell.
-KOREAN,線,tool,Craft,fx_tool,variant,"Thread, line, wire. A tool spell."
-KOREAN,布,tool,Craft,fx_tool,override,"Cotton cloth, textiles, linen. A tool spell."
-KOREAN,衣,tool,Craft,fx_tool,override,"Clothes, clothing. A tool spell."
-KOREAN,杯,tool,Craft,fx_tool,override,"Cup, glass. A tool spell."
-KOREAN,板,tool,Craft,fx_tool,override,"Plank, board. A tool spell."
-KOREAN,鐘,tool,Craft,fx_tool,variant,Clock. A tool spell.
-KOREAN,琴,tool,Craft,fx_tool,override,Chinese lute or guitar. A tool spell.
-KOREAN,鼓,tool,Craft,fx_tool,override,Drum. A tool spell.
-KOREAN,尺,tool,Craft,fx_tool,override,Chinese measure approx. 'foot. A tool spell.
-KOREAN,輪,tool,Craft,fx_tool,variant,Wheel. A tool spell.
-KOREAN,綱,tool,Craft,fx_tool,fill,"Heavy rope, hawser. A tool spell."
-KOREAN,京,tool,Craft,fx_tool,fill,Capital city. A tool spell.
-KOREAN,耕,tool,Craft,fx_tool,fill,"Plow, cultivate. A tool spell."
-KOREAN,心,mind,Mind,fx_mind,override,Heart. A mind spell.
-KOREAN,想,mind,Mind,fx_mind,override,"Think, speculate, plan, consider. A mind spell."
-KOREAN,思,mind,Mind,fx_mind,override,"Think, consider, ponder. A mind spell."
-KOREAN,念,mind,Mind,fx_mind,override,"Think of, recall, study. A mind spell."
-KOREAN,意,mind,Mind,fx_mind,override,"Thought, idea, opinion. A mind spell."
-KOREAN,知,mind,Mind,fx_mind,override,"Know, perceive, comprehend. A mind spell."
-KOREAN,識,mind,Mind,fx_mind,variant,"Recognize, understand, know. A mind spell."
-KOREAN,學,mind,Mind,fx_mind,variant,"Learning, knowledge. A mind spell."
-KOREAN,問,mind,Mind,fx_mind,variant,"Ask (about), inquire after. A mind spell."
-KOREAN,記,mind,Mind,fx_mind,variant,Record. A mind spell.
-KOREAN,忘,mind,Mind,fx_mind,override,Forget. A mind spell.
-KOREAN,愛,mind,Mind,fx_mind,variant,"Love, be fond of, like. A mind spell."
-KOREAN,恨,mind,Mind,fx_mind,override,"Hatred, dislike. A mind spell."
-KOREAN,喜,mind,Mind,fx_mind,override,"Like, love, enjoy. A mind spell."
-KOREAN,怒,mind,Mind,fx_mind,override,"Anger, rage, passion. A mind spell."
-KOREAN,哀,mind,Mind,fx_mind,override,"Sad, mournful, pitiful. A mind spell."
-KOREAN,夢,dream,Mind,fx_dream,variant,Dream. A dream spell.
-KOREAN,睡,dream,Mind,fx_dream,override,"Sleep, doze. A dream spell."
-KOREAN,眠,dream,Mind,fx_dream,override,"Close eyes, sleep. A dream spell."
-KOREAN,醉,dream,Mind,fx_dream,override,"Intoxicated, drunk. A dream spell."
-KOREAN,聲,sound,Mind,fx_sound,variant,"Sound, voice, noise. A sound spell."
-KOREAN,音,sound,Mind,fx_sound,override,"Sound, tone, pitch, pronunciation. A sound spell."
-KOREAN,聽,sound,Mind,fx_sound,variant,"Hear, listen. A sound spell."
-KOREAN,聞,sound,Mind,fx_sound,variant,Hear. A sound spell.
-KOREAN,語,sound,Mind,fx_sound,variant,"Language, words. A sound spell."
-KOREAN,言,sound,Mind,fx_sound,override,"Words, speech. A sound spell."
-KOREAN,話,sound,Mind,fx_sound,variant,"Speech, talk, language. A sound spell."
-KOREAN,說,sound,Mind,fx_sound,variant,"Speak, say, talk. A sound spell."
-KOREAN,講,sound,Mind,fx_sound,variant,Explain. A sound spell.
-KOREAN,讀,sound,Mind,fx_sound,variant,"Read, study. A sound spell."
-KOREAN,寫,sound,Mind,fx_sound,variant,Write. A sound spell.
-KOREAN,唱,sound,Mind,fx_sound,override,"Sing, chant, call. A sound spell."
-KOREAN,歌,sound,Mind,fx_sound,override,"Song, lyrics. A sound spell."
-KOREAN,答,sound,Mind,fx_sound,override,"Answer, reply. A sound spell."
-KOREAN,叫,sound,Mind,fx_sound,override,"Cry, shout. A sound spell."
-KOREAN,時,time,Time,fx_time,variant,"Time, season. A time spell."
-KOREAN,間,time,Time,fx_time,variant,"Interval, space. A time spell."
-KOREAN,年,time,Time,fx_time,override,Year. A time spell.
-KOREAN,分,time,Time,fx_time,override,Divide. A time spell.
-KOREAN,秒,time,Time,fx_time,override,Beard of grain or corn. A time spell.
-KOREAN,刻,time,Time,fx_time,override,"Carve, engrave. A time spell."
-KOREAN,早,time,Time,fx_time,override,Early. A time spell.
-KOREAN,今,time,Time,fx_time,override,"Now, today, modern era. A time spell."
-KOREAN,昨,time,Time,fx_time,override,Yesterday. A time spell.
-KOREAN,春,time,Time,fx_time,override,Spring. A time spell.
-KOREAN,夏,time,Time,fx_time,override,Summer. A time spell.
-KOREAN,秋,time,Time,fx_time,override,"Autumn, fall. A time spell."
-KOREAN,冬,time,Time,fx_time,override,"Winter, 11th lunar month. A time spell."
-KOREAN,季,time,Time,fx_time,override,Quarter of year. A time spell.
-KOREAN,節,time,Time,fx_time,variant,"Knot, node, joint. A time spell."
-KOREAN,歲,time,Time,fx_time,variant,Year. A time spell.
-KOREAN,老,time,Time,fx_time,override,"Old, aged. A time spell."
-KOREAN,新,time,Time,fx_time,override,"New, recent, fresh, modern. A time spell."
-KOREAN,舊,time,Time,fx_time,variant,"Old, ancient. A time spell."
-KOREAN,先,time,Time,fx_time,override,"First, former, previous. A time spell."
-KOREAN,初,time,Time,fx_time,override,"Beginning, initial, primary. A time spell."
-KOREAN,終,time,Time,fx_time,variant,End. A time spell.
-KOREAN,始,time,Time,fx_time,override,"Begin, start. A time spell."
-KOREAN,末,time,Time,fx_time,override,"Final, last, end. A time spell."
-KOREAN,久,time,Time,fx_time,override,Long time (ago). A time spell.
-KOREAN,暫,time,Time,fx_time,variant,Temporary. A time spell.
-KOREAN,永,time,Time,fx_time,override,"Long, perpetual, eternal, forever. A time spell."
-KOREAN,恒,time,Time,fx_time,override,"Constant, regular, persistent. A time spell."
-KOREAN,期,time,Time,fx_time,override,Period of time. A time spell.
-KOREAN,候,time,Time,fx_time,override,Wait. A time spell.
-KOREAN,等,time,Time,fx_time,override,"Rank, grade. A time spell."
-KOREAN,待,time,Time,fx_time,override,"Treat, entertain, receive. A time spell."
-KOREAN,快,time,Time,fx_time,override,"Rapid, quick, speedy, fast. A time spell."
-KOREAN,慢,time,Time,fx_time,override,"Slow(ly), leisurely, sluggish. A time spell."
-KOREAN,長,time,Time,fx_time,variant,Long. A time spell.
-KOREAN,法,rune,Arcana,fx_rune,override,"Law, rule, regulation, statute. A rune spell."
-KOREAN,術,rune,Arcana,fx_rune,variant,"Art, skill, special feat. A rune spell."
-KOREAN,符,rune,Arcana,fx_rune,override,"I.d. tag, tally, symbol, charm. A rune spell."
-KOREAN,祝,rune,Arcana,fx_rune,override,Pray for happiness or blessings. A rune spell.
-KOREAN,祈,rune,Arcana,fx_rune,override,Pray. A rune spell.
-KOREAN,圓,rune,Arcana,fx_rune,variant,Circle. A rune spell.
-KOREAN,環,rune,Arcana,fx_rune,variant,Jade ring or bracelet. A rune spell.
-KOREAN,映,mirror,Arcana,fx_mirror,override,Project. A mirror spell.
-KOREAN,反,mirror,Arcana,fx_mirror,override,"Reverse, opposite, contrary, anti. A mirror spell."
-KOREAN,複,mirror,Arcana,fx_mirror,variant,"Repeat, double, overlap. A mirror spell."
-KOREAN,雙,mirror,Arcana,fx_mirror,variant,"Set of two, pair, couple. A mirror spell."
-KOREAN,對,mirror,Arcana,fx_mirror,variant,"Correct, right. A mirror spell."
-KOREAN,像,mirror,Arcana,fx_mirror,override,"A picture, image, figure. A mirror spell."
-KOREAN,形,mirror,Arcana,fx_mirror,override,"Form, shape, appearance. A mirror spell."
-KOREAN,禁,key,Arcana,fx_key,override,"Restrict, prohibit, forbid. A key spell."
-KOREAN,解,key,Arcana,fx_key,override,"Loosen, unfasten, untie. A key spell."
-KOREAN,通,key,Arcana,fx_key,override,Pass through. A key spell.
-KOREAN,藥,potion,Arcana,fx_potion,variant,"Drugs, pharmaceuticals, medicine. A potion spell."
-KOREAN,病,potion,Arcana,fx_potion,override,"Illness, sickness, disease. A potion spell."
-KOREAN,康,potion,Arcana,fx_potion,override,"Peaceful, quiet. A potion spell."
-KOREAN,毒,potion,Arcana,fx_potion,override,"Poison, venom. A potion spell."
-KOREAN,鍊,potion,Arcana,fx_potion,variant,"Smelt metals, forge. A potion spell."
-KOREAN,香,potion,Arcana,fx_potion,override,"Fragrant, sweet-smelling. A potion spell."
-KOREAN,變,illusion,Arcana,fx_illusion,variant,"Change, transform, alter. A illusion spell."
-KOREAN,隱,illusion,Arcana,fx_illusion,variant,"Hide, conceal. A illusion spell."
-KOREAN,藏,illusion,Arcana,fx_illusion,override,"Hide, conceal. A illusion spell."
-KOREAN,迷,illusion,Arcana,fx_illusion,override,"Bewitch, charm, infatuate. A illusion spell."
-KOREAN,惑,illusion,Arcana,fx_illusion,override,"Confuse, mislead, baffle. A illusion spell."
-KOREAN,鬼,illusion,Arcana,fx_illusion,override,Ghost. A illusion spell.
-KOREAN,卜,oracle,Arcana,fx_oracle,override,Fortune telling. A oracle spell.
-KOREAN,占,oracle,Arcana,fx_oracle,override,Divine. A oracle spell.
-KOREAN,命,oracle,Arcana,fx_oracle,override,Life. A oracle spell.
-KOREAN,運,oracle,Arcana,fx_oracle,variant,"Luck, fortune. A oracle spell."
-KOREAN,福,oracle,Arcana,fx_oracle,override,"Happiness, good fortune, blessing. A oracle spell."
-KOREAN,禍,oracle,Arcana,fx_oracle,variant,"Misfortune, calamity, disaster. A oracle spell."
-KOREAN,靈,spirit,Spirit,fx_spirit,variant,"Spirit, soul. A spirit spell."
-KOREAN,魂,spirit,Spirit,fx_spirit,override,"Soul, spirit. A spirit spell."
-KOREAN,神,spirit,Spirit,fx_spirit,override,"Spirit, god, supernatural being. A spirit spell."
-KOREAN,仙,spirit,Spirit,fx_spirit,override,"Taoist super-being, transcendent, immortal. A spirit spell."
-KOREAN,佛,spirit,Spirit,fx_spirit,override,Buddha. A spirit spell.
-KOREAN,聖,spirit,Spirit,fx_spirit,variant,"Holy, sacred. A spirit spell."
-KOREAN,廟,spirit,Spirit,fx_spirit,variant,"Temple, shrine. A spirit spell."
-KOREAN,寺,spirit,Spirit,fx_spirit,override,"Court, office. A spirit spell."
-KOREAN,祖,spirit,Spirit,fx_spirit,override,"Ancestor, forefather. A spirit spell."
-KOREAN,拜,spirit,Spirit,fx_spirit,override,"Do obeisance, bow, kowtow. A spirit spell."
-KOREAN,祭,spirit,Spirit,fx_spirit,override,"Sacrifice to, worship. A spirit spell."
-KOREAN,供,spirit,Spirit,fx_spirit,override,"Supply, provide for. A spirit spell."
-KOREAN,死,spirit,Spirit,fx_spirit,override,Die. A spirit spell.
-KOREAN,亡,spirit,Spirit,fx_spirit,override,"Death, destroyed. A spirit spell."
-KOREAN,血,spirit,Spirit,fx_spirit,override,Blood. A spirit spell.
-KOREAN,精,spirit,Spirit,fx_spirit,override,Essence. A spirit spell.
-KOREAN,天,spirit,Spirit,fx_spirit,override,"Sky, heaven. A spirit spell."
-KOREAN,堂,spirit,Spirit,fx_spirit,override,Hall. A spirit spell.
-KOREAN,墓,spirit,Spirit,fx_spirit,override,"Grave, tomb. A spirit spell."
-KOREAN,墳,spirit,Spirit,fx_spirit,variant,"Grave, mound. A spirit spell."
-KOREAN,骨,spirit,Spirit,fx_spirit,override,Bone. A spirit spell.
-KOREAN,息,spirit,Spirit,fx_spirit,override,"Rest, put stop to, end, cease. A spirit spell."
-KOREAN,道,spirit,Spirit,fx_spirit,override,"Path, road, street. A spirit spell."
-KOREAN,肉,soul,Spirit,fx_soul,override,Flesh. A soul spell.
-KOREAN,護,ward,Spirit,fx_ward,variant,"Protect, guard, defend, shelter. A ward spell."
-KOREAN,衛,ward,Spirit,fx_ward,variant,"Guard, protect, defend. A ward spell."
-KOREAN,守,ward,Spirit,fx_ward,override,"Defend, protect, guard, conserve. A ward spell."
-KOREAN,保,ward,Spirit,fx_ward,override,"Protect, safeguard, defend, care. A ward spell."
-KOREAN,防,ward,Spirit,fx_ward,override,Defend. A ward spell.
-KOREAN,障,ward,Spirit,fx_ward,override,Separate. A ward spell.
-KOREAN,安,ward,Spirit,fx_ward,override,"Peaceful, tranquil, quiet. A ward spell."
-KOREAN,全,ward,Spirit,fx_ward,override,"Maintain, keep whole or intact. A ward spell."
-KOREAN,平,ward,Spirit,fx_ward,override,"Flat, level, even. A ward spell."
-KOREAN,固,ward,Spirit,fx_ward,override,"To become solid, solidify. A ward spell."
-KOREAN,堅,ward,Spirit,fx_ward,variant,"Hard, strong, firm. A ward spell."
+SIMPLIFIED,水,water,Tides,fx_water,override,Water.
+SIMPLIFIED,河,water,Tides,fx_water,override,River.
+SIMPLIFIED,江,water,Tides,fx_water,override,River.
+SIMPLIFIED,海,water,Tides,fx_water,override,Sea.
+SIMPLIFIED,湖,water,Tides,fx_water,override,Lake.
+SIMPLIFIED,泉,water,Tides,fx_water,override,Spring.
+SIMPLIFIED,池,water,Tides,fx_water,override,Pool.
+SIMPLIFIED,洋,water,Tides,fx_water,override,Sea.
+SIMPLIFIED,浪,water,Tides,fx_water,override,Wave.
+SIMPLIFIED,流,water,Tides,fx_water,override,Flow.
+SIMPLIFIED,潮,water,Tides,fx_water,override,Tide.
+SIMPLIFIED,滴,water,Tides,fx_water,override,Drip.
+SIMPLIFIED,汗,water,Tides,fx_water,override,Sweat.
+SIMPLIFIED,泪,water,Tides,fx_water,override,Tears.
+SIMPLIFIED,洗,water,Tides,fx_water,override,Wash.
+SIMPLIFIED,喝,water,Tides,fx_water,override,Drink.
+SIMPLIFIED,饮,water,Tides,fx_water,override,Swallow.
+SIMPLIFIED,汤,water,Tides,fx_water,override,Soup.
+SIMPLIFIED,冰,ice,Tides,fx_ice,override,Ice.
+SIMPLIFIED,冻,ice,Tides,fx_ice,override,Cold.
+SIMPLIFIED,寒,ice,Tides,fx_ice,override,Chilly.
+SIMPLIFIED,冷,ice,Tides,fx_ice,override,Cold.
+SIMPLIFIED,霜,ice,Tides,fx_ice,override,Frost.
+SIMPLIFIED,凉,ice,Tides,fx_ice,override,Cool.
+SIMPLIFIED,凝,ice,Tides,fx_ice,override,Freeze.
+SIMPLIFIED,澈,ice,Tides,fx_ice,override,Limpid.
+SIMPLIFIED,雪,snow,Tides,fx_snow,override,Snow.
+SIMPLIFIED,雹,snow,Tides,fx_snow,override,Hail.
+SIMPLIFIED,雨,rain,Tides,fx_rain,override,Rain.
+SIMPLIFIED,露,rain,Tides,fx_rain,override,Dew.
+SIMPLIFIED,淋,rain,Tides,fx_rain,override,Drench.
+SIMPLIFIED,伞,rain,Tides,fx_rain,override,Umbrella.
+SIMPLIFIED,阵,rain,Tides,fx_rain,override,Row.
+SIMPLIFIED,雷,rain,Tides,fx_rain,override,Thunder.
+SIMPLIFIED,雾,rain,Tides,fx_rain,override,Fog.
+SIMPLIFIED,火,fire,Flame,fx_fire,override,Fire.
+SIMPLIFIED,炎,fire,Flame,fx_fire,override,Flame.
+SIMPLIFIED,焰,fire,Flame,fx_fire,override,Flame.
+SIMPLIFIED,烧,fire,Flame,fx_fire,override,Burn.
+SIMPLIFIED,燃,fire,Flame,fx_fire,override,Ignite.
+SIMPLIFIED,热,fire,Flame,fx_fire,override,Hot.
+SIMPLIFIED,暖,fire,Flame,fx_fire,override,Warm.
+SIMPLIFIED,烤,fire,Flame,fx_fire,override,Bake.
+SIMPLIFIED,炒,fire,Flame,fx_fire,override,Boil.
+SIMPLIFIED,煮,fire,Flame,fx_fire,override,Boil.
+SIMPLIFIED,灯,fire,Flame,fx_fire,override,Lamp.
+SIMPLIFIED,烛,fire,Flame,fx_fire,override,Candle.
+SIMPLIFIED,炉,fire,Flame,fx_fire,override,Fireplace.
+SIMPLIFIED,灰,fire,Flame,fx_fire,override,Ashes.
+SIMPLIFIED,燥,fire,Flame,fx_fire,override,Arid.
+SIMPLIFIED,烫,fire,Flame,fx_fire,override,Scald.
+SIMPLIFIED,烈,fire,Flame,fx_fire,override,Fiery.
+SIMPLIFIED,爆,fire,Flame,fx_fire,override,Burst.
+SIMPLIFIED,炮,fire,Flame,fx_fire,override,Firecracker.
+SIMPLIFIED,炸,fire,Flame,fx_fire,override,Explode.
+SIMPLIFIED,焦,fire,Flame,fx_fire,override,Burned.
+SIMPLIFIED,煤,fire,Flame,fx_fire,override,Carbon.
+SIMPLIFIED,炭,fire,Flame,fx_fire,override,Carbon.
+SIMPLIFIED,烘,fire,Flame,fx_fire,override,Bake.
+SIMPLIFIED,焙,fire,Flame,fx_fire,override,Bake.
+SIMPLIFIED,炊,fire,Flame,fx_fire,override,Meal.
+SIMPLIFIED,炖,fire,Flame,fx_fire,override,Stew.
+SIMPLIFIED,焚,fire,Flame,fx_fire,override,Burn.
+SIMPLIFIED,电,lightning,Flame,fx_lightning,override,Electricity.
+SIMPLIFIED,闪,lightning,Flame,fx_lightning,override,Flash.
+SIMPLIFIED,震,lightning,Flame,fx_lightning,override,Shake.
+SIMPLIFIED,弧,lightning,Flame,fx_lightning,override,Arc.
+SIMPLIFIED,烁,lightning,Flame,fx_lightning,override,Sparkle.
+SIMPLIFIED,辉,lightning,Flame,fx_lightning,override,Brightness.
+SIMPLIFIED,耀,lightning,Flame,fx_lightning,override,Sparkle.
+SIMPLIFIED,风,wind,Sky,fx_wind,override,Wind.
+SIMPLIFIED,吹,wind,Sky,fx_wind,override,Blow.
+SIMPLIFIED,刮,wind,Sky,fx_wind,override,Shave.
+SIMPLIFIED,飘,wind,Sky,fx_wind,override,Drift.
+SIMPLIFIED,飞,wind,Sky,fx_wind,override,Fly.
+SIMPLIFIED,气,wind,Sky,fx_wind,override,Air.
+SIMPLIFIED,空,wind,Sky,fx_wind,override,Empty.
+SIMPLIFIED,云,cloud,Sky,fx_cloud,override,Cloud.
+SIMPLIFIED,烟,cloud,Sky,fx_cloud,override,Smoke.
+SIMPLIFIED,阴,cloud,Sky,fx_cloud,override,Cloudy.
+SIMPLIFIED,霞,cloud,Sky,fx_cloud,override,Rosy clouds.
+SIMPLIFIED,日,sun,Sky,fx_sun,override,Sun.
+SIMPLIFIED,阳,sun,Sky,fx_sun,override,Male principle.
+SIMPLIFIED,晴,sun,Sky,fx_sun,override,Clear.
+SIMPLIFIED,晒,sun,Sky,fx_sun,override,Sun-dry.
+SIMPLIFIED,照,sun,Sky,fx_sun,override,Shine.
+SIMPLIFIED,晨,sun,Sky,fx_sun,override,Dawn.
+SIMPLIFIED,月,moon,Sky,fx_moon,override,Month.
+SIMPLIFIED,夜,moon,Sky,fx_moon,override,Night.
+SIMPLIFIED,夕,moon,Sky,fx_moon,override,Evening.
+SIMPLIFIED,暮,moon,Sky,fx_moon,override,Dusk.
+SIMPLIFIED,晚,moon,Sky,fx_moon,override,Night.
+SIMPLIFIED,银,moon,Sky,fx_moon,override,Silver.
+SIMPLIFIED,光,light,Sky,fx_light,override,Light.
+SIMPLIFIED,明,light,Sky,fx_light,override,Bright.
+SIMPLIFIED,亮,light,Sky,fx_light,override,Bright.
+SIMPLIFIED,星,light,Sky,fx_light,override,Star.
+SIMPLIFIED,晶,light,Sky,fx_light,override,Crystal.
+SIMPLIFIED,珠,light,Sky,fx_light,override,Gem.
+SIMPLIFIED,影,shadow,Sky,fx_shadow,override,Shadow.
+SIMPLIFIED,黑,shadow,Sky,fx_shadow,override,Black.
+SIMPLIFIED,暗,shadow,Sky,fx_shadow,override,Dark.
+SIMPLIFIED,幽,shadow,Sky,fx_shadow,override,Quiet.
+SIMPLIFIED,墨,shadow,Sky,fx_shadow,override,Ink.
+SIMPLIFIED,玄,shadow,Sky,fx_shadow,override,Deep.
+SIMPLIFIED,土,earth,Ground,fx_earth,override,Soil.
+SIMPLIFIED,地,earth,Ground,fx_earth,override,Earth.
+SIMPLIFIED,田,earth,Ground,fx_earth,override,Field.
+SIMPLIFIED,场,earth,Ground,fx_earth,override,Courtyard.
+SIMPLIFIED,园,earth,Ground,fx_earth,override,Garden.
+SIMPLIFIED,沙,earth,Ground,fx_earth,override,Sand.
+SIMPLIFIED,尘,earth,Ground,fx_earth,override,Cinders.
+SIMPLIFIED,泥,earth,Ground,fx_earth,override,Mud.
+SIMPLIFIED,石,stone,Ground,fx_stone,override,Stone.
+SIMPLIFIED,岩,stone,Ground,fx_stone,override,Cliff.
+SIMPLIFIED,峰,stone,Ground,fx_stone,override,Peak.
+SIMPLIFIED,坡,stone,Ground,fx_stone,override,Slope.
+SIMPLIFIED,洞,stone,Ground,fx_stone,override,Cave.
+SIMPLIFIED,矿,stone,Ground,fx_stone,override,Mine.
+SIMPLIFIED,砖,stone,Ground,fx_stone,override,Tile.
+SIMPLIFIED,山,mountain,Ground,fx_mountain,override,Mountain.
+SIMPLIFIED,岭,mountain,Ground,fx_mountain,override,Mountain ridge.
+SIMPLIFIED,岳,mountain,Ground,fx_mountain,override,Mountain peak.
+SIMPLIFIED,巅,mountain,Ground,fx_mountain,override,Mountain peak.
+SIMPLIFIED,丘,mountain,Ground,fx_mountain,override,Mound.
+SIMPLIFIED,陵,mountain,Ground,fx_mountain,override,Hill.
+SIMPLIFIED,木,wood,Ground,fx_wood,override,Tree.
+SIMPLIFIED,林,wood,Ground,fx_wood,override,Forest.
+SIMPLIFIED,森,wood,Ground,fx_wood,override,Forest.
+SIMPLIFIED,树,wood,Ground,fx_wood,override,Tree.
+SIMPLIFIED,草,wood,Ground,fx_wood,override,Grass.
+SIMPLIFIED,花,wood,Ground,fx_wood,override,Flower.
+SIMPLIFIED,叶,wood,Ground,fx_wood,override,Leaf.
+SIMPLIFIED,金,metal,Ground,fx_metal,override,Gold.
+SIMPLIFIED,铁,metal,Ground,fx_metal,override,Iron.
+SIMPLIFIED,钢,metal,Ground,fx_metal,override,Steel.
+SIMPLIFIED,铜,metal,Ground,fx_metal,override,Copper.
+SIMPLIFIED,玉,metal,Ground,fx_metal,override,Jade.
+SIMPLIFIED,宝,metal,Ground,fx_metal,override,Treasure.
+SIMPLIFIED,钱,metal,Ground,fx_metal,override,Money.
+SIMPLIFIED,马,animal,Creatures,fx_animal,override,Horse.
+SIMPLIFIED,牛,animal,Creatures,fx_animal,override,Ox.
+SIMPLIFIED,羊,animal,Creatures,fx_animal,override,Sheep.
+SIMPLIFIED,狗,animal,Creatures,fx_animal,override,Dog.
+SIMPLIFIED,猫,animal,Creatures,fx_animal,override,Cat.
+SIMPLIFIED,鸟,animal,Creatures,fx_animal,override,Bird.
+SIMPLIFIED,鱼,animal,Creatures,fx_animal,override,Fish.
+SIMPLIFIED,龙,animal,Creatures,fx_animal,override,Dragon.
+SIMPLIFIED,虎,animal,Creatures,fx_animal,override,Tiger.
+SIMPLIFIED,兔,animal,Creatures,fx_animal,override,Rabbit.
+SIMPLIFIED,龟,animal,Creatures,fx_animal,override,Turtle.
+SIMPLIFIED,蛙,animal,Creatures,fx_animal,override,Frog.
+SIMPLIFIED,人,person,Creatures,fx_person,override,People.
+SIMPLIFIED,男,person,Creatures,fx_person,override,Male.
+SIMPLIFIED,女,person,Creatures,fx_person,override,Woman.
+SIMPLIFIED,儿,person,Creatures,fx_person,override,Son.
+SIMPLIFIED,孩,person,Creatures,fx_person,override,Baby.
+SIMPLIFIED,子,person,Creatures,fx_person,override,Son.
+SIMPLIFIED,母,person,Creatures,fx_person,override,Mother.
+SIMPLIFIED,父,person,Creatures,fx_person,override,Father.
+SIMPLIFIED,友,person,Creatures,fx_person,override,Friend.
+SIMPLIFIED,朋,person,Creatures,fx_person,override,Friend.
+SIMPLIFIED,师,person,Creatures,fx_person,override,Teacher.
+SIMPLIFIED,生,person,Creatures,fx_person,override,Life.
+SIMPLIFIED,手,hand,Creatures,fx_hand,override,Hand.
+SIMPLIFIED,指,hand,Creatures,fx_hand,override,Finger.
+SIMPLIFIED,掌,hand,Creatures,fx_hand,override,Palm.
+SIMPLIFIED,拿,hand,Creatures,fx_hand,override,Hold.
+SIMPLIFIED,持,hand,Creatures,fx_hand,override,Hold.
+SIMPLIFIED,打,hand,Creatures,fx_hand,override,Attack.
+SIMPLIFIED,推,hand,Creatures,fx_hand,override,Guess.
+SIMPLIFIED,拉,hand,Creatures,fx_hand,override,Pull.
+SIMPLIFIED,提,hand,Creatures,fx_hand,override,Lift.
+SIMPLIFIED,抬,hand,Creatures,fx_hand,override,Lift.
+SIMPLIFIED,举,hand,Creatures,fx_hand,override,Lift.
+SIMPLIFIED,船,boat,Craft,fx_boat,override,Boat.
+SIMPLIFIED,舟,boat,Craft,fx_boat,override,Boat.
+SIMPLIFIED,帆,boat,Craft,fx_boat,override,Boat.
+SIMPLIFIED,桨,boat,Craft,fx_boat,override,Paddle.
+SIMPLIFIED,港,boat,Craft,fx_boat,override,Port.
+SIMPLIFIED,航,boat,Craft,fx_boat,override,Vessel.
+SIMPLIFIED,泊,boat,Craft,fx_boat,override,Anchor.
+SIMPLIFIED,浮,boat,Craft,fx_boat,override,Drift.
+SIMPLIFIED,漂,boat,Craft,fx_boat,override,Drift.
+SIMPLIFIED,桥,boat,Craft,fx_boat,override,Bridge.
+SIMPLIFIED,车,tool,Craft,fx_tool,override,Cart.
+SIMPLIFIED,门,tool,Craft,fx_tool,override,Door.
+SIMPLIFIED,窗,tool,Craft,fx_tool,override,Window.
+SIMPLIFIED,房,tool,Craft,fx_tool,override,Building.
+SIMPLIFIED,屋,tool,Craft,fx_tool,override,Building.
+SIMPLIFIED,室,tool,Craft,fx_tool,override,House.
+SIMPLIFIED,城,tool,Craft,fx_tool,override,Castle.
+SIMPLIFIED,市,tool,Craft,fx_tool,override,City.
+SIMPLIFIED,街,tool,Craft,fx_tool,override,Street.
+SIMPLIFIED,路,tool,Craft,fx_tool,override,Road.
+SIMPLIFIED,塔,tool,Craft,fx_tool,override,Tower.
+SIMPLIFIED,书,tool,Craft,fx_tool,override,Book.
+SIMPLIFIED,纸,tool,Craft,fx_tool,override,Paper.
+SIMPLIFIED,笔,tool,Craft,fx_tool,override,Pen.
+SIMPLIFIED,刀,tool,Craft,fx_tool,override,Knife.
+SIMPLIFIED,线,tool,Craft,fx_tool,override,Line.
+SIMPLIFIED,布,tool,Craft,fx_tool,override,Cloth.
+SIMPLIFIED,衣,tool,Craft,fx_tool,override,Cloth.
+SIMPLIFIED,帽,tool,Craft,fx_tool,override,Hat.
+SIMPLIFIED,鞋,tool,Craft,fx_tool,override,Shoes.
+SIMPLIFIED,杯,tool,Craft,fx_tool,override,Cup.
+SIMPLIFIED,碗,tool,Craft,fx_tool,override,Bowl.
+SIMPLIFIED,瓶,tool,Craft,fx_tool,override,Bottle.
+SIMPLIFIED,箱,tool,Craft,fx_tool,override,Box.
+SIMPLIFIED,盒,tool,Craft,fx_tool,override,Small box or case.
+SIMPLIFIED,心,mind,Mind,fx_mind,override,Heart.
+SIMPLIFIED,想,mind,Mind,fx_mind,override,Want.
+SIMPLIFIED,思,mind,Mind,fx_mind,override,Think.
+SIMPLIFIED,念,mind,Mind,fx_mind,override,Think of.
+SIMPLIFIED,意,mind,Mind,fx_mind,override,Thought.
+SIMPLIFIED,知,mind,Mind,fx_mind,override,Know.
+SIMPLIFIED,识,mind,Mind,fx_mind,override,Knowledge.
+SIMPLIFIED,学,mind,Mind,fx_mind,override,Learning.
+SIMPLIFIED,问,mind,Mind,fx_mind,override,Ask.
+SIMPLIFIED,懂,mind,Mind,fx_mind,override,Understand.
+SIMPLIFIED,记,mind,Mind,fx_mind,override,Mark.
+SIMPLIFIED,忘,mind,Mind,fx_mind,override,Forget.
+SIMPLIFIED,怕,mind,Mind,fx_mind,override,Fear.
+SIMPLIFIED,爱,mind,Mind,fx_mind,override,Love.
+SIMPLIFIED,恨,mind,Mind,fx_mind,override,Dislike.
+SIMPLIFIED,梦,dream,Mind,fx_dream,override,Dream.
+SIMPLIFIED,睡,dream,Mind,fx_dream,override,Sleep.
+SIMPLIFIED,醒,dream,Mind,fx_dream,override,Wake up.
+SIMPLIFIED,眠,dream,Mind,fx_dream,override,Sleep.
+SIMPLIFIED,幻,dream,Mind,fx_dream,override,Fantasy.
+SIMPLIFIED,醉,dream,Mind,fx_dream,override,Intoxicated.
+SIMPLIFIED,声,sound,Mind,fx_sound,override,Sound.
+SIMPLIFIED,音,sound,Mind,fx_sound,override,Sound.
+SIMPLIFIED,听,sound,Mind,fx_sound,override,Listen.
+SIMPLIFIED,闻,sound,Mind,fx_sound,override,News.
+SIMPLIFIED,语,sound,Mind,fx_sound,override,Words.
+SIMPLIFIED,言,sound,Mind,fx_sound,override,Words.
+SIMPLIFIED,话,sound,Mind,fx_sound,override,Talk.
+SIMPLIFIED,说,sound,Mind,fx_sound,override,Say.
+SIMPLIFIED,讲,sound,Mind,fx_sound,override,Talk.
+SIMPLIFIED,读,sound,Mind,fx_sound,override,Read.
+SIMPLIFIED,写,sound,Mind,fx_sound,override,Write.
+SIMPLIFIED,唱,sound,Mind,fx_sound,override,Sing.
+SIMPLIFIED,歌,sound,Mind,fx_sound,override,Song.
+SIMPLIFIED,答,sound,Mind,fx_sound,override,Answer.
+SIMPLIFIED,时,time,Time,fx_time,override,Time.
+SIMPLIFIED,间,time,Time,fx_time,override,Between.
+SIMPLIFIED,年,time,Time,fx_time,override,Year.
+SIMPLIFIED,分,time,Time,fx_time,override,Divide.
+SIMPLIFIED,秒,time,Time,fx_time,override,Second.
+SIMPLIFIED,刻,time,Time,fx_time,override,Quarter.
+SIMPLIFIED,早,time,Time,fx_time,override,Early.
+SIMPLIFIED,今,time,Time,fx_time,override,Modern.
+SIMPLIFIED,昨,time,Time,fx_time,override,Yesterday.
+SIMPLIFIED,春,time,Time,fx_time,override,Spring.
+SIMPLIFIED,夏,time,Time,fx_time,override,Summer.
+SIMPLIFIED,秋,time,Time,fx_time,override,Autumn.
+SIMPLIFIED,冬,time,Time,fx_time,override,Winter.
+SIMPLIFIED,季,time,Time,fx_time,override,Quarter-year.
+SIMPLIFIED,节,time,Time,fx_time,override,Section.
+SIMPLIFIED,岁,time,Time,fx_time,override,Years.
+SIMPLIFIED,老,time,Time,fx_time,override,Old.
+SIMPLIFIED,新,time,Time,fx_time,override,New.
+SIMPLIFIED,旧,time,Time,fx_time,override,Old.
+SIMPLIFIED,先,time,Time,fx_time,override,First.
+SIMPLIFIED,初,time,Time,fx_time,override,First.
+SIMPLIFIED,终,time,Time,fx_time,override,End.
+SIMPLIFIED,始,time,Time,fx_time,override,Begin.
+SIMPLIFIED,末,time,Time,fx_time,override,End.
+SIMPLIFIED,久,time,Time,fx_time,override,Long.
+SIMPLIFIED,暂,time,Time,fx_time,override,Temporary.
+SIMPLIFIED,永,time,Time,fx_time,override,Long.
+SIMPLIFIED,恒,time,Time,fx_time,override,Steady.
+SIMPLIFIED,期,time,Time,fx_time,override,Period of time.
+SIMPLIFIED,候,time,Time,fx_time,override,Wait.
+SIMPLIFIED,等,time,Time,fx_time,override,Equal.
+SIMPLIFIED,待,time,Time,fx_time,override,Entertain.
+SIMPLIFIED,快,time,Time,fx_time,override,Fast.
+SIMPLIFIED,慢,time,Time,fx_time,override,Slow.
+SIMPLIFIED,长,time,Time,fx_time,override,Long.
+SIMPLIFIED,魔,rune,Arcana,fx_rune,override,Demon.
+SIMPLIFIED,法,rune,Arcana,fx_rune,override,Law.
+SIMPLIFIED,术,rune,Arcana,fx_rune,override,Skill.
+SIMPLIFIED,符,rune,Arcana,fx_rune,override,Talisman.
+SIMPLIFIED,咒,rune,Arcana,fx_rune,override,Incantation.
+SIMPLIFIED,祝,rune,Arcana,fx_rune,override,Pray.
+SIMPLIFIED,映,mirror,Arcana,fx_mirror,override,Project.
+SIMPLIFIED,反,mirror,Arcana,fx_mirror,override,Reverse.
+SIMPLIFIED,复,mirror,Arcana,fx_mirror,override,Again.
+SIMPLIFIED,双,mirror,Arcana,fx_mirror,override,Two.
+SIMPLIFIED,对,mirror,Arcana,fx_mirror,override,Correct.
+SIMPLIFIED,像,mirror,Arcana,fx_mirror,override,Alike.
+SIMPLIFIED,钥,key,Arcana,fx_key,override,Lock.
+SIMPLIFIED,匙,key,Arcana,fx_key,override,Spoon.
+SIMPLIFIED,码,key,Arcana,fx_key,override,Number.
+SIMPLIFIED,禁,key,Arcana,fx_key,override,Restrict.
+SIMPLIFIED,解,key,Arcana,fx_key,override,Explain.
+SIMPLIFIED,通,key,Arcana,fx_key,override,Pass through.
+SIMPLIFIED,药,potion,Arcana,fx_potion,override,Medicine.
+SIMPLIFIED,病,potion,Arcana,fx_potion,override,Sickness.
+SIMPLIFIED,康,potion,Arcana,fx_potion,override,Health.
+SIMPLIFIED,毒,potion,Arcana,fx_potion,override,Poison.
+SIMPLIFIED,疗,potion,Arcana,fx_potion,override,Healing.
+SIMPLIFIED,炼,potion,Arcana,fx_potion,override,Smelt.
+SIMPLIFIED,变,illusion,Arcana,fx_illusion,override,Change.
+SIMPLIFIED,隐,illusion,Arcana,fx_illusion,override,Hide.
+SIMPLIFIED,藏,illusion,Arcana,fx_illusion,override,Conceal.
+SIMPLIFIED,骗,illusion,Arcana,fx_illusion,override,Cheat.
+SIMPLIFIED,迷,illusion,Arcana,fx_illusion,override,Bewitch.
+SIMPLIFIED,惑,illusion,Arcana,fx_illusion,override,Confuse.
+SIMPLIFIED,卜,oracle,Arcana,fx_oracle,override,Fortune-telling.
+SIMPLIFIED,占,oracle,Arcana,fx_oracle,override,Divine.
+SIMPLIFIED,命,oracle,Arcana,fx_oracle,override,Life.
+SIMPLIFIED,运,oracle,Arcana,fx_oracle,override,Run.
+SIMPLIFIED,福,oracle,Arcana,fx_oracle,override,Happiness.
+SIMPLIFIED,灵,spirit,Spirit,fx_spirit,override,Spirit.
+SIMPLIFIED,魂,spirit,Spirit,fx_spirit,override,Soul.
+SIMPLIFIED,神,spirit,Spirit,fx_spirit,override,God.
+SIMPLIFIED,仙,spirit,Spirit,fx_spirit,override,God.
+SIMPLIFIED,佛,spirit,Spirit,fx_spirit,override,Buddha.
+SIMPLIFIED,圣,spirit,Spirit,fx_spirit,override,Holy.
+SIMPLIFIED,庙,spirit,Spirit,fx_spirit,override,Temple.
+SIMPLIFIED,寺,spirit,Spirit,fx_spirit,override,Court.
+SIMPLIFIED,祖,spirit,Spirit,fx_spirit,override,Ancestor.
+SIMPLIFIED,拜,spirit,Spirit,fx_spirit,override,Greet.
+SIMPLIFIED,祭,spirit,Spirit,fx_spirit,override,Sacrifice to.
+SIMPLIFIED,供,spirit,Spirit,fx_spirit,override,Supply.
+SIMPLIFIED,死,spirit,Spirit,fx_spirit,override,Die.
+SIMPLIFIED,亡,spirit,Spirit,fx_spirit,override,Death.
+SIMPLIFIED,血,spirit,Spirit,fx_spirit,override,Blood.
+SIMPLIFIED,精,spirit,Spirit,fx_spirit,override,Essence.
+SIMPLIFIED,天,spirit,Spirit,fx_spirit,override,Sky.
+SIMPLIFIED,堂,spirit,Spirit,fx_spirit,override,Hall.
+SIMPLIFIED,墓,spirit,Spirit,fx_spirit,override,Grave.
+SIMPLIFIED,坟,spirit,Spirit,fx_spirit,override,Grave.
+SIMPLIFIED,骨,spirit,Spirit,fx_spirit,override,Bone.
+SIMPLIFIED,肉,soul,Spirit,fx_soul,override,Meat.
+SIMPLIFIED,护,ward,Spirit,fx_ward,override,Defend.
+SIMPLIFIED,卫,ward,Spirit,fx_ward,override,Guard.
+SIMPLIFIED,守,ward,Spirit,fx_ward,override,Defend.
+SIMPLIFIED,保,ward,Spirit,fx_ward,override,Safeguard.
+SIMPLIFIED,防,ward,Spirit,fx_ward,override,Protect.
+SIMPLIFIED,盾,ward,Spirit,fx_ward,override,Shield.
+SIMPLIFIED,障,ward,Spirit,fx_ward,override,Separate.
+SIMPLIFIED,安,ward,Spirit,fx_ward,override,Peaceful.
+SIMPLIFIED,全,ward,Spirit,fx_ward,override,Whole.
+SIMPLIFIED,平,ward,Spirit,fx_ward,override,Flat.
+SIMPLIFIED,稳,ward,Spirit,fx_ward,override,Steady.
+SIMPLIFIED,固,ward,Spirit,fx_ward,override,Solid.
+SIMPLIFIED,坚,ward,Spirit,fx_ward,override,Hard.
+TRADITIONAL,水,water,Tides,fx_water,override,Water.
+TRADITIONAL,河,water,Tides,fx_water,override,River.
+TRADITIONAL,江,water,Tides,fx_water,override,River.
+TRADITIONAL,海,water,Tides,fx_water,override,Sea.
+TRADITIONAL,湖,water,Tides,fx_water,override,Lake.
+TRADITIONAL,泉,water,Tides,fx_water,override,Spring.
+TRADITIONAL,池,water,Tides,fx_water,override,Pool.
+TRADITIONAL,洋,water,Tides,fx_water,override,Sea.
+TRADITIONAL,浪,water,Tides,fx_water,override,Wave.
+TRADITIONAL,流,water,Tides,fx_water,override,Flow.
+TRADITIONAL,潮,water,Tides,fx_water,override,Tide.
+TRADITIONAL,滴,water,Tides,fx_water,override,Drip.
+TRADITIONAL,汗,water,Tides,fx_water,override,Sweat.
+TRADITIONAL,淚,water,Tides,fx_water,variant,Tears.
+TRADITIONAL,洗,water,Tides,fx_water,override,Wash.
+TRADITIONAL,喝,water,Tides,fx_water,override,Drink.
+TRADITIONAL,飲,water,Tides,fx_water,variant,Drink.
+TRADITIONAL,湯,water,Tides,fx_water,variant,Soup.
+TRADITIONAL,冰,ice,Tides,fx_ice,override,Ice.
+TRADITIONAL,凍,ice,Tides,fx_ice,variant,Freeze.
+TRADITIONAL,寒,ice,Tides,fx_ice,override,Chilly.
+TRADITIONAL,冷,ice,Tides,fx_ice,override,Cold.
+TRADITIONAL,霜,ice,Tides,fx_ice,override,Frost.
+TRADITIONAL,涼,ice,Tides,fx_ice,variant,Cool.
+TRADITIONAL,凝,ice,Tides,fx_ice,override,Freeze.
+TRADITIONAL,澈,ice,Tides,fx_ice,override,Limpid.
+TRADITIONAL,雪,snow,Tides,fx_snow,override,Snow.
+TRADITIONAL,雹,snow,Tides,fx_snow,override,Hail.
+TRADITIONAL,雨,rain,Tides,fx_rain,override,Rain.
+TRADITIONAL,露,rain,Tides,fx_rain,override,Dew.
+TRADITIONAL,淋,rain,Tides,fx_rain,override,Drench.
+TRADITIONAL,傘,rain,Tides,fx_rain,variant,Umbrella.
+TRADITIONAL,陣,rain,Tides,fx_rain,variant,Array.
+TRADITIONAL,雷,rain,Tides,fx_rain,override,Thunder.
+TRADITIONAL,霧,rain,Tides,fx_rain,variant,Fog.
+TRADITIONAL,火,fire,Flame,fx_fire,override,Fire.
+TRADITIONAL,炎,fire,Flame,fx_fire,override,Flame.
+TRADITIONAL,焰,fire,Flame,fx_fire,override,Flame.
+TRADITIONAL,燒,fire,Flame,fx_fire,variant,Burn.
+TRADITIONAL,燃,fire,Flame,fx_fire,override,Ignite.
+TRADITIONAL,熱,fire,Flame,fx_fire,variant,Warm up.
+TRADITIONAL,暖,fire,Flame,fx_fire,override,Warm.
+TRADITIONAL,烤,fire,Flame,fx_fire,override,Bake.
+TRADITIONAL,炒,fire,Flame,fx_fire,override,Boil.
+TRADITIONAL,煮,fire,Flame,fx_fire,override,Boil.
+TRADITIONAL,燈,fire,Flame,fx_fire,variant,Lamp.
+TRADITIONAL,燭,fire,Flame,fx_fire,variant,Candle.
+TRADITIONAL,爐,fire,Flame,fx_fire,variant,Stove.
+TRADITIONAL,灰,fire,Flame,fx_fire,override,Ashes.
+TRADITIONAL,燥,fire,Flame,fx_fire,override,Arid.
+TRADITIONAL,燙,fire,Flame,fx_fire,variant,Scald.
+TRADITIONAL,烈,fire,Flame,fx_fire,override,Fiery.
+TRADITIONAL,爆,fire,Flame,fx_fire,override,Burst.
+TRADITIONAL,炸,fire,Flame,fx_fire,override,Explode.
+TRADITIONAL,焦,fire,Flame,fx_fire,override,Burned.
+TRADITIONAL,煤,fire,Flame,fx_fire,override,Carbon.
+TRADITIONAL,炭,fire,Flame,fx_fire,override,Carbon.
+TRADITIONAL,烘,fire,Flame,fx_fire,override,Bake.
+TRADITIONAL,焙,fire,Flame,fx_fire,override,Bake.
+TRADITIONAL,炊,fire,Flame,fx_fire,override,Meal.
+TRADITIONAL,燉,fire,Flame,fx_fire,variant,Stew.
+TRADITIONAL,焚,fire,Flame,fx_fire,override,Burn.
+TRADITIONAL,赤,fire,Flame,fx_fire,override,Red.
+TRADITIONAL,紅,fire,Flame,fx_fire,variant,Red.
+TRADITIONAL,電,lightning,Flame,fx_lightning,variant,Lightning.
+TRADITIONAL,閃,lightning,Flame,fx_lightning,variant,Dodge.
+TRADITIONAL,震,lightning,Flame,fx_lightning,override,Shake.
+TRADITIONAL,爍,lightning,Flame,fx_lightning,variant,Bright.
+TRADITIONAL,輝,lightning,Flame,fx_lightning,variant,Radiance.
+TRADITIONAL,耀,lightning,Flame,fx_lightning,override,Sparkle.
+TRADITIONAL,風,wind,Sky,fx_wind,variant,Wind.
+TRADITIONAL,吹,wind,Sky,fx_wind,override,Blow.
+TRADITIONAL,飄,wind,Sky,fx_wind,variant,Float.
+TRADITIONAL,飛,wind,Sky,fx_wind,variant,Fly.
+TRADITIONAL,氣,wind,Sky,fx_wind,variant,Gas.
+TRADITIONAL,空,wind,Sky,fx_wind,override,Empty.
+TRADITIONAL,輕,wind,Sky,fx_wind,variant,Light.
+TRADITIONAL,雲,cloud,Sky,fx_cloud,variant,Cloud.
+TRADITIONAL,煙,cloud,Sky,fx_cloud,variant,Smoke.
+TRADITIONAL,陰,cloud,Sky,fx_cloud,variant,Overcast.
+TRADITIONAL,霞,cloud,Sky,fx_cloud,override,Rosy clouds.
+TRADITIONAL,日,sun,Sky,fx_sun,override,Sun.
+TRADITIONAL,陽,sun,Sky,fx_sun,variant,Positive.
+TRADITIONAL,晴,sun,Sky,fx_sun,override,Clear.
+TRADITIONAL,曬,sun,Sky,fx_sun,variant,Shine on.
+TRADITIONAL,照,sun,Sky,fx_sun,override,Shine.
+TRADITIONAL,晨,sun,Sky,fx_sun,override,Dawn.
+TRADITIONAL,月,moon,Sky,fx_moon,override,Month.
+TRADITIONAL,夜,moon,Sky,fx_moon,override,Night.
+TRADITIONAL,夕,moon,Sky,fx_moon,override,Evening.
+TRADITIONAL,暮,moon,Sky,fx_moon,override,Dusk.
+TRADITIONAL,晚,moon,Sky,fx_moon,override,Night.
+TRADITIONAL,銀,moon,Sky,fx_moon,variant,Silver.
+TRADITIONAL,光,light,Sky,fx_light,override,Light.
+TRADITIONAL,明,light,Sky,fx_light,override,Bright.
+TRADITIONAL,亮,light,Sky,fx_light,override,Bright.
+TRADITIONAL,星,light,Sky,fx_light,override,Star.
+TRADITIONAL,晶,light,Sky,fx_light,override,Crystal.
+TRADITIONAL,珠,light,Sky,fx_light,override,Gem.
+TRADITIONAL,影,shadow,Sky,fx_shadow,override,Shadow.
+TRADITIONAL,黑,shadow,Sky,fx_shadow,override,Black.
+TRADITIONAL,暗,shadow,Sky,fx_shadow,override,Dark.
+TRADITIONAL,幽,shadow,Sky,fx_shadow,override,Quiet.
+TRADITIONAL,墨,shadow,Sky,fx_shadow,override,Ink.
+TRADITIONAL,玄,shadow,Sky,fx_shadow,override,Deep.
+TRADITIONAL,土,earth,Ground,fx_earth,override,Soil.
+TRADITIONAL,地,earth,Ground,fx_earth,override,Earth.
+TRADITIONAL,田,earth,Ground,fx_earth,override,Field.
+TRADITIONAL,場,earth,Ground,fx_earth,variant,Field.
+TRADITIONAL,園,earth,Ground,fx_earth,variant,Garden.
+TRADITIONAL,沙,earth,Ground,fx_earth,override,Sand.
+TRADITIONAL,塵,earth,Ground,fx_earth,variant,Dust.
+TRADITIONAL,泥,earth,Ground,fx_earth,override,Mud.
+TRADITIONAL,石,stone,Ground,fx_stone,override,Stone.
+TRADITIONAL,岩,stone,Ground,fx_stone,override,Cliff.
+TRADITIONAL,峰,stone,Ground,fx_stone,override,Peak.
+TRADITIONAL,坡,stone,Ground,fx_stone,override,Slope.
+TRADITIONAL,洞,stone,Ground,fx_stone,override,Cave.
+TRADITIONAL,礦,stone,Ground,fx_stone,variant,Mineral deposit.
+TRADITIONAL,磚,stone,Ground,fx_stone,variant,Brick.
+TRADITIONAL,山,mountain,Ground,fx_mountain,override,Mountain.
+TRADITIONAL,嶺,mountain,Ground,fx_mountain,variant,Mountain range.
+TRADITIONAL,岳,mountain,Ground,fx_mountain,override,Mountain peak.
+TRADITIONAL,巔,mountain,Ground,fx_mountain,variant,Summit.
+TRADITIONAL,丘,mountain,Ground,fx_mountain,override,Mound.
+TRADITIONAL,陵,mountain,Ground,fx_mountain,override,Hill.
+TRADITIONAL,木,wood,Ground,fx_wood,override,Tree.
+TRADITIONAL,林,wood,Ground,fx_wood,override,Forest.
+TRADITIONAL,森,wood,Ground,fx_wood,override,Forest.
+TRADITIONAL,樹,wood,Ground,fx_wood,variant,Tree.
+TRADITIONAL,草,wood,Ground,fx_wood,override,Grass.
+TRADITIONAL,花,wood,Ground,fx_wood,override,Flower.
+TRADITIONAL,葉,wood,Ground,fx_wood,variant,Leaf.
+TRADITIONAL,金,metal,Ground,fx_metal,override,Gold.
+TRADITIONAL,鐵,metal,Ground,fx_metal,variant,Iron.
+TRADITIONAL,鋼,metal,Ground,fx_metal,variant,Steel.
+TRADITIONAL,銅,metal,Ground,fx_metal,variant,Copper.
+TRADITIONAL,玉,metal,Ground,fx_metal,override,Jade.
+TRADITIONAL,寶,metal,Ground,fx_metal,variant,Jewel.
+TRADITIONAL,錢,metal,Ground,fx_metal,variant,Coin.
+TRADITIONAL,馬,animal,Creatures,fx_animal,variant,Horse.
+TRADITIONAL,牛,animal,Creatures,fx_animal,override,Ox.
+TRADITIONAL,羊,animal,Creatures,fx_animal,override,Sheep.
+TRADITIONAL,狗,animal,Creatures,fx_animal,override,Dog.
+TRADITIONAL,貓,animal,Creatures,fx_animal,variant,Cat.
+TRADITIONAL,鳥,animal,Creatures,fx_animal,variant,Bird.
+TRADITIONAL,魚,animal,Creatures,fx_animal,variant,Fish.
+TRADITIONAL,龍,animal,Creatures,fx_animal,variant,Dragon.
+TRADITIONAL,虎,animal,Creatures,fx_animal,override,Tiger.
+TRADITIONAL,兔,animal,Creatures,fx_animal,override,Rabbit.
+TRADITIONAL,龜,animal,Creatures,fx_animal,variant,Tortoise.
+TRADITIONAL,蛙,animal,Creatures,fx_animal,override,Frog.
+TRADITIONAL,人,person,Creatures,fx_person,override,People.
+TRADITIONAL,男,person,Creatures,fx_person,override,Male.
+TRADITIONAL,女,person,Creatures,fx_person,override,Woman.
+TRADITIONAL,兒,person,Creatures,fx_person,variant,Non-syllabic diminutive suffix.
+TRADITIONAL,孩,person,Creatures,fx_person,override,Baby.
+TRADITIONAL,子,person,Creatures,fx_person,override,Son.
+TRADITIONAL,母,person,Creatures,fx_person,override,Mother.
+TRADITIONAL,父,person,Creatures,fx_person,override,Father.
+TRADITIONAL,友,person,Creatures,fx_person,override,Friend.
+TRADITIONAL,朋,person,Creatures,fx_person,override,Friend.
+TRADITIONAL,師,person,Creatures,fx_person,variant,Teacher.
+TRADITIONAL,生,person,Creatures,fx_person,override,Life.
+TRADITIONAL,手,hand,Creatures,fx_hand,override,Hand.
+TRADITIONAL,指,hand,Creatures,fx_hand,override,Finger.
+TRADITIONAL,掌,hand,Creatures,fx_hand,override,Palm.
+TRADITIONAL,拿,hand,Creatures,fx_hand,override,Hold.
+TRADITIONAL,持,hand,Creatures,fx_hand,override,Hold.
+TRADITIONAL,打,hand,Creatures,fx_hand,override,Attack.
+TRADITIONAL,推,hand,Creatures,fx_hand,override,Guess.
+TRADITIONAL,拉,hand,Creatures,fx_hand,override,Pull.
+TRADITIONAL,提,hand,Creatures,fx_hand,override,Lift.
+TRADITIONAL,抬,hand,Creatures,fx_hand,override,Lift.
+TRADITIONAL,舉,hand,Creatures,fx_hand,variant,Lift.
+TRADITIONAL,船,boat,Craft,fx_boat,override,Boat.
+TRADITIONAL,舟,boat,Craft,fx_boat,override,Boat.
+TRADITIONAL,槳,boat,Craft,fx_boat,variant,Oar.
+TRADITIONAL,港,boat,Craft,fx_boat,override,Port.
+TRADITIONAL,航,boat,Craft,fx_boat,override,Vessel.
+TRADITIONAL,泊,boat,Craft,fx_boat,override,Anchor.
+TRADITIONAL,浮,boat,Craft,fx_boat,override,Drift.
+TRADITIONAL,漂,boat,Craft,fx_boat,override,Drift.
+TRADITIONAL,橋,boat,Craft,fx_boat,variant,Bridge.
+TRADITIONAL,車,tool,Craft,fx_tool,variant,Car.
+TRADITIONAL,門,tool,Craft,fx_tool,variant,Gate.
+TRADITIONAL,窗,tool,Craft,fx_tool,override,Window.
+TRADITIONAL,房,tool,Craft,fx_tool,override,Building.
+TRADITIONAL,屋,tool,Craft,fx_tool,override,Building.
+TRADITIONAL,室,tool,Craft,fx_tool,override,House.
+TRADITIONAL,城,tool,Craft,fx_tool,override,Castle.
+TRADITIONAL,市,tool,Craft,fx_tool,override,City.
+TRADITIONAL,街,tool,Craft,fx_tool,override,Street.
+TRADITIONAL,路,tool,Craft,fx_tool,override,Road.
+TRADITIONAL,塔,tool,Craft,fx_tool,override,Tower.
+TRADITIONAL,書,tool,Craft,fx_tool,variant,Book.
+TRADITIONAL,紙,tool,Craft,fx_tool,variant,Paper.
+TRADITIONAL,筆,tool,Craft,fx_tool,variant,Writing brush.
+TRADITIONAL,刀,tool,Craft,fx_tool,override,Knife.
+TRADITIONAL,線,tool,Craft,fx_tool,variant,Thread.
+TRADITIONAL,衣,tool,Craft,fx_tool,override,Cloth.
+TRADITIONAL,帽,tool,Craft,fx_tool,override,Hat.
+TRADITIONAL,鞋,tool,Craft,fx_tool,override,Shoes.
+TRADITIONAL,杯,tool,Craft,fx_tool,override,Cup.
+TRADITIONAL,碗,tool,Craft,fx_tool,override,Bowl.
+TRADITIONAL,瓶,tool,Craft,fx_tool,override,Bottle.
+TRADITIONAL,箱,tool,Craft,fx_tool,override,Box.
+TRADITIONAL,盒,tool,Craft,fx_tool,override,Small box or case.
+TRADITIONAL,網,tool,Craft,fx_tool,variant,Net.
+TRADITIONAL,繩,tool,Craft,fx_tool,variant,Rope.
+TRADITIONAL,心,mind,Mind,fx_mind,override,Heart.
+TRADITIONAL,想,mind,Mind,fx_mind,override,Want.
+TRADITIONAL,思,mind,Mind,fx_mind,override,Think.
+TRADITIONAL,念,mind,Mind,fx_mind,override,Think of.
+TRADITIONAL,意,mind,Mind,fx_mind,override,Thought.
+TRADITIONAL,知,mind,Mind,fx_mind,override,Know.
+TRADITIONAL,識,mind,Mind,fx_mind,variant,Discern.
+TRADITIONAL,學,mind,Mind,fx_mind,variant,Learn.
+TRADITIONAL,問,mind,Mind,fx_mind,variant,Ask.
+TRADITIONAL,懂,mind,Mind,fx_mind,override,Understand.
+TRADITIONAL,記,mind,Mind,fx_mind,variant,Record.
+TRADITIONAL,忘,mind,Mind,fx_mind,override,Forget.
+TRADITIONAL,怕,mind,Mind,fx_mind,override,Fear.
+TRADITIONAL,愛,mind,Mind,fx_mind,variant,Love.
+TRADITIONAL,恨,mind,Mind,fx_mind,override,Dislike.
+TRADITIONAL,夢,dream,Mind,fx_dream,variant,Dream.
+TRADITIONAL,睡,dream,Mind,fx_dream,override,Sleep.
+TRADITIONAL,醒,dream,Mind,fx_dream,override,Wake up.
+TRADITIONAL,眠,dream,Mind,fx_dream,override,Sleep.
+TRADITIONAL,幻,dream,Mind,fx_dream,override,Fantasy.
+TRADITIONAL,醉,dream,Mind,fx_dream,override,Intoxicated.
+TRADITIONAL,聲,sound,Mind,fx_sound,variant,Sound.
+TRADITIONAL,音,sound,Mind,fx_sound,override,Sound.
+TRADITIONAL,聽,sound,Mind,fx_sound,variant,Listen to.
+TRADITIONAL,聞,sound,Mind,fx_sound,variant,Hear.
+TRADITIONAL,語,sound,Mind,fx_sound,variant,Tell.
+TRADITIONAL,言,sound,Mind,fx_sound,override,Words.
+TRADITIONAL,話,sound,Mind,fx_sound,variant,Dialect.
+TRADITIONAL,說,sound,Mind,fx_sound,variant,Speak.
+TRADITIONAL,講,sound,Mind,fx_sound,variant,Speak.
+TRADITIONAL,讀,sound,Mind,fx_sound,variant,Read out.
+TRADITIONAL,寫,sound,Mind,fx_sound,variant,Write.
+TRADITIONAL,唱,sound,Mind,fx_sound,override,Sing.
+TRADITIONAL,歌,sound,Mind,fx_sound,override,Song.
+TRADITIONAL,答,sound,Mind,fx_sound,override,Answer.
+TRADITIONAL,時,time,Time,fx_time,variant,Time.
+TRADITIONAL,間,time,Time,fx_time,variant,Between.
+TRADITIONAL,年,time,Time,fx_time,override,Year.
+TRADITIONAL,分,time,Time,fx_time,override,Divide.
+TRADITIONAL,秒,time,Time,fx_time,override,Second.
+TRADITIONAL,刻,time,Time,fx_time,override,Quarter.
+TRADITIONAL,早,time,Time,fx_time,override,Early.
+TRADITIONAL,今,time,Time,fx_time,override,Modern.
+TRADITIONAL,昨,time,Time,fx_time,override,Yesterday.
+TRADITIONAL,春,time,Time,fx_time,override,Spring.
+TRADITIONAL,夏,time,Time,fx_time,override,Summer.
+TRADITIONAL,季,time,Time,fx_time,override,Quarter-year.
+TRADITIONAL,節,time,Time,fx_time,variant,Joint.
+TRADITIONAL,歲,time,Time,fx_time,variant,Year.
+TRADITIONAL,老,time,Time,fx_time,override,Old.
+TRADITIONAL,新,time,Time,fx_time,override,New.
+TRADITIONAL,舊,time,Time,fx_time,variant,Old.
+TRADITIONAL,先,time,Time,fx_time,override,First.
+TRADITIONAL,初,time,Time,fx_time,override,First.
+TRADITIONAL,終,time,Time,fx_time,variant,End.
+TRADITIONAL,始,time,Time,fx_time,override,Begin.
+TRADITIONAL,末,time,Time,fx_time,override,End.
+TRADITIONAL,久,time,Time,fx_time,override,Long.
+TRADITIONAL,暫,time,Time,fx_time,variant,Temporary.
+TRADITIONAL,永,time,Time,fx_time,override,Long.
+TRADITIONAL,恆,time,Time,fx_time,variant,Permanent.
+TRADITIONAL,期,time,Time,fx_time,override,Period of time.
+TRADITIONAL,候,time,Time,fx_time,override,Wait.
+TRADITIONAL,等,time,Time,fx_time,override,Equal.
+TRADITIONAL,待,time,Time,fx_time,override,Entertain.
+TRADITIONAL,快,time,Time,fx_time,override,Fast.
+TRADITIONAL,慢,time,Time,fx_time,override,Slow.
+TRADITIONAL,長,time,Time,fx_time,variant,Long.
+TRADITIONAL,短,time,Time,fx_time,override,Short.
+TRADITIONAL,古,time,Time,fx_time,override,Old.
+TRADITIONAL,魔,rune,Arcana,fx_rune,override,Demon.
+TRADITIONAL,法,rune,Arcana,fx_rune,override,Law.
+TRADITIONAL,術,rune,Arcana,fx_rune,variant,Art.
+TRADITIONAL,符,rune,Arcana,fx_rune,override,Talisman.
+TRADITIONAL,祝,rune,Arcana,fx_rune,override,Pray.
+TRADITIONAL,祈,rune,Arcana,fx_rune,override,Pray.
+TRADITIONAL,映,mirror,Arcana,fx_mirror,override,Project.
+TRADITIONAL,反,mirror,Arcana,fx_mirror,override,Reverse.
+TRADITIONAL,複,mirror,Arcana,fx_mirror,variant,Repeat.
+TRADITIONAL,雙,mirror,Arcana,fx_mirror,variant,Two.
+TRADITIONAL,對,mirror,Arcana,fx_mirror,variant,Right.
+TRADITIONAL,像,mirror,Arcana,fx_mirror,override,Alike.
+TRADITIONAL,鑰,key,Arcana,fx_key,variant,Key.
+TRADITIONAL,匙,key,Arcana,fx_key,override,Spoon.
+TRADITIONAL,碼,key,Arcana,fx_key,variant,Agate.
+TRADITIONAL,禁,key,Arcana,fx_key,override,Restrict.
+TRADITIONAL,解,key,Arcana,fx_key,override,Explain.
+TRADITIONAL,通,key,Arcana,fx_key,override,Pass through.
+TRADITIONAL,藥,potion,Arcana,fx_potion,variant,Remedy.
+TRADITIONAL,病,potion,Arcana,fx_potion,override,Sickness.
+TRADITIONAL,康,potion,Arcana,fx_potion,override,Health.
+TRADITIONAL,毒,potion,Arcana,fx_potion,override,Poison.
+TRADITIONAL,療,potion,Arcana,fx_potion,variant,Healing.
+TRADITIONAL,鍊,potion,Arcana,fx_potion,variant,Chain.
+TRADITIONAL,變,illusion,Arcana,fx_illusion,variant,Change.
+TRADITIONAL,隱,illusion,Arcana,fx_illusion,variant,Secret.
+TRADITIONAL,藏,illusion,Arcana,fx_illusion,override,Conceal.
+TRADITIONAL,騙,illusion,Arcana,fx_illusion,variant,Cheat.
+TRADITIONAL,迷,illusion,Arcana,fx_illusion,override,Bewitch.
+TRADITIONAL,惑,illusion,Arcana,fx_illusion,override,Confuse.
+TRADITIONAL,蔔,oracle,Arcana,fx_oracle,variant,Divination.
+TRADITIONAL,命,oracle,Arcana,fx_oracle,override,Life.
+TRADITIONAL,運,oracle,Arcana,fx_oracle,variant,Move.
+TRADITIONAL,福,oracle,Arcana,fx_oracle,override,Happiness.
+TRADITIONAL,禍,oracle,Arcana,fx_oracle,variant,Disaster.
+TRADITIONAL,靈,spirit,Spirit,fx_spirit,variant,Quick.
+TRADITIONAL,魂,spirit,Spirit,fx_spirit,override,Soul.
+TRADITIONAL,神,spirit,Spirit,fx_spirit,override,God.
+TRADITIONAL,仙,spirit,Spirit,fx_spirit,override,God.
+TRADITIONAL,彿,spirit,Spirit,fx_spirit,variant,Buddha.
+TRADITIONAL,聖,spirit,Spirit,fx_spirit,variant,Peerless.
+TRADITIONAL,廟,spirit,Spirit,fx_spirit,variant,Temple.
+TRADITIONAL,寺,spirit,Spirit,fx_spirit,override,Court.
+TRADITIONAL,祖,spirit,Spirit,fx_spirit,override,Ancestor.
+TRADITIONAL,拜,spirit,Spirit,fx_spirit,override,Greet.
+TRADITIONAL,祭,spirit,Spirit,fx_spirit,override,Sacrifice to.
+TRADITIONAL,供,spirit,Spirit,fx_spirit,override,Supply.
+TRADITIONAL,死,spirit,Spirit,fx_spirit,override,Die.
+TRADITIONAL,亡,spirit,Spirit,fx_spirit,override,Death.
+TRADITIONAL,血,spirit,Spirit,fx_spirit,override,Blood.
+TRADITIONAL,精,spirit,Spirit,fx_spirit,override,Essence.
+TRADITIONAL,天,spirit,Spirit,fx_spirit,override,Sky.
+TRADITIONAL,堂,spirit,Spirit,fx_spirit,override,Hall.
+TRADITIONAL,墓,spirit,Spirit,fx_spirit,override,Grave.
+TRADITIONAL,墳,spirit,Spirit,fx_spirit,variant,Grave.
+TRADITIONAL,骨,spirit,Spirit,fx_spirit,override,Bone.
+TRADITIONAL,肉,soul,Spirit,fx_soul,override,Meat.
+TRADITIONAL,護,ward,Spirit,fx_ward,variant,Protect.
+TRADITIONAL,衛,ward,Spirit,fx_ward,variant,Ward.
+TRADITIONAL,守,ward,Spirit,fx_ward,override,Defend.
+TRADITIONAL,保,ward,Spirit,fx_ward,override,Safeguard.
+TRADITIONAL,防,ward,Spirit,fx_ward,override,Protect.
+TRADITIONAL,盾,ward,Spirit,fx_ward,override,Shield.
+TRADITIONAL,障,ward,Spirit,fx_ward,override,Separate.
+TRADITIONAL,安,ward,Spirit,fx_ward,override,Peaceful.
+TRADITIONAL,全,ward,Spirit,fx_ward,override,Whole.
+TRADITIONAL,平,ward,Spirit,fx_ward,override,Flat.
+TRADITIONAL,穩,ward,Spirit,fx_ward,variant,Settled.
+TRADITIONAL,固,ward,Spirit,fx_ward,override,Solid.
+TRADITIONAL,堅,ward,Spirit,fx_ward,variant,Strong.
+JAPANESE,水,water,Tides,fx_water,override,Water.
+JAPANESE,河,water,Tides,fx_water,override,River.
+JAPANESE,江,water,Tides,fx_water,override,River.
+JAPANESE,海,water,Tides,fx_water,override,Sea.
+JAPANESE,湖,water,Tides,fx_water,override,Lake.
+JAPANESE,泉,water,Tides,fx_water,override,Spring.
+JAPANESE,池,water,Tides,fx_water,override,Pond.
+JAPANESE,洋,water,Tides,fx_water,override,Ocean.
+JAPANESE,浪,water,Tides,fx_water,override,Wave.
+JAPANESE,流,water,Tides,fx_water,override,Current.
+JAPANESE,潮,water,Tides,fx_water,override,Tide.
+JAPANESE,滴,water,Tides,fx_water,override,Drip.
+JAPANESE,汗,water,Tides,fx_water,override,Sweat.
+JAPANESE,洗,water,Tides,fx_water,override,Wash.
+JAPANESE,喝,water,Tides,fx_water,override,Hoarse.
+JAPANESE,飲,water,Tides,fx_water,variant,Drink.
+JAPANESE,湯,water,Tides,fx_water,variant,Hot water.
+JAPANESE,汁,water,Tides,fx_water,override,Soup.
+JAPANESE,遊,water,Tides,fx_water,variant,Play.
+JAPANESE,泳,water,Tides,fx_water,override,Swim.
+JAPANESE,湿,water,Tides,fx_water,override,Damp.
+JAPANESE,深,water,Tides,fx_water,override,Deep.
+JAPANESE,凍,ice,Tides,fx_ice,variant,Frozen.
+JAPANESE,寒,ice,Tides,fx_ice,override,Cold.
+JAPANESE,冷,ice,Tides,fx_ice,override,Cool.
+JAPANESE,霜,ice,Tides,fx_ice,override,Frost.
+JAPANESE,涼,ice,Tides,fx_ice,variant,Cool.
+JAPANESE,凝,ice,Tides,fx_ice,override,Freeze.
+JAPANESE,雪,snow,Tides,fx_snow,override,Snow.
+JAPANESE,雨,rain,Tides,fx_rain,override,Rain.
+JAPANESE,露,rain,Tides,fx_rain,override,Dew.
+JAPANESE,傘,rain,Tides,fx_rain,variant,Umbrella.
+JAPANESE,陣,rain,Tides,fx_rain,variant,Array.
+JAPANESE,雷,rain,Tides,fx_rain,override,Thunder.
+JAPANESE,霧,rain,Tides,fx_rain,variant,Fog.
+JAPANESE,火,fire,Flame,fx_fire,override,Fire.
+JAPANESE,炎,fire,Flame,fx_fire,override,Inflammation.
+JAPANESE,燃,fire,Flame,fx_fire,override,Burn.
+JAPANESE,熱,fire,Flame,fx_fire,variant,Heat.
+JAPANESE,暖,fire,Flame,fx_fire,override,Warmth.
+JAPANESE,煮,fire,Flame,fx_fire,override,Boil.
+JAPANESE,灯,fire,Flame,fx_fire,override,Lamp.
+JAPANESE,炉,fire,Flame,fx_fire,override,Hearth.
+JAPANESE,灰,fire,Flame,fx_fire,override,Ashes.
+JAPANESE,燥,fire,Flame,fx_fire,override,Parch.
+JAPANESE,烈,fire,Flame,fx_fire,override,Ardent.
+JAPANESE,爆,fire,Flame,fx_fire,override,Burst.
+JAPANESE,焦,fire,Flame,fx_fire,override,Char.
+JAPANESE,炭,fire,Flame,fx_fire,override,Charcoal.
+JAPANESE,炊,fire,Flame,fx_fire,override,Cook.
+JAPANESE,赤,fire,Flame,fx_fire,override,Red.
+JAPANESE,紅,fire,Flame,fx_fire,variant,Crimson.
+JAPANESE,丹,fire,Flame,fx_fire,override,Rust-colored.
+JAPANESE,暑,fire,Flame,fx_fire,override,Sultry.
+JAPANESE,温,fire,Flame,fx_fire,override,Warm.
+JAPANESE,電,lightning,Flame,fx_lightning,variant,Electricity.
+JAPANESE,震,lightning,Flame,fx_lightning,override,Quake.
+JAPANESE,弧,lightning,Flame,fx_lightning,override,Arc.
+JAPANESE,輝,lightning,Flame,fx_lightning,variant,Radiance.
+JAPANESE,焼,fire,Flame,fx_fire,fill,Bake.
+JAPANESE,災,fire,Flame,fx_fire,fill,Disaster.
+JAPANESE,熟,fire,Flame,fx_fire,fill,Mellow.
+JAPANESE,窯,fire,Flame,fx_fire,fill,Kiln.
+JAPANESE,辛,fire,Flame,fx_fire,fill,Spicy.
+JAPANESE,蛍,lightning,Flame,fx_lightning,fill,Firefly.
+JAPANESE,煎,fire,Flame,fx_fire,fill,Broil.
+JAPANESE,鍛,fire,Flame,fx_fire,fill,Forge.
+JAPANESE,風,wind,Sky,fx_wind,variant,Wind.
+JAPANESE,吹,wind,Sky,fx_wind,override,Blow.
+JAPANESE,飛,wind,Sky,fx_wind,variant,Fly.
+JAPANESE,空,wind,Sky,fx_wind,override,Empty.
+JAPANESE,扇,wind,Sky,fx_wind,override,Fan.
+JAPANESE,汽,wind,Sky,fx_wind,override,Vapor.
+JAPANESE,蒸,wind,Sky,fx_wind,override,Steam.
+JAPANESE,噴,wind,Sky,fx_wind,variant,Erupt.
+JAPANESE,呼,wind,Sky,fx_wind,override,Breathe.
+JAPANESE,吸,wind,Sky,fx_wind,override,Suck.
+JAPANESE,雲,cloud,Sky,fx_cloud,variant,Cloud.
+JAPANESE,煙,cloud,Sky,fx_cloud,variant,Smoke.
+JAPANESE,陰,cloud,Sky,fx_cloud,variant,Shade.
+JAPANESE,日,sun,Sky,fx_sun,override,Day.
+JAPANESE,陽,sun,Sky,fx_sun,variant,Sunshine.
+JAPANESE,晴,sun,Sky,fx_sun,override,Clear up.
+JAPANESE,照,sun,Sky,fx_sun,override,Illuminate.
+JAPANESE,旦,sun,Sky,fx_sun,override,Daybreak.
+JAPANESE,月,moon,Sky,fx_moon,override,Month.
+JAPANESE,夜,moon,Sky,fx_moon,override,Night.
+JAPANESE,夕,moon,Sky,fx_moon,override,Evening.
+JAPANESE,暮,moon,Sky,fx_moon,override,Evening.
+JAPANESE,銀,moon,Sky,fx_moon,variant,Silver.
+JAPANESE,盤,moon,Sky,fx_moon,variant,Tray.
+JAPANESE,光,light,Sky,fx_light,override,Ray.
+JAPANESE,明,light,Sky,fx_light,override,Bright.
+JAPANESE,星,light,Sky,fx_light,override,Star.
+JAPANESE,晶,light,Sky,fx_light,override,Sparkle.
+JAPANESE,珠,light,Sky,fx_light,override,Pearl.
+JAPANESE,鏡,light,Sky,fx_light,variant,Mirror.
+JAPANESE,影,shadow,Sky,fx_shadow,override,Shadow.
+JAPANESE,暗,shadow,Sky,fx_shadow,override,Darkness.
+JAPANESE,幽,shadow,Sky,fx_shadow,override,Seclude.
+JAPANESE,墨,shadow,Sky,fx_shadow,override,Black ink.
+JAPANESE,玄,shadow,Sky,fx_shadow,override,Mysterious.
+JAPANESE,土,earth,Ground,fx_earth,override,Soil.
+JAPANESE,地,earth,Ground,fx_earth,override,Ground.
+JAPANESE,田,earth,Ground,fx_earth,override,Rice field.
+JAPANESE,場,earth,Ground,fx_earth,variant,Field.
+JAPANESE,園,earth,Ground,fx_earth,variant,Garden.
+JAPANESE,沙,earth,Ground,fx_earth,override,Sand.
+JAPANESE,泥,earth,Ground,fx_earth,override,Mud.
+JAPANESE,島,earth,Ground,fx_earth,variant,Island.
+JAPANESE,石,stone,Ground,fx_stone,override,Stone.
+JAPANESE,岩,stone,Ground,fx_stone,override,Boulder.
+JAPANESE,峰,stone,Ground,fx_stone,override,Summit.
+JAPANESE,洞,stone,Ground,fx_stone,override,Den.
+JAPANESE,崖,stone,Ground,fx_stone,override,Cliff.
+JAPANESE,壁,stone,Ground,fx_stone,override,Wall.
+JAPANESE,碑,stone,Ground,fx_stone,override,Tombstone.
+JAPANESE,山,mountain,Ground,fx_mountain,override,Mountain.
+JAPANESE,岳,mountain,Ground,fx_mountain,override,Point.
+JAPANESE,丘,mountain,Ground,fx_mountain,override,Hill.
+JAPANESE,陵,mountain,Ground,fx_mountain,override,Mausoleum.
+JAPANESE,木,wood,Ground,fx_wood,override,Tree.
+JAPANESE,林,wood,Ground,fx_wood,override,Grove.
+JAPANESE,森,wood,Ground,fx_wood,override,Forest.
+JAPANESE,樹,wood,Ground,fx_wood,variant,Timber.
+JAPANESE,草,wood,Ground,fx_wood,override,Grass.
+JAPANESE,花,wood,Ground,fx_wood,override,Flower.
+JAPANESE,葉,wood,Ground,fx_wood,variant,Leaf.
+JAPANESE,根,wood,Ground,fx_wood,override,Root.
+JAPANESE,金,metal,Ground,fx_metal,override,Gold.
+JAPANESE,鋼,metal,Ground,fx_metal,variant,Steel.
+JAPANESE,銅,metal,Ground,fx_metal,variant,Copper.
+JAPANESE,玉,metal,Ground,fx_metal,override,Jewel.
+JAPANESE,宝,metal,Ground,fx_metal,override,Treasure.
+JAPANESE,鉛,metal,Ground,fx_metal,variant,Lead.
+JAPANESE,鎖,metal,Ground,fx_metal,variant,Chain.
+JAPANESE,針,metal,Ground,fx_metal,variant,Needle.
+JAPANESE,馬,animal,Creatures,fx_animal,variant,Horse.
+JAPANESE,牛,animal,Creatures,fx_animal,override,Cow.
+JAPANESE,羊,animal,Creatures,fx_animal,override,Sheep.
+JAPANESE,猫,animal,Creatures,fx_animal,override,Cat.
+JAPANESE,鳥,animal,Creatures,fx_animal,variant,Bird.
+JAPANESE,魚,animal,Creatures,fx_animal,variant,Fish.
+JAPANESE,虎,animal,Creatures,fx_animal,override,Tiger.
+JAPANESE,蜂,animal,Creatures,fx_animal,override,Bee.
+JAPANESE,蛇,animal,Creatures,fx_animal,override,Snake.
+JAPANESE,虫,animal,Creatures,fx_animal,override,Insect.
+JAPANESE,熊,animal,Creatures,fx_animal,override,Bear.
+JAPANESE,鹿,animal,Creatures,fx_animal,override,Deer.
+JAPANESE,人,person,Creatures,fx_person,override,Person.
+JAPANESE,男,person,Creatures,fx_person,override,Male.
+JAPANESE,女,person,Creatures,fx_person,override,Woman.
+JAPANESE,子,person,Creatures,fx_person,override,Child.
+JAPANESE,母,person,Creatures,fx_person,override,Mother.
+JAPANESE,父,person,Creatures,fx_person,override,Father.
+JAPANESE,友,person,Creatures,fx_person,override,Friend.
+JAPANESE,師,person,Creatures,fx_person,variant,Expert.
+JAPANESE,生,person,Creatures,fx_person,override,Life.
+JAPANESE,医,person,Creatures,fx_person,override,Doctor.
+JAPANESE,王,person,Creatures,fx_person,override,King.
+JAPANESE,后,person,Creatures,fx_person,override,Empress.
+JAPANESE,手,hand,Creatures,fx_hand,override,Hand.
+JAPANESE,指,hand,Creatures,fx_hand,override,Finger.
+JAPANESE,掌,hand,Creatures,fx_hand,override,Palm.
+JAPANESE,持,hand,Creatures,fx_hand,override,Hold.
+JAPANESE,打,hand,Creatures,fx_hand,override,Strike.
+JAPANESE,推,hand,Creatures,fx_hand,override,Guess.
+JAPANESE,拉,hand,Creatures,fx_hand,override,Latin.
+JAPANESE,提,hand,Creatures,fx_hand,override,Lift.
+JAPANESE,抱,hand,Creatures,fx_hand,override,Embrace.
+JAPANESE,握,hand,Creatures,fx_hand,override,Grip.
+JAPANESE,投,hand,Creatures,fx_hand,override,Throw.
+JAPANESE,船,boat,Craft,fx_boat,override,Ship.
+JAPANESE,舟,boat,Craft,fx_boat,override,Boat.
+JAPANESE,帆,boat,Craft,fx_boat,override,Sail.
+JAPANESE,港,boat,Craft,fx_boat,override,Harbor.
+JAPANESE,航,boat,Craft,fx_boat,override,Navigate.
+JAPANESE,泊,boat,Craft,fx_boat,override,Overnight stay.
+JAPANESE,浮,boat,Craft,fx_boat,override,Floating.
+JAPANESE,漂,boat,Craft,fx_boat,override,Drift.
+JAPANESE,橋,boat,Craft,fx_boat,variant,Bridge.
+JAPANESE,車,tool,Craft,fx_tool,variant,Car.
+JAPANESE,門,tool,Craft,fx_tool,variant,Gate.
+JAPANESE,房,tool,Craft,fx_tool,override,Tassel.
+JAPANESE,屋,tool,Craft,fx_tool,override,Roof.
+JAPANESE,室,tool,Craft,fx_tool,override,Room.
+JAPANESE,城,tool,Craft,fx_tool,override,Castle.
+JAPANESE,市,tool,Craft,fx_tool,override,Market.
+JAPANESE,街,tool,Craft,fx_tool,override,Boulevard.
+JAPANESE,路,tool,Craft,fx_tool,override,Path.
+JAPANESE,塔,tool,Craft,fx_tool,override,Pagoda.
+JAPANESE,書,tool,Craft,fx_tool,variant,Write.
+JAPANESE,紙,tool,Craft,fx_tool,variant,Paper.
+JAPANESE,筆,tool,Craft,fx_tool,variant,Writing brush.
+JAPANESE,刀,tool,Craft,fx_tool,override,Sword.
+JAPANESE,線,tool,Craft,fx_tool,variant,Line.
+JAPANESE,布,tool,Craft,fx_tool,override,Cloth.
+JAPANESE,衣,tool,Craft,fx_tool,override,Garment.
+JAPANESE,帽,tool,Craft,fx_tool,override,Cap.
+JAPANESE,杯,tool,Craft,fx_tool,override,Cup.
+JAPANESE,瓶,tool,Craft,fx_tool,override,Bottle.
+JAPANESE,箱,tool,Craft,fx_tool,override,Box.
+JAPANESE,網,tool,Craft,fx_tool,variant,Netting.
+JAPANESE,板,tool,Craft,fx_tool,override,Plank.
+JAPANESE,椅,tool,Craft,fx_tool,override,Chair.
+JAPANESE,鐘,tool,Craft,fx_tool,variant,Bell.
+JAPANESE,琴,tool,Craft,fx_tool,override,Lute.
+JAPANESE,心,mind,Mind,fx_mind,override,Heart.
+JAPANESE,想,mind,Mind,fx_mind,override,Idea.
+JAPANESE,思,mind,Mind,fx_mind,override,Think.
+JAPANESE,念,mind,Mind,fx_mind,override,Wish.
+JAPANESE,意,mind,Mind,fx_mind,override,Idea.
+JAPANESE,知,mind,Mind,fx_mind,override,Know.
+JAPANESE,識,mind,Mind,fx_mind,variant,Discern.
+JAPANESE,学,mind,Mind,fx_mind,override,Study.
+JAPANESE,問,mind,Mind,fx_mind,variant,Ask.
+JAPANESE,記,mind,Mind,fx_mind,variant,Scribe.
+JAPANESE,忘,mind,Mind,fx_mind,override,Forget.
+JAPANESE,愛,mind,Mind,fx_mind,variant,Love.
+JAPANESE,恨,mind,Mind,fx_mind,override,Regret.
+JAPANESE,喜,mind,Mind,fx_mind,override,Rejoice.
+JAPANESE,怒,mind,Mind,fx_mind,override,Angry.
+JAPANESE,夢,dream,Mind,fx_dream,variant,Dream.
+JAPANESE,睡,dream,Mind,fx_dream,override,Drowsy.
+JAPANESE,醒,dream,Mind,fx_dream,override,Awake.
+JAPANESE,眠,dream,Mind,fx_dream,override,Sleep.
+JAPANESE,幻,dream,Mind,fx_dream,override,Phantasm.
+JAPANESE,声,sound,Mind,fx_sound,override,Voice.
+JAPANESE,音,sound,Mind,fx_sound,override,Sound.
+JAPANESE,聞,sound,Mind,fx_sound,variant,Hear.
+JAPANESE,語,sound,Mind,fx_sound,variant,Word.
+JAPANESE,言,sound,Mind,fx_sound,override,Say.
+JAPANESE,話,sound,Mind,fx_sound,variant,Tale.
+JAPANESE,講,sound,Mind,fx_sound,variant,Lecture.
+JAPANESE,写,sound,Mind,fx_sound,override,Copy.
+JAPANESE,唱,sound,Mind,fx_sound,override,Chant.
+JAPANESE,歌,sound,Mind,fx_sound,override,Song.
+JAPANESE,答,sound,Mind,fx_sound,override,Solution.
+JAPANESE,叫,sound,Mind,fx_sound,override,Shout.
+JAPANESE,笑,sound,Mind,fx_sound,override,Laugh.
+JAPANESE,鈴,sound,Mind,fx_sound,variant,Small bell.
+JAPANESE,響,sound,Mind,fx_sound,variant,Echo.
+JAPANESE,時,time,Time,fx_time,variant,Time.
+JAPANESE,間,time,Time,fx_time,variant,Interval.
+JAPANESE,年,time,Time,fx_time,override,Year.
+JAPANESE,分,time,Time,fx_time,override,Part.
+JAPANESE,秒,time,Time,fx_time,override,Second.
+JAPANESE,刻,time,Time,fx_time,override,Engrave.
+JAPANESE,早,time,Time,fx_time,override,Early.
+JAPANESE,今,time,Time,fx_time,override,Now.
+JAPANESE,昨,time,Time,fx_time,override,Yesterday.
+JAPANESE,春,time,Time,fx_time,override,Springtime.
+JAPANESE,夏,time,Time,fx_time,override,Summer.
+JAPANESE,秋,time,Time,fx_time,override,Autumn.
+JAPANESE,冬,time,Time,fx_time,override,Winter.
+JAPANESE,季,time,Time,fx_time,override,Seasons.
+JAPANESE,節,time,Time,fx_time,variant,Node.
+JAPANESE,老,time,Time,fx_time,override,Old man.
+JAPANESE,新,time,Time,fx_time,override,New.
+JAPANESE,旧,time,Time,fx_time,override,Old times.
+JAPANESE,先,time,Time,fx_time,override,Before.
+JAPANESE,初,time,Time,fx_time,override,First.
+JAPANESE,終,time,Time,fx_time,variant,End.
+JAPANESE,始,time,Time,fx_time,override,Commence.
+JAPANESE,末,time,Time,fx_time,override,End.
+JAPANESE,久,time,Time,fx_time,override,Long.
+JAPANESE,暫,time,Time,fx_time,variant,Temporarily.
+JAPANESE,永,time,Time,fx_time,override,Eternity.
+JAPANESE,恒,time,Time,fx_time,override,Steady.
+JAPANESE,期,time,Time,fx_time,override,Period.
+JAPANESE,候,time,Time,fx_time,override,Climate.
+JAPANESE,等,time,Time,fx_time,override,Equal.
+JAPANESE,待,time,Time,fx_time,override,Wait.
+JAPANESE,快,time,Time,fx_time,override,Cheerful.
+JAPANESE,慢,time,Time,fx_time,override,Slow.
+JAPANESE,長,time,Time,fx_time,variant,Long.
+JAPANESE,短,time,Time,fx_time,override,Short.
+JAPANESE,魔,rune,Arcana,fx_rune,override,Witch.
+JAPANESE,法,rune,Arcana,fx_rune,override,Method.
+JAPANESE,術,rune,Arcana,fx_rune,variant,Art.
+JAPANESE,符,rune,Arcana,fx_rune,override,Talisman.
+JAPANESE,祝,rune,Arcana,fx_rune,override,Celebrate.
+JAPANESE,祈,rune,Arcana,fx_rune,override,Pray.
+JAPANESE,環,rune,Arcana,fx_rune,variant,Ring.
+JAPANESE,映,mirror,Arcana,fx_mirror,override,Reflect.
+JAPANESE,反,mirror,Arcana,fx_mirror,override,Reverse.
+JAPANESE,複,mirror,Arcana,fx_mirror,variant,Duplicate.
+JAPANESE,双,mirror,Arcana,fx_mirror,override,Pair.
+JAPANESE,像,mirror,Arcana,fx_mirror,override,Statue.
+JAPANESE,形,mirror,Arcana,fx_mirror,override,Shape.
+JAPANESE,貌,mirror,Arcana,fx_mirror,override,Form.
+JAPANESE,禁,key,Arcana,fx_key,override,Prohibition.
+JAPANESE,解,key,Arcana,fx_key,override,Unravel.
+JAPANESE,通,key,Arcana,fx_key,override,Traffic.
+JAPANESE,病,potion,Arcana,fx_potion,override,Ill.
+JAPANESE,康,potion,Arcana,fx_potion,override,Ease.
+JAPANESE,毒,potion,Arcana,fx_potion,override,Poison.
+JAPANESE,療,potion,Arcana,fx_potion,variant,Healing.
+JAPANESE,香,potion,Arcana,fx_potion,override,Incense.
+JAPANESE,苦,potion,Arcana,fx_potion,override,Suffering.
+JAPANESE,酸,potion,Arcana,fx_potion,override,Acid.
+JAPANESE,迷,illusion,Arcana,fx_illusion,override,Astray.
+JAPANESE,惑,illusion,Arcana,fx_illusion,override,Beguile.
+JAPANESE,鬼,illusion,Arcana,fx_illusion,override,Ghost.
+JAPANESE,怪,illusion,Arcana,fx_illusion,override,Suspicious.
+JAPANESE,占,oracle,Arcana,fx_oracle,override,Fortune-telling.
+JAPANESE,命,oracle,Arcana,fx_oracle,override,Fate.
+JAPANESE,運,oracle,Arcana,fx_oracle,variant,Carry.
+JAPANESE,福,oracle,Arcana,fx_oracle,override,Blessing.
+JAPANESE,禍,oracle,Arcana,fx_oracle,variant,Calamity.
+JAPANESE,吉,oracle,Arcana,fx_oracle,override,Good luck.
+JAPANESE,凶,oracle,Arcana,fx_oracle,override,Villain.
+JAPANESE,魂,spirit,Spirit,fx_spirit,override,Soul.
+JAPANESE,神,spirit,Spirit,fx_spirit,override,Gods.
+JAPANESE,仙,spirit,Spirit,fx_spirit,override,Hermit.
+JAPANESE,聖,spirit,Spirit,fx_spirit,variant,Holy.
+JAPANESE,寺,spirit,Spirit,fx_spirit,override,Buddhist temple.
+JAPANESE,祖,spirit,Spirit,fx_spirit,override,Ancestor.
+JAPANESE,祭,spirit,Spirit,fx_spirit,override,Ritual.
+JAPANESE,供,spirit,Spirit,fx_spirit,override,Submit.
+JAPANESE,死,spirit,Spirit,fx_spirit,override,Death.
+JAPANESE,亡,spirit,Spirit,fx_spirit,override,Deceased.
+JAPANESE,血,spirit,Spirit,fx_spirit,override,Blood.
+JAPANESE,精,spirit,Spirit,fx_spirit,override,Refined.
+JAPANESE,天,spirit,Spirit,fx_spirit,override,Heavens.
+JAPANESE,堂,spirit,Spirit,fx_spirit,override,Public chamber.
+JAPANESE,墓,spirit,Spirit,fx_spirit,override,Grave.
+JAPANESE,墳,spirit,Spirit,fx_spirit,variant,Tomb.
+JAPANESE,骨,spirit,Spirit,fx_spirit,override,Skeleton.
+JAPANESE,息,spirit,Spirit,fx_spirit,override,Breath.
+JAPANESE,道,spirit,Spirit,fx_spirit,override,Road-way.
+JAPANESE,肉,soul,Spirit,fx_soul,override,Meat.
+JAPANESE,護,ward,Spirit,fx_ward,variant,Safeguard.
+JAPANESE,衛,ward,Spirit,fx_ward,variant,Defense.
+JAPANESE,守,ward,Spirit,fx_ward,override,Guard.
+JAPANESE,保,ward,Spirit,fx_ward,override,Protect.
+JAPANESE,防,ward,Spirit,fx_ward,override,Ward off.
+JAPANESE,盾,ward,Spirit,fx_ward,override,Shield.
+JAPANESE,障,ward,Spirit,fx_ward,override,Hinder.
+JAPANESE,安,ward,Spirit,fx_ward,override,Relax.
+JAPANESE,全,ward,Spirit,fx_ward,override,Whole.
+JAPANESE,平,ward,Spirit,fx_ward,override,Even.
+JAPANESE,固,ward,Spirit,fx_ward,override,Solid.
+JAPANESE,堅,ward,Spirit,fx_ward,variant,Strict.
+JAPANESE,気,spirit,Spirit,fx_spirit,fill,Spirit.
+JAPANESE,丁,ward,Spirit,fx_ward,fill,Street.
+JAPANESE,区,ward,Spirit,fx_ward,fill,Ward.
+KOREAN,水,water,Tides,fx_water,override,Water.
+KOREAN,河,water,Tides,fx_water,override,River.
+KOREAN,江,water,Tides,fx_water,override,River.
+KOREAN,海,water,Tides,fx_water,override,Sea.
+KOREAN,湖,water,Tides,fx_water,override,Lake.
+KOREAN,泉,water,Tides,fx_water,override,Spring.
+KOREAN,池,water,Tides,fx_water,override,Pool.
+KOREAN,洋,water,Tides,fx_water,override,Ocean.
+KOREAN,浪,water,Tides,fx_water,override,Wave.
+KOREAN,流,water,Tides,fx_water,override,Flow.
+KOREAN,潮,water,Tides,fx_water,override,Tide.
+KOREAN,滴,water,Tides,fx_water,override,Drip.
+KOREAN,汗,water,Tides,fx_water,override,Perspiration.
+KOREAN,淚,water,Tides,fx_water,variant,Tears.
+KOREAN,洗,water,Tides,fx_water,override,Wash.
+KOREAN,湯,water,Tides,fx_water,variant,Hot water.
+KOREAN,遊,water,Tides,fx_water,variant,Wander.
+KOREAN,泳,water,Tides,fx_water,override,Dive.
+KOREAN,濕,water,Tides,fx_water,variant,Wet.
+KOREAN,深,water,Tides,fx_water,override,Deep.
+KOREAN,波,water,Tides,fx_water,override,Waves.
+KOREAN,溪,water,Tides,fx_water,override,Mountain stream.
+KOREAN,滿,water,Tides,fx_water,variant,Fill.
+KOREAN,凍,ice,Tides,fx_ice,variant,Freeze.
+KOREAN,寒,ice,Tides,fx_ice,override,Cold.
+KOREAN,冷,ice,Tides,fx_ice,override,Cold.
+KOREAN,霜,ice,Tides,fx_ice,override,Frost.
+KOREAN,涼,ice,Tides,fx_ice,variant,Cool.
+KOREAN,凝,ice,Tides,fx_ice,override,Freeze.
+KOREAN,雪,snow,Tides,fx_snow,override,Snow.
+KOREAN,雨,rain,Tides,fx_rain,override,Rain.
+KOREAN,露,rain,Tides,fx_rain,override,Dew.
+KOREAN,陣,rain,Tides,fx_rain,variant,Array.
+KOREAN,雷,rain,Tides,fx_rain,override,Thunder.
+KOREAN,霧,rain,Tides,fx_rain,variant,Fog.
+KOREAN,火,fire,Flame,fx_fire,override,Fire.
+KOREAN,炎,fire,Flame,fx_fire,override,Flame.
+KOREAN,燒,fire,Flame,fx_fire,variant,Burn.
+KOREAN,燃,fire,Flame,fx_fire,override,Burn.
+KOREAN,熱,fire,Flame,fx_fire,variant,Hot.
+KOREAN,暖,fire,Flame,fx_fire,override,Warm.
+KOREAN,燈,fire,Flame,fx_fire,variant,Lantern.
+KOREAN,燭,fire,Flame,fx_fire,variant,Candle.
+KOREAN,爐,fire,Flame,fx_fire,variant,Fireplace.
+KOREAN,燥,fire,Flame,fx_fire,override,Dry.
+KOREAN,烈,fire,Flame,fx_fire,override,Fiery.
+KOREAN,爆,fire,Flame,fx_fire,override,Burst.
+KOREAN,炭,fire,Flame,fx_fire,override,Charcoal.
+KOREAN,赤,fire,Flame,fx_fire,override,Red.
+KOREAN,紅,fire,Flame,fx_fire,variant,Red.
+KOREAN,丹,fire,Flame,fx_fire,override,Cinnabar.
+KOREAN,暑,fire,Flame,fx_fire,override,Hot.
+KOREAN,溫,fire,Flame,fx_fire,variant,Lukewarm.
+KOREAN,電,lightning,Flame,fx_lightning,variant,Electricity.
+KOREAN,震,lightning,Flame,fx_lightning,override,Shake.
+KOREAN,輝,lightning,Flame,fx_lightning,variant,Brightness.
+KOREAN,災,fire,Flame,fx_fire,fill,Calamity.
+KOREAN,熟,fire,Flame,fx_fire,fill,Well-cooked.
+KOREAN,螢,fire,Flame,fx_fire,fill,Glowworm.
+KOREAN,辛,fire,Flame,fx_fire,fill,Bitter.
+KOREAN,風,wind,Sky,fx_wind,variant,Wind.
+KOREAN,吹,wind,Sky,fx_wind,override,Blow.
+KOREAN,飛,wind,Sky,fx_wind,variant,Fly.
+KOREAN,氣,wind,Sky,fx_wind,variant,Air.
+KOREAN,空,wind,Sky,fx_wind,override,Empty.
+KOREAN,輕,wind,Sky,fx_wind,variant,Light.
+KOREAN,蒸,wind,Sky,fx_wind,override,Steam.
+KOREAN,呼,wind,Sky,fx_wind,override,Breathe.
+KOREAN,雲,cloud,Sky,fx_cloud,variant,Clouds.
+KOREAN,煙,cloud,Sky,fx_cloud,variant,Smoke.
+KOREAN,陰,cloud,Sky,fx_cloud,variant,Passive.
+KOREAN,日,sun,Sky,fx_sun,override,Sun.
+KOREAN,陽,sun,Sky,fx_sun,variant,Active.
+KOREAN,晴,sun,Sky,fx_sun,override,Clear weather.
+KOREAN,照,sun,Sky,fx_sun,override,Shine.
+KOREAN,晨,sun,Sky,fx_sun,override,Early morning.
+KOREAN,旦,sun,Sky,fx_sun,override,Dawn.
+KOREAN,月,moon,Sky,fx_moon,override,Moon.
+KOREAN,夜,moon,Sky,fx_moon,override,Night.
+KOREAN,夕,moon,Sky,fx_moon,override,Evening.
+KOREAN,暮,moon,Sky,fx_moon,override,Evening.
+KOREAN,晚,moon,Sky,fx_moon,override,Night.
+KOREAN,銀,moon,Sky,fx_moon,variant,Silver.
+KOREAN,盤,moon,Sky,fx_moon,variant,Tray.
+KOREAN,光,light,Sky,fx_light,override,Light.
+KOREAN,明,light,Sky,fx_light,override,Bright.
+KOREAN,星,light,Sky,fx_light,override,Star.
+KOREAN,珠,light,Sky,fx_light,override,Precious stone.
+KOREAN,鏡,light,Sky,fx_light,variant,Mirror.
+KOREAN,影,shadow,Sky,fx_shadow,override,Shadow.
+KOREAN,黑,shadow,Sky,fx_shadow,override,Black.
+KOREAN,暗,shadow,Sky,fx_shadow,override,Dark.
+KOREAN,幽,shadow,Sky,fx_shadow,override,Quiet.
+KOREAN,墨,shadow,Sky,fx_shadow,override,Ink.
+KOREAN,玄,shadow,Sky,fx_shadow,override,Deep.
+KOREAN,土,earth,Ground,fx_earth,override,Soil.
+KOREAN,地,earth,Ground,fx_earth,override,Earth.
+KOREAN,田,earth,Ground,fx_earth,override,Field.
+KOREAN,場,earth,Ground,fx_earth,variant,Field.
+KOREAN,園,earth,Ground,fx_earth,variant,Garden.
+KOREAN,沙,earth,Ground,fx_earth,override,Sand.
+KOREAN,泥,earth,Ground,fx_earth,override,Mud.
+KOREAN,島,earth,Ground,fx_earth,variant,Island.
+KOREAN,岸,earth,Ground,fx_earth,override,Bank.
+KOREAN,石,stone,Ground,fx_stone,override,Stone.
+KOREAN,洞,stone,Ground,fx_stone,override,Cave.
+KOREAN,壁,stone,Ground,fx_stone,override,Partition wall.
+KOREAN,碑,stone,Ground,fx_stone,override,Stone tablet.
+KOREAN,山,mountain,Ground,fx_mountain,override,Mountain.
+KOREAN,嶺,mountain,Ground,fx_mountain,variant,Mountain ridge.
+KOREAN,岳,mountain,Ground,fx_mountain,override,Mountain peak.
+KOREAN,丘,mountain,Ground,fx_mountain,override,Hill.
+KOREAN,陵,mountain,Ground,fx_mountain,override,Hill.
+KOREAN,木,wood,Ground,fx_wood,override,Tree.
+KOREAN,林,wood,Ground,fx_wood,override,Forest.
+KOREAN,樹,wood,Ground,fx_wood,variant,Tree.
+KOREAN,草,wood,Ground,fx_wood,override,Grass.
+KOREAN,花,wood,Ground,fx_wood,override,Flower.
+KOREAN,葉,wood,Ground,fx_wood,variant,Leaf.
+KOREAN,根,wood,Ground,fx_wood,override,Root.
+KOREAN,竹,wood,Ground,fx_wood,override,Bamboo.
+KOREAN,米,wood,Ground,fx_wood,override,Rice.
+KOREAN,金,metal,Ground,fx_metal,override,Gold.
+KOREAN,鐵,metal,Ground,fx_metal,variant,Iron.
+KOREAN,鋼,metal,Ground,fx_metal,variant,Steel.
+KOREAN,銅,metal,Ground,fx_metal,variant,Copper.
+KOREAN,玉,metal,Ground,fx_metal,override,Jade.
+KOREAN,寶,metal,Ground,fx_metal,variant,Treasure.
+KOREAN,錢,metal,Ground,fx_metal,variant,Money.
+KOREAN,鉛,metal,Ground,fx_metal,variant,Lead.
+KOREAN,馬,animal,Creatures,fx_animal,variant,Horse.
+KOREAN,牛,animal,Creatures,fx_animal,override,Cow.
+KOREAN,羊,animal,Creatures,fx_animal,override,Sheep.
+KOREAN,狗,animal,Creatures,fx_animal,override,Dog.
+KOREAN,鳥,animal,Creatures,fx_animal,variant,Bird.
+KOREAN,魚,animal,Creatures,fx_animal,variant,Fish.
+KOREAN,龍,animal,Creatures,fx_animal,variant,Dragon.
+KOREAN,虎,animal,Creatures,fx_animal,override,Tiger.
+KOREAN,龜,animal,Creatures,fx_animal,variant,Turtle or tortoise.
+KOREAN,蜂,animal,Creatures,fx_animal,override,Bee.
+KOREAN,蝶,animal,Creatures,fx_animal,override,Butterfly.
+KOREAN,蛇,animal,Creatures,fx_animal,override,Snake.
+KOREAN,人,person,Creatures,fx_person,override,Man.
+KOREAN,男,person,Creatures,fx_person,override,Male.
+KOREAN,女,person,Creatures,fx_person,override,Woman.
+KOREAN,兒,person,Creatures,fx_person,variant,Son.
+KOREAN,子,person,Creatures,fx_person,override,Offspring.
+KOREAN,母,person,Creatures,fx_person,override,Mother.
+KOREAN,父,person,Creatures,fx_person,override,Father.
+KOREAN,友,person,Creatures,fx_person,override,Friend.
+KOREAN,朋,person,Creatures,fx_person,override,Friend.
+KOREAN,師,person,Creatures,fx_person,variant,Teacher.
+KOREAN,生,person,Creatures,fx_person,override,Life.
+KOREAN,醫,person,Creatures,fx_person,variant,Medicine.
+KOREAN,手,hand,Creatures,fx_hand,override,Hand.
+KOREAN,指,hand,Creatures,fx_hand,override,Finger.
+KOREAN,掌,hand,Creatures,fx_hand,override,Palm.
+KOREAN,持,hand,Creatures,fx_hand,override,Sustain.
+KOREAN,打,hand,Creatures,fx_hand,override,Strike.
+KOREAN,推,hand,Creatures,fx_hand,override,Guess.
+KOREAN,提,hand,Creatures,fx_hand,override,Lift.
+KOREAN,抱,hand,Creatures,fx_hand,override,Embrace.
+KOREAN,投,hand,Creatures,fx_hand,override,Throw.
+KOREAN,接,hand,Creatures,fx_hand,override,Receive.
+KOREAN,拍,hand,Creatures,fx_hand,override,Clap.
+KOREAN,船,boat,Craft,fx_boat,override,Ship.
+KOREAN,舟,boat,Craft,fx_boat,override,Boat.
+KOREAN,港,boat,Craft,fx_boat,override,Port.
+KOREAN,航,boat,Craft,fx_boat,override,Sail.
+KOREAN,泊,boat,Craft,fx_boat,override,Anchor vessel.
+KOREAN,浮,boat,Craft,fx_boat,override,Float.
+KOREAN,漂,boat,Craft,fx_boat,override,Float.
+KOREAN,橋,boat,Craft,fx_boat,variant,Bridge.
+KOREAN,車,tool,Craft,fx_tool,variant,Cart.
+KOREAN,門,tool,Craft,fx_tool,variant,Gate.
+KOREAN,房,tool,Craft,fx_tool,override,House.
+KOREAN,屋,tool,Craft,fx_tool,override,House.
+KOREAN,室,tool,Craft,fx_tool,override,Room.
+KOREAN,城,tool,Craft,fx_tool,override,Castle.
+KOREAN,市,tool,Craft,fx_tool,override,Market.
+KOREAN,街,tool,Craft,fx_tool,override,Street.
+KOREAN,路,tool,Craft,fx_tool,override,Road.
+KOREAN,塔,tool,Craft,fx_tool,override,Tower.
+KOREAN,書,tool,Craft,fx_tool,variant,Book.
+KOREAN,紙,tool,Craft,fx_tool,variant,Paper.
+KOREAN,筆,tool,Craft,fx_tool,variant,Writing brush.
+KOREAN,刀,tool,Craft,fx_tool,override,Knife.
+KOREAN,線,tool,Craft,fx_tool,variant,Thread.
+KOREAN,布,tool,Craft,fx_tool,override,Cloth.
+KOREAN,衣,tool,Craft,fx_tool,override,Clothes.
+KOREAN,杯,tool,Craft,fx_tool,override,Cup.
+KOREAN,板,tool,Craft,fx_tool,override,Plank.
+KOREAN,鐘,tool,Craft,fx_tool,variant,Clock.
+KOREAN,琴,tool,Craft,fx_tool,override,Lute.
+KOREAN,鼓,tool,Craft,fx_tool,override,Drum.
+KOREAN,尺,tool,Craft,fx_tool,override,Ruler.
+KOREAN,輪,tool,Craft,fx_tool,variant,Wheel.
+KOREAN,綱,tool,Craft,fx_tool,fill,Rope.
+KOREAN,京,tool,Craft,fx_tool,fill,Capital city.
+KOREAN,耕,tool,Craft,fx_tool,fill,Plow.
+KOREAN,心,mind,Mind,fx_mind,override,Heart.
+KOREAN,想,mind,Mind,fx_mind,override,Think.
+KOREAN,思,mind,Mind,fx_mind,override,Think.
+KOREAN,念,mind,Mind,fx_mind,override,Think of.
+KOREAN,意,mind,Mind,fx_mind,override,Thought.
+KOREAN,知,mind,Mind,fx_mind,override,Know.
+KOREAN,識,mind,Mind,fx_mind,variant,Discern.
+KOREAN,學,mind,Mind,fx_mind,variant,Learning.
+KOREAN,問,mind,Mind,fx_mind,variant,Ask.
+KOREAN,記,mind,Mind,fx_mind,variant,Record.
+KOREAN,忘,mind,Mind,fx_mind,override,Forget.
+KOREAN,愛,mind,Mind,fx_mind,variant,Love.
+KOREAN,恨,mind,Mind,fx_mind,override,Hatred.
+KOREAN,喜,mind,Mind,fx_mind,override,Like.
+KOREAN,怒,mind,Mind,fx_mind,override,Anger.
+KOREAN,哀,mind,Mind,fx_mind,override,Sad.
+KOREAN,夢,dream,Mind,fx_dream,variant,Dream.
+KOREAN,睡,dream,Mind,fx_dream,override,Sleep.
+KOREAN,眠,dream,Mind,fx_dream,override,Close eyes.
+KOREAN,醉,dream,Mind,fx_dream,override,Intoxicated.
+KOREAN,聲,sound,Mind,fx_sound,variant,Sound.
+KOREAN,音,sound,Mind,fx_sound,override,Sound.
+KOREAN,聽,sound,Mind,fx_sound,variant,Hear.
+KOREAN,聞,sound,Mind,fx_sound,variant,Hear.
+KOREAN,語,sound,Mind,fx_sound,variant,Language.
+KOREAN,言,sound,Mind,fx_sound,override,Words.
+KOREAN,話,sound,Mind,fx_sound,variant,Speech.
+KOREAN,說,sound,Mind,fx_sound,variant,Speak.
+KOREAN,講,sound,Mind,fx_sound,variant,Explain.
+KOREAN,讀,sound,Mind,fx_sound,variant,Read.
+KOREAN,寫,sound,Mind,fx_sound,variant,Write.
+KOREAN,唱,sound,Mind,fx_sound,override,Sing.
+KOREAN,歌,sound,Mind,fx_sound,override,Song.
+KOREAN,答,sound,Mind,fx_sound,override,Answer.
+KOREAN,叫,sound,Mind,fx_sound,override,Cry.
+KOREAN,時,time,Time,fx_time,variant,Time.
+KOREAN,間,time,Time,fx_time,variant,Interval.
+KOREAN,年,time,Time,fx_time,override,Year.
+KOREAN,分,time,Time,fx_time,override,Divide.
+KOREAN,秒,time,Time,fx_time,override,Second.
+KOREAN,刻,time,Time,fx_time,override,Carve.
+KOREAN,早,time,Time,fx_time,override,Early.
+KOREAN,今,time,Time,fx_time,override,Now.
+KOREAN,昨,time,Time,fx_time,override,Yesterday.
+KOREAN,春,time,Time,fx_time,override,Spring.
+KOREAN,夏,time,Time,fx_time,override,Summer.
+KOREAN,秋,time,Time,fx_time,override,Autumn.
+KOREAN,冬,time,Time,fx_time,override,Winter.
+KOREAN,季,time,Time,fx_time,override,Quarter of year.
+KOREAN,節,time,Time,fx_time,variant,Knot.
+KOREAN,歲,time,Time,fx_time,variant,Year.
+KOREAN,老,time,Time,fx_time,override,Old.
+KOREAN,新,time,Time,fx_time,override,New.
+KOREAN,舊,time,Time,fx_time,variant,Old.
+KOREAN,先,time,Time,fx_time,override,First.
+KOREAN,初,time,Time,fx_time,override,First.
+KOREAN,終,time,Time,fx_time,variant,End.
+KOREAN,始,time,Time,fx_time,override,Begin.
+KOREAN,末,time,Time,fx_time,override,Final.
+KOREAN,久,time,Time,fx_time,override,Long.
+KOREAN,暫,time,Time,fx_time,variant,Temporary.
+KOREAN,永,time,Time,fx_time,override,Long.
+KOREAN,恒,time,Time,fx_time,override,Steady.
+KOREAN,期,time,Time,fx_time,override,Period of time.
+KOREAN,候,time,Time,fx_time,override,Wait.
+KOREAN,等,time,Time,fx_time,override,Equal.
+KOREAN,待,time,Time,fx_time,override,Treat.
+KOREAN,快,time,Time,fx_time,override,Rapid.
+KOREAN,慢,time,Time,fx_time,override,Slow.
+KOREAN,長,time,Time,fx_time,variant,Long.
+KOREAN,法,rune,Arcana,fx_rune,override,Law.
+KOREAN,術,rune,Arcana,fx_rune,variant,Art.
+KOREAN,符,rune,Arcana,fx_rune,override,Talisman.
+KOREAN,祝,rune,Arcana,fx_rune,override,Pray for happiness or blessings.
+KOREAN,祈,rune,Arcana,fx_rune,override,Pray.
+KOREAN,圓,rune,Arcana,fx_rune,variant,Circle.
+KOREAN,環,rune,Arcana,fx_rune,variant,Ring.
+KOREAN,映,mirror,Arcana,fx_mirror,override,Project.
+KOREAN,反,mirror,Arcana,fx_mirror,override,Reverse.
+KOREAN,複,mirror,Arcana,fx_mirror,variant,Repeat.
+KOREAN,雙,mirror,Arcana,fx_mirror,variant,Set of two.
+KOREAN,對,mirror,Arcana,fx_mirror,variant,Correct.
+KOREAN,像,mirror,Arcana,fx_mirror,override,Picture.
+KOREAN,形,mirror,Arcana,fx_mirror,override,Form.
+KOREAN,禁,key,Arcana,fx_key,override,Restrict.
+KOREAN,解,key,Arcana,fx_key,override,Loosen.
+KOREAN,通,key,Arcana,fx_key,override,Pass through.
+KOREAN,藥,potion,Arcana,fx_potion,variant,Remedy.
+KOREAN,病,potion,Arcana,fx_potion,override,Illness.
+KOREAN,康,potion,Arcana,fx_potion,override,Peaceful.
+KOREAN,毒,potion,Arcana,fx_potion,override,Poison.
+KOREAN,鍊,potion,Arcana,fx_potion,variant,Smelt metals.
+KOREAN,香,potion,Arcana,fx_potion,override,Fragrant.
+KOREAN,變,illusion,Arcana,fx_illusion,variant,Change.
+KOREAN,隱,illusion,Arcana,fx_illusion,variant,Hide.
+KOREAN,藏,illusion,Arcana,fx_illusion,override,Hide.
+KOREAN,迷,illusion,Arcana,fx_illusion,override,Bewitch.
+KOREAN,惑,illusion,Arcana,fx_illusion,override,Confuse.
+KOREAN,鬼,illusion,Arcana,fx_illusion,override,Ghost.
+KOREAN,卜,oracle,Arcana,fx_oracle,override,Fortune-telling.
+KOREAN,占,oracle,Arcana,fx_oracle,override,Divine.
+KOREAN,命,oracle,Arcana,fx_oracle,override,Life.
+KOREAN,運,oracle,Arcana,fx_oracle,variant,Luck.
+KOREAN,福,oracle,Arcana,fx_oracle,override,Happiness.
+KOREAN,禍,oracle,Arcana,fx_oracle,variant,Misfortune.
+KOREAN,靈,spirit,Spirit,fx_spirit,variant,Spirit.
+KOREAN,魂,spirit,Spirit,fx_spirit,override,Soul.
+KOREAN,神,spirit,Spirit,fx_spirit,override,Spirit.
+KOREAN,仙,spirit,Spirit,fx_spirit,override,Taoist super-being.
+KOREAN,佛,spirit,Spirit,fx_spirit,override,Buddha.
+KOREAN,聖,spirit,Spirit,fx_spirit,variant,Holy.
+KOREAN,廟,spirit,Spirit,fx_spirit,variant,Temple.
+KOREAN,寺,spirit,Spirit,fx_spirit,override,Court.
+KOREAN,祖,spirit,Spirit,fx_spirit,override,Ancestor.
+KOREAN,拜,spirit,Spirit,fx_spirit,override,Greet.
+KOREAN,祭,spirit,Spirit,fx_spirit,override,Sacrifice to.
+KOREAN,供,spirit,Spirit,fx_spirit,override,Supply.
+KOREAN,死,spirit,Spirit,fx_spirit,override,Die.
+KOREAN,亡,spirit,Spirit,fx_spirit,override,Death.
+KOREAN,血,spirit,Spirit,fx_spirit,override,Blood.
+KOREAN,精,spirit,Spirit,fx_spirit,override,Essence.
+KOREAN,天,spirit,Spirit,fx_spirit,override,Sky.
+KOREAN,堂,spirit,Spirit,fx_spirit,override,Hall.
+KOREAN,墓,spirit,Spirit,fx_spirit,override,Grave.
+KOREAN,墳,spirit,Spirit,fx_spirit,variant,Grave.
+KOREAN,骨,spirit,Spirit,fx_spirit,override,Bone.
+KOREAN,息,spirit,Spirit,fx_spirit,override,Rest.
+KOREAN,道,spirit,Spirit,fx_spirit,override,Path.
+KOREAN,肉,soul,Spirit,fx_soul,override,Flesh.
+KOREAN,護,ward,Spirit,fx_ward,variant,Protect.
+KOREAN,衛,ward,Spirit,fx_ward,variant,Guard.
+KOREAN,守,ward,Spirit,fx_ward,override,Defend.
+KOREAN,保,ward,Spirit,fx_ward,override,Protect.
+KOREAN,防,ward,Spirit,fx_ward,override,Defend.
+KOREAN,障,ward,Spirit,fx_ward,override,Separate.
+KOREAN,安,ward,Spirit,fx_ward,override,Peaceful.
+KOREAN,全,ward,Spirit,fx_ward,override,Maintain.
+KOREAN,平,ward,Spirit,fx_ward,override,Flat.
+KOREAN,固,ward,Spirit,fx_ward,override,Solid.
+KOREAN,堅,ward,Spirit,fx_ward,variant,Hard.
