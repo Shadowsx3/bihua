@@ -1,10 +1,10 @@
 # Flow and test matrix
 
-Scope: 1.1.0 (1.0.9 in Play review), phone, foldable, tablet, light and dark,
+Scope: 1.1.1 (1.0.9 in Play review), phone, foldable, tablet, light and dark,
 and 1.5x text. The automated suite is JVM/Robolectric plus the local journey
 harness; pure composables and physical hardware still need the device pass.
 
-## 1.1.0 additions
+## 1.1.1 additions
 
 | Flow | What is covered | Where |
 |---|---|---|

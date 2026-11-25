@@ -1,6 +1,6 @@
 # UI test coverage map
 
-Status: living document, updated 2026-11-24 for 1.1.0. A = automated
+Status: living document, updated 2026-11-24 for 1.1.1. A = automated
 journey/unit test, P = partly automated or manual visual review, G = gap.
 
 | Area | Covered by | Status |

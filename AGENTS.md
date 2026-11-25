@@ -227,7 +227,7 @@ some etymology quality.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
-- Current release plan: `docs/1.1.0-roadmap.md`.
+- Current release plan: `docs/1.1.1-roadmap.md`.
 - Spell quest is the extra-practice spellbook: four scripts (Simplified,
   Traditional, Japanese kanji, Korean Hanja), 35 families, 10 chapters, ~350
   authored choices per script, forge-only puzzles, and two-page tablet/fold
@@ -646,7 +646,7 @@ After every source change that reaches a release, rebuild and re-smoke the APK,
 then update all three places together:
 
 1. Copy `app/build/outputs/apk/release/app-release.apk` to
-   `docs/download/bihua-1.1.0.apk`.
+   `docs/download/bihua-1.1.1.apk`.
 2. Put the new SHA-256 in `docs/download/SHA256SUMS.txt` and the landing card.
 3. Change the landing download query to `?v=<first 8 hash chars>` so the Pages
    CDN cannot keep serving the previous binary. Verify the hosted bytes with

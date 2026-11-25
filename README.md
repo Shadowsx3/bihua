@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.1.0-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.1-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -73,7 +73,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 
 ## Install
 
-The signed 1.1.0 test APK is on the [landing page](https://shadowsx3.github.io/bihua/#download).
+The signed 1.1.1 test APK is on the [landing page](https://shadowsx3.github.io/bihua/#download).
 The app is a private beta; read the release notes before installing. Uninstall a
 Play copy first because the test build uses the local release key.
 
@@ -190,7 +190,7 @@ not a public issue.
 
 ## Status
 
-**1.0.9 is in Play review.** The current development version is **1.1.0
+**1.0.9 is in Play review.** The current development version is **1.1.1
 (versionCode 21)**. It adds the spell quest in all four scripts, Progress windows
 with course-scoped analytics and empty states, optional meaning reviews and
 synonyms, an Anki-style reveal for writing, pronunciation, and meaning,

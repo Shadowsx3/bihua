@@ -11,7 +11,7 @@ Status:
 - **Watch** — known limitation, acceptable for 1.0.4.
 - **Open** — still needs work before it can be called complete.
 
-## 1.1.0 navigation, loading, and large-text pass
+## 1.1.1 navigation, loading, and large-text pass
 
 | Risk | Status | Action |
 |---|---|---|

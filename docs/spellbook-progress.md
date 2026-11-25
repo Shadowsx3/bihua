@@ -135,7 +135,7 @@ Everything below compiles and is covered by unit tests.
   now a roughly fixed total time, and the learner's cast playback follows the same
   pace.
 - Empty windows / progress / build chrome fixes from the same QA pass are
-  documented in `docs/1.1.0-release-checklist.md`.
+  documented in `docs/1.1.1-release-checklist.md`.
 
 ## Next tasks
 
@@ -147,7 +147,7 @@ Everything below compiles and is covered by unit tests.
 3. Reduce motion: effects skip, strokes still play, the scene does not drift.
 4. Re-run the standard matrix so the Home/Study tools entry, shared spell cache,
    and new data do not regress other screens.
-5. Signed 1.1.0 (21) APK and AAB are built; the APK is hosted and the landing hash is updated. Play upload waits for 1.0.9 review.
+5. Signed 1.1.1 (22) APK and AAB are built; the APK is hosted and the landing hash is updated. Play upload waits for 1.0.9 review.
 
 ## Traps
 

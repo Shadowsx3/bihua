@@ -29,7 +29,7 @@ shasum -a 256 app/build/outputs/apk/release/app-release.apk
 Verify the APK signature before installing it. The release build is invalid if a
 source file changed after it was assembled.
 
-When the landing page hosts the APK, update `docs/download/bihua-1.1.0.apk`,
+When the landing page hosts the APK, update `docs/download/bihua-1.1.1.apk`,
 `docs/download/SHA256SUMS.txt`, the landing hash, and the `?v=` cache-bust query
 together. A Pages deploy can keep the old binary at the unversioned URL, so
 compare the hosted bytes with `curl -sL <url> | shasum -a 256`.

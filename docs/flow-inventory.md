@@ -1,6 +1,6 @@
 # Flow inventory
 
-Status: living document, started 2026-11-23; updated 2026-11-24 for 1.1.0.
+Status: living document, started 2026-11-23; updated 2026-11-24 for 1.1.1.
 
 Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to automate,
 **M** manual-only for now.

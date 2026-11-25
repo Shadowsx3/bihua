@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (in progress)
+## 1.1.1 (in progress)
 
 - A guided tour with Mò, the paper-ink pet. It runs as a live overlay over the
   real app: a spotlight on the real control, a typewriter line, small pet
