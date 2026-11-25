@@ -13,7 +13,7 @@
   const updateLabel = () => {
     if (!toggle) return;
     const dark = root.dataset.theme === "dark";
-    toggle.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    toggle.setAttribute("aria-label", dark ? "Dark theme, switch to light" : "Light theme, switch to dark");
     toggle.setAttribute("aria-pressed", dark ? "true" : "false");
     const icon = toggle.querySelector(".theme-icon");
     const label = toggle.querySelector(".theme-label");
@@ -311,7 +311,6 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "grimoire-spell";
-      button.setAttribute("aria-label", `${spell.c}, ${spell.m}`);
       button.setAttribute("aria-pressed", String(i === selected));
       const glyph = document.createElement("span");
       glyph.textContent = spell.c;

@@ -986,7 +986,7 @@ body.menu-open { overflow: hidden; }
 .grimoire-glyph { font-family: var(--serif); font-size: 58px; line-height: 1; color: var(--vermillion-dark); min-width: 1.1em; text-align: center; }
 .grimoire-reading { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
 .grimoire-meaning { font-family: var(--serif); font-size: 22px; line-height: 1.2; }
-.grimoire-stamp { margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--mint); text-transform: uppercase; letter-spacing: .08em; }
+.grimoire-stamp { margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .08em; }
 .grimoire noscript img { max-width: 260px; width: 100%; border-radius: 10px; }
 
 /* Foldables and tablets. */
