@@ -9,8 +9,9 @@ import com.bassmd.bihua.settings.AppSettings
 import com.bassmd.bihua.settings.SettingsStore
 
 /**
- * Fires at the learner's chosen hour, shows a reminder only when there is a due
- * review or an allowed new lesson, and schedules the next selected day.
+ * Fires at the learner's chosen hour and minute, shows a reminder only when
+ * there is a due review or an allowed new lesson, and schedules the next
+ * selected day.
  */
 class ReminderWorker(
     appContext: Context,

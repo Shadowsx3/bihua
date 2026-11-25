@@ -3522,18 +3522,20 @@ private fun BrushSlider(
     suffix: String,
     onChange: (Float) -> Unit,
 ) {
+    var local by remember(value) { mutableFloatStateOf(value) }
     Column(Modifier.padding(top = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = InkDark, modifier = Modifier.weight(1f))
             Text(
-                String.format("%.1f%s", value, suffix),
+                String.format("%.1f%s", local, suffix),
                 style = MaterialTheme.typography.labelMedium,
                 color = InkSoft,
             )
         }
         Slider(
-            value = value.coerceIn(range.start, range.endInclusive),
-            onValueChange = onChange,
+            value = local.coerceIn(range.start, range.endInclusive),
+            onValueChange = { local = it },
+            onValueChangeFinished = { onChange(local) },
             valueRange = range,
         )
     }
