@@ -2973,7 +2973,12 @@ fun SettingsScreen(
             item {
                 val activity = androidx.compose.ui.platform.LocalContext.current
                 if (syncOpen) {
-                    SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.12f)) {
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("settings.sync"),
+                        color = Mint.copy(alpha = 0.12f),
+                    ) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Devices, contentDescription = null, tint = InkDark)
@@ -3220,74 +3225,73 @@ fun SettingsScreen(
             }
             if (settingsSection == "Help") {
             item {
-                SoftCard(
-                    Modifier
-                        .fillMaxWidth()
-                        .tourAnchor("help.grades"),
-                    color = PaperWarm,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Grading", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                        Text(
-                            "You grade. Bihua picks the next date.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
-                        HelpGrade("Again", "It slipped away.", Rose)
-                        HelpGrade("Hard", "Slow, but you got there.", Peach)
-                        HelpGrade("Good", "Right with a little thought.", Mint)
-                        HelpGrade("Easy", "Instant and effortless.", Sky)
+                // One item keeps every help anchor composed, so the tour can
+                // scroll to grades, paper, or show-answer even when the card
+                // started below the fold.
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("help.grades"),
+                        color = PaperWarm,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Grading", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                            Text(
+                                "You grade. Bihua picks the next date.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            HelpGrade("Again", "It slipped away.", Rose)
+                            HelpGrade("Hard", "Slow, but you got there.", Peach)
+                            HelpGrade("Good", "Right with a little thought.", Mint)
+                            HelpGrade("Easy", "Instant and effortless.", Sky)
+                        }
                     }
-                }
-            }
-            item {
-                SoftCard(
-                    Modifier
-                        .fillMaxWidth()
-                        .tourAnchor("help.sheets"),
-                    color = Butter.copy(alpha = 0.22f),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Paper and lists", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                        Text(
-                            "Sheets: Settings → Data → Print practice sheets (PDF).",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
-                        Text(
-                            "Lists: Settings → Study → Study lists.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("help.sheets"),
+                        color = Butter.copy(alpha = 0.22f),
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Paper and lists", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                            Text(
+                                "Sheets: Settings → Data → Print practice sheets (PDF).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                            Text(
+                                "Lists: Settings → Study → Study lists.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
                     }
-                }
-            }
-            item {
-                SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.14f)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        SettingTitle(
-                            icon = Icons.Rounded.HelpOutline,
-                            title = "Guided tour",
-                            subtitle = "One minute with Mò. The desk, reviews, grades, and paper.",
-                        )
-                        TextButton(onClick = onStartTour) { Text("Start tour") }
+                    SoftCard(Modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.14f)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            SettingTitle(
+                                icon = Icons.Rounded.HelpOutline,
+                                title = "Guided tour",
+                                subtitle = "One minute with Mò. The desk, reviews, grades, and paper.",
+                            )
+                            TextButton(onClick = onStartTour) { Text("Start tour") }
+                        }
                     }
-                }
-            }
-            item {
-                SoftCard(
-                    Modifier
-                        .fillMaxWidth()
-                        .tourAnchor("help.modes"),
-                    color = Mint.copy(alpha = 0.12f),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Show-answer mode", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                        Text(
-                            "Settings → Practice. Writing, pronunciation, or meaning. No drawing or typing. Off by default.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("help.modes"),
+                        color = Mint.copy(alpha = 0.12f),
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Show-answer mode", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                            Text(
+                                "Settings → Practice. Writing, pronunciation, or meaning. No drawing or typing. Off by default.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
                     }
                 }
             }

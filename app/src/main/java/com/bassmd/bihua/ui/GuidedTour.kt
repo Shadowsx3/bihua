@@ -1,4 +1,7 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
 
 package com.bassmd.bihua.ui
 
@@ -38,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +66,8 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -177,15 +183,6 @@ val TOUR_STEPS = listOf(
         prop = MoProp.GRADES,
     ),
     TourStep(
-        anchor = "help.modes",
-        title = "No pen today?",
-        body = "Turn on Show answer and I’ll reveal the answer for you to grade, for writing, pronunciation, or meaning. Off by default.",
-        destination = TourDestination.SETTINGS_HELP,
-        mood = MascotMood.THINKING,
-        gesture = MoGesture.SHRUG,
-        prop = MoProp.PENCIL,
-    ),
-    TourStep(
         anchor = "help.sheets",
         title = "Paper and lists",
         body = "Want paper? Settings → Data prints practice sheets as a PDF. Your saved lists live in Settings → Study.",
@@ -193,6 +190,15 @@ val TOUR_STEPS = listOf(
         mood = MascotMood.HAPPY,
         gesture = MoGesture.POINT,
         prop = MoProp.SCROLL,
+    ),
+    TourStep(
+        anchor = "help.modes",
+        title = "No pen today?",
+        body = "Turn on Show answer and I’ll reveal the answer for you to grade, for writing, pronunciation, or meaning. Off by default.",
+        destination = TourDestination.SETTINGS_HELP,
+        mood = MascotMood.THINKING,
+        gesture = MoGesture.SHRUG,
+        prop = MoProp.PENCIL,
     ),
     TourStep(
         anchor = "settings.sync",
@@ -214,15 +220,42 @@ val TOUR_STEPS = listOf(
     ),
 )
 
-/** Bounds are reported by the live app and read by the overlay. */
+/**
+ * Bounds are reported by the live app and read by the overlay. Entries are
+ * removed when their composable leaves, so a stale anchor from a previous
+ * screen or an earlier UI state can never highlight an empty spot. Each anchor
+ * also carries a [BringIntoViewRequester] so a step can scroll its target into
+ * view before the spotlight is drawn.
+ */
 object TourAnchors {
     val bounds = androidx.compose.runtime.mutableStateMapOf<String, Rect>()
+    private val requesters = mutableMapOf<String, BringIntoViewRequester>()
+
+    internal fun register(id: String, requester: BringIntoViewRequester) {
+        requesters[id] = requester
+    }
+
+    internal fun unregister(id: String, requester: BringIntoViewRequester) {
+        if (requesters[id] === requester) {
+            requesters.remove(id)
+            bounds.remove(id)
+        }
+    }
+
+    internal fun requester(id: String): BringIntoViewRequester? = requesters[id]
 }
 
 fun Modifier.tourAnchor(id: String): Modifier = composed {
-    onGloballyPositioned { coordinates ->
-        TourAnchors.bounds[id] = coordinates.boundsInWindow()
+    val requester = remember { BringIntoViewRequester() }
+    DisposableEffect(id, requester) {
+        TourAnchors.register(id, requester)
+        onDispose { TourAnchors.unregister(id, requester) }
     }
+    this
+        .bringIntoViewRequester(requester)
+        .onGloballyPositioned { coordinates ->
+            TourAnchors.bounds[id] = coordinates.boundsInWindow()
+        }
 }
 
 @Composable
@@ -231,6 +264,7 @@ fun TourInviteCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     reduceMotion: Boolean = false,
+    compact: Boolean = false,
 ) {
     val mint = Mint
     val wave = remember { Animatable(0f) }
@@ -241,9 +275,9 @@ fun TourInviteCard(
             wave.animateTo(1f, tween(1_700, easing = FastOutSlowInEasing))
         }
     }
-    val compact = LocalDensity.current.fontScale > 1.25f
+    val compactCard = compact || LocalDensity.current.fontScale > 1.25f
     SoftCard(modifier.fillMaxWidth(), color = Lilac.copy(alpha = 0.16f)) {
-        if (compact) {
+        if (compactCard) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(contentAlignment = Alignment.Center) {
@@ -337,6 +371,19 @@ fun GuidedTourOverlay(
     val step = TOUR_STEPS.getOrNull(stepIndex) ?: return
     val last = stepIndex == TOUR_STEPS.lastIndex
     val anchor = TourAnchors.bounds[step.anchor]
+    // The destination may still be navigating or scrolling when the step
+    // starts. Ask the target to reveal itself once, then let the learner keep
+    // their own scroll position.
+    LaunchedEffect(stepIndex) {
+        repeat(20) {
+            delay(100L)
+            val requester = TourAnchors.requester(step.anchor)
+            if (requester != null) {
+                requester.bringIntoView()
+                return@LaunchedEffect
+            }
+        }
+    }
     val density = LocalDensity.current
     val largeText = density.fontScale > 1.25f
     val haptic = LocalHapticFeedback.current
@@ -423,7 +470,6 @@ fun GuidedTourOverlay(
             val gapPx = with(density) { 12.dp.toPx() }
             val navPx = with(density) { 32.dp.toPx() }
             val statusPx = with(density) { 24.dp.toPx() }
-            val minCardPx = with(density) { 180.dp.toPx() }
             val spaceAbove = anchor?.let { it.top - gapPx - statusPx }
                 ?: (constraints.maxHeight * 0.62f)
             val spaceBelow = anchor?.let {
@@ -437,13 +483,44 @@ fun GuidedTourOverlay(
             } else {
                 spaceAbove > spaceBelow
             }
-            val freePx = maxOf(spaceAbove, spaceBelow).coerceAtLeast(minCardPx)
-            val maxCardHeight = if (largeText) {
-                with(density) { (constraints.maxHeight * 0.52f).toDp() }
+            // A small control gets a card that fits beside it, so the
+            // spotlight stays clear. A target that already fills most of the
+            // screen cannot be sidestepped; there the copy takes the height it
+            // needs (up to 72%), because a clipped explanation is worse than a
+            // spotlight that is partly covered.
+            val anchorFraction = anchor?.let { it.height / constraints.maxHeight } ?: 0f
+            val besideTarget = anchor != null && anchorFraction <= 0.40f
+            // On a landscape window a small target can also be avoided
+            // sideways. The card moves to the opposite edge instead of
+            // covering the control it is explaining.
+            val sideBySide = besideTarget &&
+                constraints.maxWidth > constraints.maxHeight
+            val anchorCenterX = anchor?.center?.x ?: 0f
+            val cardOnRight = sideBySide && anchorCenterX < constraints.maxWidth / 2f
+            val cardWidth = if (sideBySide) {
+                val roomPx = if (cardOnRight) {
+                    constraints.maxWidth.toFloat() - (anchor?.right ?: 0f)
+                } else {
+                    anchor?.left ?: constraints.maxWidth.toFloat()
+                }
+                with(density) {
+                    (roomPx - 24.dp.toPx())
+                        .coerceAtLeast(260.dp.toPx())
+                        .toDp()
+                }.coerceAtMost(620.dp)
             } else {
-                // A little grace into the target edge avoids clipping the last
-                // line on tall practice canvases without hiding the control.
-                with(density) { (freePx + 24.dp.toPx()).toDp() }
+                620.dp
+            }
+            val maxCardHeight = when {
+                largeText -> with(density) { (constraints.maxHeight * 0.62f).toDp() }
+                sideBySide -> with(density) { (constraints.maxHeight * 0.72f).toDp() }
+                besideTarget -> {
+                    val roomPx = (
+                        maxOf(spaceAbove, spaceBelow) + with(density) { 24.dp.toPx() }
+                        ).coerceAtLeast(with(density) { 220.dp.toPx() })
+                    with(density) { roomPx.toDp() }
+                }
+                else -> with(density) { (constraints.maxHeight * 0.72f).toDp() }
             }
             Canvas(
                 Modifier
@@ -556,14 +633,23 @@ fun GuidedTourOverlay(
                     shape = RoundedCornerShape(28.dp),
                     shadowElevation = 20.dp,
                     modifier = Modifier
-                        .align(if (placeTop) Alignment.TopCenter else Alignment.BottomCenter)
+                        .align(
+                            when {
+                                cardOnRight && placeTop -> Alignment.TopEnd
+                                cardOnRight -> Alignment.BottomEnd
+                                sideBySide && placeTop -> Alignment.TopStart
+                                sideBySide -> Alignment.BottomStart
+                                placeTop -> Alignment.TopCenter
+                                else -> Alignment.BottomCenter
+                            },
+                        )
                         .padding(
                             start = 12.dp,
                             end = 12.dp,
                             top = if (placeTop) 8.dp else 0.dp,
                             bottom = if (placeTop) 0.dp else 8.dp,
                         )
-                        .widthIn(max = 620.dp)
+                        .widthIn(max = cardWidth)
                         .fillMaxWidth()
                         .heightIn(max = maxCardHeight)
                         .graphicsLayer {
