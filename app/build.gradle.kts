@@ -1,10 +1,12 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.jetbrains.compose)
 }
 
 val keystoreFile = rootProject.file("keystore.properties")
@@ -74,11 +76,10 @@ android {
         buildConfig = true
     }
 
-    kotlin {
-        compilerOptions {
-            freeCompilerArgs.addAll("-Xskip-metadata-version-check")
-        }
-    }
+    // The KMP Android target expects the manifest in src/androidMain. Res and
+    // assets stay in the existing src/main tree.
+    sourceSets["main"].res.srcDir("src/main/res")
+    sourceSets["main"].assets.srcDir("src/main/assets")
 
     androidResources {
         noCompress += "db"
@@ -87,35 +88,96 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
-
 }
 
+kotlin {
+    androidTarget {
+        compilerOptions {
+            freeCompilerArgs.add("-Xskip-metadata-version-check")
+        }
+        compilations.configureEach {
+            if (name == "debug") defaultSourceSet.kotlin.srcDir("src/debug/java")
+        }
+    }
+
+    // The iOS app links this framework from Xcode. Android keeps its
+    // application plugin and source layout; the port starts here.
+    iosArm64()
+    iosSimulatorArm64()
+
+    targets.withType<KotlinNativeTarget>().configureEach {
+        binaries.framework {
+            baseName = "BihuaKit"
+            isStatic = true
+        }
+    }
+
+    sourceSets {
+        // During the port the Android sources stay where they are. A later
+        // commit can rename src/main/java to src/androidMain/kotlin with no
+        // behaviour change.
+        val androidMain by getting {
+            kotlin.srcDir("src/main/java")
+        }
+        val androidUnitTest by getting {
+            kotlin.srcDir("src/test/java")
+            resources.srcDir("src/test/resources")
+        }
+
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.datastore.preferences)
+            implementation(libs.androidx.exifinterface)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.okhttp)
+            implementation(libs.okhttp.tls)
+            implementation(libs.androidx.work.ktx)
+            implementation(libs.androidx.window)
+            implementation(libs.mlkit.digital.ink)
+            implementation(libs.kotlinx.coroutines.play.services)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.foundation)
+            implementation(libs.androidx.material.icons.extended)
+            implementation(libs.androidx.ui)
+            implementation(libs.androidx.ui.graphics)
+            implementation(libs.androidx.ui.tooling.preview)
+            implementation(libs.androidx.material3)
+        }
+
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+            implementation(libs.androidx.test.core)
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation("androidx.compose.ui:ui-test-junit4")
+        }
+
+        // Compose Multiplatform artifacts are only on the iOS targets for the
+        // P0 spike, so the Android dependency graph is unchanged.
+        iosMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(libs.kotlinx.coroutines.core)
+        }
+    }
+}
+
+// Android-only debug dependencies stay on the AGP configuration; the KMP
+// variant source sets do not create an androidDebug container in this setup.
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.exifinterface)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.tls)
-    implementation(libs.androidx.work.ktx)
-    implementation(libs.androidx.window)
-    implementation(libs.mlkit.digital.ink)
-    implementation(libs.kotlinx.coroutines.play.services)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.foundation)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     debugImplementation(libs.androidx.ui.tooling)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(platform(libs.androidx.compose.bom))
-    testImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

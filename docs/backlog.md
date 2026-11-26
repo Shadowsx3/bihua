@@ -127,6 +127,23 @@ This is the working list for the 1.1.2 stabilization window. Keep it short and
 honest: move an item to Done only after its proof (test, journey, screenshot, or
 release artifact) exists.
 
+## iOS port (`ios/kmp`) — P0 in progress
+
+The port runs on `ios/kmp`, branched from the tagged 1.1.2 candidate
+`android-1.1.2-rc23`. The plan and the platform matrix live in
+`docs/ios-kmp-plan.md`; Android stays shippable on `main`.
+
+- [x] Freeze the 1.1.2 tree, tag `android-1.1.2-rc23`, branch `ios/kmp`.
+- [x] Add Kotlin Multiplatform, Compose Multiplatform 1.9.3, iOS arm64 and
+      simulator targets; keep the Android sources at `src/main` through
+      `androidMain` source dirs and move only the manifest to `src/androidMain`.
+- [x] Android stays green: `make check` and `make lint` pass after the move.
+- [ ] P0 toolchain spike: framework link, Compose screen on the simulator,
+      ASCII text field, Pencil force probe, ML Kit pod link.
+- [ ] P1 source-set split and pure-package moves.
+- External: the Apple Developer account is being renewed (simulator work needs
+  no account; TestFlight in P7 does).
+
 ## P0 — Android 1.1.2 stability and release readiness
 
 - [x] Full screen-pass matrix: phone, phone-landscape, tablet, tablet-portrait,

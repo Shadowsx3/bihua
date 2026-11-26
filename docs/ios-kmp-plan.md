@@ -1,8 +1,9 @@
 # Bihua iOS plan — Compose Multiplatform, no widgets, no local sync
 
-Status: **planning only.** Android is the only client. 1.1.2 (code 23) is the
-release candidate and the release is on hold. Do not add an iOS target or an
-Apple dependency while that window is open without a branch switch.
+Status: **P0 in progress on `ios/kmp`**, branched from
+`android-1.1.2-rc23`. Android on `main` stays the shippable client; the iOS
+target and Apple dependencies exist only on the port branch. The Apple
+Developer account is being renewed; simulator work continues until TestFlight.
 
 This document replaces the earlier SwiftUI-over-KMP plan. The decision changed:
 the UI is **shared Compose Multiplatform**, not a second SwiftUI app. Native

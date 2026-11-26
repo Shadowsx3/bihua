@@ -1,6 +1,8 @@
 [versions]
 agp = "8.7.3"
 kotlin = "2.2.21"
+composeMultiplatform = "1.9.3"
+coroutines = "1.10.2"
 composeBom = "2024.12.01"
 activityCompose = "1.9.3"
 appcompat = "1.7.0"
@@ -43,9 +45,12 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
 mlkit-digital-ink = { group = "com.google.mlkit", name = "digital-ink-recognition", version.ref = "mlkitDigitalInk" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "playServicesCoroutines" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

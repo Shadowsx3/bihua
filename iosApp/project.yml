@@ -1,0 +1,48 @@
+name: Bihua
+options:
+  bundleIdPrefix: com.bassmd
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+  Bihua:
+    type: application
+    platform: iOS
+    sources:
+      - path: Bihua
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua
+        PRODUCT_NAME: Bihua
+        INFOPLIST_FILE: Bihua/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../app/build/bin/iosSimulatorArm64/debugFramework
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - BihuaKit
+        # The framework is static, so there is nothing to embed at runtime.
+        # The P0 spike builds only the simulator slice; the device slice and
+        # signing are added for TestFlight.
+        CODE_SIGNING_ALLOWED: NO
+      configs:
+        Debug:
+          ONLY_ACTIVE_ARCH: YES
+    preBuildScripts:
+      - name: Build BihuaKit
+        basedOnDependencyAnalysis: false
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :app:linkDebugFrameworkIosSimulatorArm64 --console=plain
