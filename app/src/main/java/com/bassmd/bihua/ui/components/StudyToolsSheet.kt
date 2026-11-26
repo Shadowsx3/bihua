@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.Print
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -38,6 +39,7 @@ import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
+import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Lilac
@@ -69,6 +71,8 @@ fun StudyToolsSheet(
     onOpenCharacter: (CharacterEntry) -> Unit,
     onOpenStudyLists: () -> Unit = {},
     onOpenQuest: () -> Unit = {},
+    onOpenMnemonicStudio: () -> Unit = {},
+    onOpenWorksheet: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -129,6 +133,31 @@ fun StudyToolsSheet(
 
             Spacer(Modifier.height(10.dp))
             Surface(
+                onClick = onOpenMnemonicStudio,
+                shape = RoundedCornerShape(16.dp),
+                color = Lilac.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.AutoStories, contentDescription = null, tint = InkDark)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Mnemonic palace", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                        Text(
+                            "A picture for a stubborn character",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Surface(
                 onClick = onOpenStudyLists,
                 shape = RoundedCornerShape(16.dp),
                 color = Sky.copy(alpha = 0.14f),
@@ -144,6 +173,31 @@ fun StudyToolsSheet(
                         Text("Named study lists", style = MaterialTheme.typography.titleSmall, color = InkDark)
                         Text(
                             "Characters and words · presets, import, export",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = InkSoft)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Surface(
+                onClick = onOpenWorksheet,
+                shape = RoundedCornerShape(16.dp),
+                color = Butter.copy(alpha = 0.24f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Print, contentDescription = null, tint = InkDark)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Character PDF", style = MaterialTheme.typography.titleSmall, color = InkDark)
+                        Text(
+                            "A4 or Letter · trace, write, print",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bihua: learn characters by writing them</title>
-<meta name="description" content="Bihua is an Android writing app for Chinese, Japanese, and Korean characters. FSRS-7 or SBD decides the date; on-device ink analysis tells you what your hand did. Optional meaning checks, a guided tour with Mò, and home-screen widgets that dress for the day. Print-ready sheets when you want paper.">
+<meta name="description" content="Write Chinese, Japanese, and Korean characters from memory. Bihua checks the ink on your device and brings each character back when you are about to forget it. Offline, no account.">
 <meta name="theme-color" content="#f7f2e6">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Bihua: learn characters by writing them">
@@ -20,8 +20,8 @@
     document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
   } catch (_) {}
 </script>
-<link rel="stylesheet" href="style.css?v=1.1.1-2">
-<script src="site.js?v=1.1.1-2" defer></script>
+<link rel="stylesheet" href="style.css?v=1.1.2-9">
+<script src="site.js?v=1.1.2-2" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -33,15 +33,12 @@
     </a>
     <nav class="links" aria-label="Primary">
       <a href="method.html">How it works</a>
-      <a href="#draw">Try it</a>
       <a href="#philosophy">Why</a>
-      <a href="#stylus">Stylus</a>
       <a href="#engines">Engines</a>
       <a href="#print">Print</a>
       <a href="#screens">Screens</a>
       <a href="#spell">Spell quest</a>
-      <a href="#scripts">Scripts</a>
-      <a href="changelog.html">Changelog</a>
+      <a href="#questions">Questions</a>
       <a href="#download">Download</a>
     </nav>
     <div class="nav-actions">
@@ -59,14 +56,13 @@
 <div class="mobile-menu" id="mobile-menu" data-menu hidden>
   <div class="menu-note">Bihua 筆畫 · write it. keep it.</div>
   <a href="method.html">How it works</a>
-  <a href="index.html#draw">Try it</a>
   <a href="index.html#philosophy">Why characters</a>
-  <a href="index.html#stylus">Stylus</a>
   <a href="index.html#engines">Engines</a>
   <a href="index.html#print">Print</a>
   <a href="index.html#screens">Screens</a>
   <a href="index.html#spell">Spell quest</a>
   <a href="index.html#scripts">Scripts</a>
+  <a href="index.html#questions">Questions</a>
   <a href="changelog.html">Changelog</a>
   <a href="index.html#download">Download</a>
   <a href="https://github.com/Shadowsx3/bihua">Source on GitHub</a>
@@ -75,17 +71,17 @@
 <main id="main">
   <div class="wrap hero">
     <div class="hero-copy reveal">
-      <div class="kicker">Android · stylus-first · offline</div>
+      <div class="kicker">Android · pen or finger · offline</div>
       <h1>Learn characters with a pen that <em>feels like a pen.</em></h1>
-      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. Write with a stylus or your finger, see the ink respond to your hand, and let FSRS-7 or SBD choose the next review date.</p>
+      <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. You write with a stylus or a finger; the app reads the ink and schedules the character for the day you would forget it. Everything is included: no account, no ads, no subscription.</p>
       <div class="hero-actions">
-        <a class="button" href="#download">Download latest <span aria-hidden="true">↓</span></a>
-        <a class="button secondary" href="#draw">Try the ink pad <span aria-hidden="true">↓</span></a>
+        <a class="button" href="#download">Start with three characters <span aria-hidden="true">↓</span></a>
+        <a class="button secondary" href="#screens">See a session <span aria-hidden="true">↓</span></a>
       </div>
       <div class="hero-meta">
         <span>FSRS-7 or SBD · target recall</span>
-        <span>Stylus pressure</span>
-        <span>Stylus or finger</span>
+        <span>Pen pressure</span>
+        <span>Four courses</span>
         <span>On-device ink</span>
         <span>A4 &amp; Letter print</span>
         <span>No account</span>
@@ -111,10 +107,9 @@
   <section id="contents" class="wrap contents reveal" aria-labelledby="contents-title">
     <div class="contents-head">
       <div class="kicker" id="contents-title">Index</div>
-      <p>Start with the ink pad, or jump straight to the part you came for.</p>
+      <p>Start with why the character comes first, or jump straight to the part you came for.</p>
     </div>
     <nav class="contents-links" aria-label="On this page">
-      <a href="#draw">Try the pad</a>
       <a href="#philosophy">Why characters</a>
       <a href="#stylus">Stylus and ink</a>
       <a href="#engines">Scheduling</a>
@@ -123,36 +118,63 @@
       <a href="#spell">Spell road</a>
       <a href="#fold">Foldables</a>
       <a href="#scripts">Four courses</a>
+      <a href="#questions">Questions</a>
       <a href="#download">Download</a>
     </nav>
   </section>
 
-  <section id="draw" class="wrap">
-    <div class="pad-panel reveal">
-      <div class="pad-copy">
-        <div class="kicker">Try it · local only</div>
-        <h2>Try the ink pad.</h2>
-        <p class="lead">Pick a character and draw it with a finger, mouse, or stylus. Stylus pressure changes the line where the device reports it. The guide is a shape to trace. The pad counts strokes and keeps nothing. The app also checks order and shape.</p>
+  <section id="start" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">A day with Bihua</div>
+      <h2>One character. Then the next.</h2>
+      <p class="lead">There is no placement test and no streak to protect. A session is short because the work is small: write a character once with the guide, once from memory, then let the date come back when it is about to slip.</p>
+    </div>
+    <div class="grid three">
+      <article class="card pillar accent-mint reveal">
+        <div class="icon">一</div>
+        <h3>Copy the guide</h3>
+        <p>A new character arrives with numbered stroke starts and a pale model. Trace it once, then write it again as the guide fades. If you have never held a brush, this is the whole lesson.</p>
+      </article>
+      <article class="card pillar accent-red reveal">
+        <div class="icon">二</div>
+        <h3>Write it from memory</h3>
+        <p>The review gives you the meaning and reading, then an empty square. Your hand has to produce the shape. The ink check counts strokes and points at the first one that went wrong. It never presses the grade button.</p>
+      </article>
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">三</div>
+        <h3>Let the date come back</h3>
+        <p>Pick Again, Hard, Good, or Easy. FSRS-7 or SBD moves the date out, or brings it back tomorrow. Ten new characters a day is a full load; three is a real start.</p>
+      </article>
+    </div>
+    <div class="who-band reveal">
+      <div>
+        <span class="who-label">New to characters</span>
+        <p>You do not need to know a single one. Choose Simplified or Japanese, leave the guide on, and keep the queue at a handful until the shapes stop feeling foreign. The app will not add words, readings, or another script behind your back.</p>
       </div>
-      <div class="pad-board" id="pad-board">
-        <div class="pad-guide" aria-hidden="true"><span id="pad-glyph">永</span></div>
-        <canvas id="ink-pad" width="600" height="600" aria-label="Drawing pad for the character 永. Use a finger, mouse, or stylus."></canvas>
-        <span class="pad-corner" aria-hidden="true">墨</span>
+      <div>
+        <span class="who-label">Already studying</span>
+        <p>Bring HSK 3.0, Jōyō, or Hanja. Bihua schedules the character rather than the word, treats pronunciation as its own task, and fits FSRS-7 to your history once there is enough of it. Start from course order, a study list, or the characters you keep missing.</p>
       </div>
-      <div class="pad-tools">
-        <div class="pad-chars" role="group" aria-label="Choose a character">
-          <button type="button" class="pad-chip is-active" data-glyph="永" data-strokes="5" aria-pressed="true">永</button>
-          <button type="button" class="pad-chip" data-glyph="愛" data-strokes="13" aria-pressed="false">愛</button>
-          <button type="button" class="pad-chip" data-glyph="学" data-strokes="8" aria-pressed="false">学</button>
-          <button type="button" class="pad-chip" data-glyph="山" data-strokes="3" aria-pressed="false">山</button>
-          <button type="button" class="pad-chip" data-glyph="木" data-strokes="4" aria-pressed="false">木</button>
+    </div>
+    <div class="pace-card reveal">
+      <div class="pace-copy">
+        <div class="kicker">Pick a pace</div>
+        <h3>Pick a pace you can keep.</h3>
+        <p>Three a day is a real start. You choose how many new characters enter the queue; the app never adds more than you picked, and a missed day just waits.</p>
+      </div>
+      <div class="pace-side">
+        <div class="pace-chips" role="group" aria-label="New characters per day">
+          <button type="button" class="pace-chip" data-pace="1" aria-pressed="false">1</button>
+          <button type="button" class="pace-chip is-active" data-pace="3" aria-pressed="true">3</button>
+          <button type="button" class="pace-chip" data-pace="5" aria-pressed="false">5</button>
+          <button type="button" class="pace-chip" data-pace="10" aria-pressed="false">10</button>
         </div>
-        <div class="pad-actions">
-          <button type="button" class="pad-button" id="pad-undo" disabled>Undo</button>
-          <button type="button" class="pad-button" id="pad-clear" disabled>Clear</button>
-          <button type="button" class="pad-button" id="pad-guide" aria-pressed="true">Guide on</button>
+        <div class="pace-projection" aria-live="polite">
+          <div><b id="pace-week">21</b><span>new characters in the first week</span></div>
+          <div><b id="pace-month">90</b><span>in the first month</span></div>
         </div>
-        <p class="pad-status" id="pad-status" aria-live="polite">0 of 5 strokes · count only · nothing leaves this page</p>
+        <a class="button" href="#download">Start with <span id="pace-cta">3</span> a day <span aria-hidden="true">↓</span></a>
+        <p class="small">New characters only. Reviews are added as they fall due. Change the pace any time in Settings.</p>
       </div>
     </div>
   </section>
@@ -161,13 +183,13 @@
     <div class="philosophy-panel reveal">
       <div class="philosophy-copy">
         <div class="kicker">Why characters, not words</div>
-        <h2>The character is the unit. The word is the reward.</h2>
-        <p class="lead">A word can be recognised from context, guessed from a familiar shape, or finished by autocomplete. That hides the real question: can you write this character from memory? Bihua schedules the character because that is the smallest thing your hand can produce on its own.</p>
+        <h2>You can read a word and still not write it.</h2>
+        <p class="lead">A word can be recognised from context, guessed from a familiar shape, or finished by autocomplete. None of that proves you can write the character. Bihua schedules the character itself, because that is the smallest thing your hand can produce on its own.</p>
         <div class="philosophy-points">
           <div class="point"><b>One form at a time.</b><span>A writing recall tests the shape you can produce, not whether a word looks familiar.</span></div>
           <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter the scheduler or create review debt.</span></div>
           <div class="point"><b>Sound is separate.</b><span>Pronunciation is its own task, so a word can be read without pretending it was written.</span></div>
-          <div class="point"><b>No hidden shortcut.</b><span>If you can write 愛 from memory, 愛情 is a reward, not a guess.</span></div>
+          <div class="point"><b>The writing is the test.</b><span>If 愛 comes from memory, 愛情 is a word you can use, not a shape you recognise.</span></div>
           <div class="point"><b>Mò is your guide.</b><span>The optional tour and the widgets use the same paper-ink pet, never a second mascot.</span></div>
         </div>
         <div class="philosophy-chips">
@@ -187,7 +209,7 @@
   <section id="stylus" class="wrap">
     <div class="section-head reveal">
       <div class="kicker">Built for the pen</div>
-      <h2>A stylus should feel like a stylus.</h2>
+      <h2>Made for a pen, not a tap.</h2>
       <p class="lead">Bihua is designed around pen input, not around tapping buttons with a finger. The writing surface stays central, the canvas is wrist-sized, and the ink responds when your device reports pressure.</p>
     </div>
     <div class="grid three">
@@ -315,28 +337,23 @@
         <figcaption><b>Retention between reviews</b><span>90% default</span></figcaption>
         <svg class="curve" viewBox="0 0 440 210" role="img" aria-labelledby="curve-title curve-desc">
           <title id="curve-title">Retention between reviews</title>
-          <desc id="curve-desc">Retention falls from 100 percent to the 90 percent target, then a review resets it. The intervals grow from 5 days to the 365-day cap.</desc>
+          <desc id="curve-desc">Retention falls from 100 percent to the 90 percent target. A review resets it to 100 percent. The intervals use real days: 5 to 26, 26 to 92, 92 to 293, and 293 to 365. Later intervals are wider and the fall is flatter, which shows the gain from each successful review.</desc>
           <g class="chart-grid">
             <line x1="44" y1="40" x2="424" y2="40"/>
             <line x1="44" y1="80" x2="424" y2="80"/>
             <line x1="44" y1="120" x2="424" y2="120" class="chart-target"/>
           </g>
           <line x1="44" y1="28" x2="44" y2="140" class="chart-axis"/>
-          <path class="chart-line" d="M54 40 C78 70 102 108 126 120 L126 40 C150 70 174 108 198 120 L198 40 C222 70 246 108 270 120 L270 40 C294 70 318 108 342 120 L342 40 C366 70 390 108 414 120"/>
-          <g class="chart-dots">
-            <circle cx="126" cy="120" r="3.5"/><circle cx="198" cy="120" r="3.5"/><circle cx="270" cy="120" r="3.5"/><circle cx="342" cy="120" r="3.5"/><circle cx="414" cy="120" r="3.5"/>
-          </g>
+          <path class="chart-line" pathLength="1" d="M54 40 C59.9 84 69.1 116 75 120 M75 40 C93.5 84 122.5 116 141 120 M141 40 C197.3 84 285.7 116 342 120 M342 40 C362.2 84 393.8 116 414 120"/>
+          <path class="chart-reset" d="M75 120 L75 40 M141 120 L141 40 M342 120 L342 40"/>
+          <g class="chart-dots"><circle cx="75" cy="120" r="3.5"/><circle cx="141" cy="120" r="3.5"/><circle cx="342" cy="120" r="3.5"/><circle cx="414" cy="120" r="3.5"/></g>
           <g class="chart-labels">
             <text x="38" y="43" text-anchor="end">100%</text>
             <text x="38" y="123" text-anchor="end">90%</text>
-            <text x="90" y="158" text-anchor="middle">5 d</text>
-            <text x="162" y="158" text-anchor="middle">26 d</text>
-            <text x="234" y="158" text-anchor="middle">92 d</text>
-            <text x="306" y="158" text-anchor="middle">293 d</text>
-            <text x="378" y="158" text-anchor="middle">365 d</text>
+            <text x="54" y="174" text-anchor="start">5 d</text><text x="75" y="158" text-anchor="middle">26 d</text><text x="141" y="158" text-anchor="middle">92 d</text><text x="342" y="158" text-anchor="middle">293 d</text><text x="414" y="158" text-anchor="middle">365 d</text>
           </g>
         </svg>
-        <p class="graph-note">Each dot is a review. The horizontal spacing is for reading, not to scale.</p>
+        <p class="graph-note">Real days from the first review at day 5. Each successful review makes the next gap longer and the fall to 90% flatter. The dots are review points.</p>
       </figure>
     </div>
     <div class="compare reveal">
@@ -394,53 +411,6 @@
     </div>
   </section>
 
-  <section class="wrap">
-    <div class="section-head reveal">
-      <div class="kicker">New in 1.1.1</div>
-      <h2>A reader that never strands you. A lighter spell book.</h2>
-      <p class="lead">Practice can no longer wait forever on the on-device reader. Check always returns, Stop reading cancels it, and the local stroke and shape feedback still teaches. The reader downloads once per script, starts immediately after setup, restore, or a language switch, and fails honestly when the device is offline. The spell road got a clue card, one-step grimoire gifts, and a clean paper spread. Settings, dialogs, print, and the character grid got the same quiet pass.</p>
-    </div>
-    <div class="grid two gap-top">
-      <article class="card pillar accent-mint reveal">
-        <div class="icon">✓</div>
-        <h3>Check always comes back</h3>
-        <p>The handwriting reader has a hard time limit. Model and recognition waits are bounded; a stuck read becomes local stroke and shape feedback, with Stop reading and Show answer still there. The model is tracked per script, so switching course never shows a stale spinner or blocks the rest of the app.</p>
-      </article>
-      <article class="card pillar accent-sky reveal">
-        <div class="icon">墨</div>
-        <h3>The book opens faster</h3>
-        <p>A light paper spread, a clue card with Hear, Info, and Guide, one-step grimoire gifts, drawn vines, coloured particles, and a quick book-open. Spell quest stays available while a reader prepares, and the wide book now keeps Undo and Clear beside Cast instead of clipping a third row.</p>
-      </article>
-      <article class="card pillar accent-red reveal">
-        <div class="icon">静</div>
-        <h3>A quieter desk</h3>
-        <p>The character grid flings smoothly and returns to the top when the script changes. Settings scrolls from the full pane, Watch and Trace dialogs use the paper style, and Mute app sounds silences cues and ambience without silencing a pronunciation you tapped on purpose.</p>
-      </article>
-      <article class="card pillar accent-sky reveal">
-        <div class="icon">印</div>
-        <h3>Paper and typing agree</h3>
-        <p>Worksheets print tone-mark pinyin (nǐ hǎo). Typing practice always answers in numbered pinyin (ni3 hao3). The display setting still changes readings on cards and cues, and old installs move to tone marks once so the first sheet is readable.</p>
-      </article>
-    </div>
-    <div class="license-chips reveal">
-      <span class="chip">Bounded reader</span>
-      <span class="chip">Stop reading</span>
-      <span class="chip">Show answer</span>
-      <span class="chip">Offline-aware model</span>
-      <span class="chip">Light spell book</span>
-      <span class="chip">Hear · Info · Guide</span>
-      <span class="chip">One-step gifts</span>
-      <span class="chip">Smooth character grid</span>
-      <span class="chip">Script switch resets scroll</span>
-      <span class="chip">Full-pane settings</span>
-      <span class="chip">Mute app sounds</span>
-      <span class="chip">Tone-mark PDF</span>
-      <span class="chip">Numbered typing</span>
-      <span class="chip">Paper dialogs</span>
-    </div>
-    <p class="small note reveal">From 1.0.9: finger drawing, palm safety, readable light ink, dot strokes, Word of the Day audio, scrollable onboarding, and Paper/Compare back. Bihua is still free, with no account and no ads.</p>
-  </section>
-
   <section id="print" class="wrap">
     <div class="section-head reveal">
       <div class="kicker">05 · Made for paper</div>
@@ -489,9 +459,24 @@
       <figure class="shot reveal"><img src="assets/review-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Review screen with a meaning and reading cue and a clean writing grid"><figcaption><b>05</b> Write from memory</figcaption></figure>
       <figure class="shot reveal"><img src="assets/schedule-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Schedule settings with FSRS-7 and SBD model choices, fitting, and import controls"><figcaption><b>06</b> Choose FSRS-7 or SBD, then fit it</figcaption></figure>
     </div>
+    <p class="gallery-hint reveal">Swipe the strip for more screens →</p>
     <div class="grid two gap-top">
       <figure class="shot shot-wide reveal"><img src="assets/practice-light.png?v=1.1.1-3" width="1080" height="2400" loading="lazy" decoding="async" alt="Practice canvas with a tapered brush guide and numbered starts for the character 谢"><figcaption><b>07</b> Guide, order, and your own ink</figcaption></figure>
       <figure class="shot shot-wide reveal"><img src="assets/grade-light.png?v=1.1.1" width="1080" height="2400" loading="lazy" decoding="async" alt="Handwriting check, answer, and four grade buttons with next intervals"><figcaption><b>08</b> The answer stays. You grade.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="study" class="wrap">
+    <div class="study-band reveal">
+      <div>
+        <div class="kicker">Start today</div>
+        <h2>One character is enough to start.</h2>
+        <p>Pick a course, write one character from memory, and let the date bring it back. Three a day is a real start. No streak to protect.</p>
+      </div>
+      <div class="study-actions">
+        <a class="button" href="#download">Download Bihua</a>
+        <a class="button secondary" href="#start">See the first session</a>
+      </div>
     </div>
   </section>
 
@@ -604,22 +589,125 @@
     <p class="small note reveal">Korean word examples come from the Korean Wiktionary extract. Explicit dictionary examples stay off until you turn on Mature words. <a href="https://github.com/Shadowsx3/bihua/blob/main/THIRD_PARTY_NOTICES.md">Full notices</a>.</p>
   </section>
 
+  <section id="whats-new" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">New in 1.1.2</div>
+      <h2>Widgets, a longer history, and a report you can hand over.</h2>
+      <p class="lead">Today and Week ahead widgets now show the day's real amounts and the next seven days. Progress gained All time and a GitHub-style year map, and can export a clean PDF for the range you pick. Word practice can take the whole word on one page, with optional clues. Settings can compose a report with a saved crash that never leaves your phone until you send it. Phones in landscape use the same two-page layouts as a tablet, and a clean offline device can skip setup and start a review while the optional reader downloads.</p>
+    </div>
+    <div class="grid two gap-top">
+      <article class="card pillar accent-mint reveal">
+        <div class="icon">今</div>
+        <h3>Today and the week ahead</h3>
+        <p>The Today widget shows done and total reviews and lessons, with one plain line for the next hours. A dedicated Week ahead widget shows the next seven days. Word of the Day remains its own quiet card, and all three keep the same warm paper and pet.</p>
+      </article>
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">年</div>
+        <h3>A year of study days</h3>
+        <p>Progress now includes All time. Year and All time use a seven-row heatmap with month labels, a weekday gutter, a legend, and horizontal scrolling, so a long history stays readable instead of turning into a wall of tiny calendars.</p>
+      </article>
+      <article class="card pillar accent-red reveal">
+        <div class="icon">报</div>
+        <h3>A report you read before sending</h3>
+        <p>When something breaks, the crash is saved only in app-private storage. Settings → About opens a composer with a kind chip, your words, and an optional crash. See exactly what will be sent, then Send through your own mail or messenger, or Copy it. Nothing is automatic. Rate Bihua lives on the same quiet card.</p>
+      </article>
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">写</div>
+        <h3>Write the whole word</h3>
+        <p>Multi-character word practice opens on one wide page. Write the whole word from memory, or ask for the guide, the next stroke, or the full stroke order. The ink check reads the whole word on the device; without the reader model, practice stays one character at a time.</p>
+      </article>
+      <article class="card pillar accent-red reveal">
+        <div class="icon">卷</div>
+        <h3>A progress report you can share</h3>
+        <p>Progress exports a clean A4 PDF for the selected range: the headline numbers, cumulative characters, course coverage, circular level progress, review quality, review types, a period table, the characters you touched, and a study log. It is built on the phone and saved through your own file picker.</p>
+      </article>
+      <article class="card pillar accent-sky reveal">
+        <div class="icon">横</div>
+        <h3>Landscape that fits</h3>
+        <p>A phone in landscape gets the tablet two-page Home and the book-style Practice spread. The spell quest, its gate, its draw screen, and the grimoire use their wide layouts too, so the circle, brushes, clues, Cast, and Go back all stay visible.</p>
+      </article>
+    </div>
+    <div class="license-chips reveal">
+      <span class="chip">Today widget</span>
+      <span class="chip">Week ahead widget</span>
+      <span class="chip">Word of the Day</span>
+      <span class="chip">All time</span>
+      <span class="chip">Year heatmap</span>
+      <span class="chip">Local crash files</span>
+      <span class="chip">Review before send</span>
+      <span class="chip">Rate Bihua</span>
+      <span class="chip">Landscape Home</span>
+      <span class="chip">Landscape Practice</span>
+      <span class="chip">Whole-word practice</span>
+      <span class="chip">Progress PDF</span>
+      <span class="chip">Character PDF in Study tools</span>
+      <span class="chip">Spell quest spreads</span>
+      <span class="chip">Splash without a jump</span>
+      <span class="chip">Light splash in dark theme</span>
+      <span class="chip">No account</span>
+      <span class="chip">Starts offline</span>
+    </div>
+    <p class="small note reveal">From 1.1.1: the spell quest and its grimoire, the shared daily word, brush presets, meaning checks, Reveal reviews, and study lists. Bihua still includes everything, with no account, no ads, and no subscription.</p>
+  </section>
+
+  <section id="questions" class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Questions</div>
+      <h2>What people ask before starting.</h2>
+      <p class="lead">Short answers, including the ones that are a no.</p>
+    </div>
+    <div class="faq reveal">
+      <details class="faq-item">
+        <summary>Do I need a stylus?</summary>
+        <p>No. A finger or a mouse works, and the ink check still counts strokes and compares order. A stylus adds pressure and speed, and on supported devices the app ignores a resting palm. Bihua is Android only; there is no iPhone version.</p>
+      </details>
+      <details class="faq-item">
+        <summary>I have never learned a character. Where do I start?</summary>
+        <p>Choose Simplified or Japanese, leave the guide on, and set three or four new characters a day. The first lesson writes with you, then fades the guide. The short tour explains the screen; you can skip it and still start a review. Nothing else enters the queue until you add it.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will this teach me to speak the language?</summary>
+        <p>No. Bihua trains writing and recall, and gives you readings and meanings to hold on to. Pronunciation is a separate optional task using the device's speech. Grammar, listening, and conversation are not in the app.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What is in each course?</summary>
+        <p>Simplified is HSK 3.0 plus common non-HSK characters. Traditional is a separate course with CEDICT word pairs, not a character converter. Japanese is Jōyō kanji and kana. Korean starts with Hangul, then Hanja. Across the four there are about 10,868 course entries and 34,362 word examples.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does it really work offline?</summary>
+        <p>Yes. The app starts without a network, progress lives in SQLite on the phone, and the handwriting model downloads once. Two-device sync is optional and stays on your local network. Backups are zip files you create.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What happens to my data?</summary>
+        <p>No account, no ads, no analytics, and no advertising ID. Study data stays on the device. The only third-party path is ML Kit's on-device recognition and its limited diagnostics, described in the <a href="privacy.html">privacy policy</a>. Reports and backups leave only when you send them.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will it work on a tablet or a foldable?</summary>
+        <p>Yes. A tablet gets a navigation rail and two-page screens. A foldable gets a book layout when open and the phone layout when closed. A phone in landscape uses the same wide layouts, so the canvas never gets squeezed.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is it free?</summary>
+        <p>Yes. The app code is MIT, and the content keeps its own licences, listed above. There is no subscription, no locked course, and no ad.</p>
+      </details>
+    </div>
+  </section>
+
   <section id="download" class="wrap">
     <div class="download-card reveal">
       <div>
-        <div class="kicker">Signed 1.1.1 test build</div>
+        <div class="kicker">Signed 1.1.2 test build</div>
         <h2>Install Bihua.</h2>
-        <p>This is the signed 1.1.1 build for testing on your phone. It includes the guided tour, optional meaning checks, the spell quest and its met-page collection, widget costumes, Progress windows, and the latest UI polish. 1.0.9 is still in Play review; 1.1.1 will follow after it clears.</p>
+        <p>This is the signed 1.1.2 build for testing on your phone. Install it, pick a course, and write one character; three a day is a real start. It includes Today and Week ahead widgets, All time and the year heatmap, a local report composer, a centred landscape sheet, and a fresh offline first run. 1.1.1 is live on Play; 1.1.2 is in development.</p>
         <div class="hero-actions">
-          <a class="button" href="download/bihua-1.1.1.apk?v=649abf36" download>Download 1.1.1 APK</a>
+          <a class="button" href="download/bihua-1.1.2.apk?v=1bcc530d" download>Download 1.1.2 APK</a>
           <a class="button secondary" href="https://github.com/Shadowsx3/bihua">Read the source</a>
         </div>
-        <p class="small">APK 1.1.1 · signed test build · Android 10+ · content version 34 · no account</p>
+        <p class="small">APK 1.1.2 · signed test build · Android 10+ · content version 34 · no account</p>
         <p class="small">If you already installed from Play, uninstall that copy first. This APK uses the local release key and may not install over the Play signature.</p>
       </div>
       <div class="download-side">
         <p class="small">SHA-256</p>
-        <code>649abf36cfcb3e642c3fa46523a4e9c3350a17b6675de4b675b1d9b3365cc44d</code>
+        <code>1bcc530d27066a646f3c4fb3ce1f17aec1a5700709ef8cf0b05dcd30739a1d94</code>
         <p class="small"><a href="download/SHA256SUMS.txt">Checksum file</a></p>
       </div>
     </div>

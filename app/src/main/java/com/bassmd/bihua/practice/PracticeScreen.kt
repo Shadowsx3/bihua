@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -63,6 +64,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.ai.RecognitionResult
@@ -128,7 +130,7 @@ fun PracticeScreen(
     allowFinger: Boolean,
     pinyinNumbers: Boolean = false,
     guideMode: com.bassmd.bihua.settings.GuideMode = com.bassmd.bihua.settings.GuideMode.FADE,
-    wifiOnlyModels: Boolean = false,
+    recognitionService: com.bassmd.bihua.ai.InkRecognitionService? = null,
     initialCharacter: CharacterEntry? = null,
 ) {
     var selectedId by rememberSaveable { mutableStateOf(initialCharacter?.id) }
@@ -142,7 +144,9 @@ fun PracticeScreen(
     val ink = remember { InkState() }
     val playback = rememberStrokePlayback(ink.strokes)
     val reveal = if (playback.isManualCursor || playback.isPlaying) playback.progress else null
-    val recognitionService = remember { InkRecognitionService() }
+    // One app-scoped reader keeps a single recognizer cache and one download
+    // state; a standalone screen can still create its own.
+    val reader = recognitionService ?: remember { InkRecognitionService() }
     val progress = LocalProgressStore.current
     val scope = rememberCoroutineScope()
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
@@ -175,16 +179,19 @@ fun PracticeScreen(
             try {
                 // If the reader is not ready right now, show the local shape
                 // and order feedback instead of spending a long wait on it.
-                if (!recognitionService.canReadNow(mode)) {
-                    recognition = RecognitionResult(emptyList(), false)
+                if (!reader.canReadNow(mode)) {
+                    recognition = RecognitionResult(
+                        emptyList(),
+                        false,
+                        preparing = com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode),
+                    )
                     return@launch
                 }
                 recognizing = true
-                val result = recognitionService.recognize(
+                val result = reader.recognize(
                     strokes,
                     mode,
                     entry?.character,
-                    wifiOnly = wifiOnlyModels,
                 )
                 recognition = result
                 val read = result.candidates.firstOrNull()
@@ -214,8 +221,8 @@ fun PracticeScreen(
         showFeedback = false
     }
 
-    DisposableEffect(Unit) {
-        onDispose { recognitionService.close() }
+    DisposableEffect(reader) {
+        onDispose { if (recognitionService == null) reader.close() }
     }
     LaunchedEffect(ink.strokes.size) {
         if (!recognizing) {
@@ -277,7 +284,11 @@ fun PracticeScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val book = LocalFoldState.current == FoldState.BOOK
-        val wide = maxWidth >= if (book) 700.dp else 900.dp
+        // A landscape phone has plenty of width and little height. Use the
+        // same two-pane arrangement as a book fold instead of stacking the
+        // canvas and the tools until the canvas has no height left.
+        val landscape = maxWidth > maxHeight && maxWidth >= 600.dp
+        val wide = landscape || maxWidth >= if (book) 700.dp else 900.dp
         if (wide) {
             Column(
                 modifier = Modifier
@@ -701,12 +712,15 @@ private fun CharacterPicker(
     val filtered = remember(entries, query) {
         entries.filter { com.bassmd.bihua.content.CharacterSearch.matches(it, query) }
     }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(decorFitsSystemWindows = false),
+    ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = PaperWarm,
         ) {
-            Column(Modifier.padding(20.dp)) {
+            Column(Modifier.imePadding().padding(20.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,

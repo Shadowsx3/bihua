@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
@@ -33,13 +34,23 @@ import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.TouchTarget
 
 /** One spoken node for the whole action; the visual label stays a child. */
-private fun Modifier.actionLabel(label: String, activate: () -> Unit): Modifier =
+private fun Modifier.actionLabel(
+    label: String,
+    enabled: Boolean,
+    activate: () -> Unit,
+): Modifier =
     clearAndSetSemantics {
         contentDescription = label
         role = Role.Button
-        onClick(label = label) {
-            activate()
-            true
+        if (enabled) {
+            onClick(label = label) {
+                activate()
+                true
+            }
+        } else {
+            // clearAndSetSemantics replaces the button's own disabled state, so
+            // restore it; otherwise TalkBack offers an action that cannot run.
+            disabled()
         }
     }
 
@@ -67,7 +78,7 @@ fun PrimaryAction(
             disabledContainerColor = accent.copy(alpha = 0.35f),
             disabledContentColor = InkSoft,
         ),
-        modifier = modifier.heightIn(min = if (compact) 40.dp else TouchTarget).actionLabel(text, onClick),
+        modifier = modifier.heightIn(min = if (compact) 40.dp else TouchTarget).actionLabel(text, enabled, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -95,7 +106,7 @@ fun TonalAction(
             containerColor = accent,
             contentColor = InkDark,
         ),
-        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, enabled, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -117,7 +128,7 @@ fun QuietAction(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, enabled, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -139,7 +150,7 @@ fun OutlineAction(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, onClick),
+        modifier = modifier.heightIn(min = TouchTarget).actionLabel(text, enabled, onClick),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))

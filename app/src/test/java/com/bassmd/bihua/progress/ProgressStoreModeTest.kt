@@ -10,6 +10,7 @@ import com.bassmd.bihua.settings.DayBoundary
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,6 +71,48 @@ class ProgressStoreModeTest {
                 strokes = 20,
             )
         }
+    }
+
+    @Test
+    fun allTimeIsNotCappedByASelectedWindow() = runBlocking {
+        val all = store.activity(days = 0, dayStartHour = DayBoundary.DEFAULT_HOUR)
+        assertEquals(2, all.sumOf { it.reviewed })
+        assertEquals(2, all.sumOf { it.learned })
+        assertTrue(all.isNotEmpty())
+
+        val history = store.learnedHistory(days = 0, dayStartHour = DayBoundary.DEFAULT_HOUR)
+        assertEquals(2, history.sumOf { it.learned })
+        assertEquals(ProgressRange.ALL.days, 0)
+        assertEquals("All time", ProgressRange.ALL.label)
+    }
+
+    @Test
+    fun allTimeWindowsKeepEveryCardAndLog() = runBlocking {
+        assertEquals(2, store.gradeMix(days = 0).total)
+        assertEquals(3_000L, store.practiceTimeMs(days = 0))
+        assertEquals(2, store.taskStats(days = 0).values.sumOf { it.reviews })
+        val pace = store.writingPace(days = 0)
+        assertEquals(10, pace?.strokes)
+        assertEquals(1_000L, pace?.elapsedMs)
+    }
+
+    @Test
+    fun todayCountsEverySessionAndTheWeekAhead() = runBlocking {
+        val settings = AppSettings()
+        assertEquals(2, store.reviewsToday())
+        assertEquals(1, store.reviewsToday(mode = StudyMode.SIMPLIFIED.name))
+
+        store.setMemoryLevel(simplified, settings, MemoryLevel.SHAKY, nowMs = now)
+        val load = store.todayLoad(listOf(simplified), settings, nowMs = now + 1_000)
+        assertEquals(1, load.reviewsDone)
+        assertEquals(0, load.dueNow)
+        assertEquals(0, load.dueLater)
+        assertTrue(load.hours.isEmpty())
+        assertEquals(7, load.week.size)
+        assertEquals(0, load.week.first().offset)
+        // SHAKY places the card two days out, inside the weekly forecast.
+        assertEquals(1, load.week[2].count)
+        assertEquals(1, load.weekTotal)
     }
 
     @After

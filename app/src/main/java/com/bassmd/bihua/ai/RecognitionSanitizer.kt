@@ -40,6 +40,37 @@ object RecognitionSanitizer {
         return seen.toList()
     }
 
+    /**
+     * Word practice writes several characters on one canvas. Accept a candidate
+     * that reads one or more of those characters, in the same script, and drop
+     * punctuation, spaces, and stray glyphs the learner did not write.
+     */
+    fun sanitizeWord(
+        candidates: List<InkCandidate>,
+        word: String,
+        mode: StudyMode,
+    ): List<String> {
+        val cleanWord = Normalizer.normalize(word, Normalizer.Form.NFC).trim()
+        val maxLength = cleanWord.codePointCount(0, cleanWord.length).coerceAtLeast(1)
+        val allowed = wordScript(cleanWord, mode)
+        val cleaned = candidates.mapNotNull { candidate ->
+            val text = cleanWordCandidate(candidate.text, allowed, maxLength)
+                ?: return@mapNotNull null
+            text to (candidate.score ?: Float.NEGATIVE_INFINITY)
+        }
+        val hasScores = candidates.any { it.score != null }
+        val ordered = if (hasScores) {
+            cleaned.sortedByDescending { it.second }
+        } else {
+            cleaned
+        }
+        val seen = LinkedHashSet<String>(MAX_CANDIDATES)
+        for ((text, _) in ordered) {
+            if (seen.add(text) && seen.size == MAX_CANDIDATES) break
+        }
+        return seen.toList()
+    }
+
     /** Trim, normalize, and keep exactly one visible code point. */
     private fun clean(raw: String): String? {
         var text = Normalizer.normalize(raw, Normalizer.Form.NFC)
@@ -52,6 +83,58 @@ object RecognitionSanitizer {
         if (Character.isISOControl(codePoint)) return null
         if (Character.getType(codePoint) == Character.FORMAT.toInt()) return null
         return text
+    }
+
+    /**
+     * Keep only allowed script code points from a word candidate. A partial
+     * read (one character of a two-character word) is useful evidence; a read
+     * longer than the word is not.
+     */
+    private fun cleanWordCandidate(
+        raw: String,
+        allowed: ScriptSet,
+        maxLength: Int,
+    ): String? {
+        val text = Normalizer.normalize(raw, Normalizer.Form.NFC)
+        val out = StringBuilder()
+        var count = 0
+        var index = 0
+        while (index < text.length) {
+            val codePoint = text.codePointAt(index)
+            index += Character.charCount(codePoint)
+            if (Character.isISOControl(codePoint)) continue
+            if (Character.getType(codePoint) == Character.FORMAT.toInt()) continue
+            if (Character.isWhitespace(codePoint)) continue
+            if (!allowed.allows(codePoint)) continue
+            out.appendCodePoint(codePoint)
+            count++
+        }
+        if (count == 0 || count > maxLength) return null
+        return out.toString()
+    }
+
+    private fun wordScript(word: String, mode: StudyMode): ScriptSet {
+        var hasHan = false
+        var hasKana = false
+        var hasHangul = false
+        var index = 0
+        while (index < word.length) {
+            val codePoint = word.codePointAt(index)
+            index += Character.charCount(codePoint)
+            hasHan = hasHan || isHan(codePoint)
+            hasKana = hasKana || isKana(codePoint)
+            hasHangul = hasHangul || isHangul(codePoint)
+        }
+        return when {
+            hasHangul -> ScriptSet.HANGUL_OR_HAN
+            hasKana -> ScriptSet.HAN_OR_KANA
+            hasHan -> ScriptSet.HAN
+            else -> when (mode) {
+                StudyMode.SIMPLIFIED, StudyMode.TRADITIONAL -> ScriptSet.HAN
+                StudyMode.JAPANESE -> ScriptSet.HAN_OR_KANA
+                StudyMode.KOREAN -> ScriptSet.HANGUL_OR_HAN
+            }
+        }
     }
 
     private enum class ScriptSet {

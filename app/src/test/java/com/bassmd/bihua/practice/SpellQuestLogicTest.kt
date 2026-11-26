@@ -47,11 +47,11 @@ class SpellQuestLogicTest {
     @Test
     fun playbackTimingsStayPredictable() {
         assertEquals(650L, giftPlaybackMs(1))
-        assertEquals(2_350L, giftPlaybackMs(5))
+        assertEquals(2_550L, giftPlaybackMs(5))
         assertEquals(1_175L, castPlaybackMs(1))
         assertEquals(1_750L, castPlaybackMs(2))
         assertEquals(900L, resultDelayMs(reduceMotion = true))
-        assertEquals(3_000L, resultDelayMs(reduceMotion = false))
+        assertEquals(1_800L, resultDelayMs(reduceMotion = false))
     }
 
     @Test

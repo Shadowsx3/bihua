@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import com.bassmd.bihua.ui.theme.ButterInk
 import com.bassmd.bihua.ui.theme.ButterDeep
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.KeyboardActions
@@ -36,6 +37,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,7 +50,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CompareArrows
+import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.SpaceBar
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Edit
@@ -62,8 +73,12 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -110,6 +125,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.ai.InkRecognitionService
 import com.bassmd.bihua.ai.RecognitionResult
@@ -129,6 +145,8 @@ import com.bassmd.bihua.ink.rememberStrokeOrderPlayer
 import com.bassmd.bihua.ink.rememberStrokePlayback
 import com.bassmd.bihua.settings.DrawingTool
 import com.bassmd.bihua.settings.GuideMode
+import com.bassmd.bihua.content.hasHanCharacter
+import com.bassmd.bihua.progress.MnemonicEntry
 import com.bassmd.bihua.settings.MnemonicMode
 import com.bassmd.bihua.settings.allowsHint
 import com.bassmd.bihua.settings.RecallCue
@@ -146,6 +164,7 @@ import com.bassmd.bihua.ui.components.InkMascot
 import com.bassmd.bihua.ui.components.OutlineGuide
 import com.bassmd.bihua.ui.components.RecognitionResultView
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
@@ -208,14 +227,17 @@ fun LearnScreen(
     reduceMotion: Boolean = false,
     pronunciationPractice: Boolean = false,
     meaningPractice: Boolean = false,
-    ankiWriting: Boolean = false,
-    ankiPronunciation: Boolean = false,
-    ankiMeaning: Boolean = false,
+    writingPractice: Boolean = true,
+    reviewReasonsEnabled: Boolean = false,
+    memoryHooksEnabled: Boolean = false,
+    revealWriting: Boolean = false,
+    revealPronunciation: Boolean = false,
+    revealMeaning: Boolean = false,
     meaningSynonyms: Map<String, List<String>> = emptyMap(),
     onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onlyAgainAndGood: Boolean = false,
-    wifiOnlyModels: Boolean = false,
+    recognitionService: com.bassmd.bihua.ai.InkRecognitionService? = null,
     pinyinNumbers: Boolean = false,
     guideMode: GuideMode = GuideMode.FADE,
     guideInRecall: Boolean = false,
@@ -236,9 +258,17 @@ fun LearnScreen(
     onSpeak: (String) -> Unit = {},
     speechEnabled: Boolean = true,
     onGrade: (LearnItem, Grade, Long, ReviewTask, Int) -> Unit = { _, _, _, _, _ -> },
+    onAddReason: (LearnItem, String) -> Unit = { _, _ -> },
+    onLoadMnemonic: suspend (String) -> MnemonicEntry? = { null },
+    onLoadMeta: suspend (String) -> com.bassmd.bihua.content.CharacterMeta? = { null },
+    palacePegs: List<com.bassmd.bihua.progress.PalacePeg> = emptyList(),
+    onSaveMnemonic: suspend (MnemonicEntry) -> Unit = {},
 ) {
     // Items repeat until they pass. Only the first grade of an item is
     // scheduled; later passes are practice and never touch FSRS or XP.
+    // At least one task always remains. The settings model already enforces
+    // this, but a restored backup or a hand-edited file may not.
+    val writingEnabled = writingPractice || (!pronunciationPractice && !meaningPractice)
     var session by remember(items) {
         mutableStateOf(
             resume?.let { SessionProgression(it.pending, it.position) }
@@ -252,13 +282,20 @@ fun LearnScreen(
         mutableIntStateOf(
             when {
                 savedStep == null -> if (items.firstOrNull()?.needsLesson == true) 0 else 2
-                ankiWriting && savedStep == Step.TRACE.ordinal -> Step.RECALL.ordinal
+                (!writingEnabled || revealWriting) && savedStep == Step.TRACE.ordinal ->
+                    Step.RECALL.ordinal
                 else -> savedStep
             }
         )
     }
     var learned by remember { mutableIntStateOf(resume?.learned ?: 0) }
     var revealed by remember { mutableStateOf(false) }
+    var lastGraded by remember { mutableStateOf<RecentGrade?>(null) }
+    var reasonSheet by remember { mutableStateOf<RecentGrade?>(null) }
+    var userMnemonic by remember { mutableStateOf<MnemonicEntry?>(null) }
+    var showHookDialog by androidx.compose.runtime.saveable.rememberSaveable {
+        mutableStateOf(false)
+    }
     var drawingRound by remember { mutableIntStateOf(0) }
     var lastGradeAt by remember { mutableLongStateOf(0L) }
     var showOrder by remember { mutableStateOf(showStrokeNumbers) }
@@ -274,11 +311,13 @@ fun LearnScreen(
         currentItem?.reps,
         pronunciationPractice,
         meaningPractice,
+        writingEnabled,
     ) {
         currentItem?.let {
             ReviewTaskPlan.forCard(
                 pronunciationEnabled = pronunciationPractice,
                 meaningEnabled = meaningPractice,
+                writingEnabled = writingEnabled,
                 reps = it.reps,
                 seed = it.id.hashCode(),
             )
@@ -290,11 +329,17 @@ fun LearnScreen(
         currentItem != null &&
         !com.bassmd.bihua.settings.MeaningSanitizer.isTeachableView(currentItem.meaning)
     ) {
-        ReviewTask.WRITE
+        if (pronunciationPractice) {
+            ReviewTask.PRONOUNCE
+        } else if (writingEnabled) {
+            ReviewTask.WRITE
+        } else {
+            plannedTask
+        }
     } else {
         plannedTask
     }
-    val revealOnly = task.revealsAnswer(ankiWriting, ankiPronunciation, ankiMeaning)
+    val revealOnly = task.revealsAnswer(revealWriting, revealPronunciation, revealMeaning)
     var ink by remember { mutableStateOf(InkState()) }
     var gradeUndo by remember { mutableStateOf<GradeUndoSnapshot?>(null) }
     fun resetDrawing() {
@@ -330,7 +375,7 @@ fun LearnScreen(
     }
 
     fun advanceFromIntro() {
-        if (ankiWriting) {
+        if (!writingEnabled || revealWriting) {
             stepOrdinal = Step.RECALL.ordinal
             showReference = false
         } else {
@@ -338,14 +383,31 @@ fun LearnScreen(
         }
         resetDrawing()
     }
-    val recognitionService = remember { InkRecognitionService() }
+    // One app-scoped reader keeps a single recognizer cache and one download
+    // state; a standalone screen can still create its own.
+    val reader = recognitionService ?: remember { InkRecognitionService() }
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
     var recallStartedAt by remember { mutableLongStateOf(0L) }
     val repository = com.bassmd.bihua.content.LocalContentRepository.current
-    LaunchedEffect(currentItem?.id, repository) {
+    LaunchedEffect(currentItem?.id) {
+        userMnemonic = if (
+            memoryHooksEnabled &&
+            currentItem?.character?.hasHanCharacter() == true
+        ) {
+            currentItem.character.let { onLoadMnemonic(it) }
+        } else {
+            null
+        }
+    }
+    LaunchedEffect(currentItem?.id, repository, userMnemonic) {
         val meta = currentItem?.let { item -> repository?.meta(item.character) }
-        mnemonic = meta?.etymology?.takeIf { it.isNotBlank() }
-        mnemonicLabel = if (meta?.etymologyType == "shape") "Shape hint" else "Story hint"
+        val hook = userMnemonic?.takeIf { it.hasContent() }?.hookText()?.takeIf { it.isNotBlank() }
+        mnemonic = hook ?: meta?.etymology?.takeIf { it.isNotBlank() }
+        mnemonicLabel = when {
+            hook != null -> "My hook"
+            meta?.etymologyType == "shape" -> "Shape hint"
+            else -> "Story hint"
+        }
     }
     var introWords by remember { mutableStateOf(emptyList<com.bassmd.bihua.content.WordContext>()) }
     LaunchedEffect(currentItem?.id, repository, includeMatureContent) {
@@ -377,8 +439,8 @@ fun LearnScreen(
     }
     var recognizing by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
-        onDispose { recognitionService.close() }
+    DisposableEffect(reader) {
+        onDispose { if (recognitionService == null) reader.close() }
     }
     fun visibleInk(): List<com.bassmd.bihua.ink.InkStroke> {
         if (!playback.isManualCursor && !playback.isPlaying) return ink.strokes.toList()
@@ -403,11 +465,21 @@ fun LearnScreen(
         scope.launch {
             recognizing = true
             try {
-                val result = recognitionService.recognize(
+                // Never hold a review on a 20-second download wait. If the
+                // reader is not ready now, show shape and order feedback and
+                // let the grade proceed; the model keeps preparing behind it.
+                if (!reader.canReadNow(mode)) {
+                    recognition = RecognitionResult(
+                        emptyList(),
+                        false,
+                        preparing = com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode),
+                    )
+                    return@launch
+                }
+                val result = reader.recognize(
                     visible,
                     mode,
                     items.getOrNull(askedIndex)?.character,
-                    wifiOnly = wifiOnlyModels,
                 )
                 if (askedIndex == index && askedRound == drawingRound) {
                     recognition = result
@@ -448,6 +520,14 @@ fun LearnScreen(
                 showReference = showReference,
             )
             onGrade(item, effectiveGrade, elapsedMs, task, ink.strokes.size)
+            lastGraded = if (
+                reviewReasonsEnabled &&
+                (effectiveGrade == Grade.AGAIN || effectiveGrade == Grade.HARD)
+            ) {
+                RecentGrade(item, effectiveGrade, task)
+            } else {
+                null
+            }
             if (effectiveGrade.countsAsLearned) learned++
         }
         attempts = attempts + (itemIndex to attempt)
@@ -496,6 +576,11 @@ fun LearnScreen(
         recognition = null
         if (step == Step.RECALL) recallStartedAt = System.currentTimeMillis()
     }
+    LaunchedEffect(lastGraded) {
+        val graded = lastGraded ?: return@LaunchedEffect
+        delay(15_000)
+        if (lastGraded === graded) lastGraded = null
+    }
     LaunchedEffect(undoSignal) {
         if (undoSignal == 0) return@LaunchedEffect
         val snapshot = gradeUndo ?: return@LaunchedEffect
@@ -521,7 +606,9 @@ fun LearnScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val book = LocalFoldState.current == FoldState.BOOK
-        val wide = maxWidth >= if (book) 700.dp else 860.dp
+        // A landscape fold-outer is wide but short. Use the two-pane book
+        // layout there too, so the prompt cannot squeeze the canvas to zero.
+        val wide = maxWidth >= if (book) 700.dp else 760.dp
         val shortScreen = maxHeight < 760.dp
         val currentItem = items.getOrNull(index)
         val currentIsLesson = currentItem?.needsLesson == true
@@ -559,13 +646,23 @@ fun LearnScreen(
         ) {
             SessionTopBar(
                 mode = mode,
+                writingEnabled = writingEnabled,
                 current = completed,
                 total = items.size,
                 step = step,
                 showCounters = showCounters,
                 isLesson = currentIsLesson,
                 task = task,
-                ankiWriting = ankiWriting,
+                onAddHook = if (
+                    memoryHooksEnabled &&
+                    currentItem?.character?.hasHanCharacter() == true
+                ) {
+                    { showHookDialog = true }
+                } else {
+                    null
+                },
+                onAddReason = lastGraded?.let { graded -> { reasonSheet = graded } },
+                revealWriting = revealWriting,
                 progress = block.fraction,
                 blockHint = block.hint,
                 reduceMotion = reduceMotion,
@@ -658,7 +755,7 @@ fun LearnScreen(
                 )
             }
             if (step == Step.RECALL && revealOnly && task == ReviewTask.WRITE) {
-                AnkiWritingRecall(
+                RevealWritingRecall(
                     item = item,
                     mode = mode,
                     cuePrompt = cuePrompt,
@@ -763,6 +860,7 @@ fun LearnScreen(
                             mnemonicAllowed = mnemonicAllowed,
                             showMnemonic = showMnemonic,
                             onToggleMnemonic = { showMnemonic = !showMnemonic },
+                            compact = shortScreen,
                         )
                         if (step == Step.INTRODUCE && introWords.isNotEmpty()) {
                             IntroWords(
@@ -795,76 +893,66 @@ fun LearnScreen(
                                 onClick = { advanceFromIntro() },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = CircleShape,
-                            ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
-                            Step.TRACE -> {
-                                ActionRow(
-                                    secondary = "Draw again",
-                                    onSecondary = { resetDrawing() },
-                                    primary = "Next: write",
-                                    accent = PinkFor(mode),
-                                    primaryEnabled = ink.strokes.isNotEmpty(),
-                                    onPrimary = { stepOrdinal++; resetDrawing() },
+                            ) { Text(
+                                when {
+                                    !writingEnabled && task == ReviewTask.PRONOUNCE ->
+                                        "Next: pronunciation"
+                                    !writingEnabled && task == ReviewTask.MEANING ->
+                                        "Next: meaning"
+                                    !writingEnabled || revealWriting -> "Next: show answer"
+                                    else -> "Next: trace"
+                                }
+                            ) }
+                            Step.TRACE -> Unit
+                            Step.RECALL -> if (revealed) {
+                                RevealAnswer(
+                                    onDrawAgain = {
+                                        resetDrawing()
+                                        revealed = false
+                                    },
+                                    evidence = evidence,
+                                    orderCheck = orderCheck,
+                                    player = player,
+                                    drawingTool = drawingTool,
+                                    brush = brush,
+                                    widthScale = widthScale,
+                                    allowFinger = allowFinger,
+                                    gridStyle = gridStyle,
                                 )
-                                if (ink.strokes.isEmpty()) {
-                                    Text(
-                                        "Trace one stroke to continue.",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = InkSoft,
-                                    )
-                                }
-                            }
-                            Step.RECALL -> {
-                                if (!revealed) {
-                                    ActionRow(
-                                        secondary = "Draw again",
-                                        onSecondary = { resetDrawing() },
-                                        primary = "Check & grade",
-                                        accent = PinkFor(mode),
-                                        primaryEnabled = ink.strokes.isNotEmpty(),
-                                        onPrimary = {
-                                            com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
-                                            revealed = true
-                                        },
-                                    )
-                                    Text(
-                                        if (ink.strokes.isEmpty()) {
-                                            "Write a stroke first."
-                                        } else {
-                                            "Check, then choose a grade."
-                                        },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = InkSoft,
-                                    )
-                                    TextButton(
-                                        onClick = { revealed = true },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                                    ) {
-                                        Text(
-                                            "Show answer",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = InkSoft,
-                                        )
-                                    }
-                                } else {
-                                    RevealAnswer(
-                                        onDrawAgain = {
-                                            resetDrawing()
-                                            revealed = false
-                                        },
-                                        evidence = evidence,
-                                        orderCheck = orderCheck,
-                                        player = player,
-                                        drawingTool = drawingTool,
-                                        brush = brush,
-                                        widthScale = widthScale,
-                                        allowFinger = allowFinger,
-                                        gridStyle = gridStyle,
-                                    )
-                                }
                             }
                         }
 
                     }
+                }
+                if (step == Step.TRACE || (step == Step.RECALL && !revealed)) {
+                    StickyActionBar(
+                        secondary = "Draw again",
+                        onSecondary = { resetDrawing() },
+                        accent = PinkFor(mode),
+                        compact = shortScreen,
+                        primary = if (step == Step.TRACE) "Next: write" else "Check & grade",
+                        primaryEnabled = ink.strokes.isNotEmpty(),
+                        hint = when {
+                            step == Step.TRACE && ink.strokes.isEmpty() -> "Trace one stroke to continue."
+                            step == Step.TRACE -> "Trace one, then write from memory."
+                            ink.strokes.isEmpty() -> "Write a stroke first."
+                            else -> "Then choose a grade."
+                        },
+                        onPrimary = {
+                            if (step == Step.TRACE) {
+                                stepOrdinal++
+                                resetDrawing()
+                            } else {
+                                com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.CHECK)
+                                revealed = true
+                            }
+                        },
+                        onShowAnswer = if (step == Step.RECALL) {
+                            { revealed = true }
+                        } else {
+                            null
+                        },
+                    )
                 }
                 if (step == Step.RECALL && revealed) {
                     StickyGradeBar(
@@ -922,7 +1010,16 @@ fun LearnScreen(
                             onClick = { advanceFromIntro() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
-                        ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
+                        ) { Text(
+                                when {
+                                    !writingEnabled && task == ReviewTask.PRONOUNCE ->
+                                        "Next: pronunciation"
+                                    !writingEnabled && task == ReviewTask.MEANING ->
+                                        "Next: meaning"
+                                    !writingEnabled || revealWriting -> "Next: show answer"
+                                    else -> "Next: trace"
+                                }
+                            ) }
                     }
                 } else {
                 Column(
@@ -979,7 +1076,16 @@ fun LearnScreen(
                             onClick = { advanceFromIntro() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CircleShape,
-                        ) { Text(if (ankiWriting) "Next: show answer" else "Next: trace") }
+                        ) { Text(
+                                when {
+                                    !writingEnabled && task == ReviewTask.PRONOUNCE ->
+                                        "Next: pronunciation"
+                                    !writingEnabled && task == ReviewTask.MEANING ->
+                                        "Next: meaning"
+                                    !writingEnabled || revealWriting -> "Next: show answer"
+                                    else -> "Next: trace"
+                                }
+                            ) }
                     } else {
                         // Keep the guide and ink controls above the canvas so they
                         // are never hidden behind the sticky action bar.
@@ -1111,7 +1217,191 @@ fun LearnScreen(
                 }
             }
         }
+        reasonSheet?.let { graded ->
+            ReasonSheet(
+                graded = graded,
+                onReason = { reason ->
+                    onAddReason(graded.item, reason.key)
+                    lastGraded = null
+                    reasonSheet = null
+                },
+                onDismiss = { reasonSheet = null },
+            )
+        }
+        if (showHookDialog && currentItem != null) {
+            MnemonicEditDialog(
+                mode = mode,
+                character = currentItem.character,
+                initial = userMnemonic,
+                reading = currentItem.reading,
+                palacePegs = palacePegs,
+                loadMeta = onLoadMeta,
+                onDismiss = { showHookDialog = false },
+                onSave = { entry ->
+                    scope.launch {
+                        onSaveMnemonic(entry)
+                        userMnemonic = entry
+                        showHookDialog = false
+                    }
+                },
+            )
+        }
     }
+}
+
+private data class RecentGrade(
+    val item: LearnItem,
+    val grade: Grade,
+    val task: ReviewTask,
+)
+
+@Composable
+private fun ReasonSheet(
+    graded: RecentGrade,
+    onReason: (ReviewReason) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = when (graded.grade) {
+                        Grade.AGAIN -> Rose.copy(alpha = 0.22f)
+                        else -> Peach.copy(alpha = 0.30f)
+                    },
+                    modifier = Modifier.size(44.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.EditNote,
+                            contentDescription = null,
+                            tint = InkDark,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "What made ${graded.item.character} hard?",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = InkDark,
+                    )
+                    Text(
+                        "${graded.grade.label} is already saved. This note is optional.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            val reasons = ReviewReason.forTask(graded.task)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                reasons.chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { reason ->
+                            ReasonTile(
+                                reason = reason,
+                                onClick = { onReason(reason) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                Text("Not now")
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ReasonTile(
+    reason: ReviewReason,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = when (reason) {
+        ReviewReason.ORDER -> Lilac
+        ReviewReason.DIRECTION -> Sky
+        ReviewReason.MISSING_STROKE -> Rose
+        ReviewReason.SPACING -> Peach
+        ReviewReason.READING -> Mint
+        ReviewReason.TONE -> Butter
+        ReviewReason.MEANING -> Lilac
+        ReviewReason.CONFUSED -> Sky
+    }
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = PaperWarm,
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+        modifier = modifier,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(shape = CircleShape, color = accent.copy(alpha = 0.24f)) {
+                Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        reasonIcon(reason),
+                        contentDescription = null,
+                        tint = InkDark,
+                        modifier = Modifier.size(17.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    reason.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = InkDark,
+                )
+                Text(
+                    reasonHint(reason),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    maxLines = 2,
+                )
+            }
+        }
+    }
+}
+
+private fun reasonIcon(reason: ReviewReason) = when (reason) {
+    ReviewReason.ORDER -> Icons.Rounded.FormatListNumbered
+    ReviewReason.DIRECTION -> Icons.Rounded.SwapHoriz
+    ReviewReason.MISSING_STROKE -> Icons.Rounded.RemoveCircleOutline
+    ReviewReason.SPACING -> Icons.Rounded.SpaceBar
+    ReviewReason.READING -> Icons.Rounded.RecordVoiceOver
+    ReviewReason.TONE -> Icons.Rounded.GraphicEq
+    ReviewReason.MEANING -> Icons.Rounded.Translate
+    ReviewReason.CONFUSED -> Icons.Rounded.CompareArrows
+}
+
+private fun reasonHint(reason: ReviewReason): String = when (reason) {
+    ReviewReason.ORDER -> "The strokes came in the wrong sequence"
+    ReviewReason.DIRECTION -> "A stroke went the wrong way"
+    ReviewReason.MISSING_STROKE -> "A stroke was left out"
+    ReviewReason.SPACING -> "Crowded or too wide"
+    ReviewReason.READING -> "Could not recall the sound"
+    ReviewReason.TONE -> "Right sound, wrong tone"
+    ReviewReason.MEANING -> "Could not recall what it means"
+    ReviewReason.CONFUSED -> "Mixed it up with another character"
 }
 
 @Composable
@@ -1123,7 +1413,10 @@ private fun SessionTopBar(
     showCounters: Boolean,
     isLesson: Boolean,
     task: ReviewTask,
-    ankiWriting: Boolean = false,
+    writingEnabled: Boolean = true,
+    onAddHook: (() -> Unit)? = null,
+    onAddReason: (() -> Unit)? = null,
+    revealWriting: Boolean = false,
     progress: Float,
     blockHint: String?,
     reduceMotion: Boolean,
@@ -1150,15 +1443,45 @@ private fun SessionTopBar(
                 )
                 Text(
                     when {
-                        isLesson -> if (ankiWriting && step == Step.RECALL) "Reveal" else step.label
+                        isLesson -> when {
+                            step == Step.RECALL && task == ReviewTask.PRONOUNCE ->
+                                "Pronunciation"
+                            step == Step.RECALL && task == ReviewTask.MEANING ->
+                                "Meaning"
+                            step == Step.RECALL && (!writingEnabled || revealWriting) ->
+                                "Reveal"
+                            else -> step.label
+                        }
                         task == ReviewTask.PRONOUNCE -> "Pronunciation"
                         task == ReviewTask.MEANING -> "Meaning"
-                        ankiWriting -> "Reveal"
+                        revealWriting -> "Reveal"
                         else -> "From memory"
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )
+            }
+            onAddHook?.let {
+                IconButton(onClick = it) {
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = "Add a memory hook",
+                        tint = InkDark,
+                    )
+                }
+            }
+            onAddReason?.let {
+                IconButton(
+                    onClick = it,
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.EditNote,
+                        contentDescription = "Add note for the last review",
+                        tint = InkDark,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             if (showCounters && current < total) {
                 Pill(
@@ -1219,7 +1542,7 @@ private fun SessionTopBar(
         if (isLesson) {
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val visibleSteps = if (ankiWriting) {
+                val visibleSteps = if (!writingEnabled || revealWriting) {
                     listOf(Step.INTRODUCE, Step.RECALL)
                 } else {
                     steps
@@ -1236,7 +1559,13 @@ private fun SessionTopBar(
                         },
                     ) {
                         Text(
-                            if (ankiWriting && item == Step.RECALL) "Reveal" else item.label,
+                            when {
+                                item != Step.RECALL -> item.label
+                                task == ReviewTask.PRONOUNCE -> "Pronunciation"
+                                task == ReviewTask.MEANING -> "Meaning"
+                                !writingEnabled || revealWriting -> "Reveal"
+                                else -> item.label
+                            },
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (active || done) AccentInk else InkSoft,
@@ -1578,7 +1907,7 @@ private fun PromptPanel(
     showMnemonic: Boolean = false,
     onToggleMnemonic: () -> Unit = {},
     compact: Boolean = false,
-    ankiWriting: Boolean = false,
+    revealWriting: Boolean = false,
 ) {
     val accent = PinkFor(mode)
     Surface(
@@ -1616,7 +1945,7 @@ private fun PromptPanel(
                             when (step) {
                                 Step.INTRODUCE -> "Meet ${item.character}"
                                 Step.TRACE -> "Trace it slowly"
-                                Step.RECALL -> if (ankiWriting) "Do you remember it?" else "Write from memory"
+                                Step.RECALL -> if (revealWriting) "Do you remember it?" else "Write from memory"
                             },
                             style = MaterialTheme.typography.headlineSmall,
                             color = InkDark,
@@ -1937,7 +2266,7 @@ private fun GradeChoices(
 }
 
 @Composable
-private fun AnkiWritingRecall(
+private fun RevealWritingRecall(
     item: LearnItem,
     mode: StudyMode,
     cuePrompt: RecallCuePrompt,
@@ -1983,7 +2312,7 @@ private fun AnkiWritingRecall(
                     mnemonicAllowed = mnemonicAllowed,
                     showMnemonic = showMnemonic,
                     onToggleMnemonic = onToggleMnemonic,
-                    ankiWriting = true,
+                    revealWriting = true,
                 )
                 Spacer(Modifier.height(16.dp))
                 com.bassmd.bihua.ui.components.PrimaryAction(
@@ -2445,6 +2774,8 @@ private fun MeaningReview(
     if (addOpen) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { addOpen = false },
+            modifier = Modifier.imePadding(),
+            properties = DialogProperties(decorFitsSystemWindows = false),
             title = { Text("Add a synonym") },
             text = {
                 Column {
@@ -3212,6 +3543,7 @@ private fun StickyActionBar(
     accent: Color = Sky,
     compact: Boolean = false,
     onPrimary: () -> Unit,
+    onShowAnswer: (() -> Unit)? = null,
 ) {
     Surface(color = PaperWarm, shadowElevation = 14.dp) {
         Column(
@@ -3222,6 +3554,18 @@ private fun StickyActionBar(
                     vertical = if (compact) 2.dp else 6.dp,
                 ),
         ) {
+            if (onShowAnswer != null) {
+                TextButton(
+                    onClick = onShowAnswer,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    Text(
+                        "Show answer",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = InkSoft,
+                    )
+                }
+            }
             ActionRow(
                 secondary = secondary,
                 onSecondary = onSecondary,

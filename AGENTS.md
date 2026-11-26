@@ -7,11 +7,23 @@ This file is the shared context for a new chat. Read it before changing code.
 Bihua is an offline-first Android app for learning to write Simplified Chinese,
 Traditional Chinese, Japanese, and Korean. Characters are the study items;
 readings and meanings are cues. Writing is the default recall task, with an
-optional Anki-style reveal. Pronunciation is an optional, separate review task.
+optional Reveal review. Pronunciation is an optional, separate review task.
 FSRS-7 or SBD schedules each script, with optional sharing between identical
 glyphs. No streak penalties, no account, no ads, no developer-run analytics.
 
 The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
+
+## Current state (1.1.2)
+
+- Android is the only client. Version 1.1.2 (code 23) is the release candidate;
+  the signed RC is built and audited but not uploaded. Release is on hold.
+- iOS is a long-term plan only: `docs/ios-kmp-plan.md`. Do not add Apple
+  dependencies or an iOS target during the 1.1.2 maintenance window.
+- New in 1.1.2: Today and Week ahead widgets; Progress All time and the year
+  heatmap; local crash files and the report composer; the seamless splash;
+  two-page Home/Practice and spell-quest landscape; the 65% chapter-coloured
+  guide; and the offline first-run path.
+- The live maintenance checklist is `docs/backlog.md`. Keep it current.
 
 ## Product feel
 
@@ -90,6 +102,16 @@ bar, not a suggestion. Stop only when the evidence is green.
   ambient loops at 30fps or less; honor the system animator scale; cache
   immutable parsed data; avoid waking the device for widgets more than a few
   times a day.
+- Report queries are gated by the visible tab and session, and card-wide work is
+  skipped during a session unless grade intervals need it. `dueNow`, the forecast,
+  and review totals reuse the one card map. Do not add another `allCards()` read
+  to a screen that already has `cards`.
+- Progress uses WAL and schema-18 report indexes. The content DB is prewarmed
+  while onboarding is on screen; do not move the first 30 MB copy back to the
+  first Home frame.
+- The model-download notice uses a static brush icon, not a frame-driven
+  spinner. A perpetual animation in that global Popup makes uiautomator and
+  accessibility-idle waits hang for the whole session.
 
 ### 5. Run the gates
 
@@ -180,9 +202,10 @@ scripts/journey.sh --standard --screenshots
 - The widget pet wears one tiny costume from the same Mò palette: a graduation
   hat while work waits by day, a monocle on the Word widget, a witch hat in the
   evening, a vampire at night, a nightcap on vacation, and a party hat when the
-  desk is clear. Settings → Display → Mò's widget outfit can pin one costume;
-  Auto keeps the hour/state choice. The in-app completion panel still uses the
-  party hat. Keep the widget layer-lists aligned to the 1024 art; do not draw a
+  desk is clear. Settings → Display → Mò's widget outfit opens a preview-and-
+  confirm dialog: tapping an outfit updates the real widget pet preview, and
+  Use this outfit saves it. Auto keeps the hour/state choice. The in-app
+  completion panel still uses the party hat. Keep the widget layer-lists aligned to the 1024 art; do not draw a
   second widget pet. Hats sit on the 1024 head line, not over the eyes.
 - Widgets use `dp` text sizes, not `sp`, so the 2×2 and 4×2 cells do not clip at
   1.5× launcher font scale. App screens still use `sp`.
@@ -190,10 +213,12 @@ scripts/journey.sh --standard --screenshots
   evening, and deep night with light text. Decorative glows sit at the top-right
   behind the pet. Keep text out of the motif area.
 - The Today widget shows the review and lesson counts as two big stat blocks,
-  then one flavor line and a bottom action. The Word widget keeps the word as
-  the hero on the left, the pet on the right, two review/lesson chips below the
-  definition, and the tip/footer at the bottom. Do not put a status line between
-  the reading and the definition.
+  then one flavor line and a bottom action. The Week ahead widget uses the same
+  binder with `weekly = true` and the next seven days; it is a separate
+  provider, not a mode toggle. The Word widget keeps the word as the hero on the
+  left, the pet on the right, review/lesson chips below the definition, and the
+  tip/footer at the bottom. Do not put a status line between the reading and the
+  definition.
 - The all-clear hero says “All done for today” once. Do not add a duplicate
   “All caught up” pill or a decorative pet that makes the card taller.
 - The grade prompt in a session has a “?” that opens the plain-word legend.
@@ -220,6 +245,17 @@ scripts/journey.sh --standard --screenshots
 - Settings stays compact. Explanations belong in dialogs. Mature words are off
   by default and require a confirmation when enabled.
 
+## Offline first run and reader readiness
+
+- A fresh device with no network must skip setup, open Home, and start a review.
+  The reader model is an optional background download; never gate the primary
+  action on it.
+- If the model is missing, Check still returns local stroke and shape feedback,
+  and Show answer is always available. Spell quest scenes can be answered from
+  the grimoire.
+- `offline-first-run` is the proof. The Play reviewer notes must say this.
+- The only expected network use is the ML Kit model download.
+
 ## Progress and analytics
 
 - Every Progress query is scoped to the active course (`mode.name`). A review
@@ -227,9 +263,13 @@ scripts/journey.sh --standard --screenshots
   The range-dependent store calls (`gradeMix`, `practiceTimeMs`, `writingPace`,
   `taskStats`, `activity`, `learnedHistory`) take a nullable mode; pass the
   active course from `BihuaApp`, never leave it null on a screen.
-- The page has four windows: 7D, 30D, 90D, 1Y. All range-dependent queries and
-  the selected label rerun when the window changes. The 35-day calendar is
-  allowed for longer windows and must say “Last 35 days”.
+- The page has five windows: 7D, 30D, 90D, 1Y, All. All range-dependent
+  queries and the selected label rerun when the window changes. The 35-day
+  calendar is allowed for longer windows and must say “Last 35 days”.
+- All time is a real window, not a renamed 1Y. Do not clamp it to 366 days.
+- Year and All use the GitHub-style 7-row heatmap with month labels, an M/W/F
+  gutter, a legend, and horizontal scrolling. Auto-open on the newest weeks.
+  Do not shrink a long history into tiny cells.
 - Empty windows are calm, not punitive: “New window”, “No grades yet”, “No
   practice in this window yet”, “No memory data yet”, and “Nothing scheduled
   yet”. Never show `0% passed` before there is a grade.
@@ -352,14 +392,17 @@ scripts/journey.sh --standard --screenshots
 Every character, word, reading, meaning, and story users see must be checked
 before the next content release. The working checklist is
 `docs/content-qa-backlog.md`. The screen and journey risk list is
-`docs/user-journey-risk-audit.md`. Known gaps: Korean coverage for 115 rare
+`docs/archive/user-journey-risk-audit.md`. Known gaps: Korean coverage for 115 rare
 Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
 - Dependency policy: `docs/dependency-updates.md`.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
 - Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
+- Flow galleries: `scripts/flow-gallery.sh <flow> --name <run>` writes
+  `qa/gallery/<run>/phone|tablet|fold/<flow>.png` and an `INDEX.md`; use it
+  for visual reviews, not for store assets.
 - Learning-science proposals and the joy roadmap: `docs/learning-proposals.md`.
-- Current release plan: `docs/1.1.1-roadmap.md`.
+- Current release plan and maintenance checklist: `docs/backlog.md`. The iOS/KMP plan is parked at `docs/ios-kmp-plan.md`.
 - Spell quest is the extra-practice spellbook: four scripts (Simplified,
   Traditional, Japanese kanji, Korean Hanja), 35 families, 10 chapters, ~350
   authored choices per script, forge-only puzzles, and two-page tablet/fold
@@ -369,7 +412,21 @@ some etymology quality.
   Keep it a quiet extra tool; the main path stays writing review.
 - Screen, flow, and feature inventories: `docs/screen-inventory.md`,
   `docs/flow-inventory.md`, `docs/feature-inventory.md`.
-- Test coverage: `docs/test-matrix.md`; risk audit: `docs/user-journey-risk-audit.md`.
+- Test coverage: `docs/test-matrix.md`; risk audit: `docs/archive/user-journey-risk-audit.md`.
+
+## Crash reports and About
+
+- `diagnostics/CrashHandler` writes at most three files to app-private
+  `filesDir/crash`. They are excluded from backups and sync. There is no crash
+  SDK, and nothing is uploaded automatically.
+- Settings → About → Report opens a composer with kind chips, words, an optional
+  saved crash, a preview, and Send/Copy through the learner's own app. The crash
+  file is removed after send or copy. A rate row opens the Play listing.
+- The kind labels are `Something broke`, `An idea`, and `Content looks wrong`.
+  Keep the content chip generic; do not make it word-only.
+- The report sheet must be centred in landscape and keep its actions above the
+  keyboard. `report-flow` covers phone, landscape, tablet, fold, dark, and 1.5x.
+- The iOS launch reports no crash attachment; do not promise crash traces there.
 
 ## Answer privacy
 
@@ -382,7 +439,7 @@ some etymology quality.
 - Recognition results and grade buttons appear only after the learner commits to
   an answer and asks to check.
 
-## Anki-style answering
+## Reveal review
 
 - Settings → Practice has two independent switches: **Writing: tap to reveal**
   and **Pronunciation: tap to reveal**. Both default off.
@@ -448,7 +505,19 @@ some etymology quality.
   Home. Never leave a screen that exits the app while an overlay is open.
 - Loading must end in success, an empty state, or a readable error. Handwriting
   model downloads and recognition have timeouts. Content loading has Retry.
-  The first read-aloud tap is queued while the voice engine starts.
+  The first read-aloud tap is queued while the voice engine starts, and a voice
+  engine that never answers fails after 5 s instead of queueing forever. A review
+  or practice check uses the 900 ms local readiness probe, never a 20 s download
+  wait: if the reader is not ready, shape and order feedback still show.
+- Reader readiness is cached per script in `ModelDownloads`; a positive result
+  is instant, a missing or stale one gets one short probe. Do not add per-screen
+  `isModelReady` loops, repeated Play Services checks, or download polling.
+  A completed download or a returning network re-checks the active script.
+- A script switch hides the previous course until the new one loads; never let
+  Home counts, Characters, or due counts flash the old script.
+- Backup decoding, import writes, exports, and the onboarding restore run off
+  the main thread. Widgets refresh on a short debounce after reviews rather than
+  only when the app is backgrounded.
 - Large text is a layout target, not an afterthought. Check 1.5x on Home Study
   tools, Compare, Paper, Settings, character detail, and session. Titles should
   wrap, not become a vertical strip; action rows may move below the title.
@@ -480,6 +549,7 @@ make journey-standard          # phone, fold, tablet core journeys
 make journey-full              # every profile and daily state
 make nav-gap                   # bottom bar/content inset at 1x and 1.5x
 make release                   # signed minified release APK
+make play-audit                # release APK/AAB permissions, signature, version, ABI
 make smoke                     # on-device launch/navigation smoke test
 ```
 
@@ -515,6 +585,33 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 `-s <serial>`. DB commands need a debug build. The progress DB is
 `databases/bihua_progress.db`.
 
+## Rotation and shell swaps
+
+- Rotation is a configuration change, not an activity recreation. The manifest
+  handles orientation, screen size, layout, keyboard, UI mode, and
+  `fontWeightAdjustment`; without that last flag, the activity is recreated on
+  some devices and local state disappears.
+- The phone and tablet shells are separate composition branches. Any state that
+  must survive a rotation across the shell breakpoint has to live above the
+  branch or in a stable saveable holder. The Settings section, report-open
+  state, report words, and report kind are hoisted to `BihuaApp`.
+- The review uses the two-pane layout from 760 dp on a non-book screen and
+  700 dp on a book. This keeps the canvas visible on the fold outer display and
+  tablet portrait instead of letting a long prompt squeeze it away.
+- Keep the review session, ink, typed answer, and reveal state above the wide
+  branch. `rotation-state` proves the card, ink, answer, report draft, Settings
+  section, and Practice survive a turn.
+- The wide review uses the sticky action bar for Trace/Recall and the sticky
+  grade bar after the reveal. Do not put Show answer or Check back inside the
+  scrollable side panel on a short landscape screen.
+- The Home hero is compact under 560 dp so the primary study action stays above
+  the floating bottom bar.
+- `rotation-onboarding` proves the script page and step survive a turn.
+- `screen-pass` starts from clean app data (`fresh_data`); do not let a stale
+  grid filter or scroll position leak between profiles. Stay on the character
+  grid before the draw-search detour, and try the hierarchy fallback for short
+  Settings rows.
+
 ## Device and screenshot traps
 
 1. **Never derive tap coordinates from a screenshot.** Use `device.sh ui/find`
@@ -540,7 +637,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 ## Lesson and review flow
 
 - A lesson is **Meet → Trace → Write** by default.
-- With Anki writing on, a lesson is **Meet → Reveal**; Trace is skipped.
+- With Reveal writing on, a lesson is **Meet → Reveal**; Trace is skipped.
 - Trace needs at least one stroke when it is present.
 - A reviewed card starts directly at Recall. Do not show Meet or Trace first.
 - Write cue is reading, meaning, or a word. The character is never shown before
@@ -553,9 +650,9 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   - `WRITE`: draw from a cue.
   - `PRONOUNCE`: show the character, type the reading.
   - `MEANING`: show the character, type a wording if desired, reveal the gloss.
-- New cards write, unless Anki writing is on. Reviewed cards alternate writing
+- New cards write, unless Reveal writing is on. Reviewed cards alternate writing
   and pronunciation from a deterministic phase; pronunciation is opt-in.
-- With Anki pronunciation on, a pronunciation card shows the character, then
+- With Reveal pronunciation on, a pronunciation card shows the character, then
   Show answer, then grades. No text field. Do not suggest Again just because
   the answer was revealed.
 - A pronunciation cue must never include the reading before the check. Writing
@@ -593,6 +690,17 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Character detail has top actions for Write a word and Write on paper before
   the sharing controls.
 
+## Local sync
+
+- The sender generates a per-session self-signed certificate; the pairing code
+  is the first 50 bits of the SHA-256 fingerprint. The receiver pins it. No cloud
+  service is involved.
+- `SyncClientTest` and `SyncProtocolTest` cover the correct pin, wrong pin, 403,
+  500, settings-only, progress-only, both, malformed, and empty archives. They
+  use a real local TLS socket and need no Wi-Fi or NSD.
+- Sync is Android-only in 1.1.2. The iOS launch has no sync, TLS, or custom
+  networking.
+
 ## Ink and guides
 
 - Stroke order rules are a reference dialog in Settings → Writing; the actual
@@ -610,6 +718,10 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   speed thins; ends taper. Finger input has no pressure. The Spell quest offers a
   brush tray inside its draw overlay; that choice is quest-local and must never
   write back to the app-wide brush setting.
+- The spell-quest reference guide is the scene's chapter colour at 65% opacity,
+  drawn under the ink canvas. The grimoire gift/result strokes use the same
+  source without a dark halo. The transparent paper colour must stay a no-op;
+  only the quest calls use `paperGap = false`.
 - Spell rows are script-scoped (`SIMPLIFIED`, `TRADITIONAL`, `JAPANESE`,
   `KOREAN`). Never mix script rows in a grimoire or quest; readings and stroke
   guides come from the same course. Spellbook parsing is cached per process.
@@ -662,25 +774,35 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 - Do not reintroduce the old horizontally scrolling category chips or the
   three-row chip grid.
 - Writing has the active-script background model download; Prepare models downloads
-  all four.
+  all four in parallel and can be cancelled. The reader downloads on any usable
+  connection (mobile data is fine), starts only after a script is picked during
+  onboarding, and a quick model must not flash its notice right after the splash.
+  A failed notice is tappable to retry and is scoped to the active script.
 - About is transparent about Google ML Kit diagnostics and has Send feedback and
   Source code actions.
 - Schedule is intentionally compact: profile dropdown, status, Fit, Import,
   Export, and a More menu. Long explanations belong in the info dialog, not on
   the page. Do not bring back the chip wall and paragraph stack.
+- Known-list import accepts one character or short word per line, or characters
+  separated by commas. Latin text, punctuation, and long prose lines are skipped;
+  a preview states how many characters will be marked before Confirm. Imported
+  cards get stable due dates spread over 10–45 days with a per-day cap, never one
+  giant due day. The write is one transaction.
 - Data and Sync use `TransferScope`: Everything, Settings, or Progress. Import
   and sync confirm dialogs use checkboxes for the parts present in the file.
 - Slow actions must show feedback: `BusyDialog` for blocking work, inline
   progress for the weight fit, and a snackbar after completion. A tap should
   never look ignored.
 - The TTS engine is warmed at start/onboarding/script switch; a missing voice
-  shows a Toast instead of silently doing nothing.
+  shows a Toast instead of silently doing nothing. Initialization has a 5 s
+  timeout and exposes `SpeechState`, so a dead engine cannot hold a queued tap.
 - Rotation/theme/font-scale must be tested. The app supports 1.3×+ text.
 
 ## Scheduling and data
 
-- Progress DB schema 10. `review_log` stores `elapsed_ms`, `task`, and `strokes`; `word_practice` stores `mature`.
+- Progress DB schema 18. `review_log` stores `elapsed_ms`, `task`, `strokes`, and the optional `reason`; `word_practice` stores `mature`; `mnemonic` stores a page per character with a 1–5 vividness; `palace_peg` stores reusable parts/sounds. Schema 18 adds report indexes: card mode/due, card mode/introduced, character/time review history, live-time, and training-log indexes. Content DB builder adds mode/list, variant, and mode/word indexes for future content builds.
 - Bump the schema and add an upgrade path when tables change.
+- Progress ranges and custom date windows share `ProgressWindow`; a custom end date must clamp to today and every query must carry both bounds.
 - Content DB contentVersion 34. Bump it whenever the asset changes.
 - Keep scripts pure: no simplified-only forms in Traditional, no
   traditional-only forms in Simplified; shared glyphs stay in both.
@@ -692,6 +814,18 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
   zip, and legacy settings-only JSON. `TransferScope` decides what is written.
 - Settings and profile are part of every sync package. The receiver chooses
   whether to apply settings, progress, or both.
+- Sync defaults to merging progress: cards keep the newer state, review logs
+  union without duplicates, notes keep the newer text, and XP is recomputed.
+  Settings remain an explicit choice. The incoming progress DB must be on the
+  same schema version as the receiver.
+- Drawing practice is opt-out. If it is off, at least one of pronunciation or
+  meaning stays on, lessons skip the trace step, and the review task plan never
+  returns WRITE unless no check is enabled.
+- Grade reasons are a note, never a second grade. They are written after the
+  review and must not change FSRS, XP, or the review count.
+- The Mnemonic palace is opt-in. Chinese uses initial/final/tone roles; Japanese
+  uses kanji parts; Korean uses Hanja parts. Kana and Hangul must not show the
+  palace card or the lesson/review book button.
 - Do not call `enableEdgeToEdge()` and do not set status-bar or navigation-bar
   colors directly. The 1.0.2 build was flagged for
   `Window.setStatusBarColor`, `Window.setNavigationBarColor`, and
@@ -768,7 +902,7 @@ With more than one device connected, set `BIHUA_DEVICE=<serial>` or pass
 | Mascot and opening | `ui/components/Components.kt` (`InkMascot`, Mò), `ui/components/OpeningInk.kt`, `ui/theme/Color.kt` |
 | Guided tour | `ui/GuidedTour.kt` (MoActor, anchors, overlay), `ui/BihuaApp.kt`, `settings/SettingsScreen.kt` |
 | Widgets and pet costumes | `widget/WidgetCopy.kt`, `widget/WidgetLook.kt`, `res/layout/widget_*.xml`, `res/drawable/widget_pet_*.xml` |
-| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `scripts/journey.sh`, `Makefile`, `tools/seed_fsrs_fit.py` |
+| Tooling | `scripts/device.sh`, `scripts/check.sh`, `scripts/verify-apk.sh`, `scripts/journey.sh`, `scripts/flow-gallery.sh`, `qa/gallery.py`, `Makefile`, `tools/seed_fsrs_fit.py` |
 | Coverage map | `docs/ui-test-coverage.md`, `docs/test-matrix.md` |
 | Local journeys | `qa/journey.py`, `qa/state.py`, `qa/driver.py`, `qa/scenarios.py` |
 
@@ -788,7 +922,7 @@ After every source change that reaches a release, rebuild and re-smoke the APK,
 then update all three places together:
 
 1. Copy `app/build/outputs/apk/release/app-release.apk` to
-   `docs/download/bihua-1.1.1.apk`.
+   `docs/download/bihua-1.1.2.apk`.
 2. Put the new SHA-256 in `docs/download/SHA256SUMS.txt` and the landing card.
 3. Change the landing download query to `?v=<first 8 hash chars>` so the Pages
    CDN cannot keep serving the previous binary. Verify the hosted bytes with
@@ -797,10 +931,30 @@ then update all three places together:
 Do not describe an APK as hosted before the hosted checksum matches the local
 signed build.
 
+## Release and patch flow
+
+1. Branch the Android candidate (`release/android-1.1.2`) and keep KMP/iOS work
+   off it.
+2. Run `make check`, `make lint`, the full screen-pass matrix, and the
+   report/spell/onboarding/offline journeys.
+3. Rebuild the signed AAB/APK after the last code change. Store the mapping,
+   native symbols, and hashes.
+4. Clean-install release smoke; repeat on the real phone when available.
+5. Tag the release candidate. Upload to internal testing, run the pre-launch
+   report, then staged rollout.
+6. For a hotfix: branch from the live tag, keep the diff minimal, add a
+   regression test, bump the versionCode, internal track, smoke, promote.
+   Never reuse a published versionCode.
+
 ## Known gaps
 
 - The physical stylus pass was done on the SM-X520; recheck after any ink change.
 - Full backup/import through the system file picker should be retested on a
   release build before production.
-- Automated UI/instrumentation tests are not present.
+- Robolectric Compose smoke tests and the `qa/` journey harness exist, but there
+  is no full on-device instrumentation suite for every screen.
+- Sync has robust JVM/TLS tests but no two-device NSD end-to-end test.
+- iOS is planned, not started; there is no Apple developer account yet.
 - Foldable, desktop, and XR screenshots are intentionally not supplied.
+- The 1.1.2 release candidate still needs the full matrix green and a real-phone
+  smoke before upload.

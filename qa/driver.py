@@ -2,6 +2,7 @@
 """UI driver and assertions built on uiautomator2."""
 from __future__ import annotations
 
+import json
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -9,6 +10,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import uiautomator2 as u2
+
+from layout_audit import LayoutIssue, audit_xml, summarize
+from visual import SKIP_NAMES, VisualReport, VisualResult, compare_image
 from uiautomator2.exceptions import UiObjectNotFoundError
 
 from devices import Device
@@ -34,6 +38,17 @@ class Journey:
     artifact_dir: Path
     screenshots: bool = False
     steps: list[StepResult] = field(default_factory=list)
+    profile: str = ""
+    scenario: str = ""
+    density: int = 420
+    visual: VisualReport | None = None
+    update_goldens: bool = False
+    require_goldens: bool = False
+    visual_tolerance: int = 18
+    visual_max_diff: float = 0.003
+    audit_layout_enabled: bool = False
+    visual_results: list[VisualResult] = field(default_factory=list)
+    layout_issues: list[LayoutIssue] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -325,13 +340,33 @@ class Journey:
 
     # ---------- actions ----------
 
-    def launch(self) -> None:
-        self.device.shell(f"am force-stop {APP_ID}", check=False)
-        self.device.shell(
-            f"am start -W -n {APP_ID}/.MainActivity",
-            check=False,
-        )
-        time.sleep(0.8)
+    def launch(self, extras: list[str] | None = None) -> None:
+        command = f"am start -W -n {APP_ID}/.MainActivity"
+        if extras:
+            command += " " + " ".join(extras)
+        for attempt in range(3):
+            self.device.shell(f"am force-stop {APP_ID}", check=False)
+            # Wait for the process to actually leave, otherwise the next start
+            # can restore the previous activity state (filters, scroll, dialogs).
+            deadline = time.time() + 3.0
+            while time.time() < deadline:
+                pid = self.device.shell(
+                    f"pidof {APP_ID}", check=False,
+                ).strip()
+                if not pid:
+                    break
+                time.sleep(0.1)
+            self.device.shell(command, check=False)
+            time.sleep(0.8)
+            try:
+                current = self.d.app_current()
+            except Exception:
+                current = {}
+            if not isinstance(current, dict) or current.get("package") == APP_ID:
+                return
+            # A just-stopped process can win the race and leave the launcher
+            # in front. Give it one more clean start before failing.
+            time.sleep(0.8)
 
     def force_stop(self) -> None:
         self.d.app_stop(APP_ID)
@@ -343,8 +378,32 @@ class Journey:
 
     def scroll_up(self) -> None:
         width, height = self.d.window_size()
-        self.d.swipe(width // 2, int(height * 0.28), width // 2, int(height * 0.82), 0.2)
+        # Start below the status bar. A swipe from the top edge can pull the
+        # system shade instead of the app list.
+        self.d.swipe(width // 2, int(height * 0.48), width // 2, int(height * 0.82), 0.25)
         time.sleep(0.2)
+
+    def scroll_to_top(self) -> None:
+        # A page can hold several scrollables (calendar, chart, list), so
+        # scroll.toBeginning() may pick a nested one. Large swipes always move
+        # the page itself and are safe when the list is already at the top.
+        try:
+            scroller = self.d(scrollable=True)
+            if scroller.exists:
+                scroller.scroll.toBeginning()
+                time.sleep(0.2)
+        except Exception:
+            pass
+        width, height = self.d.window_size()
+        for _ in range(8):
+            self.d.swipe(
+                width // 2,
+                int(height * 0.22),
+                width // 2,
+                int(height * 0.86),
+                0.12,
+            )
+            time.sleep(0.1)
 
     def ensure_visible(self, label: str, max_scrolls: int = 5):
         selector = self.find(label, timeout=0.5)
@@ -363,6 +422,19 @@ class Journey:
         time.sleep(0.15)
 
     def open_tab(self, name: str) -> None:
+        # A modal, a subpage, or a transient notice can hide the bottom bar.
+        # Close one layer at a time and try again instead of failing the whole
+        # visual pass on a stale hierarchy.
+        for _ in range(3):
+            if self.find(name, timeout=1.2) is not None:
+                try:
+                    self.tap(name)
+                    time.sleep(0.4)
+                    return
+                except Exception:
+                    pass
+            self.d.press("back")
+            time.sleep(0.5)
         self.tap(name)
         time.sleep(0.4)
 
@@ -381,7 +453,13 @@ class Journey:
                 return
             if self.exists("Lesson 1 of", timeout=0.5, exact=False):
                 return
-            raise
+            self.scroll_to_top()
+            label = self.tap_any(
+                ["Start studying", "Practice instead", "Learn "],
+                timeout=8,
+            )
+            if label == "Practice instead":
+                raise JourneyFailure("Home offered Practice instead, no study queue")
         if label == "Practice instead":
             raise JourneyFailure("Home offered Practice instead, no study queue")
         deadline = time.time() + 12
@@ -443,13 +521,14 @@ class Journey:
                 self.draw_points(points)
         return True
 
-    def draw_points(self, points: list[tuple[int, int]]) -> None:
+    def draw_points(self, points: list[tuple[int, int]], duration: float = 0.08) -> None:
         if len(points) < 2:
             return
         commands = [f"input motionevent DOWN {points[0][0]} {points[0][1]}"]
         commands += [f"input motionevent MOVE {x} {y}" for x, y in points[1:]]
         commands.append(f"input motionevent UP {points[-1][0]} {points[-1][1]}")
         self.device.shell("; ".join(commands))
+        time.sleep(duration)
 
     def _draw_once(self) -> bool:
         canvas = self._canvas()
@@ -543,6 +622,7 @@ class Journey:
             return
         self.tap("Close session")
         self.wait("Leave this session?", timeout=6, exact=False)
+        self.assert_controls_visible(["Resume later", "End session", "Keep studying"])
         self.tap(action)
         self.assert_home()
 
@@ -559,13 +639,143 @@ class Journey:
 
     # ---------- artifacts and checks ----------
 
-    def screenshot(self, name: str) -> Path:
+    def screenshot(self, name: str, audit: bool = False) -> Path:
         path = self.artifact_dir / f"{name}.png"
         try:
             self.d.screenshot(str(path))
         except Exception:
             pass
+        if path.exists() and self.visual is not None and not SKIP_NAMES.match(name):
+            result = compare_image(
+                self.profile,
+                self.scenario,
+                name,
+                path,
+                self.density,
+                update=self.update_goldens,
+                require=self.require_goldens,
+                tolerance=self.visual_tolerance,
+                max_fraction=self.visual_max_diff,
+            )
+            self.visual.results.append(result)
+            self.visual_results.append(result)
+        if audit or self.audit_layout_enabled:
+            self.audit_layout(name)
         return path
+
+    def compare_image_file(self, name: str, path: Path) -> None:
+        if self.visual is None or not path.exists():
+            return
+        result = compare_image(
+            self.profile,
+            self.scenario,
+            name,
+            path,
+            self.density,
+            update=self.update_goldens,
+            require=self.require_goldens,
+            tolerance=self.visual_tolerance,
+            max_fraction=self.visual_max_diff,
+        )
+        self.visual.results.append(result)
+        self.visual_results.append(result)
+
+    def hierarchy_xml(self) -> str:
+        try:
+            return self.d.dump_hierarchy(compressed=False)
+        except Exception:
+            return "<missing />"
+
+    def screen_size(self) -> tuple[int, int]:
+        try:
+            width, height = self.d.window_size()
+            return int(width), int(height)
+        except Exception:
+            return 1080, 2400
+
+    def audit_layout(self, name: str) -> list[LayoutIssue]:
+        width, height = self.screen_size()
+        density = self.density_dpi()
+        xml = self.hierarchy_xml()
+        issues = audit_xml(xml, width, height, density)
+        self.layout_issues.extend(issues)
+        self.artifact_dir.joinpath(f"layout-{name}.xml").write_text(xml)
+        self.artifact_dir.joinpath(f"layout-{name}.json").write_text(
+            json.dumps(summarize(issues), indent=2),
+        )
+        return issues
+
+    def assert_visual(self) -> None:
+        if self.visual is None:
+            return
+        failures = [
+            item for item in self.visual.failures
+            if item.status == "diff" or (item.status == "missing" and self.require_goldens)
+        ]
+        if not failures:
+            return
+        detail = "\n".join(
+            f"{item.profile}/{item.scenario}/{item.name}: {item.status} {item.detail}"
+            for item in failures[:12]
+        )
+        raise JourneyFailure(f"visual regression or missing golden:\n{detail}")
+
+    def assert_foreground(self) -> None:
+        try:
+            current = self.d.app_current()
+        except Exception as error:
+            raise JourneyFailure(f"could not read the foreground app: {error}") from error
+        package = current.get("package", "") if isinstance(current, dict) else ""
+        if package and package != APP_ID:
+            raise JourneyFailure(f"left Bihua: foreground is {package} ({current})")
+
+    def assert_controls_visible(self, labels: list[str]) -> None:
+        """A hard check for action clusters that must never clip or overlap.
+
+        Compose hierarchies often expose the label on a child and the clickable
+        box on a wrapper, so this checks bounds of the labeled nodes themselves.
+        """
+        width, height = self.screen_size()
+        found: dict[str, tuple[int, int, int, int]] = {}
+        for label in labels:
+            matches = self._match_hierarchy(label, exact=True)
+            if not matches:
+                matches = self._match_hierarchy(label, exact=False)
+            if not matches:
+                raise JourneyFailure(f"control is not visible: {label}")
+            _value, box, _clickable = matches[0]
+            x1, y1, x2, y2 = box
+            if x1 < -8 or y1 < -8 or x2 > width + 8 or y2 > height + 8:
+                raise JourneyFailure(
+                    f"control {label} leaves the screen: {box} on {width}x{height}"
+                )
+            if x2 - x1 < 8 or y2 - y1 < 8:
+                raise JourneyFailure(f"control {label} has no usable size: {box}")
+            found[label] = box
+        ordered = list(found.items())
+        for index, (label_a, box_a) in enumerate(ordered):
+            for label_b, box_b in ordered[index + 1:]:
+                overlap_x = max(0, min(box_a[2], box_b[2]) - max(box_a[0], box_b[0]))
+                overlap_y = max(0, min(box_a[3], box_b[3]) - max(box_a[1], box_b[1]))
+                overlap = overlap_x * overlap_y
+                smaller = min(
+                    (box_a[2] - box_a[0]) * (box_a[3] - box_a[1]),
+                    (box_b[2] - box_b[0]) * (box_b[3] - box_b[1]),
+                )
+                if smaller > 0 and overlap / smaller > 0.20:
+                    raise JourneyFailure(
+                        f"controls overlap: {label_a} {box_a} and {label_b} {box_b}"
+                    )
+
+    def assert_layout_clean(self) -> None:
+        errors = [issue for issue in self.layout_issues if issue.severity == "error"]
+        if not errors:
+            return
+        detail = "\n".join(
+            f"{issue.kind}: {issue.message} {issue.bounds or ''} {issue.label}".strip()
+            for issue in errors[:12]
+        )
+        raise JourneyFailure(f"layout errors:\n{detail}")
 
     def dump_ui(self, name: str) -> Path:
         path = self.artifact_dir / f"{name}.xml"

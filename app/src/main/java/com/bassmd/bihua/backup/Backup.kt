@@ -1,6 +1,7 @@
 package com.bassmd.bihua.backup
 
 import com.bassmd.bihua.settings.AppSettings
+import com.bassmd.bihua.settings.SettingsJsonMigration
 import com.bassmd.bihua.settings.UserProfile
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -40,7 +41,10 @@ object BackupCodec {
     /** Throws [BackupException] with a message fit to show the learner. */
     fun decode(text: String): BackupBundle {
         val bundle = try {
-            json.decodeFromString(BackupBundle.serializer(), text)
+            json.decodeFromString(
+                BackupBundle.serializer(),
+                SettingsJsonMigration.migrateBackupText(text),
+            )
         } catch (e: Exception) {
             throw BackupException(NOT_A_BACKUP)
         }

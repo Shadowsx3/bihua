@@ -57,6 +57,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -150,6 +151,12 @@ private enum class Tab(
     SETTINGS("Settings", "More", Icons.Rounded.Settings),
 }
 
+/** The course list tagged with the script it belongs to, so a switch never shows the old one. */
+private data class LoadedCourse(
+    val mode: StudyMode,
+    val characters: List<CharacterEntry>,
+)
+
 /**
  * The app shell. A wide window gets a rail; a compact window gets a floating
  * bottom bar. Study is a full-screen route so the canvas is never squeezed by
@@ -159,8 +166,10 @@ private enum class Tab(
 fun BihuaApp(
     store: SettingsStore,
     onContentReady: () -> Unit = {},
+    showInkNotice: Boolean = true,
 ) {
-    val settings by store.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
+    val settingsValue by store.settings.collectAsStateWithLifecycle<AppSettings?>(initialValue = null)
+    val settings = settingsValue ?: AppSettings()
     val darkTheme = when (settings.themeMode) {
         com.bassmd.bihua.settings.ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
         com.bassmd.bihua.settings.ThemeMode.LIGHT -> false
@@ -174,6 +183,28 @@ fun BihuaApp(
     val activity = context as? Activity
     val repository = remember { SqliteContentRepository(context.applicationContext) }
     val scope = rememberCoroutineScope()
+    // Start the one-time content copy while onboarding or the first settings
+    // read is still on screen. The course query then finds an open database
+    // instead of making the learner watch "Loading characters…" on first run.
+    LaunchedEffect(repository) {
+        withContext(Dispatchers.IO) {
+            runCatching { repository.prewarm() }
+        }
+    }
+    // Keep the launcher honest after a review batch without a broadcast per
+    // grade. One debounced refresh is enough.
+    val widgetRefreshJob = remember {
+        java.util.concurrent.atomic.AtomicReference<kotlinx.coroutines.Job?>(null)
+    }
+    val refreshWidgetsSoon: () -> Unit = {
+        widgetRefreshJob.get()?.cancel()
+        widgetRefreshJob.set(
+            scope.launch {
+                kotlinx.coroutines.delay(1_200L)
+                com.bassmd.bihua.widget.WidgetUpdater.updateAll(context)
+            },
+        )
+    }
     // Select the script optimistically: the chips and every screen switch on
     // the tap, while the settings write and the course load happen behind it.
     var selectedMode by remember { mutableStateOf(settings.studyMode) }
@@ -206,28 +237,34 @@ fun BihuaApp(
     var previewMode by remember { mutableStateOf<StudyMode?>(null) }
     val preloadMode: StudyMode? = when {
         showOnboarding -> previewMode
-        settings.onboarded -> mode
+        // Do not start for the default script while the saved settings are
+        // still arriving or a script switch is being written.
+        bootChecked && settings.onboarded && settings.studyMode == mode -> mode
         else -> null
     }
     val speech = remember { Speech(context.applicationContext) }
     val handwriting = remember { InkRecognitionService() }
     val modelDownloading = com.bassmd.bihua.ai.ModelDownloads.active
-    var activeModeReady by remember { mutableStateOf<Boolean?>(null) }
-    val currentInkPreparing = com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode)
+    var activeModeReady by remember(mode) {
+        mutableStateOf(com.bassmd.bihua.ai.ModelDownloads.cachedReady(mode))
+    }
+    val inkState = com.bassmd.bihua.ai.ModelDownloads.stateFor(mode)
+    val currentInkPreparing = inkState.preparing
     LaunchedEffect(
         mode,
         modelDownloading,
         currentInkPreparing,
         com.bassmd.bihua.ai.ModelDownloads.completed,
     ) {
-        activeModeReady = runCatching { handwriting.isModelReady(mode) }.getOrDefault(false)
+        // The cache makes the common case instant; the 900 ms probe only runs
+        // when this script has not been checked yet.
+        activeModeReady = runCatching { handwriting.canReadNow(mode) }.getOrDefault(false)
     }
     val preparingInk = com.bassmd.bihua.ai.shouldWaitForInk(currentInkPreparing, activeModeReady)
     val inkPreparingAny = com.bassmd.bihua.ai.ModelDownloads.activeModes.isNotEmpty()
     var showInkFailure by remember { mutableStateOf(false) }
-    val currentInkFailure = com.bassmd.bihua.ai.ModelDownloads.failed &&
-        com.bassmd.bihua.ai.ModelDownloads.failedMode == mode
-    val inkOffline = com.bassmd.bihua.ai.ModelDownloads.offline
+    val currentInkFailure = inkState.failed
+    val inkOffline = inkState.offline
     LaunchedEffect(
         mode,
         currentInkPreparing,
@@ -247,9 +284,25 @@ fun BihuaApp(
             !com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode)
         ) {
             showInkFailure = true
-            kotlinx.coroutines.delay(4_500L)
+            kotlinx.coroutines.delay(8_000L)
             showInkFailure = false
         }
+    }
+    // Let a quick model finish before the quiet notice appears. The splash has
+    // its own ink, so this also keeps the first Home frame calm. A failure or
+    // offline state still shows at once.
+    var inkNoticeVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(inkPreparingAny, showInkFailure) {
+        if (showInkFailure) {
+            inkNoticeVisible = true
+            return@LaunchedEffect
+        }
+        if (!inkPreparingAny) {
+            inkNoticeVisible = false
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(1_500L)
+        inkNoticeVisible = true
     }
     LaunchedEffect(Unit) {
         if (com.bassmd.bihua.BuildConfig.DEBUG && com.bassmd.bihua.ai.QaFlags.downloadNoticeMs > 0L) {
@@ -268,6 +321,14 @@ fun BihuaApp(
         }
         inkLifecycleOwner.lifecycle.addObserver(observer)
         onDispose { inkLifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    // If the network comes back, retry the active reader without waiting for a
+    // resume or a manual tap. A previously downloaded model already works.
+    val online by com.bassmd.bihua.ai.NetworkStatus.online.collectAsStateWithLifecycle()
+    LaunchedEffect(online, mode, settings.onboarded) {
+        if (online && settings.onboarded && activeModeReady != true) {
+            withContext(Dispatchers.IO) { handwriting.prepare(mode) }
+        }
     }
     val noVoice = {
         Toast.makeText(
@@ -312,11 +373,16 @@ fun BihuaApp(
             if (!speech.speak(text, mode)) noVoice()
         }
     }
-    LaunchedEffect(preloadMode, settings.readAloud) {
+    LaunchedEffect(preloadMode) {
         val target = preloadMode ?: return@LaunchedEffect
         // Start at once: the Home button and the notice must agree from the
-        // first frame after a skip, restore, or language switch.
-        withContext(Dispatchers.IO) { handwriting.prepare(target, settings.wifiOnlyModels) }
+        // first frame after a skip, restore, or language switch. Keep this key
+        // free of read-aloud toggles so a voice change cannot cancel a model
+        // download that is already in flight.
+        withContext(Dispatchers.IO) { handwriting.prepare(target) }
+    }
+    LaunchedEffect(preloadMode, settings.readAloud) {
+        val target = preloadMode ?: return@LaunchedEffect
         if (settings.readAloud) speech.prepare(target)
     }
     LaunchedEffect(settings.readAloud) {
@@ -337,9 +403,10 @@ fun BihuaApp(
         }
     }
     var progressVersion by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        val current = store.settings.first()
-        showOnboarding = !current.onboarded
+    LaunchedEffect(settingsValue) {
+        val loaded = settingsValue ?: return@LaunchedEffect
+        if (bootChecked) return@LaunchedEffect
+        showOnboarding = !loaded.onboarded
         bootChecked = true
     }
     if (!bootChecked) {
@@ -369,48 +436,53 @@ fun BihuaApp(
                     onboardingRestoreMessage = null
                     scope.launch {
                         var fallback: java.io.File? = null
-                        val restored = runCatching {
-                            val bytes = context.contentResolver.openInputStream(uri)
-                                ?.use { com.bassmd.bihua.backup.BackupArchive.readAll(it) }
-                                ?: error("Could not read that file.")
-                            val archive = if (BackupArchive.isZip(bytes)) {
-                                BackupArchive.decode(bytes)
-                            } else {
-                                null
-                            }
-                            val bundle = if (archive != null) {
-                                archive.backupJson?.let { BackupCodec.decode(it) }
-                            } else {
-                                BackupCodec.decode(bytes.decodeToString())
-                            }
-                            val progressBytes = archive?.progressDb
-                            if (progressBytes != null) {
-                                val backup = java.io.File(
-                                    context.cacheDir,
-                                    "pre-onboarding-import-${System.currentTimeMillis()}.db",
-                                )
-                                fallback = backup
-                                progressStore.exportTo(backup)
-                                val incoming = java.io.File(context.cacheDir, "onboarding-progress.db")
-                                try {
-                                    incoming.writeBytes(progressBytes)
-                                    progressStore.importFrom(incoming)
-                                } finally {
-                                    incoming.delete()
+                        val restored = withContext(Dispatchers.IO) {
+                            runCatching {
+                                val bytes = context.contentResolver.openInputStream(uri)
+                                    ?.use { com.bassmd.bihua.backup.BackupArchive.readAll(it) }
+                                    ?: error("Could not read that file.")
+                                val archive = if (BackupArchive.isZip(bytes)) {
+                                    BackupArchive.decode(bytes)
+                                } else {
+                                    null
                                 }
+                                val bundle = if (archive != null) {
+                                    archive.backupJson?.let { BackupCodec.decode(it) }
+                                } else {
+                                    BackupCodec.decode(bytes.decodeToString())
+                                }
+                                val progressBytes = archive?.progressDb
+                                if (progressBytes != null) {
+                                    val backup = java.io.File(
+                                        context.cacheDir,
+                                        "pre-onboarding-import-${System.currentTimeMillis()}.db",
+                                    )
+                                    fallback = backup
+                                    progressStore.exportTo(backup)
+                                    val incoming =
+                                        java.io.File(context.cacheDir, "onboarding-progress.db")
+                                    try {
+                                        incoming.writeBytes(progressBytes)
+                                        progressStore.importFrom(incoming)
+                                    } finally {
+                                        incoming.delete()
+                                    }
+                                }
+                                if (bundle != null) store.restore(bundle)
+                                store.updateSettings { it.copy(onboarded = true) }
+                                LearnSessionStore(context).clearAll()
+                                // A restored learner should not wait for a language pick.
+                                bundle?.settings?.studyMode ?: StudyMode.SIMPLIFIED
                             }
-                            if (bundle != null) store.restore(bundle)
-                            store.updateSettings { it.copy(onboarded = true) }
-                            // A restored learner should not wait for a language pick.
-                            val restoredMode = bundle?.settings?.studyMode ?: StudyMode.SIMPLIFIED
-                            scope.launch { handwriting.prepare(restoredMode) }
-                            LearnSessionStore(context).clearAll()
-                            progressVersion++
                         }
                         if (restored.isSuccess) {
                             fallback?.delete()
                             showOnboarding = false
                             onboardingRestoreMessage = null
+                            progressVersion++
+                            restored.getOrNull()?.let { restoredMode ->
+                                scope.launch { handwriting.prepare(restoredMode) }
+                            }
                         } else {
                             val rolledBack = fallback
                                 ?.takeIf { it.isFile && it.length() > 0 }
@@ -456,21 +528,34 @@ fun BihuaApp(
         )
         return
     }
-    // One notice for the whole app. It floats above the quest and the special
-    // practice pages too; onboarding is already behind us here.
-    ModelDownloadNotice(
-        visible = inkPreparingAny || showInkFailure,
-        failed = showInkFailure && !inkPreparingAny,
-        offline = com.bassmd.bihua.ai.ModelDownloads.offline && !inkPreparingAny,
-    )
-
     val stylus = remember(context) { hasStylus(context) }
     val allowFinger = settings.allowFingerDrawing || !stylus
 
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    val saveableStateHolder = rememberSaveableStateHolder()
+    val settingsSectionState = rememberSaveable { mutableStateOf<String?>(null) }
+    val showReportState = rememberSaveable { mutableStateOf(false) }
+    val reportWordsState = rememberSaveable { mutableStateOf("") }
+    val reportKindState = rememberSaveable { mutableStateOf("PROBLEM") }
     var showTour by rememberSaveable { mutableStateOf(false) }
     var tourStep by rememberSaveable { mutableIntStateOf(0) }
     var requestedSettingsSection by remember { mutableStateOf<String?>(null) }
+    // One notice for the whole app. It floats above the quest and the special
+    // practice pages too; onboarding is already behind us here. A failure is
+    // tappable so the learner can retry without hunting through Settings.
+    ModelDownloadNotice(
+        visible = showInkNotice && (inkNoticeVisible || showInkFailure),
+        failed = showInkFailure && !inkPreparingAny,
+        offline = inkState.offline && !inkPreparingAny,
+        scriptName = androidx.compose.ui.res.stringResource(mode.labelRes),
+        onClick = if (showInkFailure && !inkPreparingAny) {
+            {
+                scope.launch { handwriting.prepare(mode) }
+            }
+        } else {
+            null
+        },
+    )
     val dismissTourInvite: () -> Unit = {
         scope.launch {
             store.updateSettings { it.copy(tourInviteDismissed = true) }
@@ -493,12 +578,24 @@ fun BihuaApp(
         }
     }
     val changeTab: (Tab) -> Unit = { next ->
-        if (next != tab) {
-            com.bassmd.bihua.audio.Sfx.play(com.bassmd.bihua.audio.Sfx.Effect.TICK)
-        }
         tab = next
     }
+    // A compact brush menu is shared by the word screens and writes back to the
+    // same per-tool presets as Settings.
+    val changeWordBrush: (com.bassmd.bihua.settings.DrawingTool) -> Unit = { tool ->
+        scope.launch {
+            store.updateSettings { current ->
+                val config = current.brushPresets[tool.name]
+                    ?: com.bassmd.bihua.settings.BrushConfig.preset(tool)
+                current.withToolBrush(tool, config)
+            }
+        }
+    }
     var inSession by remember { mutableStateOf(false) }
+    val homeVisible = tab == Tab.HOME && !inSession
+    val progressVisible = tab == Tab.PROGRESS && !inSession
+    val charactersVisible = tab == Tab.CHARACTERS
+    val reportVisible = homeVisible || progressVisible
     var sessionComplete by remember { mutableStateOf(false) }
     var showLeaveSession by remember { mutableStateOf(false) }
     var startingSession by remember { mutableStateOf(false) }
@@ -508,6 +605,9 @@ fun BihuaApp(
     var sessionMode by rememberSaveable { mutableStateOf(StudyMode.SIMPLIFIED) }
     var practiceCharacterId by rememberSaveable { mutableStateOf<String?>(null) }
     var characterId by rememberSaveable { mutableStateOf<String?>(null) }
+    var characterMnemonicOpen by rememberSaveable { mutableStateOf(false) }
+    val characterDetailState =
+        androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     LaunchedEffect(showTour, tourStep) {
         if (!showTour) return@LaunchedEffect
         when (TOUR_STEPS[tourStep].destination) {
@@ -521,6 +621,10 @@ fun BihuaApp(
                 tab = Tab.SETTINGS
                 requestedSettingsSection = "Help"
             }
+            TourDestination.SETTINGS_SYNC -> {
+                tab = Tab.SETTINGS
+                requestedSettingsSection = "Sync"
+            }
             TourDestination.SETTINGS_ABOUT -> {
                 tab = Tab.SETTINGS
                 requestedSettingsSection = "About"
@@ -529,7 +633,7 @@ fun BihuaApp(
     }
     var contentRetry by remember { mutableIntStateOf(0) }
     var contentError by remember { mutableStateOf<String?>(null) }
-    val characters by produceState<List<CharacterEntry>?>(
+    val loadedCourse by produceState<LoadedCourse?>(
         initialValue = null,
         mode,
         settings.includeHiragana,
@@ -538,7 +642,10 @@ fun BihuaApp(
         contentRetry,
     ) {
         contentError = null
-        value = try {
+        if (com.bassmd.bihua.BuildConfig.DEBUG && com.bassmd.bihua.ai.QaFlags.contentDelayMs > 0L) {
+            kotlinx.coroutines.delay(com.bassmd.bihua.ai.QaFlags.contentDelayMs)
+        }
+        val loaded = try {
             withContext(Dispatchers.IO) {
                 repository.characters(mode).filter { settings.includesInStudy(it.character) }
             }
@@ -548,14 +655,24 @@ fun BihuaApp(
             contentError = error.message
             null
         }
+        value = loaded?.let { LoadedCourse(mode, it) }
     }
-    var resumableSession by remember(mode, sessionStore, progressVersion) {
-        mutableStateOf(sessionStore.load(mode, settings.dayStartHour))
+    // While a new script loads, do not let the previous course's characters
+    // appear in Home, Characters, or due counts.
+    val characters = loadedCourse?.takeIf { it.mode == mode }?.characters
+    var resumableSession by remember(mode, sessionStore, progressVersion, inSession) {
+        mutableStateOf(
+            if (inSession) null else sessionStore.load(mode, settings.dayStartHour),
+        )
     }
     var activeResume by remember { mutableStateOf<LearnSessionState?>(null) }
     var sessionCharacters by remember { mutableStateOf<Map<String, CharacterEntry>>(emptyMap()) }
     var clockTick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(inSession, homeVisible, progressVisible) {
+        // Home and Progress compare due dates; a session can need interval
+        // labels. Other tabs do not need a minute-by-minute status rebuild.
+        if (!inSession && !homeVisible && !progressVisible) return@LaunchedEffect
+        clockTick++
         while (true) {
             kotlinx.coroutines.delay(60_000)
             clockTick++
@@ -573,7 +690,15 @@ fun BihuaApp(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val cards by produceState<Map<String, CardSnapshot>>(emptyMap(), progressVersion) {
+    val cards by produceState<Map<String, CardSnapshot>>(
+        emptyMap(),
+        progressVersion,
+        inSession,
+        settings.showGradeIntervals,
+    ) {
+        // Grade interval labels are the only in-session consumer. Skip the
+        // full-card read on every grade unless that option is on.
+        if (inSession && !settings.showGradeIntervals) return@produceState
         value = withContext(Dispatchers.IO) { progressStore.allCards() }
     }
     val now = remember(progressVersion, clockTick) { System.currentTimeMillis() }
@@ -604,13 +729,24 @@ fun BihuaApp(
             }
         }
     }
-    val visibleCharacters = remember(characters, cards, settings, now) {
-        characters?.map { entry ->
-            val card = ProgressStore.cardFor(entry, settings, cards)
-            if (card == null) entry else entry.copy(
-                status = card.status(now),
-                knownProgress = card.knownDots,
-            )
+    val visibleCharacters = remember(characters, cards, settings, now, inSession) {
+        // Recomputing status copies for every character on every grade is pure
+        // waste while the learner is inside a session; the session queue is
+        // already built. Refresh on the way out.
+        if (inSession) {
+            null
+        } else {
+            characters?.map { entry ->
+                val card = ProgressStore.cardFor(entry, settings, cards)
+                if (card == null) {
+                    entry
+                } else {
+                    entry.copy(
+                        status = card.status(now),
+                        knownProgress = card.knownDots,
+                    )
+                }
+            }
         }
     }
     var sessionItems by remember { mutableStateOf<List<LearnItem>>(emptyList()) }
@@ -623,14 +759,42 @@ fun BihuaApp(
     var progressRangeName by rememberSaveable {
         mutableStateOf(com.bassmd.bihua.progress.ProgressRange.MONTH.name)
     }
+    var customStartIso by rememberSaveable { mutableStateOf<String?>(null) }
+    var customEndIso by rememberSaveable { mutableStateOf<String?>(null) }
     val progressRange = com.bassmd.bihua.progress.ProgressRange.valueOf(progressRangeName)
-    val playerStats by produceState(PlayerStats.forXp(0), progressVersion) {
+    val customStart = customStartIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val customEnd = customEndIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val progressWindowState = remember(
+        progressRange,
+        customStart,
+        customEnd,
+        today,
+        settings.dayStartHour,
+    ) {
+        com.bassmd.bihua.progress.progressWindow(
+            preset = progressRange,
+            customStart = customStart,
+            customEnd = customEnd,
+            today = today,
+            dayStartHour = settings.dayStartHour,
+        )
+    }
+    val playerStats by produceState(PlayerStats.forXp(0), progressVersion,
+        reportVisible,
+    ) {
+        if (!reportVisible) return@produceState
         value = withContext(Dispatchers.IO) { progressStore.playerStats() }
     }
-    val studyDays by produceState(0, progressVersion, today, settings.dayStartHour) {
+    val studyDays by produceState(0, progressVersion, today, settings.dayStartHour,
+        reportVisible,
+    ) {
+        if (!reportVisible) return@produceState
         value = withContext(Dispatchers.IO) { progressStore.studyDays(settings.dayStartHour) }
     }
-    val newLearnedToday by produceState(0, progressVersion, mode, today, settings.dayStartHour) {
+    val newLearnedToday by produceState(0, progressVersion, mode, today, settings.dayStartHour,
+        homeVisible,
+    ) {
+        if (!homeVisible) return@produceState
         value = withContext(Dispatchers.IO) {
             progressStore.newLearnedToday(
                 mode = mode,
@@ -644,9 +808,34 @@ fun BihuaApp(
         progressVersion,
         today,
         settings.dayStartHour,
+        progressWindowState,
         mode,
+        homeVisible,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.activity(35, settings.dayStartHour, mode.name) }
+        if (!homeVisible) return@produceState
+        // The calendar follows the selected window. All time uses the real
+        // history (so a young account is not padded with empty months) and is
+        // capped at a year so it never composes thousands of day cells.
+        val calendarWindow = if (progressWindowState.isCustom) {
+            progressWindowState.days.coerceAtMost(366)
+        } else {
+            when (progressWindowState.preset) {
+                com.bassmd.bihua.progress.ProgressRange.WEEK -> 7
+                com.bassmd.bihua.progress.ProgressRange.MONTH -> 35
+                com.bassmd.bihua.progress.ProgressRange.QUARTER -> 91
+                com.bassmd.bihua.progress.ProgressRange.YEAR -> 365
+                else -> 0
+            }
+        }
+        value = withContext(Dispatchers.IO) {
+            val days = progressStore.activity(
+                calendarWindow,
+                settings.dayStartHour,
+                mode.name,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
+            if (calendarWindow == 0) days.takeLast(366) else days
+        }
     }
     val streakActivity by produceState<List<DayActivity>>(
         emptyList(),
@@ -654,7 +843,9 @@ fun BihuaApp(
         today,
         settings.dayStartHour,
         mode,
+        progressVisible,
     ) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) { progressStore.activity(366, settings.dayStartHour, mode.name) }
     }
     val streakDays = remember(streakActivity) {
@@ -666,7 +857,10 @@ fun BihuaApp(
         visibleCharacters,
         settings,
         today,
+        cards,
+        reportVisible,
     ) {
+        if (!reportVisible) return@produceState
         value = withContext(Dispatchers.IO) {
             progressStore.dueForecast(
                 visibleCharacters.orEmpty(),
@@ -674,6 +868,7 @@ fun BihuaApp(
                 14,
                 today = today,
                 dayStartHour = settings.dayStartHour,
+                cards = cards,
             )
         }
     }
@@ -682,7 +877,9 @@ fun BihuaApp(
         mode,
         settings.includeMatureContent,
         today,
+        homeVisible,
     ) {
+        if (!homeVisible) return@produceState
         value = withContext(Dispatchers.IO) {
             repository.featuredWord(
                 mode,
@@ -696,11 +893,18 @@ fun BihuaApp(
         progressVersion,
         today,
         settings.dayStartHour,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) {
-            progressStore.activity(progressRange.days, settings.dayStartHour, mode.name)
+            progressStore.activity(
+                progressWindowState.days,
+                settings.dayStartHour,
+                mode.name,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
         }
     }
     val progressHistory by produceState<List<DayActivity>>(
@@ -708,24 +912,91 @@ fun BihuaApp(
         progressVersion,
         today,
         settings.dayStartHour,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) {
-            progressStore.learnedHistory(progressRange.days, settings.dayStartHour, mode.name)
+            progressStore.learnedHistory(
+                progressWindowState.days,
+                settings.dayStartHour,
+                mode.name,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
         }
     }
-    val recentMistakes by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters) {
+    val recentMistakes by produceState<List<CharacterEntry>>(
+        emptyList(),
+        progressVersion,
+        visibleCharacters,
+        progressWindowState,
+        settings.dayStartHour,
+        progressVisible,
+    ) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) {
-            progressStore.recentMistakes(visibleCharacters.orEmpty(), 12)
+            progressStore.recentMistakes(
+                characters = visibleCharacters.orEmpty(),
+                limit = 12,
+                days = progressWindowState.days,
+                dayStartHour = settings.dayStartHour,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
         }
     }
-    val recentlyLearned by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters) {
+    val recentlyLearned by produceState<List<CharacterEntry>>(
+        emptyList(),
+        progressVersion,
+        visibleCharacters,
+        progressWindowState,
+        settings.dayStartHour,
+        progressVisible,
+    ) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) {
-            progressStore.recentlyLearned(visibleCharacters.orEmpty(), 12)
+            progressStore.recentlyLearned(
+                characters = visibleCharacters.orEmpty(),
+                limit = 12,
+                days = progressWindowState.days,
+                dayStartHour = settings.dayStartHour,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
         }
     }
-    val confusions by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters) {
+    val reviewedInRange by produceState<List<CharacterEntry>>(
+        emptyList(),
+        progressVersion,
+        visibleCharacters,
+        progressWindowState,
+        settings.dayStartHour,
+        mode,
+        progressVisible,
+    ) {
+        if (!progressVisible) return@produceState
+        value = withContext(Dispatchers.IO) {
+            progressStore.reviewedCharacters(
+                characters = visibleCharacters.orEmpty(),
+                days = progressWindowState.days,
+                dayStartHour = settings.dayStartHour,
+                mode = mode.name,
+                endDaysAgo = progressWindowState.endDaysAgo,
+            )
+        }
+    }
+    val palacePegs by produceState<List<com.bassmd.bihua.progress.PalacePeg>>(
+        emptyList(),
+        progressVersion,
+        mode,
+        settings.memoryHooksEnabled,
+    ) {
+        if (!settings.memoryHooksEnabled) return@produceState
+        value = withContext(Dispatchers.IO) { progressStore.palacePegs(mode.name) }
+    }
+    val confusions by produceState<List<CharacterEntry>>(emptyList(), progressVersion, visibleCharacters,
+        reportVisible,
+    ) {
+        if (!reportVisible) return@produceState
         value = withContext(Dispatchers.IO) {
             progressStore.topConfusions(visibleCharacters.orEmpty(), 12)
         }
@@ -907,13 +1178,15 @@ fun BihuaApp(
         }
     }
     var wordPractice by remember { mutableStateOf<com.bassmd.bihua.content.WordContext?>(null) }
+    var wordPracticeFromHome by remember { mutableStateOf(false) }
     var wordQueue by remember { mutableStateOf<List<com.bassmd.bihua.content.WordContext>?>(null) }
     var wordQueueIndex by remember { mutableIntStateOf(0) }
-    val startWordPractice: (com.bassmd.bihua.content.WordContext) -> Unit = { word ->
+    val openWordPractice: (com.bassmd.bihua.content.WordContext, Boolean) -> Unit = { word, fromHome ->
         val chars = word.word.mapNotNull { char ->
             sessionPool.firstOrNull { it.character == char.toString() }
         }
         if (chars.isNotEmpty() && chars.size == word.word.length) {
+            wordPracticeFromHome = fromHome
             wordPractice = word
         } else {
             android.widget.Toast.makeText(
@@ -922,6 +1195,41 @@ fun BihuaApp(
                 android.widget.Toast.LENGTH_SHORT,
             ).show()
         }
+    }
+    val startWordPractice: (com.bassmd.bihua.content.WordContext) -> Unit = { word ->
+        openWordPractice(word, false)
+    }
+    val startWordPracticeFromHome: (com.bassmd.bihua.content.WordContext) -> Unit = { word ->
+        openWordPractice(word, true)
+    }
+    val closeWordPractice: () -> Unit = {
+        val word = wordPractice
+        wordPractice = null
+        if (wordPracticeFromHome) {
+            tab = Tab.HOME
+        } else {
+            word?.word?.firstOrNull()?.let { glyph ->
+                characters?.firstOrNull { it.character == glyph.toString() }?.let {
+                    characterId = it.id
+                }
+            }
+            tab = Tab.CHARACTERS
+        }
+        wordPracticeFromHome = false
+    }
+
+    LaunchedEffect(com.bassmd.bihua.ai.QaFlags.wordProbe, characters) {
+        val probe = com.bassmd.bihua.ai.QaFlags.wordProbe ?: return@LaunchedEffect
+        val all = characters ?: return@LaunchedEffect
+        val resolved = probe.mapNotNull { char ->
+            all.firstOrNull { it.character == char.toString() }
+        }
+        if (resolved.size != probe.length || resolved.isEmpty()) return@LaunchedEffect
+        val word = withContext(Dispatchers.IO) {
+            runCatching { repository.word(mode, probe) }.getOrNull()
+        } ?: return@LaunchedEffect
+        com.bassmd.bihua.ai.QaFlags.wordProbe = null
+        openWordPractice(word, true)
     }
     val startWordList: (List<String>) -> Unit = { words ->
         scope.launch {
@@ -985,70 +1293,145 @@ fun BihuaApp(
         }
     }
     var showStudyTools by remember { mutableStateOf(false) }
+    var showWorksheet by remember { mutableStateOf(false) }
+    var showMnemonicStudio by remember { mutableStateOf(false) }
     var showStudyLists by remember { mutableStateOf(false) }
     var showQuest by remember { mutableStateOf(false) }
     val gradeMix by produceState(
         com.bassmd.bihua.progress.GradeMix(0, 0, 0, 0),
         progressVersion,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.gradeMix(progressRange.days, mode.name) }
-    }
-    val reviewTotals by produceState(0 to 0f, progressVersion, visibleCharacters, settings) {
+        if (!progressVisible) return@produceState
         value = withContext(Dispatchers.IO) {
-            progressStore.reviewTotals(visibleCharacters.orEmpty(), settings)
+            progressStore.gradeMix(
+                days = progressWindowState.days,
+                mode = mode.name,
+                fromMs = progressWindowState.startMs,
+                toMs = progressWindowState.endMs,
+            )
+        }
+    }
+    val reviewTotals by produceState(0 to 0f, progressVersion, visibleCharacters, settings, cards,
+        progressVisible,
+    ) {
+        if (!progressVisible) return@produceState
+        value = withContext(Dispatchers.IO) {
+            progressStore.reviewTotals(visibleCharacters.orEmpty(), settings, cards)
         }
     }
     val vacation = com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)
-    val dueNow by produceState(0, progressVersion, clockTick, visibleCharacters, settings, today) {
+    val dueNow by produceState(
+        0,
+        progressVersion,
+        clockTick,
+        visibleCharacters,
+        settings,
+        today,
+        cards,
+        homeVisible,
+    ) {
+        if (!homeVisible) return@produceState
         value = if (com.bassmd.bihua.settings.Vacation.isActive(settings.vacationStartedAtMs)) {
             0
         } else {
-            withContext(Dispatchers.IO) {
-                val skipped = settings.skippedIdsToday(today)
-                progressStore.dueCount(
-                    visibleCharacters.orEmpty().filterNot { it.id in skipped },
-                    settings,
-                )
+            val skipped = settings.skippedIdsToday(today)
+            val charactersNow = visibleCharacters.orEmpty()
+            withContext(Dispatchers.Default) {
+                charactersNow.count { character ->
+                    character.id !in skipped &&
+                        ProgressStore.cardFor(character, settings, cards)?.dueAtMs
+                            ?.let { it <= now } == true
+                }
             }
         }
     }
-    val practiceTimeMs by produceState(0L, progressVersion, progressRange, mode) {
-        value = withContext(Dispatchers.IO) { progressStore.practiceTimeMs(progressRange.days, mode.name) }
+    val practiceTimeMs by produceState(0L, progressVersion, progressWindowState, mode,
+        progressVisible,
+    ) {
+        if (!progressVisible) return@produceState
+        value = withContext(Dispatchers.IO) {
+            progressStore.practiceTimeMs(
+                days = progressWindowState.days,
+                mode = mode.name,
+                fromMs = progressWindowState.startMs,
+                toMs = progressWindowState.endMs,
+            )
+        }
     }
     val writingPace by produceState<com.bassmd.bihua.progress.WritingPace?>(
         null,
         progressVersion,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.writingPace(progressRange.days, mode = mode.name) }
+        if (!progressVisible) return@produceState
+        value = withContext(Dispatchers.IO) {
+            progressStore.writingPace(
+                days = progressWindowState.days,
+                mode = mode.name,
+                fromMs = progressWindowState.startMs,
+                toMs = progressWindowState.endMs,
+            )
+        }
     }
     val previousWritingPace by produceState<com.bassmd.bihua.progress.WritingPace?>(
         null,
         progressVersion,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
-        value = withContext(Dispatchers.IO) {
-            progressStore.writingPace(
-                progressRange.days,
-                offsetDays = progressRange.days,
-                mode = mode.name,
-            )
+        if (!progressVisible) return@produceState
+        val start = progressWindowState.start
+        value = if (progressWindowState.allTime || start == null) {
+            null
+        } else {
+            withContext(Dispatchers.IO) {
+                val zone = java.time.ZoneId.systemDefault()
+                val previousEnd = start.minusDays(1)
+                val previousStart = previousEnd.minusDays(
+                    (progressWindowState.days - 1).coerceAtLeast(0).toLong(),
+                )
+                progressStore.writingPace(
+                    mode = mode.name,
+                    fromMs = com.bassmd.bihua.settings.DayBoundary.startMs(
+                        previousStart,
+                        settings.dayStartHour,
+                        zone,
+                    ),
+                    toMs = com.bassmd.bihua.settings.DayBoundary.startMs(
+                        previousEnd.plusDays(1),
+                        settings.dayStartHour,
+                        zone,
+                    ),
+                )
+            }
         }
     }
     val taskStats by produceState(
         emptyMap<String, com.bassmd.bihua.progress.TaskStat>(),
         progressVersion,
-        progressRange,
+        progressWindowState,
         mode,
+        progressVisible,
     ) {
-        value = withContext(Dispatchers.IO) { progressStore.taskStats(progressRange.days, mode.name) }
+        if (!progressVisible) return@produceState
+        value = withContext(Dispatchers.IO) {
+            progressStore.taskStats(
+                days = progressWindowState.days,
+                mode = mode.name,
+                fromMs = progressWindowState.startMs,
+                toMs = progressWindowState.endMs,
+            )
+        }
     }
     val memoryBuckets: List<com.bassmd.bihua.progress.MemoryBucket> =
-        remember(visibleCharacters, cards, settings, now) {
+        remember(visibleCharacters, cards, settings, now, progressVisible) {
+        if (!progressVisible) return@remember emptyList()
         MemoryLevel.entries.map { level ->
         val entries = visibleCharacters.orEmpty().filter { entry ->
             val card = ProgressStore.cardFor(entry, settings, cards)
@@ -1070,7 +1453,13 @@ fun BihuaApp(
         )
     }
     }
-    val memoryLevels: Map<String, MemoryLevel> = remember(visibleCharacters, cards, settings) {
+    val memoryLevels: Map<String, MemoryLevel> = remember(
+        visibleCharacters,
+        cards,
+        settings,
+        charactersVisible,
+    ) {
+        if (!charactersVisible) return@remember emptyMap()
         visibleCharacters.orEmpty().mapNotNull { entry ->
         val card = ProgressStore.cardFor(entry, settings, cards)
         val level = ProgressStore.levelFor(card)
@@ -1127,14 +1516,7 @@ fun BihuaApp(
                 wordQueueIndex = 0
             }
             wordPractice != null -> {
-                wordPractice?.word
-                    ?.firstOrNull()
-                    ?.let { glyph ->
-                        characters?.firstOrNull { it.character == glyph.toString() }?.let {
-                            characterId = it.id
-                        }
-                    }
-                wordPractice = null
+                closeWordPractice()
             }
             paperEntries.isNotEmpty() -> {
                 paperEntries.firstOrNull()?.let { characterId = it.id }
@@ -1240,9 +1622,12 @@ fun BihuaApp(
                             onAddToList = { addWordToList(current.word) },
                             onSpeak = speak,
                             speechEnabled = settings.readAloud,
+                            recognitionService = handwriting,
+                            onBrushChange = changeWordBrush,
                             onCompleted = {
                                 scope.launch {
                                     runCatching { progressStore.recordWordPractice(mode, current) }
+                                    refreshWidgetsSoon()
                                 }
                             },
                             onNext = {
@@ -1253,13 +1638,7 @@ fun BihuaApp(
                                     wordQueueIndex = 0
                                 }
                             },
-                            onBackToCharacter = { entry ->
-                                wordQueue = null
-                                wordQueueIndex = 0
-                                characterId = entry.id
-                                tab = Tab.CHARACTERS
-                            },
-                            onClose = {
+                            onBack = {
                                 wordQueue = null
                                 wordQueueIndex = 0
                             },
@@ -1292,17 +1671,15 @@ fun BihuaApp(
                         speechEnabled = settings.readAloud,
                         addedToList = StudyLists.containsWord(settings, word.word),
                         onAddToList = { addWordToList(word.word) },
+                        recognitionService = handwriting,
+                        onBrushChange = changeWordBrush,
                         onCompleted = {
                             scope.launch {
                                 runCatching { progressStore.recordWordPractice(mode, word) }
+                                refreshWidgetsSoon()
                             }
                         },
-                        onBackToCharacter = { entry ->
-                            wordPractice = null
-                            characterId = entry.id
-                            tab = Tab.CHARACTERS
-                        },
-                        onClose = { wordPractice = null },
+                        onBack = closeWordPractice,
                     )
                 }
             }
@@ -1316,7 +1693,7 @@ fun BihuaApp(
                 com.bassmd.bihua.practice.DrillScreen(
                     entries = studyEntries,
                     mode = mode,
-                    wifiOnlyModels = settings.wifiOnlyModels,
+                    recognitionService = handwriting,
                     brush = settings.brush,
                     widthScale = settings.inkWidth.scale,
                     gridStyle = settings.gridStyle,
@@ -1413,14 +1790,17 @@ fun BihuaApp(
                     reduceMotion = settings.reduceMotion,
                     pronunciationPractice = settings.pronunciationPractice,
                     meaningPractice = settings.meaningPractice,
-                    ankiWriting = settings.ankiWriting,
-                    ankiPronunciation = settings.ankiPronunciation,
-                    ankiMeaning = settings.ankiMeaning,
+                    writingPractice = settings.writingPractice,
+                    reviewReasonsEnabled = settings.reviewReasonsEnabled,
+                    memoryHooksEnabled = settings.memoryHooksEnabled,
+                    revealWriting = settings.revealWriting,
+                    revealPronunciation = settings.revealPronunciation,
+                    revealMeaning = settings.revealMeaning,
                     meaningSynonyms = settings.meaningSynonyms,
                     onAddMeaningSynonym = addMeaningSynonym,
                     onRemoveMeaningSynonym = removeMeaningSynonym,
                     onlyAgainAndGood = settings.onlyAgainAndGood,
-                    wifiOnlyModels = settings.wifiOnlyModels,
+                    recognitionService = handwriting,
                     pinyinNumbers = settings.pinyinNumbers,
                     guideMode = settings.guideMode,
                     guideInRecall = settings.guideInRecall,
@@ -1442,6 +1822,20 @@ fun BihuaApp(
                             sessionStore.save(state)
                             resumableSession = state
                         }
+                    },
+                    onAddReason = { item, reason ->
+                        scope.launch {
+                            progressStore.setLatestReason(item.id, reason)
+                            progressVersion++
+                        }
+                    },
+                    onLoadMnemonic = { character ->
+                        progressStore.mnemonic(mode.name, character)
+                    },
+                    onLoadMeta = { character -> repository?.meta(character) },
+                    palacePegs = palacePegs,
+                    onSaveMnemonic = { entry ->
+                        progressStore.saveMnemonic(entry)
                     },
                     undoSignal = undoSignal,
                     onClose = { complete ->
@@ -1490,6 +1884,7 @@ fun BihuaApp(
                                 if (outcome.leveledUp) sessionLevelUp = true
                                 lastReviewUndo = outcome.undo
                                 progressVersion++
+                                refreshWidgetsSoon()
                                 sessionSnackbar.currentSnackbarData?.dismiss()
                                 val action = sessionSnackbar.showSnackbar(
                                     message = "Grade saved",
@@ -1511,6 +1906,7 @@ fun BihuaApp(
                                             lastReviewUndo = null
                                             undoSignal++
                                             progressVersion++
+                                            refreshWidgetsSoon()
                                         }
                                     }
                                 }
@@ -1540,6 +1936,7 @@ fun BihuaApp(
             // same breakpoint. A tablet must not get a phone bottom bar under a
             // two-column desktop layout.
             val wide = maxWidth >= 820.dp && !book
+            saveableStateHolder.SaveableStateProvider(tab.name) {
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(
@@ -1562,6 +1959,8 @@ fun BihuaApp(
                                 settings = settings,
                                 profile = profile,
                                 mode = mode,
+                                recognitionService = handwriting,
+                                profileName = profile.displayName,
                                 preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
@@ -1579,8 +1978,13 @@ fun BihuaApp(
                                     characterId = entry.id
                                     tab = Tab.CHARACTERS
                                 },
+                                onCharacterSelected = { characterId = it },
+                                characterMnemonicOpen = characterMnemonicOpen,
+                                onCharacterMnemonicOpenChange = { characterMnemonicOpen = it },
+                                detailStateHolder = characterDetailState,
                                 onStore = store,
                                 onOpenStudyLists = { showStudyLists = true },
+                                onOpenMnemonicPalace = { showMnemonicStudio = true },
                                 progressStore = progressStore,
                                 today = today,
                                 onProgressChanged = { progressVersion++ },
@@ -1595,8 +1999,18 @@ fun BihuaApp(
                                 dueForecast = dueForecast,
                                 learnedHistory = progressHistory,
                                 rangeActivity = progressActivity,
-                                range = progressRange,
-                                onRangeChange = { progressRangeName = it.name },
+                                window = progressWindowState,
+                                onRangeChange = {
+                                    progressRangeName = it.name
+                                    customStartIso = null
+                                    customEndIso = null
+                                },
+                                onCustomRange = { start, end ->
+                                    progressRangeName =
+                                        com.bassmd.bihua.progress.ProgressRange.CUSTOM.name
+                                    customStartIso = start.toString()
+                                    customEndIso = end.toString()
+                                },
                                 streakDays = streakDays,
                                 gradeMix = gradeMix,
                                 averageInterval = reviewTotals.second,
@@ -1606,13 +2020,14 @@ fun BihuaApp(
                                 taskStats = taskStats,
                                 recentMistakes = recentMistakes,
                                 recentlyLearned = recentlyLearned,
+                                reviewedInRange = reviewedInRange,
                                 confusions = confusions,
                                 onOpenSettings = { tab = Tab.SETTINGS },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
                                 },
                                 onCompareFamily = compareFamily,
-                                onPracticeWord = startWordPractice,
+                                onPracticeWord = startWordPracticeFromHome,
                                 featuredWord = featuredWord,
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
@@ -1660,6 +2075,10 @@ fun BihuaApp(
                                 onDismissTour = dismissTourInvite,
                                 openSection = requestedSettingsSection,
                                 onSectionOpened = { requestedSettingsSection = null },
+                                sectionState = settingsSectionState,
+                                showReportState = showReportState,
+                                reportWordsState = reportWordsState,
+                                reportKindState = reportKindState,
                             )
                         }
                     }
@@ -1689,6 +2108,8 @@ fun BihuaApp(
                                 settings = settings,
                                 profile = profile,
                                 mode = mode,
+                                recognitionService = handwriting,
+                                profileName = profile.displayName,
                                 preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
@@ -1706,8 +2127,13 @@ fun BihuaApp(
                                     characterId = entry.id
                                     tab = Tab.CHARACTERS
                                 },
+                                onCharacterSelected = { characterId = it },
+                                characterMnemonicOpen = characterMnemonicOpen,
+                                onCharacterMnemonicOpenChange = { characterMnemonicOpen = it },
+                                detailStateHolder = characterDetailState,
                                 onStore = store,
                                 onOpenStudyLists = { showStudyLists = true },
+                                onOpenMnemonicPalace = { showMnemonicStudio = true },
                                 progressStore = progressStore,
                                 today = today,
                                 onProgressChanged = { progressVersion++ },
@@ -1722,8 +2148,18 @@ fun BihuaApp(
                                 dueForecast = dueForecast,
                                 learnedHistory = progressHistory,
                                 rangeActivity = progressActivity,
-                                range = progressRange,
-                                onRangeChange = { progressRangeName = it.name },
+                                window = progressWindowState,
+                                onRangeChange = {
+                                    progressRangeName = it.name
+                                    customStartIso = null
+                                    customEndIso = null
+                                },
+                                onCustomRange = { start, end ->
+                                    progressRangeName =
+                                        com.bassmd.bihua.progress.ProgressRange.CUSTOM.name
+                                    customStartIso = start.toString()
+                                    customEndIso = end.toString()
+                                },
                                 streakDays = streakDays,
                                 gradeMix = gradeMix,
                                 averageInterval = reviewTotals.second,
@@ -1733,13 +2169,14 @@ fun BihuaApp(
                                 taskStats = taskStats,
                                 recentMistakes = recentMistakes,
                                 recentlyLearned = recentlyLearned,
+                                reviewedInRange = reviewedInRange,
                                 confusions = confusions,
                                 onOpenSettings = { tab = Tab.SETTINGS },
                                 onCompare = { entry ->
                                     compareEntries = listOf(entry)
                                 },
                                 onCompareFamily = compareFamily,
-                                onPracticeWord = startWordPractice,
+                                onPracticeWord = startWordPracticeFromHome,
                                 featuredWord = featuredWord,
                                 onPaperCharacter = { entry -> paperEntries = listOf(entry) },
                                 priorityIds = settings.priorityIds,
@@ -1787,6 +2224,10 @@ fun BihuaApp(
                                 onDismissTour = dismissTourInvite,
                                 openSection = requestedSettingsSection,
                                 onSectionOpened = { requestedSettingsSection = null },
+                                sectionState = settingsSectionState,
+                                showReportState = showReportState,
+                                reportWordsState = reportWordsState,
+                                reportKindState = reportKindState,
                             )
                         }
                     }
@@ -1819,6 +2260,7 @@ fun BihuaApp(
                     )
 
                 }
+            }
             }
         }
         }
@@ -1882,8 +2324,55 @@ fun BihuaApp(
                 showStudyTools = false
                 showQuest = true
             },
+            onOpenMnemonicStudio = {
+                showStudyTools = false
+                showMnemonicStudio = true
+            },
+            onOpenWorksheet = {
+                showStudyTools = false
+                showWorksheet = true
+            },
             onDismiss = { showStudyTools = false },
         )
+    }
+    if (showWorksheet) {
+        BihuaBackground(decorated = false) {
+            BihuaLocals(repository, progressStore, settings) {
+                com.bassmd.bihua.settings.WorksheetScreen(
+                    mode = mode,
+                    studyList = settings.studyList,
+                    pinyinNumbers = false,
+                    onClose = { showWorksheet = false },
+                )
+            }
+        }
+    }
+    if (showMnemonicStudio) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showMnemonicStudio = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false,
+            ),
+        ) {
+            androidx.compose.foundation.layout.Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+            ) {
+                com.bassmd.bihua.learn.MnemonicStudioScreen(
+                    mode = mode,
+                    progress = progressStore,
+                    memoryHooksEnabled = settings.memoryHooksEnabled,
+                    onMemoryHooksChange = { enabled ->
+                        scope.launch {
+                            store.updateSettings { it.copy(memoryHooksEnabled = enabled) }
+                        }
+                    },
+                    onClose = { showMnemonicStudio = false },
+                )
+            }
+        }
     }
     if (showStudyLists) {
         StudyListsScreen(
@@ -1945,6 +2434,9 @@ private fun AppContent(
     settings: AppSettings,
     profile: UserProfile,
     mode: StudyMode,
+    recognitionService: com.bassmd.bihua.ai.InkRecognitionService? = null,
+    profileName: String = "",
+    reviewedInRange: List<CharacterEntry> = emptyList(),
     preparingInk: Boolean = false,
     characters: List<CharacterEntry>?,
     characterId: String?,
@@ -1956,9 +2448,15 @@ private fun AppContent(
     onBrowse: () -> Unit,
     onPractice: (CharacterEntry?) -> Unit,
     onOpenCharacter: (CharacterEntry) -> Unit,
+    onCharacterSelected: (String?) -> Unit = {},
+    characterMnemonicOpen: Boolean = false,
+    onCharacterMnemonicOpenChange: (Boolean) -> Unit = {},
+    detailStateHolder: androidx.compose.runtime.saveable.SaveableStateHolder =
+        androidx.compose.runtime.saveable.rememberSaveableStateHolder(),
     onStore: SettingsStore,
     onOpenStudyLists: () -> Unit = {},
     onOpenQuest: () -> Unit = {},
+    onOpenMnemonicPalace: () -> Unit = {},
     progressStore: ProgressStore? = null,
     onProgressChanged: () -> Unit = {},
     playerStats: PlayerStats = PlayerStats.forXp(0),
@@ -1973,10 +2471,17 @@ private fun AppContent(
     dueForecast: List<DueDay> = emptyList(),
     learnedHistory: List<DayActivity> = emptyList(),
     rangeActivity: List<DayActivity> = activity,
-    range: com.bassmd.bihua.progress.ProgressRange =
-        com.bassmd.bihua.progress.ProgressRange.MONTH,
+    window: com.bassmd.bihua.progress.ProgressWindow =
+        com.bassmd.bihua.progress.progressWindow(
+            com.bassmd.bihua.progress.ProgressRange.MONTH,
+            null,
+            null,
+            today,
+            com.bassmd.bihua.settings.DayBoundary.DEFAULT_HOUR,
+        ),
     streakDays: Int = 0,
     onRangeChange: (com.bassmd.bihua.progress.ProgressRange) -> Unit = {},
+    onCustomRange: (LocalDate, LocalDate) -> Unit = { _, _ -> },
     practiceTimeMs: Long = 0,
     writingPace: com.bassmd.bihua.progress.WritingPace? = null,
     previousWritingPace: com.bassmd.bihua.progress.WritingPace? = null,
@@ -2023,6 +2528,10 @@ private fun AppContent(
     onDismissTour: () -> Unit = {},
     openSection: String? = null,
     onSectionOpened: () -> Unit = {},
+    sectionState: androidx.compose.runtime.MutableState<String?>? = null,
+    showReportState: androidx.compose.runtime.MutableState<Boolean>? = null,
+    reportWordsState: androidx.compose.runtime.MutableState<String>? = null,
+    reportKindState: androidx.compose.runtime.MutableState<String>? = null,
 ) {
     if (characters == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -2076,6 +2585,7 @@ private fun AppContent(
             skippedIds = skippedIds,
             onOpenStudyTools = onOpenStudyTools,
             onOpenQuest = onOpenQuest,
+            onOpenMnemonicPalace = onOpenMnemonicPalace,
             onPaper = onPaper,
             playerStats = playerStats,
             studyDays = studyDays,
@@ -2104,6 +2614,7 @@ private fun AppContent(
         Tab.CHARACTERS -> CharactersScreen(
             mode = mode,
             characters = characters,
+            recognitionService = recognitionService,
             onPractice = { onPractice(it) },
             initialId = characterId,
             shareIdenticalGlyphs = settings.shareIdenticalGlyphs,
@@ -2131,6 +2642,10 @@ private fun AppContent(
             onToggleStudyList = onToggleStudyList,
             memoryLevels = memoryLevels,
             onSetMemoryLevel = onSetMemoryLevel,
+            onCharacterSelected = onCharacterSelected,
+            mnemonicOpen = characterMnemonicOpen,
+            onMnemonicOpenChange = onCharacterMnemonicOpenChange,
+            detailStateHolder = detailStateHolder,
         )
 
         Tab.PROGRESS -> DashboardScreen(
@@ -2138,8 +2653,9 @@ private fun AppContent(
             characters = characters,
             activity = activity,
             rangeActivity = rangeActivity,
-            range = range,
+            window = window,
             onRangeChange = onRangeChange,
+            onCustomRange = onCustomRange,
             streakDays = streakDays,
             today = today,
             forecast = dueForecast,
@@ -2154,6 +2670,8 @@ private fun AppContent(
             writingPace = writingPace,
             previousWritingPace = previousWritingPace,
             taskStats = taskStats,
+            profileName = profileName,
+            reviewedInRange = reviewedInRange,
             onOpenCharacter = onOpenCharacter,
             onReview = onStudy,
         )
@@ -2170,18 +2688,23 @@ private fun AppContent(
             allowFinger = allowFinger,
             pinyinNumbers = settings.pinyinNumbers,
             guideMode = settings.guideMode,
-            wifiOnlyModels = settings.wifiOnlyModels,
+            recognitionService = recognitionService,
             initialCharacter = characters.firstOrNull { it.id == practiceCharacterId },
         )
 
         Tab.SETTINGS -> SettingsScreen(
             store = onStore,
             progress = progressStore,
+            recognitionService = recognitionService,
             onProgressChanged = { onProgressChanged() },
             onOpenStudyLists = onOpenStudyLists,
             onStartTour = onStartTour,
             openSection = openSection,
             onSectionOpened = onSectionOpened,
+            sectionState = sectionState,
+            showReportState = showReportState,
+            reportWordsState = reportWordsState,
+            reportKindState = reportKindState,
         )
     }
 }

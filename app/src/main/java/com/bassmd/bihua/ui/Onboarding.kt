@@ -151,12 +151,10 @@ fun OnboardingScreen(
 
     BackHandler(enabled = step > 0) { step-- }
 
-    // Start the reading-model download as soon as the script step opens. The
-    // remaining pages give it time to arrive, and it is repeated when the
-    // learner picks a different script.
-    LaunchedEffect(step) {
-        if (step >= 1) onModePreview(mode)
-    }
+    // The reading-model download starts when the learner picks a script on the
+    // script page, not when the page opens. That starts it as early as the
+    // choice exists and avoids downloading a default script the learner never
+    // chooses. The remaining pages give the pick time to arrive.
 
     Box(
         Modifier

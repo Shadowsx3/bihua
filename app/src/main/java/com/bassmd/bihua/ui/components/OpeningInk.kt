@@ -4,11 +4,12 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -31,16 +33,19 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import com.bassmd.bihua.R
 import com.bassmd.bihua.ui.theme.Butter
-import com.bassmd.bihua.ui.theme.InkDark
-import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
-import com.bassmd.bihua.ui.theme.Paper
 import com.bassmd.bihua.ui.theme.Peach
 import kotlinx.coroutines.delay
 
@@ -58,6 +63,23 @@ fun OpeningInk(
     val progress = remember { Animatable(0f) }
     val interaction = remember { MutableInteractionSource() }
     val latestReady by rememberUpdatedState(ready)
+    val view = LocalView.current
+    val activity = LocalContext.current as? android.app.Activity
+    // The splash is always light, including in the dark theme, so the system
+    // bars need dark icons for these few hundred milliseconds. The normal
+    // theme appearance comes back when the welcome is removed.
+    DisposableEffect(view) {
+        val window = activity?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        val previousStatus = controller?.isAppearanceLightStatusBars
+        val previousNav = controller?.isAppearanceLightNavigationBars
+        controller?.isAppearanceLightStatusBars = true
+        controller?.isAppearanceLightNavigationBars = true
+        onDispose {
+            if (previousStatus != null) controller.isAppearanceLightStatusBars = previousStatus
+            if (previousNav != null) controller.isAppearanceLightNavigationBars = previousNav
+        }
+    }
 
     LaunchedEffect(Unit) {
         val started = System.currentTimeMillis()
@@ -86,12 +108,15 @@ fun OpeningInk(
     }
 
     val appear = ((progress.value - 0.42f) / 0.34f).coerceIn(0f, 1f)
-    val ink = InkDark
+    val ink = Color(0xFF1F2B23)
+    val soft = Color(0xFF4C5F51)
     val wet = Butter
     val bloom = Peach
     val brushTip = Color(0xFF1C3B2B)
 
-    val paper = Paper
+    // The system splash is always this warm paper, even in dark theme, so the
+    // hand-off never changes colour. The app fades to its own palette after.
+    val paper = colorResource(R.color.splash_paper)
     val peachWash = Peach
     val mintWash = Mint
 
@@ -122,86 +147,89 @@ fun OpeningInk(
                 )
             )
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 32.dp),
-        ) {
-            // Start close to the size and centre of the system splash icon,
-            // then settle into the app lockup. This is the visual hand-off.
-            val settle = (progress.value / 0.55f).coerceIn(0f, 1f)
-            Box(
-                modifier = Modifier.graphicsLayer {
-                    alpha = appear
-                    val s = 1.26f - 0.26f * settle
-                    scaleX = s
-                    scaleY = s
-                    translationY = (1f - settle) * 44.dp.toPx()
-                },
-            ) {
-                InkMascot(size = 118.dp, withBrush = true, sparkle = true)
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Bihua",
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
-                color = InkDark,
-                modifier = Modifier.graphicsLayer { alpha = appear },
-            )
-            Text(
-                "筆畫",
-                fontSize = 17.sp,
-                color = InkSoft,
-                modifier = Modifier.graphicsLayer { alpha = appear },
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Write it. Keep it.",
-                fontSize = 13.sp,
-                color = InkSoft,
-                modifier = Modifier.graphicsLayer { alpha = appear * 0.9f },
-            )
-            Spacer(Modifier.height(18.dp))
-            Canvas(
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Use the exact drawable the system splash used, at the same
+            // 288 dp box and dead centre. The launcher mark therefore does not
+            // move, scale, or change art when our splash takes over.
+            val compact = maxHeight < 560.dp
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground_art),
+                contentDescription = null,
                 modifier = Modifier
-                    .size(width = 190.dp, height = 34.dp)
-                    .graphicsLayer { alpha = 0.95f },
+                    .align(Alignment.Center)
+                    .size(288.dp),
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = (maxHeight / 2 + 90.dp).coerceAtLeast(0.dp))
+                    .padding(horizontal = 32.dp),
             ) {
-                val w = size.width
-                val h = size.height
-                val path = Path().apply {
-                    moveTo(w * 0.06f, h * 0.60f)
-                    cubicTo(w * 0.30f, h * 0.40f, w * 0.64f, h * 0.44f, w * 0.94f, h * 0.52f)
-                }
-                val measure = PathMeasure().apply { setPath(path, false) }
-                val shown = Path()
-                val total = measure.length
-                val fraction = progress.value.coerceIn(0f, 1f)
-                if (fraction > 0f && total > 0f) {
-                    measure.getSegment(0f, total * fraction, shown, true)
-                }
-                // A warm under-stroke makes the mark feel like wet ink.
-                drawPath(
-                    path = shown,
-                    color = wet.copy(alpha = 0.36f),
-                    style = Stroke(width = h * 0.20f, cap = StrokeCap.Round),
-                )
-                drawPath(
-                    path = shown,
-                    color = ink.copy(alpha = 0.88f),
-                    style = Stroke(width = h * 0.10f, cap = StrokeCap.Round),
-                )
-                if (fraction > 0f && total > 0f) {
-                    val tip = measure.getPosition(total * fraction)
-                    drawCircle(brushTip, radius = h * 0.036f, center = tip)
-                    if (fraction > 0.7f) {
-                        val spark = (fraction - 0.7f) / 0.3f
-                        drawCircle(
-                            bloom.copy(alpha = 0.6f * spark),
-                            radius = h * 0.05f * spark,
-                            center = tip + Offset(h * 0.16f, -h * 0.18f),
+                if (!compact) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "Bihua",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ink,
+                        modifier = Modifier.graphicsLayer { alpha = appear },
+                    )
+                    Text(
+                        "筆畫",
+                        fontSize = 17.sp,
+                        color = soft,
+                        modifier = Modifier.graphicsLayer { alpha = appear },
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Write it. Keep it.",
+                        fontSize = 13.sp,
+                        color = soft,
+                        modifier = Modifier.graphicsLayer { alpha = appear * 0.9f },
+                    )
+                    Spacer(Modifier.height(18.dp))
+                    Canvas(
+                        modifier = Modifier
+                            .size(width = 190.dp, height = 34.dp)
+                            .graphicsLayer { alpha = 0.95f },
+                    ) {
+                        val w = size.width
+                        val h = size.height
+                        val path = Path().apply {
+                            moveTo(w * 0.06f, h * 0.60f)
+                            cubicTo(w * 0.30f, h * 0.40f, w * 0.64f, h * 0.44f, w * 0.94f, h * 0.52f)
+                        }
+                        val measure = PathMeasure().apply { setPath(path, false) }
+                        val shown = Path()
+                        val total = measure.length
+                        val fraction = progress.value.coerceIn(0f, 1f)
+                        if (fraction > 0f && total > 0f) {
+                            measure.getSegment(0f, total * fraction, shown, true)
+                        }
+                        // A warm under-stroke makes the mark feel like wet ink.
+                        drawPath(
+                            path = shown,
+                            color = wet.copy(alpha = 0.36f),
+                            style = Stroke(width = h * 0.20f, cap = StrokeCap.Round),
                         )
+                        drawPath(
+                            path = shown,
+                            color = ink.copy(alpha = 0.88f),
+                            style = Stroke(width = h * 0.10f, cap = StrokeCap.Round),
+                        )
+                        if (fraction > 0f && total > 0f) {
+                            val tip = measure.getPosition(total * fraction)
+                            drawCircle(brushTip, radius = h * 0.036f, center = tip)
+                            if (fraction > 0.7f) {
+                                val spark = (fraction - 0.7f) / 0.3f
+                                drawCircle(
+                                    bloom.copy(alpha = 0.6f * spark),
+                                    radius = h * 0.05f * spark,
+                                    center = tip + Offset(h * 0.16f, -h * 0.18f),
+                                )
+                            }
+                        }
                     }
                 }
             }

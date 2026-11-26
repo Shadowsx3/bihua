@@ -17,10 +17,18 @@ class WidgetRefreshTest {
     }
 
     @Test
+    fun theHourlyStripRefreshesAtTheNextHour() {
+        assertEquals(
+            LocalDateTime.of(2026, 11, 24, 23, 0),
+            WidgetRefresh.nextBoundary(LocalDateTime.of(2026, 11, 24, 22, 30), dayStartHour = 4),
+        )
+    }
+
+    @Test
     fun nextBoundaryCanBeTheStudyDayStart() {
         assertEquals(
             LocalDateTime.of(2026, 11, 25, 4, 0),
-            WidgetRefresh.nextBoundary(LocalDateTime.of(2026, 11, 24, 22, 30), dayStartHour = 4),
+            WidgetRefresh.nextBoundary(LocalDateTime.of(2026, 11, 25, 3, 30), dayStartHour = 4),
         )
     }
 

@@ -1,3 +1,63 @@
+## 1.1.2 (in progress)
+
+- Report a problem, a mistake, or an idea from Settings. Crash reports stay on
+  your phone until you send one, and the composer shows exactly what will be
+  sent. In landscape the sheet is centred on the screen and keeps its words and
+  actions above the keyboard. Rate Bihua from Settings, About.
+- The Today widget now shows the day's review and lesson amounts and the next
+  hours. A dedicated Week ahead widget shows the next seven days; Word of the
+  Day remains its own card.
+- Progress gained All time, a GitHub-style year heatmap, and honest bucketing
+  for long histories. The range selector now moves Recent mistakes and
+  Recently learned too, and tapping or dragging the cumulative line reads any
+  day's total.
+- The splash now hands off from the system icon without moving it, stays light
+  in the dark theme, and no longer shows the ink-reader notice over the welcome.
+- Phones in landscape use the tablet two-page Home and the book-style Practice
+  layout, so the canvas and the study action stay visible. The spell quest,
+  its draw screen, the gate, and the grimoire use their wide spreads too.
+- A landscape review keeps Show answer and the grade bar visible, the fold outer
+  display gets the two-pane review, and rotating no longer loses the review
+  card, report draft, Settings section, or Practice selection.
+- The Progress range can be a preset or an exact start and end day. A single
+  Monday, last week, and last month all work; the charts, recent mistakes, and
+  recently learned follow the chosen window.
+- Drawing can be switched off in Settings when pronunciation or meaning is on.
+  Lessons skip the trace step, reviews use the enabled checks, and the app keeps
+  at least one practice mode on.
+- After Again or Hard, a small optional "Add a reason" note can record stroke
+  order, direction, a missing stroke, spacing, the reading, the tone, or the
+  meaning. The grade is saved first; the note never changes the schedule.
+- A Mnemonic palace gives Chinese sounds a reusable actor, place, and action,
+  and gives Japanese kanji and Korean Hanja reusable part pictures. Kana and
+  Hangul do not show the palace. The method is off by default and opens from a
+  small book button in a lesson or review, or from the character page.
+- Level progress sits under Momentum, with HSK bands, Jōyō grades, or Hanja
+  levels, and a plain "started, not mastered" note.
+- Sync can merge two devices instead of replacing one: reviews join, each card
+  keeps its newer state, notes keep their newer text, and settings remain an
+  explicit choice.
+- A fresh device with no network stays usable: setup can be skipped, Home opens,
+  and a review starts. The handwriting reader downloads in the background and
+  never gates the first action; Check still returns local ink feedback.
+- The spell-quest guide is now a chapter-coloured underlay at 65%, and the
+  grimoire gift and result strokes no longer carry a dark halo, so the learner's
+  own ink stays readable while tracing over them.
+- Word practice opens in one-page mode for multi-character words. Write the
+  whole word on a wide blank page, optionally show the guide, reveal one next
+  stroke, or play the word's stroke order. Check reads the whole ink on the
+  device; without the handwriting model, word practice stays in the safe
+  one-character-at-a-time mode.
+- Progress exports a clean A4 PDF for the selected range. It includes the
+  summary numbers, cumulative characters, course coverage, level rings, review
+  quality, review types, the recent period table, the characters touched, and a
+  study log. Empty and first-session reports get their own guided layout.
+- Study tools now includes Character PDF, so the A4/Letter worksheet builder is
+  one tap from Home instead of only Settings.
+- Character review history and the words list collapse independently, so a long
+  detail page stays readable. The optional grade note is now a small header
+  button after a grade, not a full-width row above the card.
+
 # Changelog
 
 ## 1.1.1 (in progress)
@@ -39,12 +99,12 @@
   character detail. Wordings are trimmed, deduplicated, and capped.
 - Meaning data is sanitized before it is taught: blank, placeholder, and
   structural glosses such as "variant of" or "surname" are skipped.
-- Optional Anki-style reviews for writing, pronunciation, or meaning. The cue
+- Optional Reveal reviews for writing, pronunciation, or meaning. The cue
   and the character appear first, then Show answer and grade. No canvas, typing,
   or choices; scheduling and XP stay the same. Off by default.
 - System back from Paper check or Compare returns to the character detail
   instead of dropping to the grid.
-- Anki new cards go Meet → Reveal and skip Trace; the step tabs match.
+- Reveal new cards go Meet → Reveal and skip Trace; the step tabs match.
 - The pronunciation answer card shows the reading instead of leaking a raw
   result object.
 - Large-text layouts stay readable: the Home Study tools card, Compare header,

@@ -5,21 +5,14 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg_morning"
     android:orientation="vertical"
-    android:padding="8dp">
-
-    <TextView
-        android:id="@+id/widget_accent"
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:background="#F3C85A"
-        android:importantForAccessibility="no" />
+    android:padding="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingTop="4dp">
+        android:paddingTop="3dp">
 
         <ImageView
             android:id="@+id/widget_icon"
@@ -43,12 +36,12 @@
 
         <ImageView
             android:id="@+id/widget_pet"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:importantForAccessibility="no"
             android:scaleType="fitCenter"
-            android:scaleX="1.10"
-            android:scaleY="1.10"
+            android:scaleX="1.0"
+            android:scaleY="1.0"
             android:src="@drawable/widget_pet_hat" />
     </LinearLayout>
 
@@ -62,8 +55,9 @@
 
         <LinearLayout
             android:id="@+id/widget_reviews_block"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -75,7 +69,7 @@
                 android:includeFontPadding="false"
                 android:text="5"
                 android:textColor="#1F2B23"
-                android:textSize="22dp" />
+                android:textSize="20dp" />
 
             <TextView
                 android:id="@+id/widget_reviews_label"
@@ -84,15 +78,15 @@
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:text="reviews"
-                android:textColor="#4C5F51"
+                android:textColor="#A83E56"
                 android:textSize="9dp" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_lessons_block"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -104,7 +98,7 @@
                 android:includeFontPadding="false"
                 android:text="2"
                 android:textColor="#1F2B23"
-                android:textSize="22dp" />
+                android:textSize="20dp" />
 
             <TextView
                 android:id="@+id/widget_lessons_label"
@@ -113,7 +107,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:text="new lessons"
-                android:textColor="#4C5F51"
+                android:textColor="#2E7D5B"
                 android:textSize="9dp" />
         </LinearLayout>
     </LinearLayout>
@@ -134,8 +128,9 @@
     <TextView
         android:id="@+id/widget_detail"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="12dp"
         android:ellipsize="end"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:text="@string/widget_today_detail"
         android:textColor="#4C5F51"
@@ -144,8 +139,8 @@
     <TextView
         android:id="@+id/widget_action"
         android:layout_width="match_parent"
-        android:layout_height="28dp"
-        android:layout_marginTop="4dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="2dp"
         android:background="@drawable/widget_button"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"

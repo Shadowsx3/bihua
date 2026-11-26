@@ -1721,10 +1721,13 @@ def build(out_path: Path) -> None:
           PRIMARY KEY(word_id, character_id)
         );
         CREATE INDEX character_mode_level ON character(mode, level, list_index);
+        CREATE INDEX character_mode_list ON character(mode, list_index);
         CREATE INDEX character_glyph ON character(glyph_group_id);
         CREATE INDEX character_char ON character(character);
+        CREATE INDEX char_variant_variant ON char_variant(variant);
         CREATE INDEX word_character_character ON word_character(character_id);
         CREATE INDEX word_context_mode_level ON word_context(mode, level);
+        CREATE INDEX word_context_mode_word ON word_context(mode, word);
         """
     )
 

@@ -46,6 +46,50 @@ data class GradeMix(
         if (total == 0) 0f else (again + hard * 2f + good * 3f + easy * 4f) / total
 }
 
+/**
+ * One upcoming hour of the current study day. [offset] is hours from now, so
+ * the list stays ordered across midnight and the study-day boundary. [hour] is
+ * the wall-clock hour to show ("15h"), and [count] is how many cards return in
+ * that hour.
+ */
+data class HourLoad(
+    val hour: Int,
+    val count: Int,
+    val offset: Int,
+)
+
+/** One day of the next week's review forecast. [offset] 0 is today. */
+data class DayLoad(
+    val dayOfWeek: java.time.DayOfWeek,
+    val count: Int,
+    val offset: Int,
+)
+
+/**
+ * Today as the learner lives it, not as a single window.
+ *
+ * [reviewsDone] counts every review already graded today, including a card
+ * answered again after a lapse, so a second session still adds to the day.
+ * [dueNow] and [dueLater] split what is still owed today: [dueLater] is what
+ * the scheduler will hand back before the study day ends. Because the total is
+ * done + now + later, retries and short intervals never make the day's plan
+ * shrink or jump. [hours] spreads the remaining load over the next hours and
+ * [week] over the next seven days, using the same scheduler as Home.
+ */
+data class TodayLoad(
+    val reviewsDone: Int = 0,
+    val dueNow: Int = 0,
+    val dueLater: Int = 0,
+    val nextDueInDays: Int? = null,
+    val nextDueCount: Int = 0,
+    val hours: List<HourLoad> = emptyList(),
+    val week: List<DayLoad> = emptyList(),
+) {
+    val reviewsLeft: Int get() = dueNow + dueLater
+    val reviewsTotal: Int get() = reviewsDone + reviewsLeft
+    val weekTotal: Int get() = week.sumOf { it.count }
+}
+
 /** One row of the memory card: how many characters sit at a level and how well they are recalled. */
 data class MemoryBucket(
     val level: MemoryLevel,
@@ -121,6 +165,34 @@ data class ReviewEntry(
     val elapsedMs: Long,
     val task: String = "WRITE",
     val strokes: Int = 0,
+    val reason: String = "",
+)
+
+/** A personal memory hook for one character in one script. */
+data class MnemonicEntry(
+    val mode: String,
+    val character: String,
+    val part1: String = "",
+    val part2: String = "",
+    val part3: String = "",
+    val person: String = "",
+    val place: String = "",
+    val action: String = "",
+    val story: String = "",
+    val strength: Int = 3,
+    val updatedAtMs: Long = 0,
+) {
+    fun hasContent(): Boolean = listOf(part1, part2, part3, person, place, action, story)
+        .any { it.isNotBlank() }
+}
+
+/** One reusable person, place, or action in the learner's palace. */
+data class PalacePeg(
+    val mode: String,
+    val kind: String,
+    val label: String,
+    val note: String = "",
+    val updatedAtMs: Long = 0,
 )
 
 /** How one review type is going over a window. */
@@ -194,6 +266,15 @@ data class ReviewUndo(
 class ProgressStore(private val context: Context) :
     SQLiteOpenHelper(context, "bihua_progress.db", null, SCHEMA_VERSION) {
 
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        // A grade writes the card, the review log, XP, and the undo row in one
+        // transaction. WAL keeps the many report reads from blocking that write
+        // and makes the day-to-day database cheaper to update. Export still uses
+        // VACUUM INTO, so a backup is always one consistent file.
+        runCatching { db.enableWriteAheadLogging() }
+    }
+
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -235,6 +316,7 @@ class ProgressStore(private val context: Context) :
               elapsed_ms INTEGER NOT NULL DEFAULT 0,
               task TEXT NOT NULL DEFAULT 'WRITE',
               strokes INTEGER NOT NULL DEFAULT 0,
+              reason TEXT NOT NULL DEFAULT '',
               sbd_log_s REAL,
               sbd_grade REAL,
               sbd_n REAL
@@ -249,7 +331,10 @@ class ProgressStore(private val context: Context) :
         createNoteTable(db)
         createConfusionTable(db)
         createWordPracticeTable(db)
+        createMnemonicTable(db)
+        createPalacePegTable(db)
         createSpellQuestTables(db)
+        createPerformanceIndexes(db)
     }
 
     /** Closes the database and copies the current file for a sync package. */
@@ -274,6 +359,295 @@ class ProgressStore(private val context: Context) :
         }
     }
 
+    /**
+     * Merge a sync package into this device instead of replacing it.
+     *
+     * Cards keep the newer review state. Review history is unioned, so both
+     * devices contribute their own reviews without duplicates. Notes keep the
+     * newer text; confusion counts and word practice add up. Settings are not
+     * merged here; the caller chooses those separately.
+     */
+    suspend fun mergeFrom(source: java.io.File) = withContext(Dispatchers.IO) {
+        validateProgressDatabase(source)
+        val local = writableDatabase
+        local.execSQL("ATTACH DATABASE ? AS incoming", arrayOf(source.path))
+        try {
+            val version = local.rawQuery("PRAGMA incoming.user_version", null)
+                .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+            require(version == SCHEMA_VERSION) {
+                "Update Bihua on both devices before merging progress."
+            }
+            local.beginTransaction()
+            try {
+                local.execSQL(
+                    """
+                    INSERT OR REPLACE INTO card
+                    SELECT i.* FROM incoming.card i
+                    WHERE NOT EXISTS (SELECT 1 FROM card c WHERE c.id=i.id)
+                       OR EXISTS (
+                         SELECT 1 FROM card c
+                         WHERE c.id=i.id AND (
+                           i.last_review_at > c.last_review_at OR
+                           (i.last_review_at = c.last_review_at AND (
+                             i.reps > c.reps OR
+                             (i.reps = c.reps AND (
+                               i.last_grade > c.last_grade OR
+                               (i.last_grade = c.last_grade AND i.s_long > c.s_long)
+                             ))
+                           ))
+                         )
+                       )
+                    """.trimIndent(),
+                )
+                local.execSQL(
+                    """
+                    INSERT INTO review_log(
+                      card_id, character_id, reviewed_at, grade, interval_days,
+                      s_long, s_short, difficulty, reverted, elapsed_ms, task,
+                      strokes, reason, sbd_log_s, sbd_grade, sbd_n
+                    )
+                    SELECT
+                      i.card_id, i.character_id, i.reviewed_at, i.grade, i.interval_days,
+                      i.s_long, i.s_short, i.difficulty, i.reverted, i.elapsed_ms, i.task,
+                      i.strokes, i.reason, i.sbd_log_s, i.sbd_grade, i.sbd_n
+                    FROM incoming.review_log i
+                    WHERE NOT EXISTS (
+                      SELECT 1 FROM review_log l
+                      WHERE l.card_id=i.card_id
+                        AND l.reviewed_at=i.reviewed_at
+                        AND l.grade=i.grade
+                        AND l.task=i.task
+                        AND l.reason=i.reason
+                    )
+                    """.trimIndent(),
+                )
+                mergeNotes(local)
+                mergeMnemonics(local)
+                mergePalacePegs(local)
+                mergeConfusions(local)
+                mergeWordPractice(local)
+                mergeSpellQuest(local)
+                mergeXp(local)
+                local.setTransactionSuccessful()
+            } finally {
+                local.endTransaction()
+            }
+        } finally {
+            local.execSQL("DETACH DATABASE incoming")
+        }
+    }
+
+    private fun mergeMnemonics(local: SQLiteDatabase) {
+        local.rawQuery(
+            "SELECT mode, character, part1, part2, part3, person, place, action, " +
+                "story, strength, updated_at FROM incoming.mnemonic",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val mode = cursor.getString(0)
+                val character = cursor.getString(1)
+                val updated = cursor.getLong(10)
+                val incomingSignature = (2..9).joinToString("\u0000") { cursor.getString(it) }
+                val localRow = local.rawQuery(
+                    "SELECT part1,part2,part3,person,place,action,story,strength,updated_at " +
+                        "FROM mnemonic WHERE mode=? AND character=?",
+                    arrayOf(mode, character),
+                ).use { existing ->
+                    if (existing.moveToFirst()) {
+                        listOf(
+                            existing.getString(0), existing.getString(1), existing.getString(2),
+                            existing.getString(3), existing.getString(4), existing.getString(5),
+                            existing.getString(6), existing.getInt(7).toString(),
+                        ).joinToString("\u0000") to existing.getLong(8)
+                    } else {
+                        "" to -1L
+                    }
+                }
+                if (updated < localRow.second ||
+                    (updated == localRow.second && incomingSignature <= localRow.first)
+                ) continue
+                local.execSQL(
+                    "INSERT OR REPLACE INTO mnemonic(mode,character,part1,part2,part3," +
+                        "person,place,action,story,strength,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                    arrayOf(
+                        mode, character,
+                        cursor.getString(2), cursor.getString(3), cursor.getString(4),
+                        cursor.getString(5), cursor.getString(6), cursor.getString(7),
+                        cursor.getString(8), cursor.getInt(9), updated,
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun mergePalacePegs(local: SQLiteDatabase) {
+        local.rawQuery(
+            "SELECT mode, kind, label, note, updated_at FROM incoming.palace_peg",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val mode = cursor.getString(0)
+                val kind = cursor.getString(1)
+                val label = cursor.getString(2)
+                val updated = cursor.getLong(4)
+                val localRow = local.rawQuery(
+                    "SELECT note, updated_at FROM palace_peg WHERE mode=? AND kind=? AND label=?",
+                    arrayOf(mode, kind, label),
+                ).use { existing ->
+                    if (existing.moveToFirst()) existing.getString(0) to existing.getLong(1)
+                    else "" to -1L
+                }
+                if (updated < localRow.second ||
+                    (updated == localRow.second && cursor.getString(3) <= localRow.first)
+                ) continue
+                local.execSQL(
+                    "INSERT OR REPLACE INTO palace_peg(mode,kind,label,note,updated_at) " +
+                        "VALUES(?,?,?,?,?)",
+                    arrayOf(mode, kind, label, cursor.getString(3), updated),
+                )
+            }
+        }
+    }
+
+    private fun mergeNotes(local: SQLiteDatabase) {
+        local.rawQuery("SELECT character_id, text, updated_at FROM incoming.note", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getString(0)
+                val text = cursor.getString(1)
+                val updated = cursor.getLong(2)
+                val localRow = local.rawQuery(
+                    "SELECT text, updated_at FROM note WHERE character_id=?",
+                    arrayOf(id),
+                ).use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) to cursor.getLong(1)
+                    else "" to -1L
+                }
+                if (updated > localRow.second || (updated == localRow.second && text > localRow.first)) {
+                    local.execSQL(
+                        "INSERT OR REPLACE INTO note(character_id,text,updated_at) VALUES(?,?,?)",
+                        arrayOf(id, text, updated),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun mergeConfusions(local: SQLiteDatabase) {
+        local.rawQuery(
+            "SELECT seen_id, wrote_id, count, last_at FROM incoming.confusion",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val seen = cursor.getString(0)
+                val wrote = cursor.getString(1)
+                val count = cursor.getInt(2)
+                val last = cursor.getLong(3)
+                val localRow = local.rawQuery(
+                    "SELECT count, last_at FROM confusion WHERE seen_id=? AND wrote_id=?",
+                    arrayOf(seen, wrote),
+                ).use { existing ->
+                    if (existing.moveToFirst()) existing.getInt(0) to existing.getLong(1)
+                    else 0 to 0L
+                }
+                local.execSQL(
+                    "INSERT OR REPLACE INTO confusion(seen_id,wrote_id,count,last_at) VALUES(?,?,?,?)",
+                    arrayOf(seen, wrote, maxOf(localRow.first, count), maxOf(localRow.second, last)),
+                )
+            }
+        }
+    }
+
+    private fun mergeWordPractice(local: SQLiteDatabase) {
+        local.rawQuery(
+            "SELECT mode, word, reading, meaning, practiced_at, completions, mature " +
+                "FROM incoming.word_practice",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val mode = cursor.getString(0)
+                val word = cursor.getString(1)
+                val reading = cursor.getString(2)
+                val meaning = cursor.getString(3)
+                val practiced = cursor.getLong(4)
+                val completions = cursor.getInt(5)
+                val mature = cursor.getInt(6)
+                val localRow = local.rawQuery(
+                    "SELECT practiced_at, completions, mature FROM word_practice WHERE mode=? AND word=?",
+                    arrayOf(mode, word),
+                ).use { existing ->
+                    if (existing.moveToFirst()) {
+                        Triple(existing.getLong(0), existing.getInt(1), existing.getInt(2))
+                    } else {
+                        Triple(0L, 0, 0)
+                    }
+                }
+                local.execSQL(
+                    "INSERT OR REPLACE INTO word_practice" +
+                        "(mode,word,reading,meaning,practiced_at,completions,mature) VALUES(?,?,?,?,?,?,?)",
+                    arrayOf(
+                        mode, word, reading, meaning,
+                        maxOf(localRow.first, practiced),
+                        maxOf(localRow.second, completions),
+                        maxOf(localRow.third, mature),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun mergeSpellQuest(local: SQLiteDatabase) {
+        local.rawQuery(
+            "SELECT mode, character, met_at FROM incoming.spell_quest_met",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val mode = cursor.getString(0)
+                val character = cursor.getString(1)
+                val metAt = cursor.getLong(2)
+                local.execSQL(
+                    "INSERT INTO spell_quest_met(mode,character,met_at) VALUES(?,?,?) " +
+                        "ON CONFLICT(mode,character) DO UPDATE SET met_at=MIN(met_at,excluded.met_at)",
+                    arrayOf(mode, character, metAt),
+                )
+            }
+        }
+        local.rawQuery(
+            "SELECT mode, chapter, updated_at FROM incoming.spell_quest_road",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val mode = cursor.getString(0)
+                val chapter = cursor.getInt(1)
+                val updated = cursor.getLong(2)
+                local.execSQL(
+                    "INSERT INTO spell_quest_road(mode,chapter,updated_at) VALUES(?,?,?) " +
+                        "ON CONFLICT(mode) DO UPDATE SET " +
+                        "chapter=MAX(chapter,excluded.chapter), " +
+                        "updated_at=MAX(updated_at,excluded.updated_at)",
+                    arrayOf(mode, chapter, updated),
+                )
+            }
+        }
+    }
+
+    private fun mergeXp(local: SQLiteDatabase) {
+        local.rawQuery("SELECT card_id, day, xp FROM incoming.xp_log", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                val cardId = cursor.getString(0)
+                val day = cursor.getString(1)
+                val xp = cursor.getInt(2)
+                local.execSQL(
+                    "INSERT INTO xp_log(card_id,day,xp) VALUES(?,?,?) " +
+                        "ON CONFLICT(card_id,day) DO UPDATE SET xp=MAX(xp,excluded.xp)",
+                    arrayOf(cardId, day, xp),
+                )
+            }
+        }
+        val total = local.rawQuery("SELECT COALESCE(SUM(xp),0) FROM xp_log", null)
+            .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        local.execSQL("UPDATE player SET xp=? WHERE id=1", arrayOf(total))
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) createXpTables(db)
         if (oldVersion < 3) createNoteTable(db)
@@ -291,6 +665,11 @@ class ProgressStore(private val context: Context) :
             addColumn(db, "word_practice", "mature", "INTEGER NOT NULL DEFAULT 0")
         }
         if (oldVersion < 13) createSpellQuestTables(db)
+        if (oldVersion < 14) addColumn(db, "review_log", "reason", "TEXT NOT NULL DEFAULT ''")
+        if (oldVersion < 15) createMnemonicTable(db)
+        if (oldVersion < 16) addColumn(db, "mnemonic", "strength", "INTEGER NOT NULL DEFAULT 3")
+        if (oldVersion < 17) createPalacePegTable(db)
+        if (oldVersion < 18) createPerformanceIndexes(db)
         if (oldVersion < 11) {
             addColumn(db, "card", "sbd_log_s", "REAL")
             addColumn(db, "card", "sbd_grade", "REAL")
@@ -315,6 +694,71 @@ class ProgressStore(private val context: Context) :
             found
         }
         if (!exists) db.execSQL("ALTER TABLE $table ADD COLUMN $column $declaration")
+    }
+
+    /**
+     * Indexes for the reports and the review log. They are created for new
+     * databases and added by the version 18 migration for existing ones.
+     */
+    private fun createPerformanceIndexes(db: SQLiteDatabase) {
+        // A hand-edited or very old file can be missing the quest tables; make
+        // the index creation self-sufficient.
+        createSpellQuestTables(db)
+        db.execSQL("CREATE INDEX IF NOT EXISTS card_mode_due ON card(mode, due_at)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS card_introduced ON card(introduced_at)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS card_mode_introduced ON card(mode, introduced_at)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS log_char_time ON review_log(character_id, reviewed_at)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS log_training ON review_log(card_id, reviewed_at) " +
+                "WHERE reverted=0",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS log_time_live ON review_log(reviewed_at) " +
+                "WHERE reverted=0",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS spell_met_mode_time ON spell_quest_met(mode, met_at)",
+        )
+    }
+
+    /** Reusable palace pegs, kept next to the pages that use them. */
+    private fun createPalacePegTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS palace_peg(
+              mode TEXT NOT NULL,
+              kind TEXT NOT NULL,
+              label TEXT NOT NULL,
+              note TEXT NOT NULL DEFAULT '',
+              updated_at INTEGER NOT NULL,
+              PRIMARY KEY(mode, kind, label)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS palace_peg_mode ON palace_peg(mode)")
+    }
+
+    /** The learner's own memory hooks, one per character and script. */
+    private fun createMnemonicTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS mnemonic(
+              mode TEXT NOT NULL,
+              character TEXT NOT NULL,
+              part1 TEXT NOT NULL DEFAULT '',
+              part2 TEXT NOT NULL DEFAULT '',
+              part3 TEXT NOT NULL DEFAULT '',
+              person TEXT NOT NULL DEFAULT '',
+              place TEXT NOT NULL DEFAULT '',
+              action TEXT NOT NULL DEFAULT '',
+              story TEXT NOT NULL DEFAULT '',
+              strength INTEGER NOT NULL DEFAULT 3,
+              updated_at INTEGER NOT NULL,
+              PRIMARY KEY(mode, character)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS mnemonic_mode ON mnemonic(mode)")
     }
 
     /** Quest pages and the road they belong to. Kept in the progress DB so export/import carry them. */
@@ -523,6 +967,7 @@ class ProgressStore(private val context: Context) :
         elapsedMs: Long = 0,
         task: String = "WRITE",
         strokes: Int = 0,
+        reason: String = "",
     ): ReviewOutcome = withContext(Dispatchers.IO) {
         val key = cardKey(character, settings)
         val weights = settings.parametersFor(character.mode, character.glyphGroupId) ?: Fsrs7.DEFAULT_W
@@ -622,6 +1067,7 @@ class ProgressStore(private val context: Context) :
                     put("elapsed_ms", elapsedMs.coerceAtLeast(0L))
                     put("task", task)
                     put("strokes", strokes.coerceAtLeast(0))
+                    put("reason", reason.take(32))
                 },
             )
             val inserted = insertWithOnConflict(
@@ -851,6 +1297,103 @@ class ProgressStore(private val context: Context) :
         characters.count { character -> cardFor(character, settings, cards)?.dueAtMs?.let { it <= nowMs } == true }
     }
 
+    /** Reviews actually graded in the current study day, for the daily widget. */
+    suspend fun reviewsToday(
+        mode: String? = null,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Int = withContext(Dispatchers.IO) {
+        val zone = ZoneId.systemDefault()
+        val today = DayBoundary.date(nowMs, dayStartHour, zone)
+        val startMs = DayBoundary.startMs(today, dayStartHour, zone)
+        val endMs = DayBoundary.startMs(today.plusDays(1), dayStartHour, zone)
+        val modeClause = if (mode == null) "" else " AND rl.character_id LIKE ?"
+        val args = if (mode == null) {
+            arrayOf(startMs.toString(), endMs.toString())
+        } else {
+            arrayOf(startMs.toString(), endMs.toString(), "$mode:%")
+        }
+        readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM review_log rl " +
+                "WHERE rl.reviewed_at>=? AND rl.reviewed_at<? AND rl.reverted=0$modeClause",
+            args,
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+    }
+
+    /**
+     * Everything the Today widget needs, from one card scan. The same scheduler
+     * that fills Home and the forecast decides what is due now, what returns
+     * later today, and which day is next.
+     */
+    suspend fun todayLoad(
+        characters: List<CharacterEntry>,
+        settings: AppSettings,
+        nowMs: Long = System.currentTimeMillis(),
+        forecastDays: Int = 14,
+    ): TodayLoad = withContext(Dispatchers.IO) {
+        val zone = ZoneId.systemDefault()
+        val dayStartHour = settings.dayStartHour
+        val today = DayBoundary.date(nowMs, dayStartHour, zone)
+        val endToday = DayBoundary.startMs(today.plusDays(1), dayStartHour, zone)
+        val cards = allCards()
+        var dueNow = 0
+        var dueLater = 0
+        // Bucket by absolute clock hour so a due time at 12:05 is labelled
+        // 12h even when the widget refreshes at 10:50.
+        val nowHourIndex = nowMs / 3_600_000L
+        val hourly = sortedMapOf<Long, Int>()
+        val upcoming = HashMap<LocalDate, Int>()
+        characters.forEach { character ->
+            val card = cardFor(character, settings, cards) ?: return@forEach
+            val due = card.dueAtMs
+            when {
+                due <= nowMs -> dueNow++
+                due < endToday -> dueLater++
+            }
+            // Cards that come back today are spread over hour offsets from now.
+            // Overdue cards sit in the first slot so "Now" is honest.
+            if (due < endToday) {
+                val hourIndex = if (due <= nowMs) nowHourIndex else due / 3_600_000L
+                hourly[hourIndex] = (hourly[hourIndex] ?: 0) + 1
+            }
+            val date = DayBoundary.date(due, dayStartHour, zone)
+            if (date.isAfter(today) && date.isBefore(today.plusDays(forecastDays.toLong()))) {
+                if (!settings.isSkipped(character.id, date)) {
+                    upcoming[date] = (upcoming[date] ?: 0) + 1
+                }
+            }
+        }
+        val next = upcoming.entries.minWithOrNull(compareBy({ it.key }, { it.value }))
+        TodayLoad(
+            reviewsDone = reviewsToday(
+                mode = settings.studyMode.name,
+                dayStartHour = dayStartHour,
+                nowMs = nowMs,
+            ),
+            dueNow = dueNow,
+            dueLater = dueLater,
+            nextDueInDays = next?.key?.let {
+                java.time.temporal.ChronoUnit.DAYS.between(today, it).toInt()
+            },
+            nextDueCount = next?.value ?: 0,
+            hours = hourly.entries.take(6).map { (hourIndex, count) ->
+                HourLoad(
+                    hour = Instant.ofEpochMilli(hourIndex * 3_600_000L).atZone(zone).hour,
+                    count = count,
+                    offset = (hourIndex - nowHourIndex).toInt(),
+                )
+            },
+            week = (0..6).map { offset ->
+                val date = today.plusDays(offset.toLong())
+                DayLoad(
+                    dayOfWeek = date.dayOfWeek,
+                    count = if (offset == 0) dueNow + dueLater else upcoming[date] ?: 0,
+                    offset = offset,
+                )
+            },
+        )
+    }
+
     /**
      * Sets a card to a manual memory level. This is the learner's own judgement,
      * so it writes no review log and awards no XP; it only places the card on the
@@ -955,7 +1498,11 @@ class ProgressStore(private val context: Context) :
     }
 
     companion object {
-        const val SCHEMA_VERSION = 13
+        const val SCHEMA_VERSION = 18
+
+        private const val KNOWN_IMPORT_MIN_DAY = 10
+        private const val KNOWN_IMPORT_MAX_DAY = 45
+        private const val KNOWN_IMPORT_DAYS = KNOWN_IMPORT_MAX_DAY - KNOWN_IMPORT_MIN_DAY + 1
 
         fun cardKey(character: CharacterEntry, settings: AppSettings): String =
             if (settings.effectiveSharing(character.glyphGroupId)) {
@@ -996,18 +1543,26 @@ class ProgressStore(private val context: Context) :
     /**
      * Grade counts for the last [days] days.
      */
-    suspend fun gradeMix(days: Int = 30, mode: String? = null): GradeMix = withContext(Dispatchers.IO) {
-        val start = System.currentTimeMillis() - days * 86_400_000L
+    suspend fun gradeMix(
+        days: Int = 30,
+        mode: String? = null,
+        fromMs: Long? = null,
+        toMs: Long? = null,
+    ): GradeMix = withContext(Dispatchers.IO) {
+        // days <= 0 means all time, so the lower bound is the beginning of the log.
+        val start = fromMs
+            ?: if (days <= 0) Long.MIN_VALUE else System.currentTimeMillis() - days * 86_400_000L
+        val end = toMs ?: Long.MAX_VALUE
         val counts = IntArray(5)
         val modeClause = if (mode == null) "" else " AND c.mode=?"
         val args = if (mode == null) {
-            arrayOf(start.toString())
+            arrayOf(start.toString(), end.toString())
         } else {
-            arrayOf(start.toString(), mode)
+            arrayOf(start.toString(), end.toString(), mode)
         }
         readableDatabase.rawQuery(
             "SELECT rl.grade, COUNT(*) FROM review_log rl JOIN card c ON c.id=rl.card_id " +
-                "WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause GROUP BY rl.grade",
+                "WHERE rl.reviewed_at>=? AND rl.reviewed_at<? AND rl.reverted=0$modeClause GROUP BY rl.grade",
             args,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -1019,14 +1574,18 @@ class ProgressStore(private val context: Context) :
     }
 
     /** Total reviews and average interval across the cards the learner has. */
-    suspend fun reviewTotals(characters: List<CharacterEntry>, settings: AppSettings): Pair<Int, Float> =
+    suspend fun reviewTotals(
+        characters: List<CharacterEntry>,
+        settings: AppSettings,
+        cards: Map<String, CardSnapshot>? = null,
+    ): Pair<Int, Float> =
         withContext(Dispatchers.IO) {
             var reviews = 0
             var intervalSum = 0f
             var cardsSeen = 0
-            val cards = allCards()
+            val cardsById = cards ?: allCards()
             characters.forEach { character ->
-                val card = cardFor(character, settings, cards) ?: return@forEach
+                val card = cardFor(character, settings, cardsById) ?: return@forEach
                 reviews += card.reps
                 intervalSum += card.memory.sLong
                 cardsSeen++
@@ -1038,8 +1597,9 @@ class ProgressStore(private val context: Context) :
     suspend fun characterHistory(characterId: String, limit: Int = 12): List<ReviewEntry> =
         withContext(Dispatchers.IO) {
             readableDatabase.rawQuery(
-                "SELECT reviewed_at, grade, interval_days, elapsed_ms, task, strokes FROM review_log " +
-                    "WHERE character_id=? AND reverted=0 ORDER BY reviewed_at DESC LIMIT ?",
+                "SELECT reviewed_at, grade, interval_days, elapsed_ms, task, strokes, reason " +
+                    "FROM review_log WHERE character_id=? AND reverted=0 " +
+                    "ORDER BY reviewed_at DESC LIMIT ?",
                 arrayOf(characterId, limit.toString()),
             ).use { cursor ->
                 buildList {
@@ -1052,6 +1612,7 @@ class ProgressStore(private val context: Context) :
                                 elapsedMs = cursor.getLong(3),
                                 task = cursor.getString(4),
                                 strokes = cursor.getInt(5),
+                                reason = cursor.getString(6),
                             )
                         )
                     }
@@ -1064,10 +1625,17 @@ class ProgressStore(private val context: Context) :
         days: Int = 30,
         offsetDays: Int = 0,
         mode: String? = null,
+        fromMs: Long? = null,
+        toMs: Long? = null,
     ): WritingPace? = withContext(Dispatchers.IO) {
         val day = 86_400_000L
-        val end = System.currentTimeMillis() - offsetDays * day
-        val start = end - days * day
+        val now = System.currentTimeMillis()
+        // All time has no previous window; the current window simply starts at
+        // the first log entry. A custom window passes explicit study-day
+        // bounds, including a past end date.
+        val allTime = days <= 0 && fromMs == null
+        val end = toMs ?: if (allTime) now else now - offsetDays * day
+        val start = fromMs ?: if (allTime) Long.MIN_VALUE else end - days * day
         val modeClause = if (mode == null) "" else " AND c.mode=?"
         val args = if (mode == null) {
             arrayOf(start.toString(), end.toString())
@@ -1144,27 +1712,35 @@ class ProgressStore(private val context: Context) :
     }
 
     /** Total time spent writing inside graded recalls over the last [days]. */
-    suspend fun practiceTimeMs(days: Int = 30, mode: String? = null): Long =
+    suspend fun practiceTimeMs(
+        days: Int = 30,
+        mode: String? = null,
+        fromMs: Long? = null,
+        toMs: Long? = null,
+    ): Long =
         withContext(Dispatchers.IO) {
-            val start = System.currentTimeMillis() - days * 86_400_000L
+            val start = fromMs
+                ?: if (days <= 0) Long.MIN_VALUE else System.currentTimeMillis() - days * 86_400_000L
+            val end = toMs ?: Long.MAX_VALUE
             val modeClause = if (mode == null) "" else " AND c.mode=?"
             val args = if (mode == null) {
-                arrayOf(start.toString())
+                arrayOf(start.toString(), end.toString())
             } else {
-                arrayOf(start.toString(), mode)
+                arrayOf(start.toString(), end.toString(), mode)
             }
             readableDatabase.rawQuery(
                 "SELECT COALESCE(SUM(rl.elapsed_ms), 0) FROM review_log rl " +
-                    "JOIN card c ON c.id=rl.card_id WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause",
+                    "JOIN card c ON c.id=rl.card_id " +
+                    "WHERE rl.reviewed_at>=? AND rl.reviewed_at<? AND rl.reverted=0$modeClause",
                 args,
             ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
         }
 
     /** Every graded review as CSV, for a spreadsheet or a personal archive. */
     suspend fun reviewCsv(names: Map<String, String> = emptyMap()): String = withContext(Dispatchers.IO) {
-        val out = StringBuilder("reviewed_at,character,character_id,grade,interval_days,elapsed_ms,task\n")
+        val out = StringBuilder("reviewed_at,character,character_id,grade,interval_days,elapsed_ms,task,reason\n")
         readableDatabase.rawQuery(
-            "SELECT reviewed_at, character_id, grade, interval_days, elapsed_ms, task " +
+            "SELECT reviewed_at, character_id, grade, interval_days, elapsed_ms, task, reason " +
                 "FROM review_log WHERE reverted=0 ORDER BY reviewed_at",
             null,
         ).use { cursor ->
@@ -1178,7 +1754,8 @@ class ProgressStore(private val context: Context) :
                     .append(cursor.getInt(2)).append(',')
                     .append(cursor.getFloat(3)).append(',')
                     .append(cursor.getLong(4)).append(',')
-                    .append(cursor.getString(5)).append('\n')
+                    .append(cursor.getString(5)).append(',')
+                    .append(cursor.getString(6).replace(",", " ")).append('\n')
             }
         }
         out.toString()
@@ -1188,19 +1765,23 @@ class ProgressStore(private val context: Context) :
     suspend fun taskStats(
         days: Int = 30,
         mode: String? = null,
+        fromMs: Long? = null,
+        toMs: Long? = null,
     ): Map<String, TaskStat> = withContext(Dispatchers.IO) {
-        val start = System.currentTimeMillis() - days * 86_400_000L
+        val start = fromMs
+            ?: if (days <= 0) Long.MIN_VALUE else System.currentTimeMillis() - days * 86_400_000L
+        val end = toMs ?: Long.MAX_VALUE
         val result = LinkedHashMap<String, TaskStat>()
         val modeClause = if (mode == null) "" else " AND c.mode=?"
         val args = if (mode == null) {
-            arrayOf(start.toString())
+            arrayOf(start.toString(), end.toString())
         } else {
-            arrayOf(start.toString(), mode)
+            arrayOf(start.toString(), end.toString(), mode)
         }
         readableDatabase.rawQuery(
             "SELECT rl.task, COUNT(*), SUM(CASE WHEN rl.grade>1 THEN 1 ELSE 0 END), AVG(rl.grade) " +
                 "FROM review_log rl JOIN card c ON c.id=rl.card_id " +
-                "WHERE rl.reviewed_at>=? AND rl.reverted=0$modeClause GROUP BY rl.task",
+                "WHERE rl.reviewed_at>=? AND rl.reviewed_at<? AND rl.reverted=0$modeClause GROUP BY rl.task",
             args,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -1219,11 +1800,83 @@ class ProgressStore(private val context: Context) :
         characters: List<CharacterEntry>,
         settings: AppSettings,
         ids: Set<String>,
+        nowMs: Long = System.currentTimeMillis(),
     ) = withContext(Dispatchers.IO) {
-        characters.filter { it.id in ids }.forEach { character ->
-            setMemoryLevel(character, settings, MemoryLevel.SOLID)
+        val targets = characters.filter { it.id in ids }
+        if (targets.isEmpty()) return@withContext
+        // A bulk import must not turn into a single 800-card day a month later.
+        // Assign each card a stable day in 10..45, cap the day, and shift the
+        // overflow. The cap is generous enough to keep the order natural but
+        // low enough to prevent a cliff.
+        val counts = IntArray(KNOWN_IMPORT_DAYS)
+        val cap = ((targets.size + KNOWN_IMPORT_DAYS - 1) / KNOWN_IMPORT_DAYS) + 2
+        val offsets = HashMap<String, Int>(targets.size)
+        targets.forEach { character ->
+            var offset = stableKnownDay(character)
+            var guard = 0
+            while (counts[offset - KNOWN_IMPORT_MIN_DAY] >= cap && guard < KNOWN_IMPORT_DAYS) {
+                offset = if (offset >= KNOWN_IMPORT_MAX_DAY) {
+                    KNOWN_IMPORT_MIN_DAY
+                } else {
+                    offset + 1
+                }
+                guard++
+            }
+            counts[offset - KNOWN_IMPORT_MIN_DAY]++
+            offsets[character.id] = offset
+        }
+        val database = writableDatabase
+        database.beginTransaction()
+        try {
+            targets.forEach { character ->
+                val key = cardKey(character, settings)
+                val offset = offsets.getValue(character.id)
+                val levelBump = (character.level.coerceIn(1, 9) - 1) / 3
+                val stability = offset.toFloat() + levelBump * 0.4f
+                val due = nowMs + offset * 86_400_000L
+                val memory = FsrsMemory(sLong = stability, sShort = stability * 0.8f, difficulty = 5f)
+                val snapshot = CardSnapshot(
+                    id = key,
+                    characterId = character.id,
+                    glyphGroupId = character.glyphGroupId,
+                    mode = character.mode.name,
+                    memory = memory,
+                    dueAtMs = due,
+                    lastReviewAtMs = nowMs,
+                    reps = 0,
+                    lapses = 0,
+                    introducedAtMs = nowMs,
+                    knownDots = MemoryLevel.SOLID.knownDots,
+                    lastGrade = 3,
+                    sbd = Sbd7.fromFsrs(memory),
+                )
+                database.insertWithOnConflict(
+                    "card", null, snapshot.toValues(), SQLiteDatabase.CONFLICT_REPLACE,
+                )
+            }
+            database.setTransactionSuccessful()
+        } finally {
+            database.endTransaction()
         }
     }
+
+    private fun stableKnownDay(character: CharacterEntry): Int {
+        val hash = stableHash(character.id)
+        val levelBump = (character.level.coerceIn(1, 9) - 1) / 3
+        return (KNOWN_IMPORT_MIN_DAY + hash % KNOWN_IMPORT_DAYS + levelBump)
+            .coerceIn(KNOWN_IMPORT_MIN_DAY, KNOWN_IMPORT_MAX_DAY)
+    }
+
+    /** Deterministic across devices and runs, unlike a random or time seed. */
+    private fun stableHash(text: String): Int {
+        var hash = 0x811C9DC5.toInt()
+        for (char in text) {
+            hash = hash xor char.code
+            hash *= 0x01000193
+        }
+        return hash and 0x7FFFFFFF
+    }
+
 
     suspend fun note(characterId: String): String = withContext(Dispatchers.IO) {
         readableDatabase.rawQuery(
@@ -1250,23 +1903,32 @@ class ProgressStore(private val context: Context) :
         days: Int = 35,
         dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
         mode: String? = null,
+        endDaysAgo: Int = 0,
     ): List<DayActivity> =
         withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
         val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
-        val first = today.minusDays((days - 1).toLong())
-        val startMs = DayBoundary.startMs(first, dayStartHour, zone)
+        val end = today.minusDays(endDaysAgo.coerceAtLeast(0).toLong())
+        val allTime = days <= 0
+        val first = if (allTime) null else end.minusDays((days - 1).toLong())
+        val startMs = first?.let { DayBoundary.startMs(it, dayStartHour, zone) }
+        val endMs = DayBoundary.startMs(end.plusDays(1), dayStartHour, zone)
         val reviews = HashMap<LocalDate, Int>()
         val learned = HashMap<LocalDate, Int>()
         val reviewMode = if (mode == null) "" else " AND c.mode=?"
         val reviewArgs = if (mode == null) {
-            arrayOf(startMs.toString())
+            if (allTime) arrayOf(endMs.toString()) else arrayOf(startMs.toString(), endMs.toString())
         } else {
-            arrayOf(startMs.toString(), mode)
+            if (allTime) arrayOf(endMs.toString(), mode)
+            else arrayOf(startMs.toString(), endMs.toString(), mode)
+        }
+        val reviewWhere = if (allTime) {
+            "WHERE rl.reviewed_at<? AND rl.reverted=0$reviewMode"
+        } else {
+            "WHERE rl.reviewed_at>=? AND rl.reviewed_at<? AND rl.reverted=0$reviewMode"
         }
         readableDatabase.rawQuery(
-            "SELECT rl.reviewed_at FROM review_log rl JOIN card c ON c.id=rl.card_id " +
-                "WHERE rl.reviewed_at>=? AND rl.reverted=0$reviewMode",
+            "SELECT rl.reviewed_at FROM review_log rl JOIN card c ON c.id=rl.card_id $reviewWhere",
             reviewArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -1276,12 +1938,18 @@ class ProgressStore(private val context: Context) :
         }
         val learnedMode = if (mode == null) "" else " AND mode=?"
         val learnedArgs = if (mode == null) {
-            arrayOf(startMs.toString())
+            if (allTime) arrayOf(endMs.toString()) else arrayOf(startMs.toString(), endMs.toString())
         } else {
-            arrayOf(startMs.toString(), mode)
+            if (allTime) arrayOf(endMs.toString(), mode)
+            else arrayOf(startMs.toString(), endMs.toString(), mode)
+        }
+        val learnedWhere = if (allTime) {
+            "WHERE introduced_at<?$learnedMode"
+        } else {
+            "WHERE introduced_at>=? AND introduced_at<?$learnedMode"
         }
         readableDatabase.rawQuery(
-            "SELECT introduced_at FROM card WHERE introduced_at>=?$learnedMode",
+            "SELECT introduced_at FROM card $learnedWhere",
             learnedArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -1289,8 +1957,15 @@ class ProgressStore(private val context: Context) :
                 learned[date] = (learned[date] ?: 0) + 1
             }
         }
-        (0 until days).map { offset ->
-            val date = first.plusDays(offset.toLong())
+        val startDate = if (allTime) {
+            (reviews.keys + learned.keys).minOrNull() ?: end
+        } else {
+            first!!
+        }
+        val dayCount = java.time.temporal.ChronoUnit.DAYS.between(startDate, end)
+            .toInt().coerceAtLeast(0) + 1
+        (0 until dayCount).map { offset ->
+            val date = startDate.plusDays(offset.toLong())
             DayActivity(
                 date = date,
                 reviewed = reviews[date] ?: 0,
@@ -1304,31 +1979,46 @@ class ProgressStore(private val context: Context) :
         days: Int = 120,
         dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
         mode: String? = null,
+        endDaysAgo: Int = 0,
     ): List<DayActivity> =
         withContext(Dispatchers.IO) {
         val zone = ZoneId.systemDefault()
         val today = DayBoundary.date(System.currentTimeMillis(), dayStartHour, zone)
-        val first = today.minusDays((days - 1).toLong())
-        val startMs = DayBoundary.startMs(first, dayStartHour, zone)
+        val end = today.minusDays(endDaysAgo.coerceAtLeast(0).toLong())
+        val allTime = days <= 0
+        val first = if (allTime) null else end.minusDays((days - 1).toLong())
+        val startMs = first?.let { DayBoundary.startMs(it, dayStartHour, zone) }
+        val endMs = DayBoundary.startMs(end.plusDays(1), dayStartHour, zone)
         val perDay = HashMap<LocalDate, Int>()
         val beforeMode = if (mode == null) "" else " AND mode=?"
-        val beforeArgs = if (mode == null) {
-            arrayOf(startMs.toString())
+        val totalBefore = if (allTime) {
+            0
         } else {
-            arrayOf(startMs.toString(), mode)
+            val beforeArgs = if (mode == null) {
+                arrayOf(startMs.toString())
+            } else {
+                arrayOf(startMs.toString(), mode)
+            }
+            readableDatabase.rawQuery(
+                "SELECT COUNT(*) FROM card WHERE introduced_at<?$beforeMode",
+                beforeArgs,
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
         }
-        val totalBefore = readableDatabase.rawQuery(
-            "SELECT COUNT(*) FROM card WHERE introduced_at<?$beforeMode",
-            beforeArgs,
-        ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
         val sinceMode = if (mode == null) "" else " AND mode=?"
         val sinceArgs = if (mode == null) {
-            arrayOf(startMs.toString())
+            if (allTime) arrayOf(endMs.toString())
+            else arrayOf(startMs.toString(), endMs.toString())
         } else {
-            arrayOf(startMs.toString(), mode)
+            if (allTime) arrayOf(endMs.toString(), mode)
+            else arrayOf(startMs.toString(), endMs.toString(), mode)
+        }
+        val sinceWhere = if (allTime) {
+            "WHERE introduced_at<?$sinceMode"
+        } else {
+            "WHERE introduced_at>=? AND introduced_at<?$sinceMode"
         }
         readableDatabase.rawQuery(
-            "SELECT introduced_at FROM card WHERE introduced_at>=?$sinceMode",
+            "SELECT introduced_at FROM card $sinceWhere",
             sinceArgs,
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -1336,21 +2026,51 @@ class ProgressStore(private val context: Context) :
                 perDay[date] = (perDay[date] ?: 0) + 1
             }
         }
+        val startDate = if (allTime) {
+            perDay.keys.minOrNull() ?: end
+        } else {
+            first!!
+        }
+        val dayCount = java.time.temporal.ChronoUnit.DAYS.between(startDate, end)
+            .toInt().coerceAtLeast(0) + 1
         var running = totalBefore
-        (0 until days).map { offset ->
-            val date = first.plusDays(offset.toLong())
+        (0 until dayCount).map { offset ->
+            val date = startDate.plusDays(offset.toLong())
             running += perDay[date] ?: 0
             DayActivity(date = date, reviewed = running, learned = perDay[date] ?: 0)
         }
     }
 
-    /** Characters whose last grade was Again, newest first. */
-    suspend fun recentMistakes(characters: List<CharacterEntry>, limit: Int = 12): List<CharacterEntry> =
+    /**
+     * Characters whose last grade was Again, newest first.
+     *
+     * [days] follows the Progress range: 0 means all time, otherwise only
+     * reviews inside the same study-day window as the charts are considered.
+     */
+    suspend fun recentMistakes(
+        characters: List<CharacterEntry>,
+        limit: Int = 12,
+        days: Int = 0,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        nowMs: Long = System.currentTimeMillis(),
+        endDaysAgo: Int = 0,
+    ): List<CharacterEntry> =
         withContext(Dispatchers.IO) {
+            val bounds = rangeBounds(days, dayStartHour, nowMs, endDaysAgo)
             val ids = ArrayList<String>()
+            val where = if (bounds.startMs == null) {
+                "reverted=0 AND reviewed_at<?"
+            } else {
+                "reverted=0 AND reviewed_at>=? AND reviewed_at<?"
+            }
+            val args = if (bounds.startMs == null) {
+                arrayOf(bounds.endMs.toString())
+            } else {
+                arrayOf(bounds.startMs.toString(), bounds.endMs.toString())
+            }
             readableDatabase.rawQuery(
-                "SELECT character_id, grade FROM review_log WHERE reverted=0 ORDER BY reviewed_at DESC LIMIT 400",
-                null,
+                "SELECT character_id, grade FROM review_log WHERE $where ORDER BY reviewed_at DESC LIMIT 400",
+                args,
             ).use { cursor ->
                 val seen = HashSet<String>()
                 while (cursor.moveToNext() && ids.size < limit) {
@@ -1362,16 +2082,79 @@ class ProgressStore(private val context: Context) :
             ids.mapNotNull { id -> characters.firstOrNull { it.id == id } }
         }
 
-    /** Newest introductions, for the recently learned row. */
-    suspend fun recentlyLearned(characters: List<CharacterEntry>, limit: Int = 12): List<CharacterEntry> =
+    /**
+     * Distinct characters with at least one review inside the range. The
+     * per-day activity list is a sample; this is the honest count for a report.
+     */
+    suspend fun reviewedCharacters(
+        characters: List<CharacterEntry>,
+        days: Int = 0,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        mode: String? = null,
+        endDaysAgo: Int = 0,
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<CharacterEntry> = withContext(Dispatchers.IO) {
+        val bounds = rangeBounds(days, dayStartHour, nowMs, endDaysAgo)
+        val range = if (bounds.startMs == null) {
+            "rl.reviewed_at<?"
+        } else {
+            "rl.reviewed_at>=? AND rl.reviewed_at<?"
+        }
+        val args = buildList {
+            bounds.startMs?.let { add(it.toString()) }
+            add(bounds.endMs.toString())
+            mode?.let { add(it) }
+        }.toTypedArray()
+        val modeWhere = if (mode == null) "" else " AND c.mode=?"
+        val cards = ArrayList<Pair<String, String>>()
+        readableDatabase.rawQuery(
+            "SELECT c.character_id, c.glyph_group_id FROM review_log rl " +
+                "JOIN card c ON c.id=rl.card_id " +
+                "WHERE rl.reverted=0 AND $range$modeWhere " +
+                "GROUP BY c.character_id, c.glyph_group_id " +
+                "ORDER BY MAX(rl.reviewed_at) DESC",
+            args,
+        ).use { cursor ->
+            while (cursor.moveToNext()) cards.add(cursor.getString(0) to cursor.getString(1))
+        }
+        val byCharacter = characters.associateBy { it.id }
+        val byGlyph = characters.associateBy { it.glyphGroupId }
+        cards.mapNotNull { (characterId, glyphGroupId) ->
+            byCharacter[characterId] ?: byGlyph[glyphGroupId]
+        }.distinctBy { it.id }
+    }
+
+    /**
+     * Newest introductions, for the recently learned row. [days] follows the
+     * Progress range; 0 means all time.
+     */
+    suspend fun recentlyLearned(
+        characters: List<CharacterEntry>,
+        limit: Int = 12,
+        days: Int = 0,
+        dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        nowMs: Long = System.currentTimeMillis(),
+        endDaysAgo: Int = 0,
+    ): List<CharacterEntry> =
         withContext(Dispatchers.IO) {
             // A shared-glyph card is stored under "glyph:...", not a character id.
             // Keep both keys so the row still fills when identical glyphs share
             // one memory, and so a legacy character card still resolves.
+            val bounds = rangeBounds(days, dayStartHour, nowMs, endDaysAgo)
+            val since = if (bounds.startMs == null) {
+                "WHERE introduced_at<?"
+            } else {
+                "WHERE introduced_at>=? AND introduced_at<?"
+            }
+            val args = if (bounds.startMs == null) {
+                arrayOf(bounds.endMs.toString(), limit.toString())
+            } else {
+                arrayOf(bounds.startMs.toString(), bounds.endMs.toString(), limit.toString())
+            }
             val cards = ArrayList<Pair<String, String>>()
             readableDatabase.rawQuery(
-                "SELECT character_id, glyph_group_id FROM card ORDER BY introduced_at DESC LIMIT ?",
-                arrayOf(limit.toString()),
+                "SELECT character_id, glyph_group_id FROM card $since ORDER BY introduced_at DESC LIMIT ?",
+                args,
             ).use { cursor ->
                 while (cursor.moveToNext()) cards.add(cursor.getString(0) to cursor.getString(1))
             }
@@ -1382,6 +2165,156 @@ class ProgressStore(private val context: Context) :
             }.distinctBy { it.id }
         }
 
+    suspend fun palacePegs(mode: String): List<PalacePeg> = withContext(Dispatchers.IO) {
+        readableDatabase.rawQuery(
+            "SELECT mode, kind, label, note, updated_at FROM palace_peg WHERE mode=? " +
+                "ORDER BY kind, updated_at DESC",
+            arrayOf(mode),
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        PalacePeg(
+                            mode = cursor.getString(0),
+                            kind = cursor.getString(1),
+                            label = cursor.getString(2),
+                            note = cursor.getString(3),
+                            updatedAtMs = cursor.getLong(4),
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun savePalacePeg(peg: PalacePeg, nowMs: Long = System.currentTimeMillis()) =
+        withContext(Dispatchers.IO) {
+            writableDatabase.insertWithOnConflict(
+                "palace_peg",
+                null,
+                ContentValues().apply {
+                    put("mode", peg.mode)
+                    put("kind", peg.kind)
+                    put("label", peg.label.take(60))
+                    put("note", peg.note.take(160))
+                    put("updated_at", nowMs)
+                },
+                SQLiteDatabase.CONFLICT_REPLACE,
+            )
+        }
+
+    suspend fun deletePalacePeg(mode: String, kind: String, label: String) =
+        withContext(Dispatchers.IO) {
+            writableDatabase.delete(
+                "palace_peg",
+                "mode=? AND kind=? AND label=?",
+                arrayOf(mode, kind, label),
+            )
+        }
+
+    suspend fun mnemonic(mode: String, character: String): MnemonicEntry? =
+        withContext(Dispatchers.IO) {
+            readableDatabase.rawQuery(
+                "SELECT mode, character, part1, part2, part3, person, place, action, " +
+                    "story, strength, updated_at FROM mnemonic WHERE mode=? AND character=?",
+                arrayOf(mode, character),
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                MnemonicEntry(
+                    mode = cursor.getString(0),
+                    character = cursor.getString(1),
+                    part1 = cursor.getString(2),
+                    part2 = cursor.getString(3),
+                    part3 = cursor.getString(4),
+                    person = cursor.getString(5),
+                    place = cursor.getString(6),
+                    action = cursor.getString(7),
+                    story = cursor.getString(8),
+                    strength = cursor.getInt(9),
+                    updatedAtMs = cursor.getLong(10),
+                )
+            }
+        }
+
+    suspend fun mnemonics(mode: String): List<MnemonicEntry> = withContext(Dispatchers.IO) {
+        readableDatabase.rawQuery(
+            "SELECT mode, character, part1, part2, part3, person, place, action, " +
+                "story, strength, updated_at FROM mnemonic WHERE mode=? ORDER BY updated_at DESC",
+            arrayOf(mode),
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        MnemonicEntry(
+                            mode = cursor.getString(0),
+                            character = cursor.getString(1),
+                            part1 = cursor.getString(2),
+                            part2 = cursor.getString(3),
+                            part3 = cursor.getString(4),
+                            person = cursor.getString(5),
+                            place = cursor.getString(6),
+                            action = cursor.getString(7),
+                            story = cursor.getString(8),
+                            strength = cursor.getInt(9),
+                            updatedAtMs = cursor.getLong(10),
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun saveMnemonic(entry: MnemonicEntry, nowMs: Long = System.currentTimeMillis()) =
+        withContext(Dispatchers.IO) {
+            writableDatabase.insertWithOnConflict(
+                "mnemonic",
+                null,
+                ContentValues().apply {
+                    put("mode", entry.mode)
+                    put("character", entry.character)
+                    put("part1", entry.part1.take(80))
+                    put("part2", entry.part2.take(80))
+                    put("part3", entry.part3.take(80))
+                    put("person", entry.person.take(80))
+                    put("place", entry.place.take(80))
+                    put("action", entry.action.take(80))
+                    put("story", entry.story.take(600))
+                    put("strength", entry.strength.coerceIn(1, 5))
+                    put("updated_at", nowMs)
+                },
+                SQLiteDatabase.CONFLICT_REPLACE,
+            )
+        }
+
+    suspend fun deleteMnemonic(mode: String, character: String) = withContext(Dispatchers.IO) {
+        writableDatabase.delete(
+            "mnemonic",
+            "mode=? AND character=?",
+            arrayOf(mode, character),
+        )
+    }
+
+    /**
+     * Attach a diagnosis to the most recent review of [characterId]. This is
+     * used by the optional post-grade note; it never changes the grade, the
+     * schedule, or the XP.
+     */
+    suspend fun setLatestReason(characterId: String, reason: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val logId = readableDatabase.rawQuery(
+                "SELECT id FROM review_log WHERE character_id=? AND reverted=0 " +
+                    "ORDER BY reviewed_at DESC LIMIT 1",
+                arrayOf(characterId),
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
+                ?: return@withContext false
+            writableDatabase.update(
+                "review_log",
+                ContentValues().apply { put("reason", reason.take(32)) },
+                "id=?",
+                arrayOf(logId.toString()),
+            ) > 0
+        }
+
     /** Real due counts for the next [days] local dates. */
     suspend fun dueForecast(
         characters: List<CharacterEntry>,
@@ -1389,8 +2322,9 @@ class ProgressStore(private val context: Context) :
         days: Int = 14,
         today: LocalDate = LocalDate.now(),
         dayStartHour: Int = DayBoundary.DEFAULT_HOUR,
+        cards: Map<String, CardSnapshot>? = null,
     ): List<DueDay> = withContext(Dispatchers.IO) {
-        val cardsById = allCards()
+        val cardsById = cards ?: allCards()
         val zone = ZoneId.systemDefault()
         val counts = HashMap<LocalDate, Int>()
         characters.forEach { character ->
@@ -1411,14 +2345,12 @@ class ProgressStore(private val context: Context) :
 
     /** Distinct study dates with at least one review. No streak, no breakage. */
     suspend fun studyDays(dayStartHour: Int = DayBoundary.DEFAULT_HOUR): Int = withContext(Dispatchers.IO) {
-        val zone = ZoneId.systemDefault()
-        readableDatabase.rawQuery("SELECT reviewed_at FROM review_log WHERE reverted=0", null).use { cursor ->
-            val days = HashSet<LocalDate>()
-            while (cursor.moveToNext()) {
-                days.add(DayBoundary.date(cursor.getLong(0), dayStartHour, zone))
-            }
-            days.size
-        }
+        val hour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR)
+        readableDatabase.rawQuery(
+            "SELECT COUNT(DISTINCT date(reviewed_at/1000, 'unixepoch', 'localtime', ?)) " +
+                "FROM review_log WHERE reverted=0",
+            arrayOf("-$hour hours"),
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
     }
 
     suspend fun knownCount(
@@ -1467,6 +2399,24 @@ class ProgressStore(private val context: Context) :
             ids.mapNotNull { byId[it] }.distinctBy { it.id }
         }
 
+}
+
+/** Study-day bounds for a range, or a null start for all time. */
+private data class RangeBounds(val startMs: Long?, val endMs: Long)
+
+private fun rangeBounds(
+    days: Int,
+    dayStartHour: Int,
+    nowMs: Long,
+    endDaysAgo: Int,
+): RangeBounds {
+    val zone = ZoneId.systemDefault()
+    val endDate = DayBoundary.date(nowMs, dayStartHour, zone)
+        .minusDays(endDaysAgo.coerceAtLeast(0).toLong())
+    val endMs = DayBoundary.startMs(endDate.plusDays(1), dayStartHour, zone)
+    if (days <= 0) return RangeBounds(null, endMs)
+    val first = endDate.minusDays((days - 1).toLong())
+    return RangeBounds(DayBoundary.startMs(first, dayStartHour, zone), endMs)
 }
 
 private fun Cursor.toSnapshot(): CardSnapshot = CardSnapshot(

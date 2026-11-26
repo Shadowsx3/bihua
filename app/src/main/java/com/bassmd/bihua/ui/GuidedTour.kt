@@ -95,7 +95,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
 
-enum class TourDestination { HOME, CHARACTERS, PRACTICE, SETTINGS_HELP, SETTINGS_ABOUT }
+enum class TourDestination { HOME, CHARACTERS, PRACTICE, SETTINGS_HELP, SETTINGS_SYNC, SETTINGS_ABOUT }
 
 /** A small gesture Mò can make while talking. */
 enum class MoGesture { WAVE, POINT, NOD, SCRIBBLE, SHRUG, CHEER }
@@ -193,6 +193,15 @@ val TOUR_STEPS = listOf(
         mood = MascotMood.HAPPY,
         gesture = MoGesture.POINT,
         prop = MoProp.SCROLL,
+    ),
+    TourStep(
+        anchor = "settings.sync",
+        title = "Phone and tablet, together",
+        body = "Open Settings → Sync. Start sharing on one device, type its code on the other, then choose Merge. Both review histories join; each card keeps its newer state.",
+        destination = TourDestination.SETTINGS_SYNC,
+        mood = MascotMood.HAPPY,
+        gesture = MoGesture.POINT,
+        prop = MoProp.CARD,
     ),
     TourStep(
         anchor = "about.free",

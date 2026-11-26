@@ -32,10 +32,10 @@ Status:
 | A failed list export throws instead of reporting. | Fixed | Save errors are caught and shown. |
 | A backup restore can finish onboarding while still running. | Fixed | Continue and Skip are disabled during restore. |
 | Settings subpages, Compare, Paper, Practice picker, study lists, and the study tools sheet have no back-stack regression. | Fixed | `navigation-deep` walks all of them on every standard run. |
-| Writing or reading review without a canvas or keyboard is impossible. | Fixed | Optional independent Anki-style switches for writing, pronunciation, and meaning, off by default. |
+| Writing or reading review without a canvas or keyboard is impossible. | Fixed | Optional independent Reveal review switches for writing, pronunciation, and meaning, off by default. |
 | Meaning prompts can show blank, placeholder, or structural dictionary redirects. | Fixed | `MeaningSanitizer` filters them; a character with no teachable gloss falls back to writing. Phonetic kana/Hangul stay in pronunciation. |
 | A learner's own wording for a meaning is lost. | Fixed | Synonyms are stored per character, cleaned, deduplicated, capped, removable from the reveal and character detail, and included in backups. |
-| Anki meaning still shows a typing field. | Fixed | `meaning-anki` journey asserts no field; `Show answer` reveals the gloss and example word. |
+| Reveal meaning still shows a typing field. | Fixed | `meaning-reveal` journey asserts no field; `Show answer` reveals the gloss and example word. |
 | A writing review with no ink, or a slow recognizer, leaves the learner stuck behind Check & grade. | Fixed | Show answer is always available in the recall step, before ink and while recognition settles. |
 | The spell quest's ambient drift keeps the screen busy on a low-end phone or with system animations removed. | Fixed | The screen honors the system animator scale, caps drift/ring motion at 30fps, and caches immutable puzzle parts. |
 | Mò's note has no visible dismissal. | Fixed | The note card has a Close button, plus outside-tap and back. |

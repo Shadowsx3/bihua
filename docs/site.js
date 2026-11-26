@@ -50,6 +50,27 @@
     reveals.forEach((el) => el.classList.add("visible"));
   }
 
+  const paceChips = [...document.querySelectorAll(".pace-chip")];
+  const paceWeek = document.getElementById("pace-week");
+  const paceMonth = document.getElementById("pace-month");
+  const paceCta = document.getElementById("pace-cta");
+  if (paceChips.length) {
+    const setPace = (pace) => {
+      paceChips.forEach((chip) => {
+        const on = Number(chip.dataset.pace) === pace;
+        chip.classList.toggle("is-active", on);
+        chip.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      if (paceWeek) paceWeek.textContent = String(pace * 7);
+      if (paceMonth) paceMonth.textContent = String(pace * 30);
+      if (paceCta) paceCta.textContent = String(pace);
+    };
+    paceChips.forEach((chip) => {
+      chip.addEventListener("click", () => setPace(Number(chip.dataset.pace)));
+    });
+    setPace(3);
+  }
+
   const menuToggle = document.querySelector("[data-menu-toggle]");
   const menu = document.querySelector("[data-menu]");
   const closeMenu = () => {
@@ -86,179 +107,6 @@
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
   }
-})();
-
-// Live ink pad on the landing page. Free practice only: no schedule, no upload.
-(() => {
-  const canvas = document.getElementById("ink-pad");
-  if (!canvas) return;
-  const board = document.getElementById("pad-board");
-  const glyph = document.getElementById("pad-glyph");
-  const status = document.getElementById("pad-status");
-  const undo = document.getElementById("pad-undo");
-  const clear = document.getElementById("pad-clear");
-  const guide = document.getElementById("pad-guide");
-  const chips = [...document.querySelectorAll(".pad-chip")];
-  const ctx = canvas.getContext("2d");
-  let strokes = [];
-  let current = null;
-  let target = 5;
-  let width = 600;
-  let height = 600;
-  let brush = "#17211a";
-
-  const readInk = () => getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#17211a";
-
-  function segmentWidth(stroke, pressure) {
-    const p = Math.min(1, Math.max(0, pressure));
-    return Math.max(1, stroke.w * width * (0.55 + p * 0.9));
-  }
-
-  function drawSegment(a, b, stroke) {
-    ctx.beginPath();
-    ctx.strokeStyle = brush;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = segmentWidth(stroke, (a.p + b.p) / 2);
-    ctx.moveTo(a.x * width, a.y * height);
-    ctx.lineTo(b.x * width, b.y * height);
-    ctx.stroke();
-  }
-
-  function redraw() {
-    ctx.clearRect(0, 0, width, height);
-    for (const stroke of strokes) {
-      if (stroke.points.length === 1) {
-        const point = stroke.points[0];
-        ctx.beginPath();
-        ctx.fillStyle = brush;
-        ctx.arc(point.x * width, point.y * height, segmentWidth(stroke, point.p) / 2, 0, Math.PI * 2);
-        ctx.fill();
-        continue;
-      }
-      for (let i = 1; i < stroke.points.length; i++) {
-        drawSegment(stroke.points[i - 1], stroke.points[i], stroke);
-      }
-    }
-  }
-
-  function updateStatus() {
-    undo.disabled = strokes.length === 0;
-    clear.disabled = strokes.length === 0;
-    const n = strokes.length;
-    status.textContent = `${n} of ${target} stroke${target === 1 ? "" : "s"} · count only · nothing leaves this page`;
-  }
-
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width) return;
-    width = rect.width;
-    height = rect.height;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    redraw();
-  }
-
-  function pointFrom(event) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (event.clientX - rect.left) / rect.width,
-      y: (event.clientY - rect.top) / rect.height,
-      p: event.pressure > 0 ? event.pressure : 0.5,
-    };
-  }
-
-  function start(event) {
-    if (event.button !== undefined && event.button !== 0) return;
-    if (event.isPrimary === false) return;
-    event.preventDefault();
-    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
-    brush = readInk();
-    const point = pointFrom(event);
-    current = { points: [point], w: width < 420 ? 0.028 : 0.022 };
-    strokes.push(current);
-    ctx.beginPath();
-    ctx.fillStyle = brush;
-    ctx.arc(point.x * width, point.y * height, segmentWidth(current, point.p) / 2, 0, Math.PI * 2);
-    ctx.fill();
-    updateStatus();
-  }
-
-  function move(event) {
-    if (!current) return;
-    event.preventDefault();
-    const coalesced = event.getCoalescedEvents ? event.getCoalescedEvents() : [];
-    const points = coalesced.length ? coalesced : [event];
-    for (const item of points) {
-      const point = pointFrom(item);
-      const last = current.points[current.points.length - 1];
-      if (Math.hypot((point.x - last.x) * width, (point.y - last.y) * height) < 1.1) continue;
-      current.points.push(point);
-      drawSegment(last, point, current);
-    }
-  }
-
-  function end(event) {
-    if (!current) return;
-    if (event.pointerId !== undefined && canvas.hasPointerCapture?.(event.pointerId)) {
-      try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
-    }
-    current = null;
-  }
-
-  canvas.addEventListener("pointerdown", start);
-  canvas.addEventListener("pointermove", move);
-  canvas.addEventListener("pointerup", end);
-  canvas.addEventListener("pointercancel", end);
-  canvas.addEventListener("contextmenu", (event) => event.preventDefault());
-
-  undo.addEventListener("click", () => {
-    strokes.pop();
-    redraw();
-    updateStatus();
-  });
-  clear.addEventListener("click", () => {
-    strokes = [];
-    redraw();
-    updateStatus();
-  });
-  guide.addEventListener("click", () => {
-    const on = guide.getAttribute("aria-pressed") !== "true";
-    guide.setAttribute("aria-pressed", String(on));
-    guide.textContent = on ? "Guide on" : "Guide off";
-    board.classList.toggle("guide-off", !on);
-  });
-  chips.forEach((chip) => chip.addEventListener("click", () => {
-    chips.forEach((item) => {
-      const active = item === chip;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-pressed", String(active));
-    });
-    const value = chip.dataset.glyph || "永";
-    target = Number(chip.dataset.strokes) || 5;
-    glyph.textContent = value;
-    canvas.setAttribute("aria-label", `Drawing pad for the character ${value}. Use a finger, mouse, or stylus.`);
-    strokes = [];
-    current = null;
-    redraw();
-    updateStatus();
-  }));
-
-  if ("ResizeObserver" in window) {
-    new ResizeObserver(resize).observe(canvas);
-  } else {
-    window.addEventListener("resize", resize);
-  }
-  new MutationObserver(() => {
-    brush = readInk();
-    redraw();
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
-  brush = readInk();
-  resize();
-  updateStatus();
 })();
 
 /* Interactive grimoire sample: chapter tabs, spell pages, one detail card. */

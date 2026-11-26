@@ -13,7 +13,7 @@ Write Chinese, Japanese, Korean characters. Print sheets, offline, no account.
 Bihua is a place to practise characters with your hand. Pick a script, get a cue, and write. The app reads the ink, you choose a grade, and the schedule decides when the character comes back.
 
 · A blank square and a cue
-A review starts without the answer: a reading, meaning, or word, and an empty canvas. The guide can be full, a light outline, or hidden. After the attempt, the app shows what it can see; you grade. Undo restores the card and the day's XP.
+A review starts without the answer: a reading, meaning, or word, and an empty canvas. The guide can be full, a light outline, or hidden. After the attempt, the app shows what it can see; you grade. Undo restores the card and the day's XP. If you would rather not draw, turn drawing off and use pronunciation or meaning checks instead; lessons skip the canvas.
 
 · The schedule follows your memory
 FSRS-7 keeps two stability values and a difficulty estimate for each card. SBD is a seven-parameter model you can choose instead, fitted from your own reviews. Both solve for the next date at your target recall, 90% by default. Nothing resets because you missed a day. Fit the weights locally and keep a profile for each script. Choose a study-day boundary from midnight to 6 AM; due counts, the calendar, XP, skips, and forecasts follow it.
@@ -41,11 +41,20 @@ An optional quest in all four courses. Draw a character that fits the scene, or 
 · Practice without touching the schedule
 Word practice hides a word's characters and gives you the reading and meaning. Paper check asks you to write on real paper, then reveals the character. Stroke playback can play, reverse, and step through your own ink.
 
-· Light and dark
-Warm paper with forest ink, or a forest-night palette with cream ink. The writing square stays the largest thing on the screen. Phone, tablet, and foldable layouts fit the screen; Mute app sounds keeps your music playing.
+· Three quiet widgets
+Today shows the day's reviews and lessons as done and total, with a plain line for the next hours. Week ahead shows the next seven days. Word of the Day keeps its own card. They refresh at the next day-part or study-day boundary.
+
+· Progress you can read
+Study days, known characters, new today, a practice calendar, streak, grades, and a GitHub-style year heatmap. Pick 7 days, a year, all time, or an exact start and end day, and the charts, recent mistakes, and recently learned follow the range. Tap or drag the cumulative line to read any day's total. All time is a real window, not a renamed year.
+
+· Tell me what broke
+Settings → About opens a report composer. A crash can be saved locally and attached for review; nothing leaves the phone until you tap Send or Copy. Send opens your own mail or messenger. Rate Bihua sits on the same quiet card.
+
+· Light and dark, every shape
+Warm paper with forest ink, or a forest-night palette with cream ink. The writing square stays the largest thing on the screen. Phone portrait and landscape, tablet, and foldable layouts fit the screen; the spell quest and its draw screen use the same wide spreads. Mute app sounds keeps your music playing.
 
 · Your data stays with you
-No account. No ads. No developer-run analytics. Progress, notes, and history live in a local SQLite database. Export a zip backup or sync two devices on your own Wi-Fi. Android cloud backup is off.
+No account. No ads. No developer-run analytics. Progress, notes, and history live in a local SQLite database. Export a zip backup or sync two devices on your own Wi-Fi; merge keeps both review histories and takes each card's newer state. Android cloud backup is off.
 
 · Open code, open data
 The app code is MIT-licensed. Character and word data comes from open sources, with full credits inside Settings → About. The content database keeps its CC BY-SA, Arphic, LGPL, and Unicode terms.

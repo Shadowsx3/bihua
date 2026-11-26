@@ -278,10 +278,18 @@ object PuzzleForge {
             .filter { it.isNotBlank() }
             .distinct()
         val place = partsOfPlace.joinToString(" ")
-        val styleLine = when {
-            style == PuzzleStyle.CHARACTER -> "It wants one exact shape."
-            style == PuzzleStyle.CATEGORY -> "It answers to a whole chapter, not one family."
-            else -> ""
+        val styleLine = when (style) {
+            PuzzleStyle.CHARACTER ->
+                "It wants one exact shape. Only that one character will fit."
+            PuzzleStyle.CATEGORY -> {
+                val chapters = solutionList.flatMap { it.categories }.distinct()
+                if (chapters.isEmpty()) {
+                    "It answers to a whole chapter, not one family."
+                } else {
+                    "It answers to the ${chapters.joinToString(" or ")} chapter. Any character from that chapter will fit."
+                }
+            }
+            PuzzleStyle.FAMILY -> ""
         }
         val lines = listOf(time.line, weather.line).filter { it.isNotBlank() } +
             listOfNotNull(styleLine.takeIf { it.isNotEmpty() }) + obstacle.lines

@@ -40,10 +40,10 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Finger draw | Finger stroke | Accepted by default, visible | M |
 | Stylus draw | S Pen stroke | Accepted, pressure width | M |
 | Stylus only | Stylus-only onboarding | Finger ignored on canvas, buttons work | G |
-| Anki writing | Settings → Practice → tap to reveal | Cue, Show answer, grade, no canvas; new cards skip Trace | A |
-| Anki pronunciation | Settings → Practice → tap to reveal | Character, Show answer, grade, no typing | A |
+| Reveal writing | Settings → Practice → tap to reveal | Cue, Show answer, grade, no canvas; new cards skip Trace | A |
+| Reveal pronunciation | Settings → Practice → tap to reveal | Character, Show answer, grade, no typing | A |
 | Meaning review | Settings → Practice → Meaning | Type wording, Show answer, gloss + word, add synonym, grade | A |
-| Meaning Anki | Settings → Practice → Meaning + Anki | Show answer, no typing field, grade | A |
+| Meaning reveal | Settings → Practice → Meaning + Reveal | Show answer, no typing field, grade | A |
 | Palm while pen down | Palm + pen | Stylus wins, no stray stroke | M |
 | Dot stroke | Tap canvas | Dot recorded, not lost | G |
 | Check feedback | Check | Recognition, coach, shape, order, close | P |
@@ -101,6 +101,16 @@ Legend: **A** covered by a journey/unit test, **P** partly covered, **G** gap to
 | Spell gift | Grimoire → choose a spell | Guide starts empty, draws in order on the result, actions unlock when it finishes | A |
 | Wrong cast | Draw → cast a non-fitting family | "A different way", Mò's need, attempted reading/meaning tip, Draw/Grimoire/one answer/walk on | A |
 | Spell quest fold/tablet | Same flow on tablet and BOOK | Story left, circle right, hinge gap, no spanning | A |
+
+## Feedback and support
+
+| Flow | Steps | Expected | A |
+|---|---|---|---|
+| Report a problem or idea | Settings → About → Report | Kind chips, words, crash attachment, preview, Send/Copy; the landscape keyboard leaves the field and actions visible | A |
+| Report with a crash | A crash is saved → About → Report | Row names the date; checkbox checked; include/exclude; preview names the crash | A |
+| Send a report | Composer → Send | Mail/messenger chooser; crash file removed after send | A |
+| Copy a report | Composer → Copy | Clipboard body, confirmation, crash file removed | A |
+| Rate Bihua | About → Rate | The https Play listing opens | A |
 
 ## Settings
 

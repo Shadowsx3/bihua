@@ -8,6 +8,15 @@ enum class ProgressRange(val days: Int, val label: String, val shortLabel: Strin
     MONTH(30, "Last 30 days", "30D"),
     QUARTER(90, "Last 90 days", "90D"),
     YEAR(365, "Last year", "1Y"),
+    /** Everything the learner has done, with no fixed window. */
+    ALL(0, "All time", "All"),
+    /** A picked start and end date; the dates live in the Progress state. */
+    CUSTOM(0, "Custom range", "Custom");
+
+    companion object {
+        /** The fixed chips, in the order they appear above the report. */
+        val presets: List<ProgressRange> = listOf(WEEK, MONTH, QUARTER, YEAR, ALL)
+    }
 }
 
 /**

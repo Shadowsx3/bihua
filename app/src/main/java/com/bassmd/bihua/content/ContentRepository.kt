@@ -70,6 +70,12 @@ class SqliteContentRepository(
         queryCharacters("SELECT * FROM character WHERE mode=? ORDER BY list_index", arrayOf(mode.name))
     }
 
+    /** Opens and copies the content database without loading a course list. */
+    suspend fun prewarm() = withContext(Dispatchers.IO) {
+        database
+        Unit
+    }
+
     override suspend fun find(id: String): CharacterEntry? = withContext(Dispatchers.IO) {
         queryCharacters("SELECT * FROM character WHERE id=?", arrayOf(id)).firstOrNull()
     }
@@ -437,7 +443,11 @@ class SqliteContentRepository(
         }
         val temp = File(target.parentFile, "${target.name}.tmp")
         context.assets.open("bihua_content.db").use { input ->
-            temp.outputStream().use { output -> input.copyTo(output) }
+            temp.outputStream().buffered(1 shl 20).use { output ->
+                // A 30 MB course DB; a large buffer cuts the first-launch copy
+                // from thousands of tiny asset reads to a few dozen.
+                input.copyTo(output, bufferSize = 1 shl 20)
+            }
         }
         if (!temp.renameTo(target)) {
             temp.copyTo(target, overwrite = true)

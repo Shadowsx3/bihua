@@ -11,8 +11,8 @@ journey/unit test, P = partly automated or manual visual review, G = gap.
 | Progress windows and analytics | `progress-ranges`, `progress-empty`, `ProgressStoreModeTest`, `StudyStreakTest`, `daily100`, `goal30` | A |
 | Mixed sessions and resume | `daily20`, `resume`, `process-death` | A |
 | Writing and pronunciation review modes | `review-modes`, `review-modes-long`, `pronounce-kana` | A |
-| Anki writing and pronunciation | `anki` | A |
-| Meaning review, meaning Anki, synonyms | `meaning`, `meaning-anki`, `synonyms` | A |
+| Reveal writing and pronunciation | `reveal-review` | A |
+| Meaning review, meaning reveal, synonyms | `meaning`, `meaning-reveal`, `synonyms` | A |
 | Grade legend | `grade-help` | A |
 | Tour, invite, Help & tour | `tour`, `tour-dark`; compact 1.5× manual | A/P |
 | Large-text navigation and invite | 1.5× tour, `navigation-deep`, `synonyms`, `settings-outfit` | A/P |

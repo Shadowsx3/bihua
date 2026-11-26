@@ -90,6 +90,8 @@ class PinyinTest {
     fun toneMarksAreTheDefaultDisplay() {
         assertEquals("nǐhǎo", Pinyin.display("nǐhǎo", StudyMode.SIMPLIFIED, false))
         assertEquals("ni3hao3", Pinyin.display("nǐhǎo", StudyMode.SIMPLIFIED, true))
+        assertEquals("ài", Pinyin.display("ai4", StudyMode.SIMPLIFIED, false))
+        assertEquals("bǎi / bó", Pinyin.display("bai3,bo2", StudyMode.SIMPLIFIED, false))
         assertFalse(AppSettings().pinyinNumbers)
     }
 }

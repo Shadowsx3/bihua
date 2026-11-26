@@ -263,7 +263,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('gate','RING');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('gate','BIND');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('dark-path','Find the way down','The path ahead is black as ink.|Something rustles and then decides to be quiet.','The path needs light, or moving air, not more dark.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('dark-path','Find the way down the dark path','The path ahead is black as ink.|Something rustles and then decides to be quiet.','The path needs light, or moving air, not more dark.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('dark-path','LIGHT');
 
@@ -333,7 +333,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('bee-garden','GROW');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('bee-garden','HEAT');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('sleeping-guard','Pass the sleeping guard','The guard is asleep across the only door.|The keys are on the table, and the floorboards have opinions.','The way needs quiet, softness, or a little dark.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('sleeping-guard','Pass the sleeping guard','The guard is asleep across the only door.|The keys are on the table, and the floorboards have opinions.','The way needs a soft step, a little dark, or moving air.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('sleeping-guard','DARK');
 
@@ -351,7 +351,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('broken-wheel','WEIGHT');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('broken-wheel','BIND');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('cold-child','Warm the cold child','A child sits by a dead fire, blue at the fingers.|The wood is damp and the wind is unkind.','The child needs warmth, light, or something healing.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('cold-child','Warm the cold child','A child sits by a dead fire, blue at the fingers.|The wood is damp and the wind is unkind.','The child needs warmth, light, something healing, or something soft.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('cold-child','HEAT');
 
@@ -369,7 +369,7 @@ INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('fog-lighthouse','RING');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('fog-lighthouse','AIR');
 
-INSERT INTO obstacle(id, prompt, lines, need) VALUES ('shadow-door','Open the shadow door','A door appears only where the lamplight and shadow meet.|It has no handle on this side.','The door needs both light and dark, or something that turns the moment.');
+INSERT INTO obstacle(id, prompt, lines, need) VALUES ('shadow-door','Open the shadow door','A door appears only where the lamplight and shadow meet.|It has no handle on this side.','The door needs light or dark, or something that turns the moment.');
 
 INSERT INTO obstacle_accepts(obstacle_id, tag) VALUES ('shadow-door','LIGHT');
 

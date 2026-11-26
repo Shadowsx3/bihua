@@ -145,10 +145,13 @@ def _settings(**overrides) -> dict:
         "pinyinNumbers": False,
         "pinyinToneMigrated": True,
         "pronunciationPractice": False,
+        "writingPractice": True,
         "meaningPractice": False,
-        "ankiWriting": False,
-        "ankiPronunciation": False,
-        "ankiMeaning": False,
+        "reviewReasonsEnabled": False,
+        "memoryHooksEnabled": False,
+        "revealWriting": False,
+        "revealPronunciation": False,
+        "revealMeaning": False,
         "meaningSynonyms": {},
         "includeHiragana": True,
         "includeKatakana": True,
@@ -157,7 +160,6 @@ def _settings(**overrides) -> dict:
         "includeMatureContent": False,
         "onlyAgainAndGood": False,
         "showGradeIntervals": False,
-        "wifiOnlyModels": True,
         "vacationStartedAtMs": 0,
         "easeBackUntilMs": 0,
         "guideMode": "FADE",
@@ -227,10 +229,13 @@ def build_state(
     session_progress: str = "NEXT_LESSON",
     mix_interval: int = 5,
     pronunciation: bool = False,
+    writing: bool = True,
     meaning_practice: bool = False,
-    anki_writing: bool = False,
-    anki_pronunciation: bool = False,
-    anki_meaning: bool = False,
+    review_reasons: bool = False,
+    memory_hooks: bool = False,
+    reveal_writing: bool = False,
+    reveal_pronunciation: bool = False,
+    reveal_meaning: bool = False,
     meaning_synonyms: dict | None = None,
     task_mode: str = "BOTH",
     guides_only: bool = False,
@@ -374,10 +379,13 @@ def build_state(
         themeMode=theme.upper(),
         reduceMotion=reduce_motion,
         pronunciationPractice=pronunciation,
+        writingPractice=writing,
         meaningPractice=meaning_practice,
-        ankiWriting=anki_writing,
-        ankiPronunciation=anki_pronunciation,
-        ankiMeaning=anki_meaning,
+        reviewReasonsEnabled=review_reasons,
+        memoryHooksEnabled=memory_hooks,
+        revealWriting=reveal_writing,
+        revealPronunciation=reveal_pronunciation,
+        revealMeaning=reveal_meaning,
         meaningSynonyms=meaning_synonyms or {},
         shareIdenticalGlyphs=shared_glyphs,
         includeMatureContent=mature,
@@ -508,6 +516,9 @@ if __name__ == "__main__":
     parser.add_argument("--vacation", action="store_true")
     parser.add_argument("--ease-back", action="store_true")
     parser.add_argument("--pronunciation", action="store_true")
+    parser.add_argument("--no-writing", dest="writing", action="store_false")
+    parser.add_argument("--review-reasons", action="store_true")
+    parser.add_argument("--memory-hooks", action="store_true")
     parser.add_argument("--review-order", default="RANDOM")
     parser.add_argument("--task-mode", default="BOTH")
     parser.add_argument("--guides-only", action="store_true")
@@ -521,7 +532,9 @@ if __name__ == "__main__":
         mode=args.mode, theme=args.theme, reduce_motion=args.reduce_motion,
         shared_glyphs=args.shared_glyphs,
         mature=args.mature, goal=args.goal, vacation=args.vacation, ease_back=args.ease_back,
-        pronunciation=args.pronunciation, review_order=args.review_order,
+        pronunciation=args.pronunciation, writing=args.writing,
+        review_reasons=args.review_reasons, memory_hooks=args.memory_hooks,
+        review_order=args.review_order,
         task_mode=args.task_mode, guides_only=args.guides_only,
     )
     settings, profile = write_settings_files(state)

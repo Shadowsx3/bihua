@@ -66,6 +66,29 @@ class SpellbookTest {
     }
 
     @Test
+    fun everyFamilyHasAChapterAndAnEffect() {
+        val ids = SpellFamilies.all.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
+        SpellFamilies.all.forEach { family ->
+            assertTrue("${family.id} has an unknown chapter", family.chapter in SpellFamilies.chapters)
+            assertTrue("${family.id} names itself", family.name.isNotBlank())
+            assertTrue("${family.id} has no effect", family.style.name.isNotBlank())
+        }
+    }
+
+    @Test
+    fun everyChapterHasARealAccent() {
+        SpellFamilies.chapters.forEach { chapter ->
+            val color = com.bassmd.bihua.practice.chapterColor(chapter)
+            // Spirit intentionally uses the quiet slate fallback; every other
+            // chapter should have its own accent rather than the fallback.
+            if (chapter != "Spirit") {
+                assertTrue("$chapter lost its accent", color != com.bassmd.bihua.practice.chapterColor("unknown"))
+            }
+        }
+    }
+
+    @Test
     fun everyCategoryHasAFunNumberOfChoices() {
         val grouped = Spellbook.byCategory(shippedSpells())
         grouped.forEach { (category, spells) ->

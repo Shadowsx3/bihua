@@ -89,7 +89,7 @@ fun DrillScreen(
     showStrokeNumbers: Boolean,
     writingSize: WritingSize,
     allowFinger: Boolean,
-    wifiOnlyModels: Boolean = false,
+    recognitionService: com.bassmd.bihua.ai.InkRecognitionService? = null,
     onClose: () -> Unit,
 ) {
     if (entries.isEmpty()) return
@@ -101,12 +101,16 @@ fun DrillScreen(
     val player = rememberStrokeOrderPlayer(entry.id)
     var showReference by remember { mutableStateOf(true) }
     var showOrder by remember { mutableStateOf(showStrokeNumbers) }
-    val recognitionService = remember { InkRecognitionService() }
+    // One app-scoped reader keeps a single recognizer cache and one download
+    // state; a standalone screen can still create its own.
+    val reader = recognitionService ?: remember { InkRecognitionService() }
     val scope = rememberCoroutineScope()
     var recognition by remember { mutableStateOf<RecognitionResult?>(null) }
     var recognizing by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) { onDispose { recognitionService.close() } }
+    DisposableEffect(reader) {
+        onDispose { if (recognitionService == null) reader.close() }
+    }
 
     Column(
         Modifier
@@ -236,11 +240,21 @@ fun DrillScreen(
                 if (ink.strokes.isEmpty() || recognizing) return@PrimaryAction
                 scope.launch {
                     recognizing = true
-                    recognition = recognitionService.recognize(
+                    // Keep the drill moving when the model is still arriving.
+                    if (!reader.canReadNow(mode)) {
+                        recognition = RecognitionResult(
+                            emptyList(),
+                            false,
+                            preparing = com.bassmd.bihua.ai.ModelDownloads
+                                .activeModes.contains(mode),
+                        )
+                        recognizing = false
+                        return@launch
+                    }
+                    recognition = reader.recognize(
                         ink.strokes.toList(),
                         mode,
                         entry.character,
-                        wifiOnly = wifiOnlyModels,
                     )
                     recognizing = false
                 }

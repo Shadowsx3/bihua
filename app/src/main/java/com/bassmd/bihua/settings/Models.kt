@@ -1,6 +1,8 @@
 package com.bassmd.bihua.settings
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import com.bassmd.bihua.content.CharacterOrder
 import com.bassmd.bihua.fsrs.FsrsWeights
 
@@ -255,14 +257,20 @@ data class AppSettings(
      */
     val pinyinToneMigrated: Boolean = false,
     val pronunciationPractice: Boolean = false,
+    /** Drawing is on by default; recognition-only learners can switch it off. */
+    val writingPractice: Boolean = true,
     /** Optional meaning checks: character to meaning, with example words. */
     val meaningPractice: Boolean = false,
-    /** Anki-style writing: show the answer and grade, with no canvas. */
-    val ankiWriting: Boolean = false,
-    /** Anki-style pronunciation: show the reading and grade, with no typing. */
-    val ankiPronunciation: Boolean = false,
-    /** Anki-style meaning: show the meaning and grade, with no choices. */
-    val ankiMeaning: Boolean = false,
+    /** Reveal writing: show the answer and grade, with no canvas. */
+    val revealWriting: Boolean = false,
+    /** Reveal pronunciation: show the reading and grade, with no typing. */
+    val revealPronunciation: Boolean = false,
+    /** Reveal meaning: show the meaning and grade, with no choices. */
+    val revealMeaning: Boolean = false,
+    /** Optional one-tap diagnosis after Again or Hard. Off by default. */
+    val reviewReasonsEnabled: Boolean = false,
+    /** Optional memory-hook button in new-character lessons. Off by default. */
+    val memoryHooksEnabled: Boolean = false,
     /** User wordings accepted for a meaning, keyed by character id. */
     val meaningSynonyms: Map<String, List<String>> = emptyMap(),
     /** The one-time Home invitation to the guided tour has been answered. */
@@ -307,12 +315,6 @@ data class AppSettings(
     val brushPresets: Map<String, BrushConfig> = emptyMap(),
     val drawingTool: DrawingTool = DrawingTool.INK,
     val allowFingerDrawing: Boolean = true,
-    /**
-     * Kept for backup compatibility. The reading model is required for ink
-     * check, so downloads are no longer restricted to Wi-Fi. `sanitized()`
-     * always clears this old flag.
-     */
-    val wifiOnlyModels: Boolean = false,
     /** One-time migration: 1.0.7 shipped finger drawing off even on stylus phones. */
     val fingerDrawingMigrated: Boolean = false,
     /** One-time migration: 1.0.7 shipped ink thin enough to look like a hairline. */
@@ -487,7 +489,11 @@ data class AppSettings(
         val activeBrush = presets[drawingTool.name] ?: migratedBrush.copy(tool = drawingTool)
         // 1.0.7 stored one flat study list. Convert it here so every load path
         // (including a fresh install of this version) sees a named list.
+        // At least one task must stay on. If an old or hand-edited settings
+        // file has drawing off and no recognition check, drawing comes back.
+        val writing = writingPractice || (!pronunciationPractice && !meaningPractice)
         return StudyLists.ensureMigrated(copy(
+            writingPractice = writing,
             dailyNewGoal = dailyNewGoal.coerceIn(MIN_DAILY_GOAL, MAX_DAILY_GOAL),
             dayStartHour = dayStartHour.coerceIn(DayBoundary.MIN_HOUR, DayBoundary.MAX_HOUR),
             reminderHour = reminderHour.coerceIn(0, 23),
@@ -508,7 +514,6 @@ data class AppSettings(
             brush = activeBrush.copy(tool = drawingTool),
             brushPresets = presets,
             brushWidthMigrated = true,
-            wifiOnlyModels = false,
             desiredRetention = desiredRetention.coerceIn(0.70f, 0.97f),
             meaningSynonyms = MeaningSanitizer.mergeSynonyms(meaningSynonyms),
             sbdWeights = sbd,
@@ -538,4 +543,44 @@ data class UserProfile(
             .take(40),
         createdAtEpochMs = createdAtEpochMs.coerceAtLeast(0L),
     )
+}
+
+/**
+ * 1.1.1 stored the reveal switches under older keys. Read those keys once so
+ * existing settings and backups keep their choices; every write after this
+ * uses the reveal* names.
+ */
+object SettingsJsonMigration {
+    private val legacyKeys = linkedMapOf(
+        "ankiWriting" to "revealWriting",
+        "ankiPronunciation" to "revealPronunciation",
+        "ankiMeaning" to "revealMeaning",
+    )
+
+    fun migrateText(text: String): String {
+        val root = runCatching { Json.parseToJsonElement(text) as? JsonObject }.getOrNull()
+            ?: return text
+        val migrated = migrateObject(root)
+        return if (migrated === root) text else migrated.toString()
+    }
+
+    fun migrateBackupText(text: String): String {
+        val root = runCatching { Json.parseToJsonElement(text) as? JsonObject }.getOrNull()
+            ?: return text
+        val settings = root["settings"] as? JsonObject ?: return text
+        val migrated = migrateObject(settings)
+        if (migrated === settings) return text
+        return JsonObject(root + ("settings" to migrated)).toString()
+    }
+
+    fun migrateObject(root: JsonObject): JsonObject {
+        var changed = false
+        val map = root.toMutableMap()
+        legacyKeys.forEach { (old, new) ->
+            val value = map.remove(old) ?: return@forEach
+            if (new !in map) map[new] = value
+            changed = true
+        }
+        return if (changed) JsonObject(map) else root
+    }
 }

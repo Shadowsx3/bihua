@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -434,10 +435,14 @@ private fun ComparePicker(
             com.bassmd.bihua.content.Pinyin.matches(entry.reading, query) ||
             entry.meaning.contains(query, ignoreCase = true)
     }
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(decorFitsSystemWindows = false),
+    ) {
         Surface(color = PaperWarm, shape = RoundedCornerShape(24.dp)) {
             Column(
                 Modifier
+                    .imePadding()
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
             ) {
@@ -629,6 +634,7 @@ private fun CompareWriteDrill(
                             .writingSheet(),
                         contentAlignment = Alignment.Center,
                     ) {
+                        WritingGrid(gridStyle, Modifier.fillMaxSize())
                         when (guideMode) {
                             CompareGuide.FAINT -> OutlineGuide(
                                 character = entry.character,
@@ -651,6 +657,7 @@ private fun CompareWriteDrill(
                             drawingTool = drawingTool,
                             brush = brush,
                             allowFinger = allowFinger,
+                            drawGrid = false,
                             contentDescription = "Write ${entry.character} from the comparison.",
                         )
                     }

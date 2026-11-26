@@ -1,22 +1,46 @@
 # Play Store submission
 
-This is the working checklist for the 1.1.1 upload. It records what the app
+This is the working checklist for the 1.1.2 upload. It records what the app
 actually does so the Play Console answers stay honest. Update it with the
 release checklist whenever the manifest, SDKs, or data flows change.
 
 ## Build identity
 
 - Package: `com.bassmd.bihua`
-- Version: `1.1.1` (`versionCode 22`)
+- Version: `1.1.2` (`versionCode 23`)
 - Min SDK: 29 (Android 10)
 - Target SDK: 36 (Android 16)
 - ABI: `arm64-v8a` only; Play accepts a 64-bit-only app.
 - Signed with the local release key (`keystore.properties`), never committed.
-- Upload artifact: `store/play-assets/upload-1.1.1/bihua-1.1.1.aab`
-  (SHA-256 `6ba3bc03…`; rebuild only if the app code changes)
-- Test APK: `docs/download/bihua-1.1.1.apk` (SHA-256 `649abf36…`)
+- Upload artifact: `store/play-assets/upload-1.1.2/bihua-1.1.2.aab`
+  (SHA-256 `e66b5b85…`)
+- Test APK: `docs/download/bihua-1.1.2.apk` (SHA-256 `1bcc530d…`)
 - Privacy policy: `https://shadowsx3.github.io/bihua/privacy.html`
 - Support: the GitHub repository and its issue tracker.
+
+## Reviewer notes
+
+Paste these into App access / review notes:
+
+- **No account or credentials.** There is no sign-in, subscription, purchase,
+  or test account. Every feature is available on first launch.
+- **A clean offline device is still usable.** The handwriting model is an
+  optional one-time download. On a fresh device with no network it starts in
+  the background, never blocks the primary action, and setup can be skipped.
+  Home still opens and the writing queue still runs. If the reader is not
+  available, Check still returns local stroke and shape feedback and Show
+  answer is always there. Spell quest scenes can be answered from the
+  grimoire, which ships with the app and needs no download.
+- **A quiet model notice is expected.** It explains the optional download; it
+  is not an error and does not stop the learner. The download can complete
+  later when the device is online.
+- **Crash reports are local and user-initiated.** A crash may be saved in
+  app-private storage. Nothing leaves the device until the learner opens
+  Settings → About → Report, reviews the text, and taps Send or Copy. Send
+  opens Android's share sheet so the learner chooses the app; there is no developer crash
+  service.
+- **The app is arm64-only.** Use a 64-bit device or emulator; there is no
+  32-bit ABI by design to keep the local model size down.
 
 ## Permissions
 
@@ -58,6 +82,15 @@ Bihua server.
 - **Data deletion:** there is no account and no server profile. The learner can
   clear progress in Settings, clear app storage in Android, or delete exported
   backups. There is nothing for the developer to delete on a server.
+- **Android backup:** disabled in the manifest (`allowBackup="false"` plus
+  exclusion rules for every data domain). Progress, notes, profile, models, and
+  crash files are not copied into Google backup or OS migration. The app's own
+  Export and local sync are the only transfer paths.
+- **Crash files stay on the device:** a crash may be saved in app-private
+  storage. It is uploaded only if the learner opens Settings → About → Report,
+  reviews it, and taps Send or Copy. That opens Android's share sheet; it
+  is not a developer crash service and is not automatic. Local crash files are
+  excluded from backups and settings sync.
 - **Data collection is optional:** handwriting recognition is used for grading
   hints, never to press the grade button. The learner can grade without it.
 - The reading model is a one-time download from Google Play services. It may
@@ -66,7 +99,7 @@ Bihua server.
 
 ## Content rating and audience
 
-- Target audience: **13+**. The app is not designed for children under 13 and
+- Target audience: **16+**. The app is not designed for children under 16 and
   has no child-directed ads, purchases, or social features.
 - Content rating questionnaire: learning tool; no graphic violence or
   depictions, no user-generated public content, no gambling. Fantasy vocabulary
@@ -76,7 +109,7 @@ Bihua server.
   appropriate language category in the IARC questionnaire; do not select
   "Everyone" just because the toggle is off. The default experience is
   non-mature, and the opt-in is behind a confirmation dialog.
-- The app is **13+**. Do not opt into the Families program.
+- The app is **16+**. Do not opt into the Families program.
 - No ads, no in-app purchases, no subscriptions, no loot boxes.
 - No user-to-user chat, public profiles, or content sharing. Study lists and
   backups stay local or go to the learner's own file provider.
@@ -101,18 +134,26 @@ Bihua server.
 
 ## Store listing
 
+- Release notes (1.1.2): “Today and Week ahead widgets, All time and a year
+  heatmap in Progress, recent mistakes and recently learned that follow the
+  selected range, a report composer that keeps crash files on your phone until
+  you send, and a splash that no longer jumps. Landscape phones use the
+  two-page Home and Practice layouts, and the spell quest, its draw screen, and
+  the grimoire use their wide spreads.”
 - Title, short description, full description, and screenshots match the
-  current build. Do not claim features that are not in 1.1.1.
-- The screenshot set is in `store/play-assets/upload-1.1.1/` (local, gitignored)
-  with phone, 7-inch, 10-inch, fold, and the feature graphic.
+  current build. Do not claim features that are not in 1.1.2.
+- The screenshot set is in `store/play-assets/upload-1.1.2/` (local, gitignored):
+  eight phone cards, six captioned 7-inch and six captioned 10-inch tablet
+  cards, seven fold cards, the feature graphic, and the icon. Progress and the
+  report composer appear on phone, tablet, and fold.
 - The signed test APK on the landing page is for testers, not the Play build.
 - Upload the AAB to an internal testing track first, install from Play, and run
-  the release smoke. Promote only after the 1.0.9 review clears.
+  the release smoke. Promote only after that smoke passes.
 
 ## Policy checks before upload
 
-- [ ] Target SDK 36 and versionCode 22.
-- [ ] `make check`, `make lint`, and the release journeys are green.
+- [ ] Target SDK 36 and versionCode 23.
+- [ ] `make check`, `make lint`, and the release journeys are green, including `offline-first-run`.
 - [ ] AAB is signed and the Play upload certificate matches the upload key.
 - [ ] No debug build, `android:debuggable`, test-only flag, or debug signing in
       the uploaded AAB.
@@ -121,11 +162,12 @@ Bihua server.
 - [ ] Data safety and content rating answers match the shipped behavior.
 - [ ] Privacy policy URL, support URL, and developer contact are live.
 - [ ] App access instructions say "No account. All features are available on
-      first launch."
+      first launch." Reviewer notes explain that a clean offline device can
+      skip setup and start a review while the optional reader downloads.
 - [ ] Ads declaration says "No ads".
 - [ ] In-app purchases declaration says "No".
 - [ ] News, health, finance, government, and gambling declarations are "No".
-- [ ] Families policy is not selected (13+ audience).
+- [ ] Families policy is not selected (16+ audience).
 - [ ] The store description does not promise clinical or literacy outcomes.
 - [ ] Store screenshots and feature graphic are current and do not show a
       different build.

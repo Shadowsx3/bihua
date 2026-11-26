@@ -2,6 +2,7 @@
 
 package com.bassmd.bihua.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -13,7 +14,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,15 +25,27 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -42,10 +57,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -61,6 +81,7 @@ import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.progress.DueDay
 import com.bassmd.bihua.progress.ProgressRange
+import com.bassmd.bihua.progress.ProgressWindow
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.ui.components.Dot
@@ -81,7 +102,19 @@ import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.SkyInk
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.temporal.ChronoUnit
+import kotlin.math.ceil
 import kotlin.math.roundToInt
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.bassmd.bihua.progress.ProgressReportData
+import com.bassmd.bihua.progress.ProgressReportPdf
 
 /**
  * Progress over weeks, not the next action. The home screen already answers
@@ -93,8 +126,9 @@ fun DashboardScreen(
     characters: List<CharacterEntry>,
     activity: List<DayActivity>,
     rangeActivity: List<DayActivity> = activity,
-    range: ProgressRange = ProgressRange.MONTH,
+    window: ProgressWindow,
     onRangeChange: (ProgressRange) -> Unit = {},
+    onCustomRange: (LocalDate, LocalDate) -> Unit = { _, _ -> },
     streakDays: Int = 0,
     today: java.time.LocalDate = java.time.LocalDate.now(),
     forecast: List<DueDay>,
@@ -109,6 +143,8 @@ fun DashboardScreen(
     writingPace: com.bassmd.bihua.progress.WritingPace? = null,
     previousWritingPace: com.bassmd.bihua.progress.WritingPace? = null,
     taskStats: Map<String, com.bassmd.bihua.progress.TaskStat> = emptyMap(),
+    profileName: String = "",
+    reviewedInRange: List<CharacterEntry> = emptyList(),
     onOpenCharacter: (CharacterEntry) -> Unit,
     onReview: () -> Unit = {},
 ) {
@@ -120,6 +156,139 @@ fun DashboardScreen(
     val new = counts[StudyStatus.NEW] ?: 0
     val largeText = LocalDensity.current.fontScale > 1.25f
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
+    var showCustomRange by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val modeLabel = stringResource(mode.labelRes)
+    val scope = rememberCoroutineScope()
+    var reportBuilding by remember { mutableStateOf(false) }
+    var showPdfExport by remember { mutableStateOf(false) }
+    val touched = remember(reviewedInRange, rangeActivity, characters) {
+        if (reviewedInRange.isNotEmpty()) {
+            reviewedInRange
+        } else {
+            val byId = characters.associateBy { it.id }
+            rangeActivity.flatMap { it.characters }.distinct().mapNotNull { byId[it] }
+        }
+    }
+    val reportData = remember(
+        profileName, mode, window, today, characters, rangeActivity, history,
+        gradeMix, averageInterval, practiceTimeMs, streakDays, writingPace,
+        previousWritingPace, taskStats, memoryBuckets, touched, mistakes,
+        confusions, recent, reviewedInRange,
+    ) {
+        ProgressReportData(
+            profileName = profileName,
+            modeLabel = modeLabel,
+            rangeLabel = window.label,
+            generatedOn = today,
+            characters = characters,
+            days = rangeActivity,
+            history = history,
+            gradeMix = gradeMix,
+            averageInterval = averageInterval,
+            practiceTimeMs = practiceTimeMs,
+            streakDays = streakDays,
+            writingPace = writingPace,
+            previousWritingPace = previousWritingPace,
+            taskStats = taskStats,
+            memoryBuckets = memoryBuckets,
+            touched = touched.ifEmpty { recent },
+            mistakes = mistakes,
+            confusions = confusions,
+            recentlyLearned = recent,
+        )
+    }
+    LaunchedEffect(
+        com.bassmd.bihua.ai.QaFlags.reportProbe,
+        window.label,
+        today,
+        rangeActivity,
+        history,
+        characters,
+        gradeMix,
+        practiceTimeMs,
+        streakDays,
+    ) {
+        if (!com.bassmd.bihua.ai.QaFlags.reportProbe) return@LaunchedEffect
+        val label = window.label.replace(Regex("[^A-Za-z0-9]+"), "-").trim('-')
+        val file = java.io.File(
+            context.getExternalFilesDir(null),
+            "bihua-progress-report-${label.ifBlank { "range" }}.pdf",
+        )
+        withContext(Dispatchers.IO) {
+            runCatching {
+                file.parentFile?.mkdirs()
+                val temp = java.io.File(file.parentFile, "${file.name}.tmp")
+                temp.outputStream().use { ProgressReportPdf.write(reportData, it) }
+                if (!temp.renameTo(file)) {
+                    temp.copyTo(file, overwrite = true)
+                    temp.delete()
+                }
+            }.onFailure {
+                android.util.Log.e("ProgressReport", "could not write ${file.name}", it)
+            }
+        }
+        android.util.Log.d("ProgressReport", "wrote ${file.absolutePath} ${file.length()} bytes")
+    }
+    val reportFileName = remember(window, today) {
+        val range = window.label
+            .replace(Regex("[^A-Za-z0-9]+"), "-")
+            .trim('-')
+            .ifBlank { "progress" }
+        "bihua-progress-$range-${today}.pdf"
+    }
+    val createReport = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        if (uri != null) {
+            reportBuilding = true
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openOutputStream(uri)?.use { stream ->
+                            ProgressReportPdf.write(reportData, stream)
+                        } ?: error("Could not open the report file.")
+                    }.isSuccess
+                }
+                reportBuilding = false
+                Toast.makeText(
+                    context,
+                    if (ok) "Progress report saved." else "Could not write the report.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    val shareReport: () -> Unit = {
+        reportBuilding = true
+        scope.launch {
+            val file = withContext(Dispatchers.IO) {
+                com.bassmd.bihua.ui.components.cachePdf(
+                    context,
+                    reportFileName,
+                ) { stream -> ProgressReportPdf.write(reportData, stream) }
+            }
+            reportBuilding = false
+            if (file != null) {
+                runCatching {
+                    com.bassmd.bihua.ui.components.sharePdf(
+                        context,
+                        file,
+                        "Share progress summary",
+                    )
+                }.onFailure {
+                    Toast.makeText(context, "No app could share the PDF.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(
+                    context,
+                    "Could not prepare the report.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val book = LocalFoldState.current == FoldState.BOOK
@@ -157,25 +326,43 @@ fun DashboardScreen(
                 }
             }
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                        ProgressRange.entries.forEachIndexed { index, option ->
-                            SegmentedButton(
-                                selected = range == option,
-                                onClick = { onRangeChange(option) },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = ProgressRange.entries.size,
-                                ),
-                                label = { Text(option.shortLabel) },
-                                modifier = Modifier.semantics {
-                                    contentDescription = option.label
-                                },
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (wide) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            PresetRangeChips(
+                                window = window,
+                                onRangeChange = onRangeChange,
+                                modifier = Modifier.weight(1f),
+                            )
+                            CustomRangeCard(
+                                window = window,
+                                onClick = { showCustomRange = true },
+                                modifier = Modifier.width(360.dp),
                             )
                         }
+                    } else {
+                        PresetRangeChips(
+                            window = window,
+                            onRangeChange = onRangeChange,
+                        )
+                        CustomRangeCard(
+                            window = window,
+                            onClick = { showCustomRange = true },
+                        )
                     }
                     Text(
-                        "Reviews, growth, pace, and practice time for the ${range.label.lowercase()}.",
+                        when {
+                            window.allTime ->
+                                "Reviews, growth, pace, and practice time across everything you have done."
+                            window.isCustom ->
+                                "Reviews, growth, pace, and practice time from ${window.label}."
+                            else ->
+                                "Reviews, growth, pace, and practice time for the ${window.label.lowercase()}."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
@@ -183,7 +370,7 @@ fun DashboardScreen(
             }
             item {
                 RangeSummaryCard(
-                    range = range,
+                    window = window,
                     days = rangeActivity,
                     mix = gradeMix,
                     practiceTimeMs = practiceTimeMs,
@@ -191,46 +378,78 @@ fun DashboardScreen(
                 )
             }
             item {
-                val calendarDays = when (range) {
-                    ProgressRange.WEEK, ProgressRange.MONTH -> rangeActivity
+                if (wide) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        CoverageCard(
+                            characters = characters,
+                            mode = mode,
+                            modifier = Modifier.weight(1f),
+                        )
+                        ReviewQualityCard(
+                            mix = gradeMix,
+                            window = window,
+                            averageInterval = averageInterval,
+                            practiceTimeMs = practiceTimeMs,
+                            writingPace = writingPace,
+                            previousWritingPace = previousWritingPace,
+                            taskStats = taskStats,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                } else {
+                    CoverageCard(characters, mode)
+                }
+            }
+            item {
+                val calendarDays = when {
+                    window.isCustom -> rangeActivity
+                    window.preset == ProgressRange.WEEK ||
+                        window.preset == ProgressRange.MONTH -> rangeActivity
                     else -> activity
                 }
-                StudyCalendarCard(days = calendarDays, today = today, onDayClick = { selectedDay = it })
+                StudyCalendarCard(
+                    days = calendarDays,
+                    today = today,
+                    label = if (window.isCustom) window.label else null,
+                    onDayClick = { selectedDay = it },
+                )
             }
             if (history.any { it.reviewed > 0 }) {
                 item {
                     SoftCard(Modifier.fillMaxWidth()) {
                         LearnedChart(
                             history = history,
-                            periodLabel = range.label,
+                            periodLabel = window.label,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
-            item {
-                ReviewQualityCard(
-                    mix = gradeMix,
-                    range = range,
-                    averageInterval = averageInterval,
-                    practiceTimeMs = practiceTimeMs,
-                    writingPace = writingPace,
-                    previousWritingPace = previousWritingPace,
-                    taskStats = taskStats,
-                )
+            if (!wide) {
+                item {
+                    ReviewQualityCard(
+                        mix = gradeMix,
+                        window = window,
+                        averageInterval = averageInterval,
+                        practiceTimeMs = practiceTimeMs,
+                        writingPace = writingPace,
+                        previousWritingPace = previousWritingPace,
+                        taskStats = taskStats,
+                    )
+                }
             }
             item {
                 if (wide) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        CoverageCard(characters, Modifier.weight(1f))
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            ForecastCard(days = forecast, onDayClick = { selectedDay = DayActivity(date = it.date, due = it.due) })
-                            MemoryCard(memoryBuckets, new)
-                        }
+                        ForecastCard(
+                            days = forecast,
+                            onDayClick = { selectedDay = DayActivity(date = it.date, due = it.due) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MemoryCard(memoryBuckets, new, Modifier.weight(1f))
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        CoverageCard(characters)
                         ForecastCard(days = forecast, onDayClick = { selectedDay = DayActivity(date = it.date, due = it.due) })
                         MemoryCard(memoryBuckets, new)
                     }
@@ -253,6 +472,7 @@ fun DashboardScreen(
                 item {
                     CharacterStrip(
                         title = "Characters you mix up",
+                        subtitle = "All time",
                         characters = confusions,
                         emptyText = "",
                         onOpen = onOpenCharacter,
@@ -264,6 +484,7 @@ fun DashboardScreen(
                 item {
                     CharacterStrip(
                         title = "Recent mistakes",
+                        subtitle = window.label,
                         characters = mistakes,
                         emptyText = "",
                         onOpen = onOpenCharacter,
@@ -274,20 +495,546 @@ fun DashboardScreen(
             item {
                 CharacterStrip(
                     title = "Recently learned",
+                    subtitle = window.label,
                     characters = recent,
-                    emptyText = "New characters will appear here after your first session.",
+                    emptyText = if (window.allTime) {
+                        "New characters will appear here after your first session."
+                    } else {
+                        "No new characters in this range."
+                    },
                     onOpen = onOpenCharacter,
                     onReview = onReview,
                 )
             }
+            item {
+                SoftCard(Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "Take this range with you",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = InkDark,
+                            )
+                            Text(
+                                "A clean PDF of the numbers, levels, and characters for a teacher, a friend, or your own records.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        OutlinedButton(
+                            onClick = { showPdfExport = true },
+                            enabled = !reportBuilding,
+                            shape = CircleShape,
+                        ) {
+                            Icon(
+                                Icons.Rounded.PictureAsPdf,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (reportBuilding) "Building…" else "PDF")
+                        }
+                    }
+                }
+            }
         }
         selectedDay?.let { DayDetailSheet(day = it, onDismiss = { selectedDay = null }) }
+        if (showCustomRange) {
+            CustomRangeSheet(
+                today = today,
+                initialStart = window.start,
+                initialEnd = window.end,
+                onDismiss = { showCustomRange = false },
+                onApply = { start, end ->
+                    onCustomRange(start, end)
+                    showCustomRange = false
+                },
+                onPreset = { preset ->
+                    onRangeChange(preset)
+                    showCustomRange = false
+                },
+            )
+        }
+        if (showPdfExport) {
+            com.bassmd.bihua.ui.components.PdfExportDialog(
+                title = "Progress summary PDF",
+                onDismiss = { showPdfExport = false },
+                onSave = {
+                    showPdfExport = false
+                    createReport.launch(reportFileName)
+                },
+                onShare = {
+                    showPdfExport = false
+                    shareReport()
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomRangeSheet(
+    today: LocalDate,
+    initialStart: LocalDate?,
+    initialEnd: LocalDate?,
+    onDismiss: () -> Unit,
+    onApply: (LocalDate, LocalDate) -> Unit,
+    onPreset: (ProgressRange) -> Unit,
+) {
+    val first = initialStart ?: today.minusDays(6)
+    val last = initialEnd ?: today
+    var startIso by rememberSaveable(first.toString(), last.toString()) {
+        mutableStateOf<String?>(first.toString())
+    }
+    var endIso by rememberSaveable(first.toString(), last.toString()) {
+        mutableStateOf<String?>(last.toString())
+    }
+    var monthIso by rememberSaveable(first.toString(), last.toString()) {
+        mutableStateOf(YearMonth.from(last).toString())
+    }
+    val pickedStart = startIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val pickedEnd = endIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val month = runCatching { YearMonth.parse(monthIso) }.getOrDefault(YearMonth.from(last))
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    fun choose(start: LocalDate, end: LocalDate) {
+        startIso = start.toString()
+        endIso = end.toString()
+        monthIso = YearMonth.from(end).toString()
+    }
+    fun pick(date: LocalDate) {
+        val start = pickedStart
+        when {
+            start == null || pickedEnd != null || date.isBefore(start) -> {
+                startIso = date.toString()
+                endIso = null
+            }
+            else -> endIso = date.toString()
+        }
+    }
+
+    val dayCount = if (pickedStart != null && pickedEnd != null) {
+        ChronoUnit.DAYS.between(pickedStart, pickedEnd).toInt().coerceAtLeast(0) + 1
+    } else {
+        0
+    }
+    val summary = when {
+        pickedStart == null -> "Pick a start day."
+        pickedEnd == null -> "Start: ${formatDay(pickedStart, today)} · pick an end day."
+        else -> "${formatDay(pickedStart, today)} – ${formatDay(pickedEnd, today)} · " +
+            if (dayCount == 1) "1 day" else "$dayCount days"
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.94f)
+                .padding(horizontal = 20.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = Mint.copy(alpha = 0.24f),
+                    modifier = Modifier.size(44.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.CalendarMonth,
+                            contentDescription = null,
+                            tint = InkDark,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Choose a range",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = InkDark,
+                    )
+                    Text(
+                        "Last week, one Monday, or any two days.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                QuickRangeGrid(
+                    today = today,
+                    pickedStart = pickedStart,
+                    pickedEnd = pickedEnd,
+                    onChoose = ::choose,
+                )
+                Spacer(Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Mint.copy(alpha = 0.16f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Rounded.CalendarMonth,
+                            contentDescription = null,
+                            tint = InkDark,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            summary,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = InkDark,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                RangeCalendar(
+                    month = month,
+                    start = pickedStart,
+                    end = pickedEnd,
+                    today = today,
+                    onMonthChange = { monthIso = it.toString() },
+                    onPick = ::pick,
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { onPreset(ProgressRange.MONTH) }) {
+                    Text("Reset to 30D")
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+                Spacer(Modifier.width(6.dp))
+                Button(
+                    onClick = {
+                        if (pickedStart != null && pickedEnd != null) {
+                            onApply(pickedStart, pickedEnd)
+                        }
+                    },
+                    enabled = pickedStart != null && pickedEnd != null,
+                ) {
+                    Text("Apply range")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickRangeGrid(
+    today: LocalDate,
+    pickedStart: LocalDate?,
+    pickedEnd: LocalDate?,
+    onChoose: (LocalDate, LocalDate) -> Unit,
+) {
+    val ranges = quickRanges(today)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ranges.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pair.forEach { quick ->
+                    val selected = pickedStart == quick.start && pickedEnd == quick.end
+                    Surface(
+                        onClick = { onChoose(quick.start, quick.end) },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (selected) Mint.copy(alpha = 0.24f) else PaperWarm,
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) Mint else InkSoft.copy(alpha = 0.14f),
+                        ),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
+                            Text(
+                                quick.label,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = InkDark,
+                            )
+                            Text(
+                                quickHint(quick),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkSoft,
+                            )
+                        }
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RangeCalendar(
+    month: YearMonth,
+    start: LocalDate?,
+    end: LocalDate?,
+    today: LocalDate,
+    onMonthChange: (YearMonth) -> Unit,
+    onPick: (LocalDate) -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = PaperWarm,
+        border = BorderStroke(1.dp, InkSoft.copy(alpha = 0.14f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { onMonthChange(month.minusMonths(1)) }) {
+                    Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous month")
+                }
+                Text(
+                    month.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy")),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = InkDark,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    enabled = month < YearMonth.from(today),
+                    onClick = { onMonthChange(month.plusMonths(1)) },
+                ) {
+                    Icon(
+                        Icons.Rounded.ChevronRight,
+                        contentDescription = "Next month",
+                        tint = if (month < YearMonth.from(today)) InkDark else InkSoft.copy(alpha = 0.35f),
+                    )
+                }
+            }
+            Row(Modifier.fillMaxWidth()) {
+                listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            val offset = month.atDay(1).dayOfWeek.value % 7
+            val dayCount = month.lengthOfMonth()
+            val rows = ceil((offset + dayCount) / 7.0).toInt()
+            repeat(rows) { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    repeat(7) { column ->
+                        val index = row * 7 + column
+                        val day = index - offset + 1
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (day in 1..dayCount) {
+                                val date = month.atDay(day)
+                                val inRange = start != null && end != null &&
+                                    !date.isBefore(start) && !date.isAfter(end)
+                                val isEdge = date == start || date == end
+                                val future = date.isAfter(today)
+                                Surface(
+                                    onClick = { if (!future) onPick(date) },
+                                    enabled = !future,
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = when {
+                                        isEdge -> Mint
+                                        inRange -> Mint.copy(alpha = 0.18f)
+                                        else -> Color.Transparent
+                                    },
+                                    border = if (date == today && !isEdge) {
+                                        BorderStroke(1.5.dp, InkDark)
+                                    } else {
+                                        null
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(1.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            "$day",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (future) {
+                                                InkSoft.copy(alpha = 0.32f)
+                                            } else {
+                                                InkDark
+                                            },
+                                            fontWeight = if (isEdge) FontWeight.SemiBold else FontWeight.Normal,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Text(
+                "Tap a start day, then an end day. One day is allowed.",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+            )
+        }
+    }
+}
+
+private data class QuickRange(
+    val label: String,
+    val start: LocalDate,
+    val end: LocalDate,
+)
+
+private fun quickRanges(today: LocalDate): List<QuickRange> {
+    // The Progress calendar starts its weeks on Sunday, so the quick ranges do
+    // the same; a Monday-only view is then one tap inside the calendar.
+    val sunday = today.minusDays((today.dayOfWeek.value % 7).toLong())
+    val lastSunday = sunday.minusWeeks(1)
+    val monthStart = today.withDayOfMonth(1)
+    val lastMonthEnd = monthStart.minusDays(1)
+    return listOf(
+        QuickRange("This week", sunday, today),
+        QuickRange("Last week", lastSunday, lastSunday.plusDays(6)),
+        QuickRange("This month", monthStart, today),
+        QuickRange("Last month", lastMonthEnd.withDayOfMonth(1), lastMonthEnd),
+        QuickRange("Today", today, today),
+        QuickRange("Yesterday", today.minusDays(1), today.minusDays(1)),
+    )
+}
+
+private fun quickHint(range: QuickRange): String {
+    val format = java.time.format.DateTimeFormatter.ofPattern("MMM d")
+    return if (range.start == range.end) {
+        range.start.format(format)
+    } else {
+        "${range.start.format(format)} – ${range.end.format(format)}"
+    }
+}
+
+private fun formatDay(date: LocalDate, today: LocalDate): String {
+    val pattern = if (date.year == today.year) "EEE, MMM d" else "EEE, MMM d, yyyy"
+    return date.format(java.time.format.DateTimeFormatter.ofPattern(pattern))
+}
+
+@Composable
+private fun PresetRangeChips(
+    window: ProgressWindow,
+    onRangeChange: (ProgressRange) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(ProgressRange.presets) { option ->
+            FilterChip(
+                selected = !window.isCustom && window.preset == option,
+                onClick = { onRangeChange(option) },
+                label = { Text(option.shortLabel) },
+                modifier = Modifier.semantics {
+                    contentDescription = option.label
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomRangeCard(
+    window: ProgressWindow,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = if (window.isCustom) Mint.copy(alpha = 0.22f) else PaperWarm,
+        border = BorderStroke(
+            1.dp,
+            if (window.isCustom) Mint else InkSoft.copy(alpha = 0.18f),
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = if (window.isCustom) {
+                    "Custom range, ${window.label}. Change the dates"
+                } else {
+                    "Choose a custom date range"
+                }
+            },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Rounded.CalendarMonth,
+                contentDescription = null,
+                tint = InkDark,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Custom range",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = InkDark,
+                )
+                Text(
+                    if (window.isCustom) {
+                        "${window.label} · " +
+                            if (window.days == 1) "1 day" else "${window.days} days"
+                    } else {
+                        "Last week, one Monday, or any two days."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            }
+            Text(
+                if (window.isCustom) "Change" else "Pick",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (window.isCustom) InkDark else InkSoft,
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = null,
+                tint = InkSoft,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }
 
 @Composable
 private fun RangeSummaryCard(
-    range: ProgressRange,
+    window: ProgressWindow,
     days: List<DayActivity>,
     mix: com.bassmd.bihua.progress.GradeMix,
     practiceTimeMs: Long,
@@ -305,7 +1052,7 @@ private fun RangeSummaryCard(
                 Column(Modifier.weight(1f)) {
                     Text("Momentum", style = MaterialTheme.typography.titleMedium, color = InkDark)
                     Text(
-                        range.label,
+                        window.label,
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
@@ -335,7 +1082,11 @@ private fun RangeSummaryCard(
                 when {
                     practiced == 0 -> "No practice in this window yet. One session starts it."
                     else -> buildString {
-                        append("$practiced of ${range.days} days with ink")
+                        if (window.allTime) {
+                            append("$practiced study days with ink")
+                        } else {
+                            append("$practiced of ${window.days} days with ink")
+                        }
                         if (streakDays > 0) append(" · $streakDays-day streak")
                         if (best != null && best.reviewed > 0) {
                             append(" · best day ${best.reviewed} reviews")
@@ -377,21 +1128,22 @@ private fun RangeStatTile(
 @Composable
 private fun ReviewQualityCard(
     mix: com.bassmd.bihua.progress.GradeMix,
-    range: ProgressRange,
+    window: ProgressWindow,
     averageInterval: Float,
     practiceTimeMs: Long,
     writingPace: com.bassmd.bihua.progress.WritingPace?,
     previousWritingPace: com.bassmd.bihua.progress.WritingPace?,
     taskStats: Map<String, com.bassmd.bihua.progress.TaskStat>,
+    modifier: Modifier = Modifier,
 ) {
     val colors = listOf(Rose, Butter, Mint, Sky)
     val labels = listOf("Again", "Hard", "Good", "Easy")
     val counts = listOf(mix.again, mix.hard, mix.good, mix.easy)
-    SoftCard(Modifier.fillMaxWidth()) {
+    SoftCard(modifier.fillMaxWidth()) {
         Column {
             Text("Review quality", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
-                "${range.label} · how your grades split",
+                "${window.label} · how your grades split",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkSoft,
             )
@@ -443,7 +1195,8 @@ private fun ReviewQualityCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${(mix.passRate * 100).toInt()}% passed · ${mix.total} reviews in this window",
+                    "${(mix.passRate * 100).toInt()}% passed · ${mix.total} reviews " +
+                        if (window.allTime) "overall" else "in this window",
                     style = MaterialTheme.typography.labelSmall,
                     color = InkSoft,
                 )
@@ -452,8 +1205,10 @@ private fun ReviewQualityCard(
                         append("Average interval ${averageInterval.toInt()} days")
                         if (practiceTimeMs > 0) {
                             append(
-                                " · ${formatDuration(practiceTimeMs)} practising in the " +
-                                    range.label.lowercase(),
+                                " · ${formatDuration(practiceTimeMs)} practising " +
+                                    if (window.allTime) "overall"
+                                    else if (window.isCustom) "in this range"
+                                    else "in the ${window.label.lowercase()}",
                             )
                         }
                         com.bassmd.bihua.progress.formatPace(writingPace)?.let {
@@ -464,9 +1219,9 @@ private fun ReviewQualityCard(
                             ?.let { trend ->
                                 append(
                                     if (trend > 0) {
-                                        " · $trend% quicker than the previous ${range.days} days"
+                                        " · $trend% quicker than the previous ${window.days} days"
                                     } else {
-                                        " · ${-trend}% slower than the previous ${range.days} days"
+                                        " · ${-trend}% slower than the previous ${window.days} days"
                                     }
                                 )
                             }
@@ -503,7 +1258,11 @@ private fun ReviewQualityCard(
 }
 
 @Composable
-private fun CoverageCard(characters: List<CharacterEntry>, modifier: Modifier = Modifier) {
+private fun CoverageCard(
+    characters: List<CharacterEntry>,
+    mode: StudyMode,
+    modifier: Modifier = Modifier,
+) {
     val levels = characters
         .groupBy { it.levelLabel.ifBlank { "Level ${it.level}" } }
         .toList()
@@ -514,19 +1273,33 @@ private fun CoverageCard(characters: List<CharacterEntry>, modifier: Modifier = 
                 Icon(Icons.Rounded.School, contentDescription = null, tint = InkDark)
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Character coverage", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    Text("Level progress", style = MaterialTheme.typography.titleMedium, color = InkDark)
                     Text(
-                        "How much of each level you have learned.",
+                        when (mode) {
+                            StudyMode.SIMPLIFIED, StudyMode.TRADITIONAL ->
+                                "HSK 3.0 bands, then the non-HSK characters."
+                            StudyMode.JAPANESE ->
+                                "Jōyō grade levels, then the secondary kanji set."
+                            StudyMode.KOREAN ->
+                                "Hangul, syllables, then the Hanja set."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
                 }
+                val overall = if (characters.isEmpty()) 0f else {
+                    characters.count { it.status != StudyStatus.NEW }.toFloat() / characters.size
+                }
+                Pill(formatPercent(overall), Mint.copy(alpha = 0.45f))
             }
             Spacer(Modifier.height(12.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val columns = if (maxWidth >= 900.dp) 4 else 2
+                FlowRow(
+                    maxItemsInEachRow = columns,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                 levels.forEach { (label, entries) ->
                     val learned = entries.count { it.status != StudyStatus.NEW }
                     val total = entries.size.coerceAtLeast(1)
@@ -572,7 +1345,14 @@ private fun CoverageCard(characters: List<CharacterEntry>, modifier: Modifier = 
                         }
                     }
                 }
+                }
             }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Started means introduced at least once. It is not a mastery claim.",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+            )
         }
     }
 }
@@ -612,10 +1392,14 @@ private fun CoverageRing(fraction: Float, label: String, color: Color, size: and
 }
 
 @Composable
-private fun ForecastCard(days: List<DueDay>, onDayClick: (DueDay) -> Unit) {
+private fun ForecastCard(
+    days: List<DueDay>,
+    onDayClick: (DueDay) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val total = days.sumOf { it.due }
     val peak = days.maxOfOrNull { it.due }?.coerceAtLeast(1) ?: 1
-    SoftCard(Modifier.fillMaxWidth()) {
+    SoftCard(modifier.fillMaxWidth()) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Insights, contentDescription = null, tint = InkDark)
@@ -684,10 +1468,18 @@ internal fun CharacterStrip(
     emptyText: String,
     onOpen: (CharacterEntry) -> Unit,
     onReview: () -> Unit,
+    subtitle: String? = null,
 ) {
     SoftCard(Modifier.fillMaxWidth()) {
         Column {
             Text(title, style = MaterialTheme.typography.titleMedium, color = InkDark)
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                )
+            }
             Spacer(Modifier.height(8.dp))
             if (characters.isEmpty()) {
                 Text(
@@ -733,7 +1525,11 @@ internal fun CharacterStrip(
 }
 
 @Composable
-private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, new: Int) {
+private fun MemoryCard(
+    buckets: List<com.bassmd.bihua.progress.MemoryBucket>,
+    new: Int,
+    modifier: Modifier = Modifier,
+) {
     val colors = mapOf(
         com.bassmd.bihua.progress.MemoryLevel.STRONG to GuideGreen,
         com.bassmd.bihua.progress.MemoryLevel.SOLID to SkyInk,
@@ -741,7 +1537,7 @@ private fun MemoryCard(buckets: List<com.bassmd.bihua.progress.MemoryBucket>, ne
         com.bassmd.bihua.progress.MemoryLevel.SHAKY to MaterialTheme.colorScheme.error,
     )
     val total = buckets.sumOf { it.count }
-    SoftCard(Modifier.fillMaxWidth()) {
+    SoftCard(modifier.fillMaxWidth()) {
         Column {
             Text("Memory", style = MaterialTheme.typography.titleMedium, color = InkDark)
             Text(
@@ -816,9 +1612,23 @@ private fun MemoryRow(label: String, count: Int, recall: Int, color: Color) {
 private fun TimelineCard(days: List<DayActivity>, modifier: Modifier = Modifier) {
     val reviews = days.sumOf { it.reviewed }
     val active = days.count { it.reviewed > 0 }
-    val values = days.map { it.reviewed }
+    // Keep the bars readable for an all-time run of years. Totals above stay
+    // exact; the chart uses daily, then chunky buckets.
+    val chartDays = if (days.size <= 160) {
+        days
+    } else {
+        val chunk = (days.size + 159) / 160
+        days.chunked(chunk).map { group ->
+            DayActivity(
+                date = group.first().date,
+                reviewed = group.sumOf { it.reviewed },
+                learned = group.sumOf { it.learned },
+            )
+        }
+    }
+    val values = chartDays.map { it.reviewed }
     val max = (values.maxOrNull() ?: 0).coerceAtLeast(1)
-    val firstLabel = days.firstOrNull()?.date
+    val firstLabel = chartDays.firstOrNull()?.date
         ?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")) ?: "Start"
     val soft = InkSoft
     if (reviews == 0) {

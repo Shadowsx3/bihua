@@ -2,7 +2,12 @@ package com.bassmd.bihua.ai
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * One tiny connectivity check for model downloads. If the network is missing
@@ -13,9 +18,35 @@ import android.net.NetworkCapabilities
 object NetworkStatus {
     @Volatile
     private var appContext: Context? = null
+    private val registered = AtomicBoolean(false)
+    private val _online = MutableStateFlow(true)
+    val online: StateFlow<Boolean> = _online.asStateFlow()
 
     fun init(context: Context) {
-        appContext = context.applicationContext
+        val application = context.applicationContext
+        appContext = application
+        _online.value = isOnline()
+        if (!registered.compareAndSet(false, true)) return
+        runCatching {
+            val manager = application.getSystemService(ConnectivityManager::class.java)
+                ?: return@runCatching
+            manager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    _online.value = isOnline()
+                }
+
+                override fun onLost(network: Network) {
+                    _online.value = isOnline()
+                }
+
+                override fun onCapabilitiesChanged(
+                    network: Network,
+                    networkCapabilities: NetworkCapabilities,
+                ) {
+                    _online.value = isOnline()
+                }
+            })
+        }
     }
 
     fun isOnline(): Boolean {

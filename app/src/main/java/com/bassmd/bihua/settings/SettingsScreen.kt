@@ -22,10 +22,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +40,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.produceState
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,10 +60,13 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.FlightTakeoff
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
@@ -113,6 +122,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -122,6 +132,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -137,6 +148,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.ai.InkRecognitionService
@@ -146,6 +158,9 @@ import com.bassmd.bihua.backup.BackupException
 import com.bassmd.bihua.backup.TransferScope
 import com.bassmd.bihua.content.CharacterOrder
 import com.bassmd.bihua.content.StudyMode
+import com.bassmd.bihua.diagnostics.CrashEntry
+import com.bassmd.bihua.diagnostics.CrashLog
+import com.bassmd.bihua.diagnostics.ReportKind
 import com.bassmd.bihua.fsrs.FsrsOptimizer
 import com.bassmd.bihua.fsrs.SbdOptimizer
 import com.bassmd.bihua.fsrs.FsrsWeights
@@ -157,6 +172,8 @@ import com.bassmd.bihua.sync.SyncClient
 import com.bassmd.bihua.sync.SyncCode
 import com.bassmd.bihua.sync.SyncPackage
 import com.bassmd.bihua.sync.SyncServer
+import com.bassmd.bihua.sync.SyncUndoInfo
+import com.bassmd.bihua.sync.SyncUndoStore
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.BusyDialog
 import com.bassmd.bihua.ui.components.ProfileAvatar
@@ -191,11 +208,16 @@ import java.time.format.DateTimeFormatter
 fun SettingsScreen(
     store: SettingsStore,
     progress: com.bassmd.bihua.progress.ProgressStore? = null,
+    recognitionService: InkRecognitionService? = null,
     onProgressChanged: () -> Unit = {},
     onOpenStudyLists: () -> Unit = {},
     onStartTour: () -> Unit = {},
     openSection: String? = null,
     onSectionOpened: () -> Unit = {},
+    sectionState: androidx.compose.runtime.MutableState<String?>? = null,
+    showReportState: androidx.compose.runtime.MutableState<Boolean>? = null,
+    reportWordsState: androidx.compose.runtime.MutableState<String>? = null,
+    reportKindState: androidx.compose.runtime.MutableState<String>? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -213,8 +235,12 @@ fun SettingsScreen(
     var importApplyProgress by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
     val hasStylus = remember { com.bassmd.bihua.ink.hasStylus(context) }
-    val inkRecognition = remember { InkRecognitionService() }
+    // Share the app reader so Settings' downloads and labels match every screen.
+    val inkRecognition = recognitionService ?: remember { InkRecognitionService() }
     var preparingHandwriting by remember { mutableStateOf(false) }
+    var prepareAllJob by remember { mutableStateOf<Job?>(null) }
+    var pendingKnownImport by remember { mutableStateOf<KnownImportPreview?>(null) }
+    var markingKnown by remember { mutableStateOf(false) }
     var handwritingReady by remember { mutableStateOf(false) }
     val modelStates = remember { mutableStateMapOf<StudyMode, Boolean>() }
     var preparingMode by remember { mutableStateOf<StudyMode?>(null) }
@@ -225,12 +251,16 @@ fun SettingsScreen(
     var joinCode by remember { mutableStateOf("") }
     var syncing by remember { mutableStateOf(false) }
     var syncMessage by remember { mutableStateOf<String?>(null) }
+    var syncUndo by remember { mutableStateOf<SyncUndoInfo?>(null) }
+    var confirmSyncUndo by remember { mutableStateOf(false) }
     var pendingSync by remember { mutableStateOf<SyncPackage?>(null) }
     var syncServer by remember { mutableStateOf<SyncServer?>(null) }
     var syncSendScope by remember { mutableStateOf(TransferScope()) }
     var syncApplySettings by remember { mutableStateOf(true) }
     var syncApplyProgress by remember { mutableStateOf(true) }
-    var settingsSection by rememberSaveable { mutableStateOf<String?>(null) }
+    var syncMergeProgress by remember { mutableStateOf(true) }
+    val fallbackSection = rememberSaveable { mutableStateOf<String?>(null) }
+    var settingsSection by (sectionState ?: fallbackSection)
     var settingsQuery by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(openSection) {
         if (openSection != null) {
@@ -240,12 +270,24 @@ fun SettingsScreen(
         }
     }
     val settingsListState = rememberLazyListState()
-    var showLicences by remember { mutableStateOf(false) }
-    var showStrokeRules by remember { mutableStateOf(false) }
-    var confirmReset by remember { mutableStateOf(false) }
-    var showWorksheet by remember { mutableStateOf(false) }
+    var showLicences by rememberSaveable { mutableStateOf(false) }
+    var showStrokeRules by rememberSaveable { mutableStateOf(false) }
+    val fallbackShowReport = rememberSaveable { mutableStateOf(false) }
+    val fallbackReportWords = rememberSaveable { mutableStateOf("") }
+    val fallbackReportKind = rememberSaveable { mutableStateOf(ReportKind.PROBLEM.name) }
+    var showReport by (showReportState ?: fallbackShowReport)
+    var reportWords by (reportWordsState ?: fallbackReportWords)
+    var reportKindName by (reportKindState ?: fallbackReportKind)
+    var crashEntry by remember { mutableStateOf<CrashEntry?>(null) }
+    var crashVersion by remember { mutableIntStateOf(0) }
+    val reportKind = ReportKind.entries.firstOrNull { it.name == reportKindName } ?: ReportKind.PROBLEM
+    LaunchedEffect(crashVersion, showReport) {
+        crashEntry = withContext(Dispatchers.IO) { CrashLog.newest(context) }
+    }
+    var confirmReset by rememberSaveable { mutableStateOf(false) }
+    var showWorksheet by rememberSaveable { mutableStateOf(false) }
     var busyMessage by remember { mutableStateOf<String?>(null) }
-    var showWeightsImport by remember { mutableStateOf(false) }
+    var showWeightsImport by rememberSaveable { mutableStateOf(false) }
     var weightDraft by remember { mutableStateOf("") }
     var optimizingWeights by remember { mutableStateOf(false) }
     var optimizingSbd by remember { mutableStateOf(false) }
@@ -254,10 +296,10 @@ fun SettingsScreen(
     var weightProfile by rememberSaveable { mutableStateOf(AppSettings.SHARED_WEIGHTS) }
     var weightProfileMenu by remember { mutableStateOf(false) }
     var weightMoreMenu by remember { mutableStateOf(false) }
-    var showFitScope by remember { mutableStateOf(false) }
-    var showWeightsHelp by remember { mutableStateOf(false) }
-    var showOutfit by remember { mutableStateOf(false) }
-    var confirmMature by remember { mutableStateOf(false) }
+    var showFitScope by rememberSaveable { mutableStateOf(false) }
+    var showWeightsHelp by rememberSaveable { mutableStateOf(false) }
+    var showOutfit by rememberSaveable { mutableStateOf(false) }
+    var confirmMature by rememberSaveable { mutableStateOf(false) }
     var reminderHourMenu by remember { mutableStateOf(false) }
     var reminderMinuteMenu by remember { mutableStateOf(false) }
     val weightProfileLabel = when (weightProfile) {
@@ -290,30 +332,44 @@ fun SettingsScreen(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            val text = runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-            }.getOrNull()
+            val text = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                }.getOrNull()
+            }
             if (text == null) {
                 message = "Could not read that file."
                 return@launch
             }
-            val chars = com.bassmd.bihua.content.KnownList.parse(text)
-            val entries = repository?.characters(settings.studyMode).orEmpty()
-            val byChar = entries.associateBy { it.character }
-            val ids = chars.mapNotNull { byChar[it]?.id }.toSet()
-            progress?.markKnown(entries, settings, ids)
-            onProgressChanged()
-            message = if (ids.isEmpty()) {
-                "No characters from this script were found in the file."
-            } else {
-                "Marked ${ids.size} characters as known. ${chars.size - ids.size} were not in this script."
+            val parsed = withContext(Dispatchers.IO) {
+                com.bassmd.bihua.content.KnownList.parseList(text)
             }
+            val entries = withContext(Dispatchers.IO) {
+                repository?.characters(settings.studyMode).orEmpty()
+            }
+            val byChar = entries.associateBy { it.character }
+            val ids = parsed.characters.mapNotNull { byChar[it]?.id }.toSet()
+            if (ids.isEmpty()) {
+                message = if (parsed.characters.isEmpty()) {
+                    "No character list was found. Use one character per line, or characters separated by commas."
+                } else {
+                    "No characters from this script were found in the file."
+                }
+                return@launch
+            }
+            pendingKnownImport = KnownImportPreview(
+                entries = entries.filter { it.id in ids },
+                ids = ids,
+                missing = parsed.characters.size - ids.size,
+                skippedLines = parsed.skippedLines,
+                sample = parsed.characters.filter { it in byChar }.take(24),
+            )
         }
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(inkRecognition) {
         onDispose {
-            inkRecognition.close()
+            if (recognitionService == null) inkRecognition.close()
             syncServer?.stop()
         }
     }
@@ -348,19 +404,26 @@ fun SettingsScreen(
     }
     // Re-read the models whenever a download ends (from this screen or from
     // the app's own background warm-up), so a row that said "Not downloaded"
-    // becomes "Ready" without leaving the page.
+    // becomes "Ready" without leaving the page. Checks run in parallel and the
+    // Compose state is written back on the main thread.
     LaunchedEffect(
         settingsSection,
         preparingHandwriting,
-        com.bassmd.bihua.ai.ModelDownloads.active,
         com.bassmd.bihua.ai.ModelDownloads.completed,
     ) {
         if (settingsSection == "Writing") {
-            withContext(Dispatchers.IO) {
-                StudyMode.entries.forEach { mode ->
-                    modelStates[mode] = inkRecognition.isModelReady(mode)
+            val cached = StudyMode.entries.mapNotNull { mode ->
+                com.bassmd.bihua.ai.ModelDownloads.cachedReady(mode)?.let { mode to it }
+            }.toMap()
+            if (cached.isNotEmpty()) modelStates.putAll(cached)
+            val checked = withContext(Dispatchers.IO) {
+                coroutineScope {
+                    StudyMode.entries.map { mode ->
+                        async { mode to inkRecognition.isModelReady(mode) }
+                    }.awaitAll().toMap()
                 }
             }
+            modelStates.putAll(checked)
             handwritingReady = StudyMode.entries.all { modelStates[it] == true }
         }
     }
@@ -566,9 +629,11 @@ fun SettingsScreen(
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            val text = runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-            }.getOrNull().orEmpty()
+            val text = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                }.getOrNull().orEmpty()
+            }
             applyWeightText(text, "Imported from ${uri.lastPathSegment ?: "file"}")
         }
     }
@@ -595,12 +660,15 @@ fun SettingsScreen(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            runCatching {
-                saveProfilePhoto(context.filesDir, uri, context.contentResolver)
-            }.onSuccess { path ->
+            val path = withContext(Dispatchers.IO) {
+                runCatching {
+                    saveProfilePhoto(context.filesDir, uri, context.contentResolver)
+                }.getOrNull()
+            }
+            if (path != null) {
                 store.updateProfile { it.copy(photoPath = path) }
                 message = "Photo updated."
-            }.onFailure {
+            } else {
                 message = "Could not use that photo."
             }
         }
@@ -613,27 +681,34 @@ fun SettingsScreen(
         busyMessage = "Preparing backup…"
         scope.launch {
             try {
-                runCatching {
-                    val text = if (exportScope.settings) {
-                    BackupCodec.encode(store.snapshot(System.currentTimeMillis()))
-                } else {
-                    null
-                }
-                val progressBytes = if (exportScope.progress) {
-                    progress?.let { storeRef ->
-                        val temp = java.io.File(context.cacheDir, "export-progress.db")
-                        try {
-                            storeRef.exportTo(temp)
-                            temp.readBytes()
-                        } finally {
-                            temp.delete()
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val text = if (exportScope.settings) {
+                            BackupCodec.encode(store.snapshot(System.currentTimeMillis()))
+                        } else {
+                            null
                         }
+                        val progressBytes = if (exportScope.progress) {
+                            progress?.let { storeRef ->
+                                val temp = java.io.File(context.cacheDir, "export-progress.db")
+                                try {
+                                    storeRef.exportTo(temp)
+                                    temp.readBytes()
+                                } finally {
+                                    temp.delete()
+                                }
+                            }
+                        } else {
+                            null
+                        }
+                        writeBytes(
+                            context,
+                            uri,
+                            com.bassmd.bihua.backup.BackupArchive.encode(text, progressBytes),
+                        )
                     }
-                } else {
-                    null
                 }
-                    writeBytes(context, uri, com.bassmd.bihua.backup.BackupArchive.encode(text, progressBytes))
-                }.onSuccess {
+                result.onSuccess {
                     message = "${exportScope.label} saved."
                 }.onFailure {
                     message = "Could not save the backup. Free up space and try again."
@@ -651,14 +726,17 @@ fun SettingsScreen(
         busyMessage = "Exporting review history…"
         scope.launch {
             try {
-                runCatching {
-                    val names = runCatching {
-                    com.bassmd.bihua.content.StudyMode.entries
-                        .flatMap { mode -> repository?.characters(mode).orEmpty() }
-                        .associate { it.id to it.character }
-                }.getOrDefault(emptyMap())
-                    writeText(context, uri, progress.reviewCsv(names))
-                }.onSuccess {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val names = runCatching {
+                            com.bassmd.bihua.content.StudyMode.entries
+                                .flatMap { mode -> repository?.characters(mode).orEmpty() }
+                                .associate { it.id to it.character }
+                        }.getOrDefault(emptyMap())
+                        writeText(context, uri, progress.reviewCsv(names))
+                    }
+                }
+                result.onSuccess {
                     message = "Review history saved."
                 }.onFailure {
                     message = "Could not save the review history."
@@ -678,24 +756,28 @@ fun SettingsScreen(
         pendingProgress = null
         scope.launch {
             try {
-                runCatching {
-                    val bytes = readBytes(context, uri)
-                    // Decode both halves before touching the pending state, so a
-                    // corrupt settings blob cannot leave a progress-only import
-                    // dialog behind after the error.
-                    if (com.bassmd.bihua.backup.BackupArchive.isZip(bytes)) {
-                        val archive = com.bassmd.bihua.backup.BackupArchive.decode(bytes)
-                        val progress = archive.progressDb
-                        val backup = archive.backupJson?.let { BackupCodec.decode(it) }
-                        pendingProgress = progress
-                        pendingImport = backup
-                    } else {
-                        pendingImport = BackupCodec.decode(bytes.decodeToString())
-                        pendingProgress = null
+                // Read and decode off the main thread; a large backup can take
+                // a moment and must not jank the picker hand-off.
+                val loaded = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val bytes = readBytes(context, uri)
+                        // Decode both halves before touching the pending state,
+                        // so a corrupt settings blob cannot leave a
+                        // progress-only import dialog behind after the error.
+                        if (com.bassmd.bihua.backup.BackupArchive.isZip(bytes)) {
+                            val archive = com.bassmd.bihua.backup.BackupArchive.decode(bytes)
+                            archive.progressDb to
+                                archive.backupJson?.let { BackupCodec.decode(it) }
+                        } else {
+                            null to BackupCodec.decode(bytes.decodeToString())
+                        }
                     }
-                }.onSuccess {
-                    importApplySettings = pendingImport != null
-                    importApplyProgress = pendingProgress != null
+                }
+                loaded.onSuccess { (progressBytes, backup) ->
+                    pendingProgress = progressBytes
+                    pendingImport = backup
+                    importApplySettings = backup != null
+                    importApplyProgress = progressBytes != null
                 }.onFailure {
                     message = (it as? BackupException)?.message ?: "This file is not a Bihua backup."
                 }
@@ -711,11 +793,19 @@ fun SettingsScreen(
     }
     LaunchedEffect(settingsSection) {
         settingsListState.scrollToItem(0)
+        // Sync is a direct action page: do not make the learner find an
+        // additional “Open” button before they can use it.
+        if (settingsSection == "Sync") {
+            syncOpen = true
+            syncUndo = withContext(Dispatchers.IO) { SyncUndoStore.current(context) }
+        }
     }
 
     if (showWeightsImport) {
         AlertDialog(
             onDismissRequest = { showWeightsImport = false },
+            modifier = Modifier.imePadding(),
+            properties = DialogProperties(decorFitsSystemWindows = false),
             title = { Text("Import $weightProfileLabel weights") },
             text = {
                 Column {
@@ -774,7 +864,7 @@ fun SettingsScreen(
         LazyColumn(
             state = settingsListState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = side, end = side, top = 20.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(start = side, end = side, top = 20.dp, bottom = 140.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -897,11 +987,29 @@ fun SettingsScreen(
                         SettingTitle(
                             icon = Icons.Rounded.School,
                             title = "Practice modes",
-                            subtitle = "Writing is the default. Pronunciation and meaning are optional checks you can switch on.",
+                            subtitle = "Drawing is the default. Switch it off for a recognition-only review, or add pronunciation and meaning checks.",
                         )
                         Surface(
+                            onClick = {
+                                if (settings.writingPractice &&
+                                    !settings.pronunciationPractice &&
+                                    !settings.meaningPractice
+                                ) {
+                                    message = "Turn on Pronunciation or Meaning before switching drawing off."
+                                } else {
+                                    update(settings.copy(writingPractice = !settings.writingPractice))
+                                }
+                            },
                             shape = RoundedCornerShape(18.dp),
-                            color = Mint.copy(alpha = 0.30f),
+                            color = if (settings.writingPractice) {
+                                Mint.copy(alpha = 0.30f)
+                            } else {
+                                PaperWarm
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                if (settings.writingPractice) Mint else InkSoft.copy(alpha = 0.18f),
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(
@@ -911,7 +1019,7 @@ fun SettingsScreen(
                                 Icon(
                                     Icons.Rounded.Brush,
                                     contentDescription = null,
-                                    tint = InkDark,
+                                    tint = if (settings.writingPractice) InkDark else InkSoft,
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
@@ -921,30 +1029,42 @@ fun SettingsScreen(
                                         color = InkDark,
                                     )
                                     Text(
-                                        if (settings.ankiWriting) {
-                                            "Reveal the character and grade. Anki-style is on below."
+                                        if (settings.writingPractice) {
+                                            "Draw the character from memory. Switch off to use only the checks you enable."
                                         } else {
-                                            "Draw the character from memory. Anki-style can reveal it instead, below."
+                                            "Drawing is off. Reviews ask only the checks you enabled."
                                         },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = InkSoft,
                                     )
                                 }
-                                Icon(
-                                    if (settings.ankiWriting) Icons.Rounded.Visibility else Icons.Rounded.CheckCircle,
-                                    contentDescription = if (settings.ankiWriting) {
-                                        "Reveal-only"
-                                    } else {
-                                        "Always on"
+                                Switch(
+                                    checked = settings.writingPractice,
+                                    onCheckedChange = { enabled ->
+                                        if (!enabled &&
+                                            !settings.pronunciationPractice &&
+                                            !settings.meaningPractice
+                                        ) {
+                                            message = "Turn on Pronunciation or Meaning before switching drawing off."
+                                        } else {
+                                            update(settings.copy(writingPractice = enabled))
+                                        }
                                     },
-                                    tint = InkDark,
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Writing practice"
+                                    },
                                 )
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         Surface(
                             onClick = {
-                                update(settings.copy(pronunciationPractice = !settings.pronunciationPractice))
+                                val enabled = !settings.pronunciationPractice
+                                if (!enabled && !settings.writingPractice && !settings.meaningPractice) {
+                                    message = "Keep one practice mode on. Turn Writing back on first."
+                                } else {
+                                    update(settings.copy(pronunciationPractice = enabled))
+                                }
                             },
                             shape = RoundedCornerShape(18.dp),
                             color = if (settings.pronunciationPractice) {
@@ -988,8 +1108,15 @@ fun SettingsScreen(
                                 }
                                 Switch(
                                     checked = settings.pronunciationPractice,
-                                    onCheckedChange = {
-                                        update(settings.copy(pronunciationPractice = it))
+                                    onCheckedChange = { enabled ->
+                                        if (!enabled && !settings.writingPractice && !settings.meaningPractice) {
+                                            message = "Keep one practice mode on. Turn Writing back on first."
+                                        } else {
+                                            update(settings.copy(pronunciationPractice = enabled))
+                                        }
+                                    },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Pronunciation practice"
                                     },
                                 )
                             }
@@ -997,7 +1124,12 @@ fun SettingsScreen(
                         Spacer(Modifier.height(8.dp))
                         Surface(
                             onClick = {
-                                update(settings.copy(meaningPractice = !settings.meaningPractice))
+                                val enabled = !settings.meaningPractice
+                                if (!enabled && !settings.writingPractice && !settings.pronunciationPractice) {
+                                    message = "Keep one practice mode on. Turn Writing back on first."
+                                } else {
+                                    update(settings.copy(meaningPractice = enabled))
+                                }
                             },
                             shape = RoundedCornerShape(18.dp),
                             color = if (settings.meaningPractice) {
@@ -1041,18 +1173,33 @@ fun SettingsScreen(
                                 }
                                 Switch(
                                     checked = settings.meaningPractice,
-                                    onCheckedChange = {
-                                        update(settings.copy(meaningPractice = it))
+                                    onCheckedChange = { enabled ->
+                                        if (!enabled && !settings.writingPractice && !settings.pronunciationPractice) {
+                                            message = "Keep one practice mode on. Turn Writing back on first."
+                                        } else {
+                                            update(settings.copy(meaningPractice = enabled))
+                                        }
+                                    },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Meaning practice"
                                     },
                                 )
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            if (settings.pronunciationPractice || settings.meaningPractice) {
-                                "On: reviews mix writing with the checks you enabled, so writing stays the core."
-                            } else {
-                                "Off: every review asks only for the drawing. You can turn either check on any time."
+                            when {
+                                !settings.writingPractice -> {
+                                    val checks = buildList {
+                                        if (settings.pronunciationPractice) add("pronunciation")
+                                        if (settings.meaningPractice) add("meaning")
+                                    }.joinToString(" and ")
+                                    "Drawing is off. Reviews ask only for $checks."
+                                }
+                                settings.pronunciationPractice || settings.meaningPractice ->
+                                    "On: reviews mix writing with the checks you enabled, so writing stays the core."
+                                else ->
+                                    "Off: every review asks only for the drawing. Turn on a check to switch drawing off."
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
@@ -1065,14 +1212,19 @@ fun SettingsScreen(
                     Column {
                         SettingTitle(
                             icon = Icons.Rounded.Visibility,
-                            title = "Anki-style review",
+                            title = "Reveal review",
                             subtitle = "Show the answer, then grade. Skip the canvas, keyboard, or choices if that suits you.",
                         )
                         SwitchRow(
                             title = "Writing: tap to reveal",
-                            subtitle = "The cue appears first. Show the character, then grade. No canvas.",
-                            checked = settings.ankiWriting,
-                            onCheckedChange = { update(settings.copy(ankiWriting = it)) },
+                            subtitle = if (settings.writingPractice) {
+                                "The cue appears first. Show the character, then grade. No canvas."
+                            } else {
+                                "Drawing is off. Turn Writing practice back on to use this."
+                            },
+                            checked = settings.revealWriting,
+                            onCheckedChange = { update(settings.copy(revealWriting = it)) },
+                            enabled = settings.writingPractice,
                         )
                         SwitchRow(
                             title = "Pronunciation: tap to reveal",
@@ -1081,8 +1233,8 @@ fun SettingsScreen(
                             } else {
                                 "Turn pronunciation on above to use this."
                             },
-                            checked = settings.ankiPronunciation,
-                            onCheckedChange = { update(settings.copy(ankiPronunciation = it)) },
+                            checked = settings.revealPronunciation,
+                            onCheckedChange = { update(settings.copy(revealPronunciation = it)) },
                             enabled = settings.pronunciationPractice,
                         )
                         SwitchRow(
@@ -1092,13 +1244,41 @@ fun SettingsScreen(
                             } else {
                                 "Turn meaning on above to use this."
                             },
-                            checked = settings.ankiMeaning,
-                            onCheckedChange = { update(settings.copy(ankiMeaning = it)) },
+                            checked = settings.revealMeaning,
+                            onCheckedChange = { update(settings.copy(revealMeaning = it)) },
                             enabled = settings.meaningPractice,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "All three are optional. They change how you answer, not the review dates or XP.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            }
+            item {
+                SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.14f)) {
+                    Column {
+                        SettingTitle(
+                            icon = Icons.Rounded.EditNote,
+                            title = "Grade with a reason",
+                            subtitle = "After Again or Hard, one optional row of chips records why. It never changes the schedule.",
+                        )
+                        SwitchRow(
+                            title = "Show reason chips",
+                            subtitle = "Stroke order, direction, a missing stroke, spacing, or the meaning. One tap, and you can always skip.",
+                            checked = settings.reviewReasonsEnabled,
+                            onCheckedChange = { update(settings.copy(reviewReasonsEnabled = it)) },
+                        )
+                        SwitchRow(
+                            title = "Mnemonic palace",
+                            subtitle = "Adds a small book button to lessons. You can always open the palace from Study tools.",
+                            checked = settings.memoryHooksEnabled,
+                            onCheckedChange = { update(settings.copy(memoryHooksEnabled = it)) },
+                        )
+                        Text(
+                            "The chips are just a note for you. The grade decides the next date.",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -1887,7 +2067,7 @@ fun SettingsScreen(
                         )
                         SwitchRow(
                             title = "Reduce motion",
-                            subtitle = "Keeps feedback. Removes confetti and motion.",
+                            subtitle = "Keeps feedback. Removes confetti and motion. Follows the system remove-animations switch.",
                             checked = settings.reduceMotion,
                             onCheckedChange = { update(settings.copy(reduceMotion = it)) },
                         )
@@ -2393,19 +2573,19 @@ fun SettingsScreen(
                                                 val ready = kotlinx.coroutines.withTimeoutOrNull(
                                                     MODEL_DOWNLOAD_WAIT_MS,
                                                 ) {
-                                                    inkRecognition.prepare(
-                                                        mode,
-                                                        settings.wifiOnlyModels,
-                                                    )
+                                                    inkRecognition.prepare(mode)
                                                 } ?: false
                                                 modelStates[mode] = ready
                                                 handwritingReady = StudyMode.entries.all {
                                                     modelStates[it] == true
                                                 }
-                                                message = if (ready) {
-                                                    "${mode.modelLabel()} model ready."
-                                                } else {
-                                                    "The ${mode.modelLabel()} model did not arrive. Check Wi-Fi and try again."
+                                                message = when {
+                                                    ready -> "${mode.modelLabel()} model ready."
+                                                    com.bassmd.bihua.ai.ModelDownloads
+                                                        .stateFor(mode).preparing ->
+                                                        "Still downloading the ${mode.modelLabel()} model. It will appear here when ready."
+                                                    else ->
+                                                        "The ${mode.modelLabel()} model did not arrive. Check your connection and try again."
                                                 }
                                             } finally {
                                                 preparingMode = null
@@ -2421,7 +2601,7 @@ fun SettingsScreen(
                                         when {
                                             modelStates[mode] == true -> "Ready"
                                             preparingMode == mode -> "Preparing…"
-                                            com.bassmd.bihua.ai.ModelDownloads.activeModes.contains(mode) ->
+                                            com.bassmd.bihua.ai.ModelDownloads.stateFor(mode).preparing ->
                                                 "Preparing…"
                                             else -> "Download"
                                         },
@@ -2433,15 +2613,28 @@ fun SettingsScreen(
                         }
                         OutlinedButton(
                             onClick = {
+                                if (preparingHandwriting) {
+                                    prepareAllJob?.cancel()
+                                    return@OutlinedButton
+                                }
                                 preparingHandwriting = true
-                                scope.launch {
+                                message = "Preparing handwriting models…"
+                                prepareAllJob = scope.launch {
                                     try {
-                                        val result = StudyMode.entries.associateWith { mode ->
-                                            kotlinx.coroutines.withTimeoutOrNull(
-                                                MODEL_DOWNLOAD_WAIT_MS,
-                                            ) {
-                                                inkRecognition.prepare(mode, settings.wifiOnlyModels)
-                                            } ?: false
+                                        val result = withContext(Dispatchers.IO) {
+                                            coroutineScope {
+                                                StudyMode.entries.map { mode ->
+                                                    async {
+                                                        mode to (
+                                                            kotlinx.coroutines.withTimeoutOrNull(
+                                                                MODEL_DOWNLOAD_WAIT_MS,
+                                                            ) {
+                                                                inkRecognition.prepare(mode)
+                                                            } ?: false
+                                                            )
+                                                    }
+                                                }.awaitAll().toMap()
+                                            }
                                         }
                                         result.forEach { (mode, ready) ->
                                             modelStates[mode] = ready
@@ -2450,19 +2643,23 @@ fun SettingsScreen(
                                         message = if (handwritingReady) {
                                             "Handwriting models are ready."
                                         } else {
-                                            "Some handwriting models did not arrive. Check Wi-Fi and try again."
+                                            "Some handwriting models did not arrive. Check your connection and try again."
                                         }
+                                    } catch (cancel: kotlinx.coroutines.CancellationException) {
+                                        message = "Model download stopped."
+                                        throw cancel
                                     } finally {
                                         preparingHandwriting = false
+                                        prepareAllJob = null
                                     }
                                 }
                             },
-                            enabled = !preparingHandwriting && preparingMode == null,
+                            enabled = preparingMode == null,
                             shape = RoundedCornerShape(50),
                         ) {
                             Text(
                                 when {
-                                    preparingHandwriting -> "Preparing…"
+                                    preparingHandwriting -> "Cancel"
                                     handwritingReady -> "Download again"
                                     else -> "Download all"
                                 }
@@ -2684,10 +2881,10 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Rounded.PlaylistAddCheck, contentDescription = null)
                             Spacer(Modifier.width(6.dp))
-                            Text("Import a known-character list (.txt)")
+                            Text("Import a known list (.txt)")
                         }
                         Text(
-                            "One character per line. Matching characters become Solid.",
+                            "One character or short word per line, or characters separated by commas. A preview shows what will change.",
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -2745,6 +2942,34 @@ fun SettingsScreen(
 
             }
             if (settingsSection == "Sync") {
+            syncUndo?.let { undo ->
+                item {
+                    SoftCard(Modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.18f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.History, contentDescription = null, tint = InkDark)
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Undo the last sync",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = InkDark,
+                                )
+                                Text(
+                                    "Restore this device to before ${formatSyncTime(undo.atMs)}. The other device is not changed.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkSoft,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedButton(
+                                onClick = { confirmSyncUndo = true },
+                                shape = CircleShape,
+                                enabled = progress != null && !syncing,
+                            ) { Text("Restore") }
+                        }
+                    }
+                }
+            }
             item {
                 val activity = androidx.compose.ui.platform.LocalContext.current
                 if (syncOpen) {
@@ -2805,7 +3030,7 @@ fun SettingsScreen(
                                 if (hostCode == null) {
                                     "Start sharing to get a pairing code. Enter that code on the other device."
                                 } else {
-                                    "Enter this code on the other device, then choose Copy from this device."
+                                    "Enter this code on the other device, then tap Sync there."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
@@ -2822,6 +3047,18 @@ fun SettingsScreen(
                                             transfer = syncSendScope,
                                             onReady = { session -> hostCode = session.code },
                                             onError = { message -> hostError = message },
+                                            onServed = {
+                                                scope.launch {
+                                                    onProgressChanged()
+                                                    syncUndo = withContext(Dispatchers.IO) {
+                                                        SyncUndoStore.current(context)
+                                                    }
+                                                    message = "Synced. Both devices are up to date."
+                                                    hostCode = null
+                                                    syncServer?.stop()
+                                                    syncServer = null
+                                                }
+                                            },
                                         )
                                     },
                                     enabled = progress != null,
@@ -2847,6 +3084,15 @@ fun SettingsScreen(
                                         color = InkSoft,
                                     )
                                 }
+                                TextButton(
+                                    onClick = {
+                                        syncServer?.stop()
+                                        syncServer = null
+                                        hostCode = null
+                                        message = "Sharing stopped."
+                                    },
+                                    modifier = Modifier.align(Alignment.End),
+                                ) { Text("Stop sharing") }
                             }
                             hostError?.let {
                                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -2855,12 +3101,12 @@ fun SettingsScreen(
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                "Copy from another device",
+                                "Sync from another device",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = InkDark,
                             )
                             Text(
-                                "Open Sync on the other device, start sharing, and type its pairing code here. You choose what to apply after the transfer.",
+                                "Open Sync on the other device, start sharing, and type its pairing code here. Progress merges on both devices.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = InkSoft,
                             )
@@ -2888,11 +3134,27 @@ fun SettingsScreen(
                                         syncMessage = null
                                         scope.launch {
                                             val client = SyncClient(context.applicationContext)
+                                            val localProgress = withContext(Dispatchers.IO) {
+                                                progress?.let { storeRef ->
+                                                    val temp = java.io.File(
+                                                        context.cacheDir,
+                                                        "sync-outgoing.db",
+                                                    )
+                                                    try {
+                                                        storeRef.exportTo(temp)
+                                                        temp.readBytes()
+                                                    } finally {
+                                                        temp.delete()
+                                                    }
+                                                } ?: ByteArray(0)
+                                            }
                                             val hosts = client.discover()
                                             var packageToApply: SyncPackage? = null
                                             var lastError: String? = null
                                             for (host in hosts) {
-                                                val result = runCatching { client.pull(host, joinCode) }
+                                                val result = runCatching {
+                                                    client.sync(host, joinCode, localProgress)
+                                                }
                                                 if (result.isSuccess) {
                                                     packageToApply = result.getOrNull()
                                                     break
@@ -2908,6 +3170,7 @@ fun SettingsScreen(
                                                 pendingSync = packageToApply
                                                 syncApplySettings = packageToApply.backup != null
                                                 syncApplyProgress = packageToApply.progressDb != null
+                                                syncMergeProgress = true
                                             }
                                         }
                                     },
@@ -2922,7 +3185,7 @@ fun SettingsScreen(
                                         )
                                         Spacer(Modifier.width(8.dp))
                                     }
-                                    Text(if (syncing) "Searching…" else "Copy")
+                                    Text(if (syncing) "Syncing…" else "Sync now")
                                 }
                             }
                             syncMessage?.let {
@@ -2931,7 +3194,12 @@ fun SettingsScreen(
                         }
                     }
                 } else {
-                    SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.10f)) {
+                    SoftCard(
+                        Modifier
+                            .fillMaxWidth()
+                            .tourAnchor("settings.sync"),
+                        color = Mint.copy(alpha = 0.10f),
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Devices, contentDescription = null, tint = InkDark)
                             Spacer(Modifier.width(8.dp))
@@ -3055,7 +3323,7 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "No account and no ads. Handwriting runs on-device with Google ML Kit, which may send limited diagnostics and usage analytics. Model downloads and privacy details are in the policy.",
+                            "No account, no ads, no subscription. Everything is included. Handwriting runs on-device with Google ML Kit, which may send limited diagnostics and usage analytics. Model downloads and privacy details are in the policy.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkSoft,
                         )
@@ -3076,26 +3344,53 @@ fun SettingsScreen(
                                 Text("Privacy policy")
                             }
                             TextButton(onClick = {
-                                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:manuelbuslon22@gmail.com")
-                                    putExtra(Intent.EXTRA_SUBJECT, "Bihua feedback")
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "Bihua ${BuildConfig.VERSION_NAME}\n\nWhat happened:\n\nWhat I expected:\n\nDevice and Android version:\n",
-                                    )
-                                }
-                                runCatching { context.startActivity(intent) }.onFailure {
-                                    uriHandler.openUri("https://github.com/Shadowsx3/bihua/issues")
-                                }
-                            }) {
-                                Text("Send feedback")
-                            }
-                            TextButton(onClick = {
                                 uriHandler.openUri("https://github.com/Shadowsx3/bihua")
                             }) {
                                 Text("Source code")
                             }
                         }
+                    }
+                }
+            }
+            item {
+                SoftCard(
+                    Modifier.fillMaxWidth(),
+                    color = InkSoft.copy(alpha = 0.06f),
+                ) {
+                    Column {
+                        AboutActionRow(
+                            icon = Icons.Rounded.EditNote,
+                            tint = Lilac,
+                            title = "Report a problem or idea",
+                            subtitle = crashEntry?.let {
+                                "A crash was saved ${it.dateLabel}. You can include it if you like."
+                            } ?: "Tell me what broke, or what would help.",
+                            onClick = { showReport = true },
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                            color = InkSoft.copy(alpha = 0.12f),
+                        )
+                        AboutActionRow(
+                            icon = Icons.Rounded.StarBorder,
+                            tint = Butter,
+                            title = "Rate Bihua",
+                            subtitle = "A review helps another learner find their way here.",
+                            chevron = true,
+                            onClick = {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    RateLinks.playListing(BuildConfig.APPLICATION_ID),
+                                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    scope.launch {
+                                        snackbar.showSnackbar(
+                                            "The store did not open. Search for Bihua in Play.",
+                                        )
+                                    }
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -3110,6 +3405,24 @@ fun SettingsScreen(
 
     if (showStrokeRules) {
         StrokeRulesDialog(onDismiss = { showStrokeRules = false })
+    }
+
+    if (showReport) {
+        ReportDialog(
+            kind = reportKind,
+            words = reportWords,
+            onKindChange = { reportKindName = it.name },
+            onWordsChange = { reportWords = it },
+            crash = crashEntry,
+            onDismiss = { showReport = false },
+            onSent = {
+                reportWords = ""
+                reportKindName = ReportKind.PROBLEM.name
+                crashVersion++
+            },
+            onCrashConsumed = { crashVersion++ },
+            onMessage = { text -> scope.launch { snackbar.showSnackbar(text) } },
+        )
     }
 
     if (confirmMature) {
@@ -3181,59 +3494,141 @@ fun SettingsScreen(
         )
     }
 
+    if (confirmSyncUndo) {
+        AlertDialog(
+            onDismissRequest = { confirmSyncUndo = false },
+            title = { Text("Restore the previous state?") },
+            text = {
+                Text(
+                    "This replaces this device's progress and settings with the copy from before the last sync. The other device is not changed.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = progress != null,
+                    onClick = {
+                        val storeRef = progress ?: return@TextButton
+                        confirmSyncUndo = false
+                        busyMessage = "Restoring previous state…"
+                        scope.launch {
+                            val ok = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val restored = SyncUndoStore.restore(context, store, storeRef)
+                                    if (restored) {
+                                        com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
+                                    }
+                                    restored
+                                }.getOrDefault(false)
+                            }
+                            busyMessage = null
+                            if (ok) {
+                                syncUndo = null
+                                onProgressChanged()
+                                message = "Previous state restored."
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Restored the state from before the last sync.",
+                                    android.widget.Toast.LENGTH_SHORT,
+                                ).show()
+                                context.findActivity()?.recreate()
+                            } else {
+                                message = "Could not restore the previous state."
+                            }
+                        }
+                    },
+                ) { Text("Restore") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmSyncUndo = false }) { Text("Cancel") }
+            },
+        )
+    }
+
     pendingSync?.let { packageToApply ->
         val hasSettings = packageToApply.backup != null
         val hasProgress = packageToApply.progressDb != null
         AlertDialog(
             onDismissRequest = { pendingSync = null },
-            title = { Text("Apply this sync?") },
+            title = {
+                Text(
+                    when {
+                        !hasProgress || !syncApplyProgress -> "Apply this sync?"
+                        syncMergeProgress -> "Merge with the other device?"
+                        else -> "Replace this device?"
+                    }
+                )
+            },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "The other device is sending ${if (hasSettings && hasProgress) "settings, profile, notes and progress" else if (hasSettings) "settings and profile" else "progress and review history"}. Choose what this device should replace.",
+                        if (hasSettings && hasProgress) {
+                            "Both devices will exchange progress and history. Settings and profile from the other device are applied here."
+                        } else if (hasSettings) {
+                            "Settings and profile from the other device will be applied here."
+                        } else {
+                            "Progress and review history will be merged on both devices."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
-                    Spacer(Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = syncApplySettings && hasSettings,
-                                enabled = hasSettings,
-                                role = Role.Checkbox,
-                                onValueChange = { syncApplySettings = it },
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = syncApplySettings && hasSettings,
-                            onCheckedChange = null,
-                            enabled = hasSettings,
-                        )
-                        Text("Profile and settings", color = if (hasSettings) InkDark else InkSoft)
+                    if (hasProgress) {
+                        Surface(
+                            color = Mint.copy(alpha = 0.16f),
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Devices,
+                                    contentDescription = null,
+                                    tint = InkDark,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        if (syncMergeProgress) "Safe merge" else "Clean copy",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = InkDark,
+                                    )
+                                    Text(
+                                        if (syncMergeProgress) {
+                                            "Reviews from both devices are combined. Newer cards, notes, and mnemonics win; practice counts keep the higher total."
+                                        } else {
+                                            "Uses only the other device's progress. This device's current data stays in the fallback file."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                    )
+                                }
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = syncMergeProgress,
+                                onClick = { syncMergeProgress = true },
+                                label = { Text("Merge history") },
+                            )
+                            FilterChip(
+                                selected = !syncMergeProgress,
+                                onClick = { syncMergeProgress = false },
+                                label = { Text("Replace here") },
+                            )
+                        }
                     }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = syncApplyProgress && hasProgress,
-                                enabled = hasProgress,
-                                role = Role.Checkbox,
-                                onValueChange = { syncApplyProgress = it },
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = syncApplyProgress && hasProgress,
-                            onCheckedChange = null,
-                            enabled = hasProgress,
+                    if (hasSettings) {
+                        Text(
+                            "Profile and settings from the other device will also be applied.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
                         )
-                        Text("Progress, notes and review history", color = if (hasProgress) InkDark else InkSoft)
                     }
-                    Spacer(Modifier.height(6.dp))
                     Text(
-                        "Your current data is exported to a fallback file first. The app restarts when it finishes.",
+                        "A restore point is saved first, so you can undo this sync.",
                         style = MaterialTheme.typography.labelSmall,
                         color = InkSoft,
                     )
@@ -3251,31 +3646,58 @@ fun SettingsScreen(
                         busyMessage = "Applying sync…"
                         scope.launch {
                             var fallback: java.io.File? = null
-                            val result = runCatching {
-                                val file = java.io.File(
-                                    context.cacheDir,
-                                    "pre-sync-${System.currentTimeMillis()}.db",
-                                )
-                                fallback = file
-                                storeRef.exportTo(file)
-                                if (applyProgress) {
-                                    val dbFile = java.io.File(context.cacheDir, "incoming-progress.db")
-                                    try {
-                                        dbFile.writeBytes(incoming.progressDb!!)
-                                        storeRef.importFrom(dbFile)
-                                    } finally {
-                                        dbFile.delete()
+                            val restorePoint = withContext(Dispatchers.IO) {
+                                SyncUndoStore.snapshot(context, store, storeRef)
+                            }
+                            if (restorePoint == null) {
+                                message = "Could not save a restore point. The sync was not applied."
+                                busyMessage = null
+                                return@launch
+                            }
+                            val result = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val file = java.io.File(
+                                        context.cacheDir,
+                                        "pre-sync-${System.currentTimeMillis()}.db",
+                                    )
+                                    fallback = file
+                                    storeRef.exportTo(file)
+                                    if (applyProgress) {
+                                        val dbFile =
+                                            java.io.File(context.cacheDir, "incoming-progress.db")
+                                        try {
+                                            dbFile.writeBytes(incoming.progressDb!!)
+                                            if (syncMergeProgress) {
+                                                storeRef.mergeFrom(dbFile)
+                                            } else {
+                                                storeRef.importFrom(dbFile)
+                                            }
+                                        } finally {
+                                            dbFile.delete()
+                                        }
                                     }
-                                }
-                                if (applySettings) {
-                                    store.restore(incoming.backup!!)
+                                    if (applySettings) {
+                                        store.restore(incoming.backup!!)
+                                    }
                                 }
                             }
                             if (result.isSuccess) {
                                 fallback?.delete()
                                 com.bassmd.bihua.learn.LearnSessionStore(context).clearAll()
                                 onProgressChanged()
-                                message = "Sync complete."
+                                message = if (applyProgress && syncMergeProgress) {
+                                    "Sync merged."
+                                } else {
+                                    "Sync complete."
+                                }
+                                syncUndo = withContext(Dispatchers.IO) {
+                                    SyncUndoStore.current(context)
+                                }
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Devices synced. Your progress is up to date.",
+                                    android.widget.Toast.LENGTH_SHORT,
+                                ).show()
                                 context.findActivity()?.recreate()
                             } else {
                                 if (applyProgress) {
@@ -3297,10 +3719,98 @@ fun SettingsScreen(
                         }
                     },
                     enabled = (syncApplySettings && hasSettings) || (syncApplyProgress && hasProgress),
-                ) { Text("Replace") }
+                ) {
+                    Text(
+                        when {
+                            !syncApplyProgress || !hasProgress -> "Apply"
+                            syncMergeProgress -> "Merge"
+                            else -> "Replace"
+                        }
+                    )
+                }
             },
             dismissButton = {
                 TextButton(onClick = { pendingSync = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    pendingKnownImport?.let { known ->
+        AlertDialog(
+            onDismissRequest = { if (!markingKnown) pendingKnownImport = null },
+            title = { Text("Mark characters as known?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "This file marks ${known.ids.size} characters as known.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkDark,
+                    )
+                    if (known.missing > 0) {
+                        Text(
+                            "${known.missing} more were not in this script and will be skipped.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                    if (known.skippedLines > 0) {
+                        Text(
+                            "Skipped ${known.skippedLines} line(s) that looked like prose, not a list.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Text(
+                        "They will come back across 10–45 days, not all on one day.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Text(
+                        known.sample.joinToString(" "),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = InkDark,
+                    )
+                    if (known.ids.size > known.sample.size) {
+                        Text(
+                            "and ${known.ids.size - known.sample.size} more",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !markingKnown && progress != null,
+                    onClick = {
+                        markingKnown = true
+                        val target = known
+                        scope.launch {
+                            val ok = runCatching {
+                                val storeRef = progress
+                                    ?: error("The progress store is not available.")
+                                storeRef.markKnown(target.entries, settings, target.ids)
+                            }.isSuccess
+                            markingKnown = false
+                            pendingKnownImport = null
+                            if (ok) {
+                                onProgressChanged()
+                                message =
+                                    "Marked ${target.ids.size} characters as known across 10–45 days."
+                            } else {
+                                message = "Could not mark those characters. Try again."
+                            }
+                        }
+                    },
+                ) {
+                    Text(if (markingKnown) "Marking…" else "Mark as known")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !markingKnown,
+                    onClick = { pendingKnownImport = null },
+                ) { Text("Cancel") }
             },
         )
     }
@@ -3329,26 +3839,28 @@ fun SettingsScreen(
                 scope.launch {
                     var fallback: java.io.File? = null
                     val progressStoreRef = progress
-                    val restored = runCatching {
-                        if (applyProgress) {
-                            val storeRef = progressStoreRef
-                                ?: error("The progress store is not available.")
-                            val backup = java.io.File(
-                                context.cacheDir,
-                                "pre-import-${System.currentTimeMillis()}.db",
-                            )
-                            fallback = backup
-                            storeRef.exportTo(backup)
-                            val file = java.io.File(context.cacheDir, "import-progress.db")
-                            try {
-                                file.writeBytes(progressBytes!!)
-                                storeRef.importFrom(file)
-                            } finally {
-                                file.delete()
+                    val restored = withContext(Dispatchers.IO) {
+                        runCatching {
+                            if (applyProgress) {
+                                val storeRef = progressStoreRef
+                                    ?: error("The progress store is not available.")
+                                val backup = java.io.File(
+                                    context.cacheDir,
+                                    "pre-import-${System.currentTimeMillis()}.db",
+                                )
+                                fallback = backup
+                                storeRef.exportTo(backup)
+                                val file = java.io.File(context.cacheDir, "import-progress.db")
+                                try {
+                                    file.writeBytes(progressBytes!!)
+                                    storeRef.importFrom(file)
+                                } finally {
+                                    file.delete()
+                                }
                             }
-                        }
-                        if (applySettings) {
-                            store.restore(settingsBundle!!)
+                            if (applySettings) {
+                                store.restore(settingsBundle!!)
+                            }
                         }
                     }
                     if (restored.isSuccess) {
@@ -3419,66 +3931,10 @@ fun SettingsScreen(
     }
 
     if (showOutfit) {
-        AlertDialog(
-            onDismissRequest = { showOutfit = false },
-            title = { Text("Mò's outfit") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Dress Mò on the home-screen widgets. Auto follows the hour and celebrates a clear desk.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkSoft,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    val outfitColumns = if (LocalDensity.current.fontScale > 1.7f) 1 else 2
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        maxItemsInEachRow = outfitColumns,
-                    ) {
-                        MascotOutfit.entries.forEach { option ->
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .semantics(mergeDescendants = true) {
-                                        contentDescription = option.label
-                                        role = Role.RadioButton
-                                        this.selected = settings.mascotOutfit == option
-                                    }
-                                    .clickable {
-                                        update(settings.copy(mascotOutfit = option))
-                                        showOutfit = false
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RadioButton(
-                                    selected = settings.mascotOutfit == option,
-                                    onClick = {
-                                        update(settings.copy(mascotOutfit = option))
-                                        showOutfit = false
-                                    },
-                                    modifier = Modifier.clearAndSetSemantics { },
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    option.label,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = InkDark,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showOutfit = false },
-                    modifier = Modifier.semantics { contentDescription = "Close" },
-                ) { Text("Close") }
-            },
+        OutfitDialog(
+            current = settings.mascotOutfit,
+            onPick = { update(settings.copy(mascotOutfit = it)) },
+            onDismiss = { showOutfit = false },
         )
     }
 
@@ -3581,7 +4037,7 @@ private val SETTINGS_ENTRIES = listOf(
     SettingsEntry(
         "Practice", "Practice", "Writing, pronunciation, meaning",
         Icons.Rounded.RecordVoiceOver, Mint, "LEARNING",
-        "writing pronunciation reading meaning comprehension anki tap reveal practice modes",
+        "writing pronunciation reading meaning comprehension reveal review tap show answer practice modes",
     ),
     SettingsEntry(
         "Study", "Study", "Pace, order, cues, words, vacation",
@@ -3621,7 +4077,7 @@ private val SETTINGS_ENTRIES = listOf(
     SettingsEntry(
         "Help", "Help & tour", "Guided tour, grading, character sheets",
         Icons.Rounded.HelpOutline, Sky, "HELP",
-        "help tour guide grading again hard good easy anki show answer character sheets print worksheet",
+        "help tour guide grading again hard good easy reveal review show answer character sheets print worksheet",
     ),
     SettingsEntry(
         "About", "About", "Version, licences, privacy, feedback",
@@ -3632,7 +4088,7 @@ private val SETTINGS_ENTRIES = listOf(
 
 private val SETTINGS_GROUPS = listOf("YOU", "LEARNING", "WRITING", "YOUR DATA", "HELP", "ABOUT")
 
-/** Stop a Wi-Fi-only model download from blocking the settings screen forever. */
+/** Stop a model download from blocking the settings screen forever. */
 private const val MODEL_DOWNLOAD_WAIT_MS = 30_000L
 
 private val REMINDER_DAYS = listOf(
@@ -3935,6 +4391,14 @@ private fun writeBytes(context: Context, uri: Uri, bytes: ByteArray) {
         ?: error("Could not open the selected file for writing.")
 }
 
+private data class KnownImportPreview(
+    val entries: List<com.bassmd.bihua.content.CharacterEntry>,
+    val ids: Set<String>,
+    val missing: Int,
+    val skippedLines: Int,
+    val sample: List<String>,
+)
+
 private fun StudyMode.modelLabel(): String = when (this) {
     StudyMode.SIMPLIFIED -> "Simplified"
     StudyMode.TRADITIONAL -> "Traditional"
@@ -3944,6 +4408,12 @@ private fun StudyMode.modelLabel(): String = when (this) {
 
 private fun dayStartLabel(hour: Int): String =
     if (hour <= 0) "Midnight" else "$hour:00 AM"
+
+private fun formatSyncTime(epochMs: Long): String =
+    java.text.DateFormat.getDateTimeInstance(
+        java.text.DateFormat.MEDIUM,
+        java.text.DateFormat.SHORT,
+    ).format(java.util.Date(epochMs))
 
 private fun formatDate(epochMs: Long): String =
     java.time.Instant.ofEpochMilli(epochMs)
@@ -4210,4 +4680,45 @@ private fun StrokeRulesDialog(onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) { Text("Close") }
         },
     )
+}
+
+
+@Composable
+private fun AboutActionRow(
+    icon: ImageVector,
+    tint: Color,
+    title: String,
+    subtitle: String,
+    chevron: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(shape = RoundedCornerShape(9.dp), color = tint.copy(alpha = 0.20f)) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = InkSoft,
+                modifier = Modifier.padding(7.dp).size(16.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium, color = InkDark)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+        }
+        if (chevron) {
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = InkSoft.copy(alpha = 0.7f),
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
 }

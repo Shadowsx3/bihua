@@ -17,12 +17,11 @@ class SettingsSanitizeTest {
     }
 
     @Test
-    fun ankiModesAreOffByDefault() {
+    fun revealModesAreOffByDefault() {
         val settings = AppSettings()
-        assertFalse(settings.wifiOnlyModels)
-        assertFalse(settings.ankiWriting)
-        assertFalse(settings.ankiPronunciation)
-        assertFalse(settings.ankiMeaning)
+        assertFalse(settings.revealWriting)
+        assertFalse(settings.revealPronunciation)
+        assertFalse(settings.revealMeaning)
         assertFalse(settings.meaningPractice)
         assertTrue(settings.meaningSynonyms.isEmpty())
         assertFalse(settings.tourInviteDismissed)
@@ -30,16 +29,16 @@ class SettingsSanitizeTest {
     }
 
     @Test
-    fun sanitizeKeepsAnkiChoices() {
+    fun sanitizeKeepsRevealChoices() {
         val settings = AppSettings(
-            ankiWriting = true,
-            ankiPronunciation = true,
-            ankiMeaning = true,
+            revealWriting = true,
+            revealPronunciation = true,
+            revealMeaning = true,
             meaningPractice = true,
         ).sanitized()
-        assertTrue(settings.ankiWriting)
-        assertTrue(settings.ankiPronunciation)
-        assertTrue(settings.ankiMeaning)
+        assertTrue(settings.revealWriting)
+        assertTrue(settings.revealPronunciation)
+        assertTrue(settings.revealMeaning)
         assertTrue(settings.meaningPractice)
     }
 
@@ -58,6 +57,20 @@ class SettingsSanitizeTest {
     @Test
     fun keepsTheTourInviteChoice() {
         assertTrue(AppSettings(tourInviteDismissed = true).sanitized().tourInviteDismissed)
+    }
+
+    @Test
+    fun keepsAtLeastOnePracticeMode() {
+        // Drawing cannot be the only mode that is off: restore a check or
+        // bring drawing back, never leave a session with no task at all.
+        assertTrue(
+            AppSettings(writingPractice = false).sanitized().writingPractice,
+        )
+        val recognitionOnly = AppSettings(
+            writingPractice = false,
+            pronunciationPractice = true,
+        ).sanitized()
+        assertFalse(recognitionOnly.writingPractice)
     }
 
     @Test

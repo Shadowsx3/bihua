@@ -80,7 +80,7 @@ layout can differ. Landscape and large font scale are separate passes.
 | Write | Session | blank canvas, recognition, check, grade | A |
 | Pronunciation | Session | type reading, hint, correct/wrong | A |
 | Meaning | Session | type a wording, reveal gloss, example word, synonyms, grade | A |
-| Anki meaning | Session | reveal-only, no typing field | A |
+| Reveal meaning | Session | reveal-only, no typing field | A |
 | Grade buttons | Write | four/two-button scale, interval labels | A |
 | Stroke coach | Check | waiting, missing, reversal, repair modes, clean | P |
 | Leave session | Close | resume later, end, keep studying | A |
@@ -102,10 +102,10 @@ layout can differ. Landscape and large font scale are separate passes.
 
 | Screen | Entry | Main states | A |
 |---|---|---|---|
-| Spell quest gate | Home Study tools / Study tools sheet | rules, met count and chapter, start/walk on, grimoire, leave; phone and BOOK two-page | A |
-| Spell quest scene | Start the road | problem, draw, gift, hint, result, walk on | A |
+| Spell quest gate | Home Study tools / Study tools sheet | rules, met count and chapter, start/walk on, grimoire, leave; phone portrait and landscape/BOOK two-page | A |
+| Spell quest scene | Start the road | problem, draw, gift, hint, result, walk on; story and circle share a spread in landscape | A |
 | Cast overlay | Draw | rune circle, clue card above, shape/reading/meaning reveals, quest-only brush tray, undo/clear, cast, grimoire | A |
-| Grimoire | Scene or gate | cover, index, 10 chapter spreads, script-specific seals, met stars, fold hinge, light/dark | A |
+| Grimoire | Scene or gate | cover, index, 10 chapter spreads, script-specific seals, met stars, fold hinge, short landscape page, light/dark | A |
 
 ## Progress
 
@@ -125,7 +125,7 @@ layout can differ. Landscape and large font scale are separate passes.
 |---|---|---|---|
 | Settings index | Tab | search, no match, all groups, back from every section | A |
 | Profile | Settings | name, photo, restore/remove | M |
-| Practice | Settings | task mix, pronunciation, meaning, Anki writing/pronunciation/meaning, synonyms | A |
+| Practice | Settings | task mix, pronunciation, meaning, Reveal writing/pronunciation/meaning, synonyms | A |
 | Study | Settings | list entry, day boundary, vacation, cues, words | A |
 | Reminders | Settings | off, permission needed, scheduled | P |
 | Schedule | Settings | FSRS/SBD, target recall, weights fit/import/export | P |
@@ -133,7 +133,9 @@ layout can differ. Landscape and large font scale are separate passes.
 | Display | Settings | theme, orientation, pinyin, voice, sound | P |
 | Data | Settings | backup/import scope, CSV, reset | P |
 | Sync | Settings | host, join, error, success | M |
-| About | Settings | version, licences, privacy, feedback | A |
+| About | Settings | version, report a problem or idea, rate, licences, privacy, source | A |
+| Report | About | kind chips, words, saved crash, privacy note, Send/Copy/Cancel, compact landscape with keyboard | A |
+| What will be sent | Report → See what will be sent | app and device header, words, optional crash trace, Close | A |
 | Licences | About | list, full notices, links | P |
 
 ## Study lists

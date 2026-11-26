@@ -17,7 +17,7 @@ class SettingsTransferTest {
     fun backupCarriesMeaningTourAndSynonyms() {
         val settings = AppSettings(
             meaningPractice = true,
-            ankiMeaning = true,
+            revealMeaning = true,
             meaningSynonyms = mapOf(
                 "U+611B" to listOf("affection", "love"),
             ),
@@ -31,7 +31,7 @@ class SettingsTransferTest {
         )
         val decoded = BackupCodec.decode(BackupCodec.encode(bundle))
         assertTrue(decoded.settings.meaningPractice)
-        assertTrue(decoded.settings.ankiMeaning)
+        assertTrue(decoded.settings.revealMeaning)
         assertEquals(
             listOf("affection", "love"),
             decoded.settings.meaningSynonyms["U+611B"],
@@ -66,7 +66,7 @@ class SettingsTransferTest {
             .decodeFromString(AppSettings.serializer(), """{"onboarded":true}""")
             .sanitized()
         assertFalse(decoded.meaningPractice)
-        assertFalse(decoded.ankiMeaning)
+        assertFalse(decoded.revealMeaning)
         assertTrue(decoded.meaningSynonyms.isEmpty())
         assertFalse(decoded.tourInviteDismissed)
         assertEquals(MascotOutfit.AUTO, decoded.mascotOutfit)

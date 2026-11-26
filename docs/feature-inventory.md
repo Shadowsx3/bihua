@@ -37,13 +37,13 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Tour invite | Dismissible Home card once; “Not now” goes straight to the app | A |
 | Tour replay | Settings → Help & tour → Start tour; Skip/Back/Next and final Back to app | A |
 | Grading help | Again/Hard/Good/Easy explained in plain words with colour; “?” in the session too | P |
-| Progress windows | 7/30/90/365-day ranges for momentum, reviews, learned, practice time, pass rate, streak, best day, growth, and daily rhythm; course-scoped with calm empty states and a real 366-day streak | A |
+| Progress windows | 7/30/90/365-day and All time ranges for momentum, reviews, learned, practice time, pass rate, streak, best day, growth, and daily rhythm; course-scoped with calm empty states, a real 366-day streak, a scrollable GitHub-style year heatmap, and bucketed all-time charts | A |
 | Paper and lists help | Exact Settings paths for printable sheets and saved lists | A |
 | Reduce motion + TalkBack | No typewriter, bobbing, pulse, or confetti; full line read at once | P |
 | Sound effects | Synthesised tick, check, grade, add, tour, and session cues; one Settings switch | P |
 | Widget pet costumes | Study cap or word monocle, witch hat in the evening, vampire at night, nightcap on vacation, party hat when the desk is clear; Settings can pin one | P |
 | Widget day-part backgrounds | Warm morning, mint afternoon, lilac evening, deep night with light text and soft glows | P |
-| Widget stat blocks | Today shows review and lesson counts; Word shows two chips below the definition | P |
+| Widget family | Today keeps the 1.1.1 two-number card with done-of-total amounts and a plain next-hours line; Week ahead swaps the line for the next days; both keep the pet, colored labels, and Study button; Word of the Day keeps its word card | P |
 | Completion party hat | Mò wears a party hat on the session-complete panel | P |
 | Spell quest | Extra practice in all four scripts: draw a character that fits the scene, or take a gift from the grimoire; nothing graded or scheduled | A/P |
 | Spell quest road | Met pages, chapter, new-page note, and every-tenth-page milestone; stored in the progress DB so export/import/sync carry it | A/P |
@@ -59,8 +59,8 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Palm safety | Stylus priority | M |
 | Pressure and taper | Width, speed thinning, taper | P |
 | Dot strokes | Single tap is a stroke | G |
-| Anki writing | Optional cue → Show answer → grade with no canvas | A |
-| Anki pronunciation | Optional character → Show answer → grade with no typing | A |
+| Reveal writing | Optional cue → Show answer → grade with no canvas | A |
+| Reveal pronunciation | Optional character → Show answer → grade with no typing | A |
 | Meaning review | Optional character → type wording → gloss, example word, grade | A |
 | Meaning synonyms | Add/remove user wordings in the reveal or character detail, cleaned and capped | A |
 | Meaning data sanitizer | Skip blank/structural glosses; filter words | A |
@@ -80,7 +80,7 @@ Legend: **A** automated, **P** partly automated, **G** automation gap, **M** man
 | Grading | Four or two buttons, intervals | A |
 | Undo | Card/XP/day restore | A |
 | Load estimate | New goal simulation | P |
-| Widgets | Today, Word, time-aware | M |
+| Widgets | Today, Week ahead, Word of the Day; time-aware and resize-aware | M |
 | Word of the Day | Curated, non-mature, audio | P |
 | Streak/calendar | Local days, no debt | A |
 

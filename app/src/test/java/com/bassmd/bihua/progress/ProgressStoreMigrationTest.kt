@@ -31,7 +31,7 @@ class ProgressStoreMigrationTest {
 
     @Test
     fun everyOldVersionUpgradesToCurrentWithoutLosingCards() {
-        for (version in 1..11) {
+        for (version in 1..17) {
             context.deleteDatabase(DB_NAME)
             createDatabaseAt(version)
             val store = ProgressStore(context)
@@ -42,12 +42,19 @@ class ProgressStoreMigrationTest {
                 assertTrue(hasTable(db, "note"))
                 assertTrue(hasTable(db, "confusion"))
                 assertTrue(hasTable(db, "word_practice"))
+                assertTrue(hasTable(db, "mnemonic"))
+                assertTrue(hasTable(db, "palace_peg"))
+                assertTrue(hasColumn(db, "mnemonic", "strength"))
                 assertTrue(hasColumn(db, "review_log", "elapsed_ms"))
                 assertTrue(hasColumn(db, "review_log", "task"))
                 assertTrue(hasColumn(db, "review_log", "strokes"))
+                assertTrue(hasColumn(db, "review_log", "reason"))
                 assertTrue(hasColumn(db, "word_practice", "mature"))
                 assertTrue(hasColumn(db, "card", "sbd_log_s"))
                 assertTrue(hasColumn(db, "review_log", "sbd_n"))
+                assertTrue(hasIndex(db, "log_char_time"))
+                assertTrue(hasIndex(db, "log_time_live"))
+                assertTrue(hasIndex(db, "card_mode_due"))
                 val cards = runBlocking { store.allCards() }
                 val card = cards[CARD_ID]
                 assertTrue("card lost upgrading v$version", card != null)
@@ -94,6 +101,7 @@ class ProgressStoreMigrationTest {
             if (version >= 11) {
                 append(", sbd_log_s REAL, sbd_grade REAL, sbd_n REAL")
             }
+            if (version >= 14) append(", reason TEXT NOT NULL DEFAULT ''")
             append(")")
         }
         db.execSQL(reviewColumns)
@@ -124,6 +132,26 @@ class ProgressStoreMigrationTest {
                 db.execSQL("ALTER TABLE word_practice ADD COLUMN mature INTEGER NOT NULL DEFAULT 0")
             }
         }
+        if (version >= 15) {
+            db.execSQL(
+                "CREATE TABLE mnemonic(mode TEXT NOT NULL, character TEXT NOT NULL, " +
+                    "part1 TEXT NOT NULL DEFAULT '', part2 TEXT NOT NULL DEFAULT '', " +
+                    "part3 TEXT NOT NULL DEFAULT '', person TEXT NOT NULL DEFAULT '', " +
+                    "place TEXT NOT NULL DEFAULT '', action TEXT NOT NULL DEFAULT '', " +
+                    "story TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL, " +
+                    "PRIMARY KEY(mode, character))"
+            )
+            if (version >= 16) {
+                db.execSQL("ALTER TABLE mnemonic ADD COLUMN strength INTEGER NOT NULL DEFAULT 3")
+            }
+        }
+        if (version >= 16) {
+            db.execSQL(
+                "CREATE TABLE palace_peg(mode TEXT NOT NULL, kind TEXT NOT NULL, " +
+                    "label TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', " +
+                    "updated_at INTEGER NOT NULL, PRIMARY KEY(mode, kind, label))"
+            )
+        }
         val now = 1_700_000_000_000L
         val cardSql = if (version >= 11) {
             "INSERT INTO card(id, character_id, glyph_group_id, mode, s_long, s_short, " +
@@ -141,12 +169,14 @@ class ProgressStoreMigrationTest {
             if (version >= 5) add("elapsed_ms")
             if (version >= 6) add("task")
             if (version >= 8) add("strokes")
+            if (version >= 14) add("reason")
         }
         val values = buildList<Any> {
             addAll(listOf(CARD_ID, CHARACTER_ID, now, 3, 2.0f, 2f, 1.6f, 5f, 0))
             if (version >= 5) add(8_000L)
             if (version >= 6) add("WRITE")
             if (version >= 8) add(1)
+            if (version >= 14) add("")
         }
         db.execSQL(
             "INSERT INTO review_log(${columns.joinToString(",")}) VALUES(${columns.joinToString(",") { "?" }})",
@@ -167,6 +197,12 @@ class ProgressStoreMigrationTest {
             }
             false
         }
+
+    private fun hasIndex(db: SQLiteDatabase, index: String): Boolean =
+        db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name=?",
+            arrayOf(index),
+        ).use { it.moveToFirst() }
 
     private companion object {
         const val DB_NAME = "bihua_progress.db"

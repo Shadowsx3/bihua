@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -52,6 +53,7 @@ import com.bassmd.bihua.ai.RecognitionResult
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.InkState
 import com.bassmd.bihua.ink.InkCanvas
+import com.bassmd.bihua.ink.WritingGrid
 import com.bassmd.bihua.settings.BrushConfig
 import com.bassmd.bihua.settings.GridStyle
 import com.bassmd.bihua.ui.components.writingSheet
@@ -70,16 +72,21 @@ fun DrawSearchDialog(
     mode: StudyMode,
     brush: BrushConfig,
     allowFinger: Boolean = false,
+    recognitionService: InkRecognitionService? = null,
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val recognizer = remember { InkRecognitionService() }
+    // Use the app reader when it is available so readiness and download state
+    // are shared with the rest of the app.
+    val recognizer = recognitionService ?: remember { InkRecognitionService() }
     val ink = remember { InkState() }
     var result by remember { mutableStateOf<RecognitionResult?>(null) }
     var busy by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) { onDispose { recognizer.close() } }
+    DisposableEffect(recognizer) {
+        onDispose { if (recognitionService == null) recognizer.close() }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -112,12 +119,17 @@ fun DrawSearchDialog(
                         .aspectRatio(1f)
                         .writingSheet(RoundedCornerShape(16.dp)),
                 ) {
+                    WritingGrid(
+                        com.bassmd.bihua.settings.GridStyle.MI_ZI,
+                        Modifier.fillMaxSize(),
+                    )
                     InkCanvas(
                         state = ink,
                         modifier = Modifier.fillMaxWidth().aspectRatio(1f),
                         gridStyle = GridStyle.MI_ZI,
                         brush = brush,
                         allowFinger = allowFinger,
+                        drawGrid = false,
                     )
                     if (ink.strokes.isEmpty()) {
                         Text(
@@ -136,7 +148,16 @@ fun DrawSearchDialog(
                             if (ink.strokes.isEmpty() || busy) return@TextButton
                             busy = true
                             scope.launch {
-                                result = recognizer.recognize(ink.strokes.toList(), mode)
+                                result = if (recognizer.canReadNow(mode)) {
+                                    recognizer.recognize(ink.strokes.toList(), mode)
+                                } else {
+                                    RecognitionResult(
+                                        emptyList(),
+                                        false,
+                                        preparing = com.bassmd.bihua.ai.ModelDownloads
+                                            .activeModes.contains(mode),
+                                    )
+                                }
                                 busy = false
                             }
                         },
@@ -156,7 +177,11 @@ fun DrawSearchDialog(
                 result?.let { outcome ->
                     if (!outcome.modelReady) {
                         Text(
-                            "Reading by drawing needs the on-device model. Download it in Settings → Writing, or search by text, pinyin, or meaning instead.",
+                            if (outcome.preparing) {
+                                "The ink reader is still preparing. Try again in a moment, or search by text, pinyin, or meaning instead."
+                            } else {
+                                "Reading by drawing needs the on-device model. Download it in Settings → Writing, or search by text, pinyin, or meaning instead."
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )

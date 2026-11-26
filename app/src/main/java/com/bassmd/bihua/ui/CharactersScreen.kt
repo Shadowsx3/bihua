@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +38,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.Check
@@ -90,8 +92,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import com.bassmd.bihua.content.CharacterEntry
+import com.bassmd.bihua.content.hasHanCharacter
 import com.bassmd.bihua.content.Pinyin
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
@@ -99,6 +103,8 @@ import com.bassmd.bihua.content.visible
 import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.content.LocalContentRepository
 import com.bassmd.bihua.progress.LocalProgressStore
+import com.bassmd.bihua.learn.MnemonicEditDialog
+import com.bassmd.bihua.progress.MnemonicEntry
 import com.bassmd.bihua.progress.ReviewEntry
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.Dot
@@ -164,6 +170,12 @@ fun CharactersScreen(
     meaningSynonyms: Map<String, List<String>> = emptyMap(),
     onAddMeaningSynonym: (String, String) -> Unit = { _, _ -> },
     onRemoveMeaningSynonym: (String, String) -> Unit = { _, _ -> },
+    onCharacterSelected: (String?) -> Unit = {},
+    mnemonicOpen: Boolean = false,
+    onMnemonicOpenChange: (Boolean) -> Unit = {},
+    detailStateHolder: androidx.compose.runtime.saveable.SaveableStateHolder =
+        androidx.compose.runtime.saveable.rememberSaveableStateHolder(),
+    recognitionService: com.bassmd.bihua.ai.InkRecognitionService? = null,
 ) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -209,6 +221,11 @@ fun CharactersScreen(
     androidx.activity.compose.BackHandler(enabled = selected != null) {
         selectedId = null
     }
+    // Hoist the open character so a layout change (phone to landscape or a
+    // foldable opening) cannot close a page the learner is reading.
+    LaunchedEffect(selectedId) {
+        onCharacterSelected(selectedId)
+    }
     val repository = LocalContentRepository.current
     val progressStore = LocalProgressStore.current
     LaunchedEffect(mode) {
@@ -229,7 +246,10 @@ fun CharactersScreen(
         if (selected != null) selectedGlyph = selected.character
     }
     LaunchedEffect(mode, all) {
-        if (all.none { it.id == selectedId }) {
+        // A rotation or a script reload can briefly hand us an empty list.
+        // Dropping the selection then would close the detail page (and an open
+        // mnemonic sheet) for no reason, so wait for real content.
+        if (all.isNotEmpty() && all.none { it.id == selectedId }) {
             val sameGlyph = selectedGlyph?.let { glyph -> all.firstOrNull { it.character == glyph } }
             selectedId = sameGlyph?.id
             selectedGlyph = sameGlyph?.character
@@ -280,6 +300,105 @@ fun CharactersScreen(
                                 .fillMaxSize()
                                 .padding(start = 4.dp),
                         ) {
+                            CharacterDetailHost(detailStateHolder, selected) {
+                                CharacterDetail(
+                                    entry = selected,
+                                    pinned = selected.id in priorityIds,
+                                    skipped = selected.id in skippedIds,
+                                    inStudyList = selected.id in studyList,
+                                    memoryLevel = memoryLevels[selected.id],
+                                    onSetMemoryLevel = { level -> onSetMemoryLevel(selected, level) },
+                                    onSpeak = { text -> onSpeak(text) },
+                                    onOpenComponent = { component ->
+                                        all.firstOrNull { it.character == component }
+                                            ?.let { selectedId = it.id }
+                                    },
+                                    availableComponents = characterSet,
+                                    shareIdenticalGlyphs = shareIdenticalGlyphs,
+                                    sharedModes = sharedModes,
+                                    sharingOverride = sharingOverrides[selected.glyphGroupId],
+                                    sharingEffective = sharingOverrides[selected.glyphGroupId] ?: shareIdenticalGlyphs,
+                                    onSharingOverride = { value -> onSharingOverride(selected.glyphGroupId, value) },
+                                    speechEnabled = speechEnabled,
+                                    onCompare = { onCompare(selected) },
+                                    onCompareFamily = onCompareFamily,
+                                    onPracticeWord = onPracticeWord,
+                                    includeMatureContent = includeMatureContent,
+                                    onPaper = { onPaperCharacter(selected) },
+                                    onPractice = { onPractice(selected) },
+                                    onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
+                                    onPrioritize = {
+                                        val next = selected.id !in priorityIds
+                                        onPrioritize(selected, next)
+                                        scope.launch {
+                                            snackbar.showSnackbar(
+                                                if (next) "Pinned to the front of today's queue." else "Pin removed."
+                                            )
+                                        }
+                                    },
+                                    suspended = selected.id in suspendedIds,
+                                    onSuspend = {
+                                        val next = selected.id !in suspendedIds
+                                        onSuspend(selected, next)
+                                        scope.launch {
+                                            snackbar.showSnackbar(
+                                                if (next) "Suspended until you resume it. Memory is untouched." else "Back in the queue."
+                                            )
+                                        }
+                                    },
+                                    onSkip = {
+                                        val next = selected.id !in skippedIds
+                                        onSkip(selected, next)
+                                        scope.launch {
+                                            snackbar.showSnackbar(
+                                                if (next) "Skipped until the next day. Memory is untouched." else "Back in today's queue."
+                                            )
+                                        }
+                                    },
+                                    onAddToList = {
+                                        val adding = selected.id !in studyList
+                                        onToggleStudyList(selected)
+                                        com.bassmd.bihua.audio.Sfx.play(
+                                            if (adding) {
+                                                com.bassmd.bihua.audio.Sfx.Effect.ADD
+                                            } else {
+                                                com.bassmd.bihua.audio.Sfx.Effect.TICK
+                                            },
+                                        )
+                                        scope.launch {
+                                            snackbar.showSnackbar(
+                                                if (adding) "Added to the active list." else "Removed from the active list."
+                                            )
+                                        }
+                                    },
+                                    onReset = { showReset = true },
+                                    synonyms = meaningSynonyms[selected.id].orEmpty(),
+                                    onAddSynonym = { text -> onAddMeaningSynonym(selected.id, text) },
+                                    onRemoveSynonym = { text -> onRemoveMeaningSynonym(selected.id, text) },
+                                    mnemonicOpen = mnemonicOpen,
+                                    onMnemonicOpenChange = onMnemonicOpenChange,
+                                )
+                            }
+                        }
+                    } else {
+                        EmptyDetail(modifier = Modifier.width(390.dp))
+                    }
+                }
+            } else {
+                if (selected != null) {
+                    Column(Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            IconButton(onClick = { selectedId = null }) {
+                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                            }
+                            Text("Characters", style = MaterialTheme.typography.titleLarge)
+                        }
+                        CharacterDetailHost(detailStateHolder, selected) {
                             CharacterDetail(
                                 entry = selected,
                                 pinned = selected.id in priorityIds,
@@ -354,101 +473,11 @@ fun CharactersScreen(
                                 synonyms = meaningSynonyms[selected.id].orEmpty(),
                                 onAddSynonym = { text -> onAddMeaningSynonym(selected.id, text) },
                                 onRemoveSynonym = { text -> onRemoveMeaningSynonym(selected.id, text) },
+                                mnemonicOpen = mnemonicOpen,
+                                onMnemonicOpenChange = onMnemonicOpenChange,
                             )
                         }
-                    } else {
-                        EmptyDetail(modifier = Modifier.width(390.dp))
-                    }
-                }
-            } else {
-                if (selected != null) {
-                    Column(Modifier.fillMaxSize()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            IconButton(onClick = { selectedId = null }) {
-                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                            }
-                            Text("Characters", style = MaterialTheme.typography.titleLarge)
-                        }
-                        CharacterDetail(
-                            entry = selected,
-                            pinned = selected.id in priorityIds,
-                            skipped = selected.id in skippedIds,
-                            inStudyList = selected.id in studyList,
-                            memoryLevel = memoryLevels[selected.id],
-                            onSetMemoryLevel = { level -> onSetMemoryLevel(selected, level) },
-                            onSpeak = { text -> onSpeak(text) },
-                            onOpenComponent = { component ->
-                                all.firstOrNull { it.character == component }
-                                    ?.let { selectedId = it.id }
-                            },
-                            availableComponents = characterSet,
-                            shareIdenticalGlyphs = shareIdenticalGlyphs,
-                            sharedModes = sharedModes,
-                            sharingOverride = sharingOverrides[selected.glyphGroupId],
-                            sharingEffective = sharingOverrides[selected.glyphGroupId] ?: shareIdenticalGlyphs,
-                            onSharingOverride = { value -> onSharingOverride(selected.glyphGroupId, value) },
-                            speechEnabled = speechEnabled,
-                            onCompare = { onCompare(selected) },
-                            onCompareFamily = onCompareFamily,
-                            onPracticeWord = onPracticeWord,
-                            includeMatureContent = includeMatureContent,
-                            onPaper = { onPaperCharacter(selected) },
-                            onPractice = { onPractice(selected) },
-                            onNoteSaved = { scope.launch { snackbar.showSnackbar("Note saved.") } },
-                            onPrioritize = {
-                                val next = selected.id !in priorityIds
-                                onPrioritize(selected, next)
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        if (next) "Pinned to the front of today's queue." else "Pin removed."
-                                    )
-                                }
-                            },
-                            suspended = selected.id in suspendedIds,
-                            onSuspend = {
-                                val next = selected.id !in suspendedIds
-                                onSuspend(selected, next)
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        if (next) "Suspended until you resume it. Memory is untouched." else "Back in the queue."
-                                    )
-                                }
-                            },
-                            onSkip = {
-                                val next = selected.id !in skippedIds
-                                onSkip(selected, next)
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        if (next) "Skipped until the next day. Memory is untouched." else "Back in today's queue."
-                                    )
-                                }
-                            },
-                            onAddToList = {
-                                val adding = selected.id !in studyList
-                                onToggleStudyList(selected)
-                                com.bassmd.bihua.audio.Sfx.play(
-                                    if (adding) {
-                                        com.bassmd.bihua.audio.Sfx.Effect.ADD
-                                    } else {
-                                        com.bassmd.bihua.audio.Sfx.Effect.TICK
-                                    },
-                                )
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        if (adding) "Added to the active list." else "Removed from the active list."
-                                    )
-                                }
-                            },
-                            onReset = { showReset = true },
-                            synonyms = meaningSynonyms[selected.id].orEmpty(),
-                            onAddSynonym = { text -> onAddMeaningSynonym(selected.id, text) },
-                            onRemoveSynonym = { text -> onRemoveMeaningSynonym(selected.id, text) },
-                        )
+
                     }
                 } else {
                     Column(Modifier.fillMaxSize()) {
@@ -513,6 +542,7 @@ fun CharactersScreen(
             mode = mode,
             brush = brush,
             allowFinger = allowFinger,
+            recognitionService = recognitionService,
             onPick = { glyph ->
                 showDrawSearch = false
                 scope.launch {
@@ -1014,6 +1044,15 @@ private fun CharacterTile(
 }
 
 @Composable
+private fun CharacterDetailHost(
+    stateHolder: androidx.compose.runtime.saveable.SaveableStateHolder,
+    entry: CharacterEntry,
+    content: @Composable () -> Unit,
+) {
+    stateHolder.SaveableStateProvider(entry.id) { content() }
+}
+
+@Composable
 private fun CharacterDetail(
     entry: CharacterEntry,
     pinned: Boolean,
@@ -1046,6 +1085,8 @@ private fun CharacterDetail(
     synonyms: List<String> = emptyList(),
     onAddSynonym: (String) -> Unit = {},
     onRemoveSynonym: (String) -> Unit = {},
+    mnemonicOpen: Boolean = false,
+    onMnemonicOpenChange: (Boolean) -> Unit = {},
 ) {
     val repository = LocalContentRepository.current
     val progress = LocalProgressStore.current
@@ -1059,6 +1100,12 @@ private fun CharacterDetail(
     var editingNote by remember(entry.id) { mutableStateOf(false) }
     var variants by remember(entry.id) { mutableStateOf(emptySet<String>()) }
     var history by remember(entry.id) { mutableStateOf<List<ReviewEntry>>(emptyList()) }
+    var historyOpen by rememberSaveable(entry.id) { mutableStateOf(true) }
+    var wordsOpen by rememberSaveable(entry.id) { mutableStateOf(true) }
+    var mnemonic by remember(entry.id) { mutableStateOf<MnemonicEntry?>(null) }
+    var palacePegs by remember(entry.mode) {
+        mutableStateOf<List<com.bassmd.bihua.progress.PalacePeg>>(emptyList())
+    }
     var meta by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterMeta?>(null) }
     var family by remember(entry.id) { mutableStateOf<com.bassmd.bihua.content.CharacterFamily?>(null) }
     var showStory by remember(entry.id) { mutableStateOf(false) }
@@ -1088,12 +1135,14 @@ private fun CharacterDetail(
         note = progress?.note(entry.id).orEmpty()
         noteDraft = note
         history = progress?.characterHistory(entry.id, 10).orEmpty()
+        mnemonic = progress?.mnemonic(entry.mode.name, entry.character)
+        palacePegs = progress?.palacePegs(entry.mode.name).orEmpty()
     }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 108.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1288,26 +1337,35 @@ private fun CharacterDetail(
                 }
             }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             if (featureWord == null) {
                 words.firstOrNull()?.let { word ->
-                    TextButton(onClick = { onPracticeWord(word) }) {
-                        Icon(Icons.Rounded.Brush, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Write a word", style = MaterialTheme.typography.labelLarge)
-                    }
+                    CharacterActionChip(
+                        icon = Icons.Rounded.Brush,
+                        label = "Word",
+                        description = "Write a word",
+                        onClick = { onPracticeWord(word) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
-            TextButton(onClick = onPaper) {
-                Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Write on paper", style = MaterialTheme.typography.labelLarge)
-            }
-            TextButton(onClick = onCompare) {
-                Icon(Icons.Rounded.Compare, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Compare", style = MaterialTheme.typography.labelLarge)
-            }
+            CharacterActionChip(
+                icon = Icons.Rounded.Edit,
+                label = "Paper",
+                description = "Write on paper",
+                onClick = onPaper,
+                modifier = Modifier.weight(1f),
+            )
+            CharacterActionChip(
+                icon = Icons.Rounded.Compare,
+                label = "Compare",
+                description = "Compare characters",
+                onClick = onCompare,
+                modifier = Modifier.weight(1f),
+            )
         }
 
         if (sharedModes.size > 1) {
@@ -1462,8 +1520,15 @@ private fun CharacterDetail(
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (members.size >= 2) {
-                                TextButton(onClick = { onCompareFamily(members.take(4)) }) {
-                                    Text("Compare four")
+                                val shown = members.take(4)
+                                TextButton(onClick = { onCompareFamily(shown) }) {
+                                    Text(
+                                        when (shown.size) {
+                                            2 -> "Compare both"
+                                            3 -> "Compare these three"
+                                            else -> "Compare four"
+                                        },
+                                    )
                                 }
                             }
                         }
@@ -1472,15 +1537,92 @@ private fun CharacterDetail(
             }
         }
 
+        if (entry.character.hasHanCharacter()) {
+        Surface(
+            onClick = { onMnemonicOpenChange(true) },
+            shape = RoundedCornerShape(18.dp),
+            color = Lilac.copy(alpha = 0.11f),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = null,
+                        tint = InkDark,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Mnemonic palace",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                        )
+                        Text(
+                            if (mnemonic == null) {
+                                "A scene for this character."
+                            } else {
+                                "Your page. Change it any time."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Text(
+                        if (mnemonic == null) "Write a page" else "Open",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = InkDark,
+                    )
+                }
+                mnemonic?.let { page ->
+                    val scene = listOf(page.story, page.person, page.place, page.action)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · ")
+                    if (scene.isNotBlank()) {
+                        Text(
+                            scene,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                            modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 10.dp),
+                        )
+                    }
+                }
+            }
+        }
+        }
+
+
         if (history.isNotEmpty()) {
             SoftCard(Modifier.fillMaxWidth()) {
                 Column {
-                    Text("Review history", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                    Text(
-                        "Each graded drawing, newest first.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkSoft,
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(role = Role.Button) { historyOpen = !historyOpen },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Review history", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                            Text(
+                                "Each graded drawing, newest first · ${history.size} entries.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = InkSoft,
+                            )
+                        }
+                        Icon(
+                            if (historyOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = if (historyOpen) {
+                                "Collapse review history"
+                            } else {
+                                "Expand review history"
+                            },
+                            tint = InkSoft,
+                        )
+                    }
+                    if (!historyOpen) return@Column
                     Spacer(Modifier.height(8.dp))
                     history.forEach { review ->
                         Row(
@@ -1524,6 +1666,13 @@ private fun CharacterDetail(
                                                 else -> "writing"
                                             }
                                         )
+                                        if (review.reason.isNotBlank()) {
+                                            append(" · ")
+                                            append(
+                                                com.bassmd.bihua.learn.ReviewReason
+                                                    .labelFor(review.reason)
+                                            )
+                                        }
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = InkSoft,
@@ -1606,12 +1755,39 @@ private fun CharacterDetail(
 
         SoftCard(Modifier.fillMaxWidth()) {
             Column {
-                Text("Found in words", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                Text(
-                    "Tap Write to practise a word on the canvas.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkSoft,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = words.isNotEmpty(), role = Role.Button) {
+                            wordsOpen = !wordsOpen
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Found in words", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Text(
+                            if (words.isEmpty()) {
+                                "No dictionary examples for this character yet."
+                            } else {
+                                "Tap Write to practise · ${words.size} words."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                    if (words.isNotEmpty()) {
+                        Icon(
+                            if (wordsOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = if (wordsOpen) {
+                                "Collapse words"
+                            } else {
+                                "Expand words"
+                            },
+                            tint = InkSoft,
+                        )
+                    }
+                }
+                if (words.isEmpty() || !wordsOpen) return@Column
                 Spacer(Modifier.height(10.dp))
                 if (words.isEmpty()) {
                     Text(
@@ -1744,6 +1920,8 @@ private fun CharacterDetail(
         )
         AlertDialog(
             onDismissRequest = { synonymsOpen = false },
+            modifier = Modifier.imePadding(),
+            properties = DialogProperties(decorFitsSystemWindows = false),
             title = { Text("Add a synonym") },
             text = {
                 Column {
@@ -1798,6 +1976,62 @@ private fun CharacterDetail(
                 TextButton(onClick = { synonymsOpen = false }) { Text("Cancel") }
             },
         )
+
+    }
+
+    if (mnemonicOpen && entry.character.hasHanCharacter()) {
+        MnemonicEditDialog(
+            mode = entry.mode,
+            character = entry.character,
+            initial = mnemonic,
+            reading = entry.reading,
+            palacePegs = palacePegs,
+            loadMeta = { character -> repository?.meta(character) },
+            onDismiss = { onMnemonicOpenChange(false) },
+            onSave = { page ->
+                scope.launch {
+                    progress?.saveMnemonic(page)
+                    mnemonic = page
+                    onMnemonicOpenChange(false)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CharacterActionChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = PaperWarm,
+        border = BorderStroke(1.dp, InkSoft.copy(alpha = 0.14f)),
+        modifier = modifier
+            .height(44.dp)
+            .semantics { contentDescription = description },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = InkDark, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(5.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = InkDark,
+                maxLines = 1,
+            )
+        }
     }
 }
 

@@ -3,7 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.1.1-e89a6b.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.2-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
 Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
@@ -35,24 +35,36 @@ no developer-run analytics.
   <a href="https://shadowsx3.github.io/bihua/#download"><strong>Download</strong></a>
 </p>
 
-## New in 1.1.1
+## New in 1.1.2
 
-- **The ink reader can no longer strand a session.** Model and recognition
-  waits are bounded. Check always returns, with **Stop reading**, local shape and
-  stroke-order feedback, and **Show answer** still available.
-- **Downloads tell the truth.** Preparation is tracked per script, starts right
-  after setup, restore, or a language switch, detects an offline device before
-  trying, and shows one quiet notice instead of two competing spinners.
-- **A lighter spell book.** A clue card with **Hear / Info / Guide**, a clean
-  paper spread, one-step grimoire gifts, drawn vines and particles, and a fast
-  book-open. Spell quest stays open while a reader prepares.
-- **A calmer desk.** The character grid flings smoothly and returns to the top
-  when the script changes. Settings scrolls from the full pane. Watch and trace
-  dialogs use the paper style. **Mute app sounds** keeps music playing without
-  losing a deliberately tapped pronunciation.
-- **Print uses tone marks.** The worksheet PDF writes `nǐ hǎo`; typing practice
-  always answers in numbered pinyin (`ni3 hao3`). The display setting still
-  controls cards and cues.
+- **Today and Week ahead widgets.** The Today widget shows the day's reviews
+  and lessons as done and total, with one plain next-hours line. A dedicated
+  Week ahead widget shows the next seven days. Word of the Day stays its own
+  card. They refresh at day-part and study-day boundaries, on app changes, and
+  on clock/date changes.
+- **Progress gained All time and a year map.** All time is a real window, not a
+  renamed year. Year and All use a GitHub-style mint heatmap with month labels,
+  a weekday gutter, a legend, and horizontal scrolling.
+- **A report that stays yours.** Settings → About opens a composer with a kind
+  chip, your words, and an optional saved crash. The preview shows exactly what
+  will be sent, and Send opens your own mail or messenger. Crash files stay in
+  app-private storage until then. Rate Bihua sits on the same quiet card.
+- **A splash that does not jump.** The system splash and the in-app welcome use
+  the same launcher art at the same size and centre, stay light in the dark
+  theme, and no longer cover the welcome with the ink-reader notice.
+- **Landscape phones.** Home uses the tablet two-page dashboard, Practice uses
+  the book spread, and the spell quest, gate, draw screen, and grimoire use
+  their wide layouts. The report sheet is centred and keeps its actions above
+  the keyboard.
+- **A guide you can trace over.** The spell-quest guide is the scene's chapter
+  colour at 65% and sits under the learner's ink; the grimoire gift and result
+  strokes drop their dark halo.
+- **Offline from the first launch.** A clean device with no network can skip
+  setup, open Home, and start a review while the optional reader downloads in
+  the background.
+
+From 1.1.1: the spell quest and its grimoire, the shared daily word, brush
+presets, meaning checks, Reveal review, and study lists.
 
 ## Why it exists
 
@@ -77,23 +89,23 @@ Read the full rationale in [The Bihua method](docs/method.html).
 |---|---|
 | **Scripts** | Simplified, Traditional, Japanese, Korean. Separate courses; script-pure content. |
 | **Scheduling** | FSRS-7 or SBD, shared profile for shared glyphs, local weight fitting, a 70–97% target recall, 4 AM default day boundary, vacation mode, seven-day ease-back. |
-| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Each of the four tools keeps its own brush preset. Finger drawing is on by default; stylus-only is a choice. An optional Anki-style mode can reveal the answer instead. The reading model downloads once automatically on any connection, then works offline. |
+| **Writing** | Introduce → Trace → Recall; guide fade; stroke order, shape, reversals, missing/extra strokes, and a focused correction loop. Each of the four tools keeps its own brush preset. Finger drawing is on by default; stylus-only is a choice. An optional Reveal review mode can show the answer instead. The reading model downloads once automatically on any connection, then works offline. |
 | **Guided tour** | An optional live overlay over the real screens: the desk, reviews, grades, paper, search, and the spell road. Replay it from Settings → Help & tour. |
-| **Progress** | 7-day, 30-day, 90-day, and yearly windows for reviews, characters learned, practice time, pass rate, streak, best day, and daily rhythm, with course scoping and honest empty states. |
-| **Meaning** | Optional character-to-meaning reviews: type a wording, reveal the clean gloss, see a real word, and grade. User synonyms are kept as accepted wordings. Off by default; Anki-style reveal available. |
-| **Anki-style review** | Optional writing, pronunciation, and/or meaning reviews that show **Show answer** and then grade, with no canvas, keyboard, or choices. Independent switches; off by default. |
+| **Progress** | 7-day, 30-day, 90-day, yearly, and All time windows for reviews, characters learned, practice time, pass rate, streak, best day, and daily rhythm. Year and All use a scrolling GitHub-style heatmap; every query is course-scoped and empty states stay honest. |
+| **Meaning** | Optional character-to-meaning reviews: type a wording, reveal the clean gloss, see a real word, and grade. User synonyms are kept as accepted wordings. Off by default; Reveal review available. |
+| **Reveal review** | Optional writing, pronunciation, and/or meaning reviews that show **Show answer** and then grade, with no canvas, keyboard, or choices. Independent switches; off by default. |
 | **Pronunciation** | Separate review task; type pinyin, romaji or kana, or Hangul or romaja. |
 | **Dictionary** | Reading, meaning, level, strokes, frequency, variants, radical, components, etymology, families, words, notes, history. A full-screen lookup opens any word into free writing practice. |
 | **Spell quest** | Optional extra practice in all four courses: 1,387 spells, 10 chapters, and 35 families. Write a character that fits the scene, or take one from the grimoire. Every scene has several fitting answers, a whole-chapter door, or a rare exact-shape door; met pages stay in the book. Nothing is graded or scheduled. |
 | **Word of the day** | One shared word per course and study day, chosen by the calendar rather than install time or a personal seed. The Home card and widget agree, and the word does not repeat inside a cycle. |
-| **Home-screen widgets** | A Today widget with due reviews and new lessons that changes with the time of day, and a Word of the Day widget with Mò, the ink pet, plus the reading, meaning, and review/lesson counts. They refresh at day boundaries, on app changes, and on clock/date changes, with a six-hour fallback instead of a half-hour poll. |
+| **Home-screen widgets** | Today shows the day's done/total reviews and lessons with a plain next-hours line. Week ahead shows the next seven days. Word of the Day keeps its own card with Mò, the reading, meaning, and review/lesson counts. They refresh at day boundaries, on app changes, and on clock/date changes, with a six-hour fallback. |
 | **Worksheets** | Print-ready A4 or Letter PDF from the course (start at any character number), picked characters, an imported .txt/.csv, study list, recently learned, recent mistakes, or confusion groups. Trace, two traces, model and copy, memory, trace only, alternate, and poster templates; configurable grid, boxes, page size, labels, and order. |
 | **Transfer** | Word writing, paper checks, stroke-order rules, phonetic/semantic families. |
 | **Study lists** | Named character and word lists, presets, streaming TXT/CSV/TSV/JSON import, `.txt` export, quick add, and list-only study. |
 | **Theme** | System, Light, and Dark; cream ink on forest-night paper. |
-| **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account. |
+| **Data** | Selective zip backup/import and encrypted local Wi-Fi sync (settings and/or progress), CSV export, no account, and a local-only report composer when something breaks. |
 | **Reminders** | Optional daily study nudge, off by default, with a chosen hour and weekdays. |
-| **Foldables and tablets** | A book-style two-page inner layout on foldables, a two-page dashboard with a navigation rail on tablets, and the phone layout on the outer display. |
+| **Foldables, tablets, and landscape phones** | A book-style two-page inner layout on foldables, a two-page dashboard with a navigation rail on tablets, a two-page Home and book Practice in phone landscape, and the phone layout on the outer display. |
 
 ## Requirements
 
@@ -103,7 +115,7 @@ Read the full rationale in [The Bihua method](docs/method.html).
 
 ## Install
 
-The signed 1.1.1 test APK is on the [landing page](https://shadowsx3.github.io/bihua/#download).
+The signed 1.1.2 test APK is on the [landing page](https://shadowsx3.github.io/bihua/#download).
 The app is a private beta; read the release notes before installing. Uninstall a
 Play copy first because the test build uses the local release key.
 
@@ -156,7 +168,7 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 Copy the APK to `docs/download/`, update `docs/download/SHA256SUMS.txt`, the
-landing download hash, and `docs/1.1.1-release-checklist.md`. The hosted APK is a
+landing download hash, and `docs/play-store-submission.md`. The hosted APK is a
 test build; Play upload waits for the current review to clear. The Play Console
 answers, data-safety notes, permissions, and pre-upload checks live in
 `docs/play-store-submission.md`.
@@ -202,7 +214,7 @@ make audit
 ```
 
 The screen and user-journey risk list is
-[`docs/user-journey-risk-audit.md`](docs/user-journey-risk-audit.md). The flow to
+[`docs/archive/user-journey-risk-audit.md`](docs/archive/user-journey-risk-audit.md). The flow to
 test mapping, including the on-device smoke pass, is
 [`docs/test-matrix.md`](docs/test-matrix.md). The local daily-state harness is
 [`qa/README.md`](qa/README.md). The learning-science and joy proposals are in
@@ -289,14 +301,11 @@ code or content.
 
 ## Status
 
-**1.0.9 is in Play review.** The current development version is **1.1.1
-(versionCode 22)**. It adds the spell quest in all four scripts, a shared daily
-word per course, place-honest procedural puzzles with several fitting answers,
-Progress windows with course-scoped analytics and empty states, optional meaning
-reviews and synonyms, an Anki-style reveal for writing, pronunciation, and
-meaning, large-text layout fixes, safer study-list imports, widget count parity,
-loading timeouts, a phone shell that meets the bottom bar at every font scale,
-and a deep navigation pass.
+**1.1.1 is live on Play.** The current development version is **1.1.2
+(versionCode 23)**. It adds Today and Week ahead widgets, All time and a
+GitHub-style year heatmap, a local report composer with an optional saved
+crash, a splash that no longer jumps, and two-page landscape layouts for Home,
+Practice, the spell quest, its draw screen, and the grimoire.
 
 New learners start with five new characters a day, reviews are mixed with new
 lessons, and the session progress bar fills to the next lesson. The app also has
@@ -305,7 +314,7 @@ encrypted local sync, off-by-default study reminders, and foldable book layouts.
 The phone, tablet, and foldable paths are checked at normal and 1.5x text. The
 journey harness covers onboarding, daily queues, process death, fold changes,
 dictionary, worksheet export, paper/Compare, study lists, appearance,
-Word of the Day audio, Anki-style reviews, the spell quest in all four scripts,
+Word of the Day audio, Reveal reviews, the spell quest in all four scripts,
 and a walk through every Settings section and overlay. A full TalkBack sweep at 2x and a current physical stylus
 pass remain on the roadmap. The app is not a clinical intervention or a
 guarantee of literacy.

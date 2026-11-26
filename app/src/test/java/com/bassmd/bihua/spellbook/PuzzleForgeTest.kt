@@ -178,7 +178,7 @@ class PuzzleForgeTest {
         val chapter = PuzzleForge.generate(
             parts, Random(2), family = "water", character = "水", style = PuzzleStyle.CATEGORY,
         )
-        assertTrue(chapter.lines.any { "whole chapter" in it })
+        assertTrue(chapter.lines.any { "Tides chapter" in it && "Any character" in it })
         // The exact-shape door is the deliberate single-answer exception; a
         // chapter door still offers a whole chapter of spells.
         assertTrue(chapter.solutions.size in 1..2)

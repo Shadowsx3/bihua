@@ -1,6 +1,8 @@
 <resources>
     <style name="Theme.Bihua" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash_paper</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowSplashScreenBackground">@color/splash_paper</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground_art</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_paper</item>

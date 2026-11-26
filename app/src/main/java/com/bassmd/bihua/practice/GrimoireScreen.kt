@@ -656,7 +656,7 @@ private fun BookSheet(
         PageEdge.BOTH -> RoundedCornerShape(6.dp)
     }
     val isCover = page == BookPage.Cover
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .clip(shape)
@@ -677,13 +677,43 @@ private fun BookSheet(
                             else Modifier.vineMargin(ink, edge),
                         )
                 },
-            )
-            .padding(horizontal = 26.dp, vertical = 22.dp),
+            ),
+    ) {
+    // A landscape phone gives the cover only a short page; keep the title and
+    // mascot whole instead of clipping the title under the gilt frame.
+    val shortCover = maxHeight < 300.dp
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = if (shortCover) 18.dp else 26.dp, vertical = if (shortCover) 12.dp else 22.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (page) {
-            BookPage.Cover -> {
+            BookPage.Cover -> if (shortCover) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    InkMascot(size = 44.dp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Grimoire",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = GiltLeaf,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        "The spells of this course",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GiltLeaf.copy(alpha = 0.9f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            } else {
                 Spacer(Modifier.weight(1f))
                 InkMascot(size = 96.dp)
                 Spacer(Modifier.height(10.dp))
@@ -884,6 +914,7 @@ private fun BookSheet(
                 }
             }
         }
+    }
     }
 }
 

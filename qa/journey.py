@@ -6,6 +6,7 @@ import argparse
 import html
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -25,6 +26,7 @@ from devices import AvdLock, Device, boot  # noqa: E402
 from driver import Journey, JourneyFailure  # noqa: E402
 from scenarios import RUNNERS, SCENARIOS, ScenarioSpec, scenario_by_name  # noqa: E402
 from state import ScenarioState, build_state, write_settings_files  # noqa: E402
+from visual import VisualReport, write_contact_sheet  # noqa: E402
 
 
 @dataclass
@@ -116,12 +118,28 @@ def run_scenario(
     artifact = run_dir / profile / spec.name
     artifact.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    journey = Journey(device=device, artifact_dir=artifact, screenshots=args.screenshots)
+    visual = VisualReport() if (args.goldens or args.update_goldens) else None
+    journey = Journey(
+        device=device,
+        artifact_dir=artifact,
+        screenshots=args.screenshots,
+        profile=profile,
+        scenario=spec.name,
+        density=int(profile_cfg.get("density", 420)),
+        visual=visual,
+        update_goldens=args.update_goldens,
+        require_goldens=args.require_goldens,
+        visual_tolerance=args.visual_tolerance,
+        visual_max_diff=args.visual_max_diff,
+        audit_layout_enabled=args.layout_audit,
+    )
     detail = ""
     status = "ok"
     try:
         device.clear_logcat()
         device.force_stop()
+        if args.perf:
+            device.shell("dumpsys gfxinfo com.bassmd.bihua reset", check=False)
         device.shell("am force-stop com.google.android.documentsui", check=False)
         device.shell("input keyevent 3", check=False)
         device.shell(
@@ -129,8 +147,10 @@ def run_scenario(
             check=False,
         )
         state: ScenarioState | None = None
-        if spec.runner == "fresh":
+        if spec.runner == "fresh" or spec.fresh_data:
             device.clear_app()
+        if spec.runner == "fresh":
+            pass
         else:
             now, tz = device_now(device)
             kwargs = dict(spec.state)
@@ -139,6 +159,11 @@ def run_scenario(
             if args.new is not None:
                 kwargs["new"] = args.new
             state = build_state(f"{profile}-{spec.name}", now, tz, **kwargs)
+            # A landscape profile is also a test of the app's own orientation
+            # setting. Force the writing mode to Landscape so the display and
+            # the app agree even on an emulator with a stubborn rotation lock.
+            if profile_cfg.get("rotation") in (1, 3):
+                state.settings["orientation"] = "LANDSCAPE"
             settings_path, profile_path = write_settings_files(state)
             device.push_db(state.db_path)
             device.apply_settings(settings_path, profile_path)
@@ -147,6 +172,21 @@ def run_scenario(
         journey.assert_no_crash()
         if args.screenshots:
             journey.screenshot("final")
+        journey.assert_visual()
+        if args.layout_audit:
+            journey.assert_layout_clean()
+        if args.perf:
+            perf = read_gfxinfo(device)
+            artifact.joinpath("perf.json").write_text(json.dumps(perf, indent=2))
+            if "jank_percent" in perf:
+                print(f"      frames {perf.get('Total frames rendered', '?')}, "
+                      f"jank {perf['jank_percent']:.1f}%, "
+                      f"p90 {perf.get('90th percentile', '?')}")
+            limit = args.perf_jank_limit
+            if limit is not None and perf.get("jank_percent", 0) > limit:
+                raise JourneyFailure(
+                    f"jank {perf['jank_percent']:.1f}% exceeds the local limit of {limit:.1f}%"
+                )
     except Exception as error:
         status = "failed"
         detail = str(error)
@@ -161,14 +201,54 @@ def run_scenario(
         print(f"      FAILED: {detail.splitlines()[0] if detail else error}")
     seconds = time.time() - started
     result = RunResult(profile, spec.name, status, seconds, journey.steps, detail, str(artifact))
+    visual_results = [item.as_dict() for item in journey.visual_results]
+    layout_errors = [issue.as_dict() for issue in journey.layout_issues if issue.severity == "error"]
+    layout_warnings = [issue.as_dict() for issue in journey.layout_issues if issue.severity != "error"]
     artifact.joinpath("result.json").write_text(json.dumps({
         "profile": profile,
         "scenario": spec.name,
         "status": status,
         "seconds": seconds,
         "detail": detail,
+        "visual": visual_results,
+        "layout_errors": layout_errors,
+        "layout_warnings": layout_warnings,
+        "perf": (
+            json.loads((artifact / "perf.json").read_text())
+            if (artifact / "perf.json").exists() else None
+        ),
     }, indent=2))
     return result
+
+
+def read_gfxinfo(device: Device) -> dict:
+    """Small local performance snapshot from gfxinfo.
+
+    This is a smoke signal, not a benchmark. Run it on physical hardware for a
+    meaningful frame result; software-rendered emulators are for regression
+    shape only.
+    """
+    out = device.shell("dumpsys gfxinfo com.bassmd.bihua", check=False)
+    data: dict = {}
+    for line in out.splitlines():
+        line = line.strip()
+        for key in (
+            "Total frames rendered",
+            "Janky frames",
+            "50th percentile",
+            "90th percentile",
+            "95th percentile",
+            "99th percentile",
+            "Number Slow UI thread",
+            "Number Slow issue draw commands",
+            "Number Frame deadline missed",
+        ):
+            if line.startswith(key + ":"):
+                data[key] = line.split(":", 1)[1].strip()
+    match = re.search(r"Janky frames:\s+\d+ \(([\d.]+)%\)", out)
+    if match:
+        data["jank_percent"] = float(match.group(1))
+    return data
 
 
 def write_report(run_dir: Path, results: list[RunResult]) -> None:
@@ -190,6 +270,15 @@ def write_report(run_dir: Path, results: list[RunResult]) -> None:
             failure.text = result.detail
     ET.ElementTree(junit).write(run_dir / "junit.xml", encoding="utf-8", xml_declaration=True)
 
+    visual_failures = sum(
+        1 for result in results
+        for item in json.loads((Path(result.artifact_dir) / "result.json").read_text()).get("visual", [])
+        if item.get("status") in {"diff", "missing"}
+    )
+    layout_errors = sum(
+        1 for result in results
+        for item in json.loads((Path(result.artifact_dir) / "result.json").read_text()).get("layout_errors", [])
+    )
     rows = []
     for result in results:
         color = "#e6f4ea" if result.status == "ok" else "#fde8e8"
@@ -207,7 +296,8 @@ def write_report(run_dir: Path, results: list[RunResult]) -> None:
 <html><head><meta charset="utf-8"><title>Bihua journeys</title>
 <style>body{{font-family:-apple-system,sans-serif;margin:24px;color:#222}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #ddd;padding:6px;vertical-align:top;text-align:left}}th{{background:#f5f5f5}}</style>
 </head><body><h1>Bihua journeys</h1>
-<p>{len(results)} runs, {len(failures)} failed. {datetime.now().isoformat(timespec="seconds")}</p>
+<p>{len(results)} runs, {len(failures)} failed. {visual_failures} visual diff/missing, {layout_errors} layout errors. {datetime.now().isoformat(timespec="seconds")}</p>
+<p><a href="contact-sheet.html">Open the visual contact sheet</a> · <a href="contact-sheet.png">PNG contact sheet</a></p>
 <table><thead><tr><th>Profile</th><th>Scenario</th><th>Status</th><th>Time</th><th>Steps</th><th>Artifacts</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table></body></html>"""
     (run_dir / "index.html").write_text(page)
@@ -233,10 +323,22 @@ def main() -> int:
     parser.add_argument("--shut-down", action="store_true", help="kill AVDs started by this run")
     parser.add_argument("--no-build", action="store_true")
     parser.add_argument("--screenshots", action="store_true")
+    parser.add_argument("--goldens", action="store_true", help="compare screenshots with qa/goldens")
+    parser.add_argument("--update-goldens", action="store_true", help="replace qa/goldens with this run")
+    parser.add_argument("--require-goldens", action="store_true", help="fail when a screenshot has no golden")
+    parser.add_argument("--visual-tolerance", type=int, default=18, help="per-channel pixel tolerance")
+    parser.add_argument("--visual-max-diff", type=float, default=0.003, help="allowed mismatch fraction")
+    parser.add_argument("--layout-audit", action="store_true", help="check hierarchy bounds after every screenshot")
+    parser.add_argument("--perf", action="store_true", help="record a gfxinfo frame snapshot per scenario")
+    parser.add_argument("--perf-jank-limit", type=float, help="fail when janky frames exceed this percent")
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--parallel", type=int, help="AVDs to run at once (default 1 for quick, 2 otherwise)")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
+    if args.update_goldens:
+        args.goldens = True
+    if args.goldens:
+        args.screenshots = True
 
     if args.list:
         for spec in SCENARIOS:
@@ -308,7 +410,11 @@ def main() -> int:
                 device.font_scale(args.font_scale)
                 for spec in specs:
                     print(f"  {spec.name}", flush=True)
+                    if spec.font_scale is not None:
+                        device.font_scale(spec.font_scale)
                     result = run_scenario(device, profile, cfg, spec, args, run_dir)
+                    if spec.font_scale is not None:
+                        device.font_scale(args.font_scale)
                     out.append(result)
                     if result.status != "ok" and args.fail_fast:
                         raise SystemExit(1)
@@ -342,6 +448,10 @@ def main() -> int:
                 ))
 
     write_report(run_dir, results)
+    if args.screenshots:
+        sheet = write_contact_sheet(run_dir)
+        if sheet:
+            print(f"contact sheet: {sheet}")
     failed = [r for r in results if r.status != "ok"]
     print(f"\n{len(results)} runs, {len(failed)} failed")
     print(f"report: {run_dir / 'index.html'}")

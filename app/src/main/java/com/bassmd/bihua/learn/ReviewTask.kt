@@ -14,18 +14,30 @@ enum class ReviewTask {
 /**
  * Decides which skill a card practises on a given review.
  *
- * New cards always start with writing, because the motor pattern has to be
- * learned first. Once a card has been reviewed, enabled extra tasks join a
- * repeating sequence. Writing keeps at least half of the reviews.
+ * New cards start with writing because the motor pattern has to be learned
+ * first, unless the learner has switched drawing off. Then the enabled
+ * recognition checks carry the card instead. Once a card has been reviewed,
+ * enabled extra tasks join a repeating sequence; writing keeps at least half
+ * of the reviews while it is on.
  */
 object ReviewTaskPlan {
 
     fun forCard(
         pronunciationEnabled: Boolean,
         meaningEnabled: Boolean = false,
+        writingEnabled: Boolean = true,
         reps: Int,
         seed: Int,
     ): ReviewTask {
+        val extras = buildList {
+            if (pronunciationEnabled) add(ReviewTask.PRONOUNCE)
+            if (meaningEnabled) add(ReviewTask.MEANING)
+        }
+        if (!writingEnabled) {
+            if (extras.isEmpty()) return ReviewTask.WRITE
+            val phase = Math.floorMod(seed, extras.size)
+            return extras[Math.floorMod(reps + phase, extras.size)]
+        }
         if (reps <= 0) return ReviewTask.WRITE
         val sequence = when {
             pronunciationEnabled && meaningEnabled -> listOf(
@@ -43,13 +55,13 @@ object ReviewTaskPlan {
     }
 }
 
-/** Anki-style answering is optional per task, so each skill can differ. */
+/** Reveal answering is optional per task, so each skill can differ. */
 fun ReviewTask.revealsAnswer(
-    ankiWriting: Boolean = false,
-    ankiPronunciation: Boolean = false,
-    ankiMeaning: Boolean = false,
+    revealWriting: Boolean = false,
+    revealPronunciation: Boolean = false,
+    revealMeaning: Boolean = false,
 ): Boolean = when (this) {
-    ReviewTask.WRITE -> ankiWriting
-    ReviewTask.PRONOUNCE -> ankiPronunciation
-    ReviewTask.MEANING -> ankiMeaning
+    ReviewTask.WRITE -> revealWriting
+    ReviewTask.PRONOUNCE -> revealPronunciation
+    ReviewTask.MEANING -> revealMeaning
 }

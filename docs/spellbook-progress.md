@@ -135,7 +135,7 @@ Everything below compiles and is covered by unit tests.
   now a roughly fixed total time, and the learner's cast playback follows the same
   pace.
 - Empty windows / progress / build chrome fixes from the same QA pass are
-  documented in `docs/1.1.1-release-checklist.md`.
+  documented in `docs/archive/1.1.1-release-checklist.md`.
 
 ## Next tasks
 

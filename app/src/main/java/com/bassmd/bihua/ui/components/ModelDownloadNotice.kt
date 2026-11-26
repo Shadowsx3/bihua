@@ -10,24 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -37,6 +29,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -51,6 +44,8 @@ fun ModelDownloadNotice(
     visible: Boolean,
     failed: Boolean = false,
     offline: Boolean = false,
+    scriptName: String = "",
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     if (!visible) return
@@ -72,7 +67,20 @@ fun ModelDownloadNotice(
                 color = Color(0xFF241637),
                 contentColor = Color(0xFFF7F3FB),
                 shadowElevation = 10.dp,
-                modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                modifier = modifier
+                    .then(
+                        if (onClick != null) {
+                            Modifier.clickable(onClickLabel = "Retry the ink reader download", onClick = onClick)
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        if (onClick != null) {
+                            contentDescription = "Ink reader download. Tap to retry."
+                        }
+                    },
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -86,22 +94,34 @@ fun ModelDownloadNotice(
                             modifier = Modifier.size(18.dp),
                         )
                     } else {
-                        InkSpinner(
+                        androidx.compose.material3.Icon(
+                            Icons.Rounded.Brush,
+                            contentDescription = null,
+                            tint = Color(0xFFE6C47A),
                             modifier = Modifier.size(18.dp),
-                            color = Color(0xFFE6C47A),
                         )
                     }
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        if (offline) {
-                            "No connection — the ink reader will download when you're online."
-                        } else if (failed) {
-                            "Ink reader unavailable — you can keep going."
-                        } else {
-                            "Preparing the ink reader…"
+                        when {
+                            offline && onClick != null ->
+                                "No connection — tap to retry when you're online."
+                            offline ->
+                                "No connection — the ink reader will download when you're online."
+                            failed && onClick != null ->
+                                "${
+                                    scriptName.ifBlank { "Ink" }
+                                } reader unavailable — tap to retry."
+                            failed ->
+                                "Ink reader unavailable — you can keep going."
+                            scriptName.isNotBlank() ->
+                                "Preparing the $scriptName ink reader…"
+                            else ->
+                                "Preparing the ink reader…"
                         },
                         style = MaterialTheme.typography.labelLarge,
                         maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -109,40 +129,3 @@ fun ModelDownloadNotice(
     }
 }
 
-/**
- * A small ink-stroke spinner driven by frame time, not the platform animator.
- * It keeps turning even when system animations are switched off, so a download
- * never looks frozen.
- */
-@Composable
-private fun InkSpinner(modifier: Modifier = Modifier, color: Color) {
-    var angle by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
-    LaunchedEffect(Unit) {
-        var start = 0L
-        while (true) {
-            androidx.compose.runtime.withFrameNanos { now ->
-                if (start == 0L) start = now
-                angle = (((now - start) / 1_000_000f) % 900f) / 900f * 360f
-            }
-        }
-    }
-    val stroke = with(density) { 2.dp.toPx() }
-    Canvas(modifier) {
-        drawArc(
-            color = color.copy(alpha = 0.22f),
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            style = Stroke(stroke, cap = StrokeCap.Round),
-        )
-        drawArc(
-            color = color,
-            startAngle = angle,
-            sweepAngle = 110f,
-            useCenter = false,
-            style = Stroke(stroke, cap = StrokeCap.Round),
-            size = Size(size.width, size.height),
-        )
-    }
-}

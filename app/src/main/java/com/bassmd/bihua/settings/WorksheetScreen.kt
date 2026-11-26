@@ -114,6 +114,23 @@ private enum class WorksheetSource(val label: String) {
     CONFUSIONS("Confusions"),
 }
 
+/** Everything a worksheet export needs, captured at the moment the learner asks. */
+private data class WorksheetExport(
+    val characters: List<CharacterEntry>,
+    val template: WorksheetTemplate,
+    val grid: WorksheetGrid,
+    val page: WorksheetPage,
+    val cells: Int,
+    val perPage: Int,
+    val showReading: Boolean,
+    val showMeaning: Boolean,
+    val showNumbers: Boolean,
+    val includeCover: Boolean,
+    val title: String,
+    val showStrokeCount: Boolean,
+    val showLevel: Boolean,
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WorksheetScreen(
@@ -236,61 +253,73 @@ fun WorksheetScreen(
     val pages = if (selected.isEmpty()) 0 else
         (selected.size + perPage - 1) / perPage + if (includeCover) 1 else 0
 
+    var pendingExport by remember { mutableStateOf<WorksheetExport?>(null) }
+    var showPdfExport by remember { mutableStateOf(false) }
+    val captureWorksheet: () -> WorksheetExport = {
+        WorksheetExport(
+            characters = selected,
+            template = template,
+            grid = grid,
+            page = page,
+            cells = cells,
+            perPage = perPage,
+            showReading = showReading,
+            showMeaning = showMeaning,
+            showNumbers = showNumbers,
+            includeCover = includeCover,
+            title = studentName,
+            showStrokeCount = showStrokeCount,
+            showLevel = showLevel,
+        )
+    }
+    suspend fun optionsFor(export: WorksheetExport): WorksheetOptions {
+        val sheet = withContext(Dispatchers.IO) {
+            export.characters.map { entry ->
+                val guide = runCatching { repository?.guide(entry.id) }.getOrNull()
+                WorksheetCharacter(
+                    character = entry.character,
+                    reading = Pinyin.display(entry.reading, entry.mode, pinyinNumbers),
+                    meaning = entry.meaning,
+                    strokes = guide?.strokes.orEmpty().map { stroke ->
+                        WorksheetStroke(
+                            points = stroke.points.map { it.x to it.y },
+                            pathData = stroke.pathData,
+                        )
+                    },
+                    levelLabel = entry.levelLabel,
+                )
+            }
+        }
+        return WorksheetOptions(
+            title = export.title.trim().ifBlank { "Bihua writing practice" },
+            subtitle = "${modeName(mode)} · ${export.page.label} · ${LocalDate.now()}",
+            characters = sheet,
+            template = export.template,
+            grid = export.grid,
+            page = export.page,
+            cellsPerCharacter = export.cells,
+            charactersPerPage = export.perPage,
+            showReading = export.showReading,
+            showMeaning = export.showMeaning,
+            showStrokeCount = export.showStrokeCount,
+            showLevel = export.showLevel,
+            showNumbers = export.showNumbers,
+            includeCover = export.includeCover,
+            studentName = export.title.trim(),
+        )
+    }
+
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf"),
     ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val chosen = selected
-        val chosenTemplate = template
-        val chosenGrid = grid
-        val chosenPage = page
-        val chosenCells = cells
-        val chosenPerPage = perPage
-        val chosenReading = showReading
-        val chosenMeaning = showMeaning
-        val chosenNumbers = showNumbers
-        val chosenCover = includeCover
-        val chosenTitle = studentName
-        val chosenStrokeCount = showStrokeCount
-        val chosenLevel = showLevel
+        val export = pendingExport
+        pendingExport = null
+        if (uri == null || export == null) return@rememberLauncherForActivityResult
         busy = true
         message = null
         scope.launch {
             val result = runCatching {
-                val sheet = withContext(Dispatchers.IO) {
-                    chosen.map { entry ->
-                        val guide = runCatching { repository?.guide(entry.id) }.getOrNull()
-                        WorksheetCharacter(
-                            character = entry.character,
-                            reading = Pinyin.display(entry.reading, entry.mode, pinyinNumbers),
-                            meaning = entry.meaning,
-                            strokes = guide?.strokes.orEmpty().map { stroke ->
-                                WorksheetStroke(
-                                    points = stroke.points.map { it.x to it.y },
-                                    pathData = stroke.pathData,
-                                )
-                            },
-                            levelLabel = entry.levelLabel,
-                        )
-                    }
-                }
-                val options = WorksheetOptions(
-                    title = chosenTitle.trim().ifBlank { "Bihua writing practice" },
-                    subtitle = "${modeName(mode)} · ${chosenPage.label} · ${LocalDate.now()}",
-                    characters = sheet,
-                    template = chosenTemplate,
-                    grid = chosenGrid,
-                    page = chosenPage,
-                    cellsPerCharacter = chosenCells,
-                    charactersPerPage = chosenPerPage,
-                    showReading = chosenReading,
-                    showMeaning = chosenMeaning,
-                    showStrokeCount = chosenStrokeCount,
-                    showLevel = chosenLevel,
-                    showNumbers = chosenNumbers,
-                    includeCover = chosenCover,
-                    studentName = chosenTitle.trim(),
-                )
+                val options = optionsFor(export)
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openOutputStream(uri)?.use { out ->
                         WorksheetPdf.write(options, out)
@@ -299,9 +328,38 @@ fun WorksheetScreen(
             }
             busy = false
             message = if (result.isSuccess) {
-                "Worksheet saved · ${chosenPage.label} · ${characterCount(chosen.size)}."
+                "Worksheet saved · ${export.page.label} · ${characterCount(export.characters.size)}."
             } else {
                 "The worksheet did not save. Try another folder."
+            }
+        }
+    }
+
+    val shareWorksheet: () -> Unit = {
+        val export = captureWorksheet()
+        busy = true
+        message = null
+        scope.launch {
+            val file = withContext(Dispatchers.IO) {
+                runCatching {
+                    val options = optionsFor(export)
+                    com.bassmd.bihua.ui.components.cachePdf(
+                        context,
+                        "bihua-practice-${LocalDate.now()}-${export.characters.size}.pdf",
+                    ) { out -> WorksheetPdf.write(options, out) }
+                }.getOrNull()
+            }
+            busy = false
+            if (file != null) {
+                runCatching {
+                    com.bassmd.bihua.ui.components.sharePdf(
+                        context,
+                        file,
+                        "Share practice sheet",
+                    )
+                }.onFailure { message = "No app could share the worksheet." }
+            } else {
+                message = "The worksheet did not prepare. Try again."
             }
         }
     }
@@ -404,11 +462,7 @@ fun WorksheetScreen(
                     Spacer(Modifier.height(8.dp))
                     PrimaryAction(
                         text = if (busy) "Preparing PDF…" else "Export PDF",
-                        onClick = {
-                            exportLauncher.launch(
-                                "bihua-practice-${LocalDate.now()}-${selected.size}.pdf",
-                            )
-                        },
+                        onClick = { showPdfExport = true },
                         enabled = selected.isNotEmpty() && !busy,
                         icon = Icons.Rounded.Print,
                         modifier = Modifier.fillMaxWidth(),
@@ -781,6 +835,23 @@ fun WorksheetScreen(
             onDismiss = {
                 showPicker = false
                 if (pickedIds.isNotEmpty()) source = WorksheetSource.PICKED
+            },
+        )
+    }
+    if (showPdfExport) {
+        com.bassmd.bihua.ui.components.PdfExportDialog(
+            title = "Practice sheet PDF",
+            onDismiss = { showPdfExport = false },
+            onSave = {
+                showPdfExport = false
+                pendingExport = captureWorksheet()
+                exportLauncher.launch(
+                    "bihua-practice-${LocalDate.now()}-${selected.size}.pdf",
+                )
+            },
+            onShare = {
+                showPdfExport = false
+                shareWorksheet()
             },
         )
     }

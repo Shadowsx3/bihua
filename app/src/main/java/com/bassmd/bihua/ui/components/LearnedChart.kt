@@ -49,11 +49,27 @@ fun LearnedChart(
     modifier: Modifier = Modifier,
 ) {
     if (history.isEmpty()) return
-    var picked by remember(history) { mutableStateOf<Int?>(null) }
-    val values = history.map { it.reviewed }
+    // A year or more of daily points is unreadable on a phone. Bucket the
+    // display into at most ~180 points; the running total stays exact.
+    val chartHistory = remember(history) {
+        if (history.size <= 240) {
+            history
+        } else {
+            val chunk = (history.size + 179) / 180
+            history.chunked(chunk).map { group ->
+                DayActivity(
+                    date = group.first().date,
+                    reviewed = group.last().reviewed,
+                    learned = group.sumOf { it.learned },
+                )
+            }
+        }
+    }
+    var picked by remember(chartHistory) { mutableStateOf<Int?>(null) }
+    val values = chartHistory.map { it.reviewed }
     val maxValue = values.maxOrNull()?.coerceAtLeast(1) ?: 1
     val labelFormat = DateTimeFormatter.ofPattern("MMM d")
-    val selected = picked?.let { history.getOrNull(it) } ?: history.lastOrNull()
+    val selected = picked?.let { chartHistory.getOrNull(it) } ?: chartHistory.lastOrNull()
     val soft = InkSoft
 
     Column(modifier.fillMaxWidth()) {
@@ -103,18 +119,18 @@ fun LearnedChart(
             Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .pointerInput(history) {
+                .pointerInput(chartHistory) {
                     detectTapGestures { offset ->
-                        picked = indexFor(offset.x, size.width.toFloat(), history.size)
+                        picked = indexFor(offset.x, size.width.toFloat(), chartHistory.size)
                     }
                 }
-                .pointerInput(history) {
+                .pointerInput(chartHistory) {
                     detectHorizontalDragGestures(
                         onDragStart = { offset ->
-                            picked = indexFor(offset.x, size.width.toFloat(), history.size)
+                            picked = indexFor(offset.x, size.width.toFloat(), chartHistory.size)
                         },
                         onHorizontalDrag = { change, _ ->
-                            picked = indexFor(change.position.x, size.width.toFloat(), history.size)
+                            picked = indexFor(change.position.x, size.width.toFloat(), chartHistory.size)
                         },
                     )
                 },

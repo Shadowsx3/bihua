@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -66,6 +67,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -132,6 +134,7 @@ fun HomeScreen(
     skippedIds: Set<String> = emptySet(),
     onOpenStudyTools: () -> Unit = {},
     onOpenQuest: () -> Unit = {},
+    onOpenMnemonicPalace: () -> Unit = {},
     playerStats: com.bassmd.bihua.progress.PlayerStats,
     studyDays: Int,
     newToday: Int,
@@ -202,9 +205,13 @@ fun HomeScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val book = LocalFoldState.current == FoldState.BOOK && maxWidth >= 700.dp
-        // Match the shell rail breakpoint; the two-column dashboard and the
-        // rail arrive together on a tablet.
-        val wide = maxWidth >= 820.dp
+        // A landscape phone has the same wide, short shape as a tablet. Use
+        // the two-page dashboard there too instead of stretching one column.
+        val wide = maxWidth >= 700.dp
+        val compactHero = maxHeight < 560.dp
+        // A short landscape window must show the study action, not a one-time
+        // invitation above it. The invite returns in a taller window.
+        val showInvite = showTourInvite && maxHeight >= 560.dp
         if (!book && !wide) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -223,7 +230,7 @@ fun HomeScreen(
                     profile = profile,
                 )
             }
-            if (showTourInvite) {
+            if (showInvite) {
                 item {
                     TourInviteCard(
                         onStart = onStartTour,
@@ -304,6 +311,7 @@ fun HomeScreen(
                         onPractice = onPractice,
                         onEndVacation = { showEndVacation = true },
                         onOpenQuest = onOpenQuest,
+                        compact = compactHero,
                     )
                 }
             }
@@ -364,6 +372,7 @@ fun HomeScreen(
                     entries = studyList,
                     onOpenStudyTools = onOpenStudyTools,
                     onOpenQuest = onOpenQuest,
+                    onOpenMnemonicPalace = onOpenMnemonicPalace,
                     canOpenQuest = true,
                     onDrill = onDrill,
                     onPaper = onPaper,
@@ -458,7 +467,7 @@ fun HomeScreen(
                             profile = profile,
                         )
                     }
-                    if (showTourInvite) {
+                    if (showInvite) {
                         item {
                             TourInviteCard(
                         onStart = onStartTour,
@@ -539,6 +548,7 @@ fun HomeScreen(
                                 onPractice = onPractice,
                                 onEndVacation = { showEndVacation = true },
                                 onOpenQuest = onOpenQuest,
+                                compact = compactHero,
                             )
                         }
                     }
@@ -580,6 +590,7 @@ fun HomeScreen(
                             entries = studyList,
                             onOpenStudyTools = onOpenStudyTools,
                             onOpenQuest = onOpenQuest,
+                            onOpenMnemonicPalace = onOpenMnemonicPalace,
                             canOpenQuest = true,
                             onDrill = onDrill,
                             onPaper = onPaper,
@@ -821,6 +832,7 @@ private fun StudyHero(
     onEndVacation: () -> Unit,
     onOpenQuest: () -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     Box(
         modifier = modifier
@@ -840,7 +852,7 @@ private fun StudyHero(
                     )
                 )
             )
-            .padding(22.dp),
+            .padding(if (compact) 14.dp else 22.dp),
     ) {
         Column {
             if (vacation || due + fresh > 0) {
@@ -850,7 +862,7 @@ private fun StudyHero(
                         color = Color.White.copy(alpha = 0.42f),
                     )
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(if (compact) 8.dp else 16.dp))
             }
             Text(
                 when {
@@ -859,11 +871,15 @@ private fun StudyHero(
                     due == 0 -> "No reviews due"
                     else -> "Time to write"
                 },
-                style = MaterialTheme.typography.headlineMedium,
+                style = if (compact) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.headlineMedium
+                },
                 color = InkDark,
                 modifier = Modifier.tourAnchor("home.reviews"),
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(if (compact) 2.dp else 6.dp))
             Text(
                 when {
                     vacation -> "Your schedule is frozen. End vacation when you are back and due dates shift by the time away."
@@ -876,8 +892,10 @@ private fun StudyHero(
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = InkDark.copy(alpha = 0.76f),
+                maxLines = if (compact) 2 else Int.MAX_VALUE,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(if (compact) 8.dp else 20.dp))
             val action = when {
                 vacation -> onEndVacation
                 due + fresh == 0 -> onPractice
@@ -1249,6 +1267,7 @@ private fun StudyToolsCard(
     entries: List<CharacterEntry>,
     onOpenStudyTools: () -> Unit,
     onOpenQuest: () -> Unit,
+    onOpenMnemonicPalace: () -> Unit,
     canOpenQuest: Boolean,
     onDrill: () -> Unit,
     onPaper: () -> Unit,
@@ -1327,6 +1346,42 @@ private fun StudyToolsCard(
                     )
                 }
             }
+            }
+            Surface(
+                onClick = onOpenMnemonicPalace,
+                shape = RoundedCornerShape(12.dp),
+                color = Lilac.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = null,
+                        tint = InkDark,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Mnemonic palace",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = InkDark,
+                        )
+                        Text(
+                            "A picture for a stubborn character",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkSoft,
+                        )
+                    }
+                    Text(
+                        "Open",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkSoft,
+                    )
+                }
             }
             if (entries.isNotEmpty()) {
                 FlowRow(

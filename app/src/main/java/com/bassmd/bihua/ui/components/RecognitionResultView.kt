@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CompareArrows
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -46,6 +47,29 @@ import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.PaperWarm
 import com.bassmd.bihua.ui.theme.Sky
+
+@Composable
+internal fun CheckCardHeader(practiceOnly: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "Handwriting check",
+            style = MaterialTheme.typography.titleSmall,
+            color = InkDark,
+            modifier = Modifier.weight(1f),
+        )
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = PaperWarm.copy(alpha = 0.7f),
+        ) {
+            Text(
+                if (practiceOnly) "Practice only" else "Does not grade",
+                style = MaterialTheme.typography.labelSmall,
+                color = InkSoft,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
+    }
+}
 
 /**
  * The handwriting result. The target and what the recognizer read sit side by
@@ -79,37 +103,69 @@ fun RecognitionResultView(
     }
     when {
         recognizing -> SoftCard(modifier.fillMaxWidth(), color = Sky.copy(alpha = 0.16f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = InkDark,
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "Reading your writing…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkSoft,
-                )
+            Column {
+                CheckCardHeader(practiceOnly)
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = InkDark,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Reading your writing…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
             }
         }
 
         result == null -> Unit
 
         !result.modelReady -> SoftCard(modifier.fillMaxWidth(), color = Butter.copy(alpha = 0.35f)) {
-            Text(
-                "The handwriting check is unavailable right now. Shape and order feedback still work. To enable reading, download the model in Settings → Writing.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InkSoft,
-            )
+            Column {
+                CheckCardHeader(practiceOnly)
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    if (result.preparing) {
+                        "The ink reader is still preparing. Shape and order feedback still work — check again in a moment."
+                    } else {
+                        "The handwriting check is unavailable right now. Shape and order feedback still work. To enable reading, download the model in Settings → Writing."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                )
+            }
         }
 
-        result.candidates.isEmpty() -> SoftCard(modifier.fillMaxWidth()) {
-            Text(
-                "No clear reading. You can still choose a grade.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InkSoft,
-            )
+        result.candidates.isEmpty() -> SoftCard(
+            modifier.fillMaxWidth(),
+            color = Sky.copy(alpha = 0.10f),
+        ) {
+            Column {
+                CheckCardHeader(practiceOnly)
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.VisibilityOff,
+                        contentDescription = null,
+                        tint = InkSoft,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (practiceOnly) {
+                            "No clear reading. Write larger or leave a little more space, then check again."
+                        } else {
+                            "No clear reading. You can still choose a grade."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                }
+            }
         }
 
         else -> {
@@ -131,25 +187,7 @@ fun RecognitionResultView(
                 },
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Handwriting check",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = InkDark,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = PaperWarm.copy(alpha = 0.7f),
-                        ) {
-                            Text(
-                                if (practiceOnly) "Practice only" else "Does not grade",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = InkSoft,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-                    }
+                    CheckCardHeader(practiceOnly)
                     Spacer(Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -298,12 +336,23 @@ private fun RecognitionSummary(
             border = androidx.compose.foundation.BorderStroke(1.dp, Butter.copy(alpha = 0.45f)),
             modifier = modifier.fillMaxWidth(),
         ) {
-            Text(
-                "The handwriting check is unavailable. You still choose the grade.",
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
+            Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-            )
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Check", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (result.preparing) {
+                        "The ink reader is still preparing. Shape and order feedback still work."
+                    } else {
+                        "The handwriting check is unavailable. You still choose the grade."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
         return
     }
@@ -314,12 +363,19 @@ private fun RecognitionSummary(
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             modifier = modifier.fillMaxWidth(),
         ) {
-            Text(
-                "No clear reading. You still choose the grade.",
-                style = MaterialTheme.typography.labelSmall,
-                color = InkSoft,
+            Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-            )
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Check", style = MaterialTheme.typography.labelSmall, color = InkSoft)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "No clear reading. You still choose the grade.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkSoft,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
         return
     }

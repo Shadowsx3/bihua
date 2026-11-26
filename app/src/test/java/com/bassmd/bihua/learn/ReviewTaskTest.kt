@@ -8,24 +8,24 @@ import org.junit.Test
 class ReviewTaskTest {
 
     @Test
-    fun ankiWritingOnlyChangesWriting() {
-        assertTrue(ReviewTask.WRITE.revealsAnswer(ankiWriting = true, ankiPronunciation = false))
-        assertFalse(ReviewTask.PRONOUNCE.revealsAnswer(ankiWriting = true, ankiPronunciation = false))
-        assertFalse(ReviewTask.MEANING.revealsAnswer(ankiWriting = true, ankiPronunciation = false))
+    fun revealWritingOnlyChangesWriting() {
+        assertTrue(ReviewTask.WRITE.revealsAnswer(revealWriting = true, revealPronunciation = false))
+        assertFalse(ReviewTask.PRONOUNCE.revealsAnswer(revealWriting = true, revealPronunciation = false))
+        assertFalse(ReviewTask.MEANING.revealsAnswer(revealWriting = true, revealPronunciation = false))
     }
 
     @Test
-    fun ankiPronunciationOnlyChangesPronunciation() {
-        assertFalse(ReviewTask.WRITE.revealsAnswer(ankiWriting = false, ankiPronunciation = true))
-        assertTrue(ReviewTask.PRONOUNCE.revealsAnswer(ankiWriting = false, ankiPronunciation = true))
-        assertFalse(ReviewTask.MEANING.revealsAnswer(ankiWriting = false, ankiPronunciation = true))
+    fun revealPronunciationOnlyChangesPronunciation() {
+        assertFalse(ReviewTask.WRITE.revealsAnswer(revealWriting = false, revealPronunciation = true))
+        assertTrue(ReviewTask.PRONOUNCE.revealsAnswer(revealWriting = false, revealPronunciation = true))
+        assertFalse(ReviewTask.MEANING.revealsAnswer(revealWriting = false, revealPronunciation = true))
     }
 
     @Test
-    fun ankiMeaningOnlyChangesMeaning() {
-        assertFalse(ReviewTask.WRITE.revealsAnswer(ankiWriting = false, ankiMeaning = true))
-        assertFalse(ReviewTask.PRONOUNCE.revealsAnswer(ankiWriting = false, ankiMeaning = true))
-        assertTrue(ReviewTask.MEANING.revealsAnswer(ankiWriting = false, ankiMeaning = true))
+    fun revealMeaningOnlyChangesMeaning() {
+        assertFalse(ReviewTask.WRITE.revealsAnswer(revealWriting = false, revealMeaning = true))
+        assertFalse(ReviewTask.PRONOUNCE.revealsAnswer(revealWriting = false, revealMeaning = true))
+        assertTrue(ReviewTask.MEANING.revealsAnswer(revealWriting = false, revealMeaning = true))
     }
 
     @Test
@@ -33,16 +33,16 @@ class ReviewTaskTest {
         ReviewTask.entries.forEach { task ->
             assertFalse(
                 task.revealsAnswer(
-                    ankiWriting = false,
-                    ankiPronunciation = false,
-                    ankiMeaning = false,
+                    revealWriting = false,
+                    revealPronunciation = false,
+                    revealMeaning = false,
                 )
             )
             assertTrue(
                 task.revealsAnswer(
-                    ankiWriting = true,
-                    ankiPronunciation = true,
-                    ankiMeaning = true,
+                    revealWriting = true,
+                    revealPronunciation = true,
+                    revealMeaning = true,
                 )
             )
         }
@@ -88,5 +88,59 @@ class ReviewTaskTest {
         assertEquals(6, tasks.count { it == ReviewTask.WRITE })
         assertEquals(3, tasks.count { it == ReviewTask.PRONOUNCE })
         assertEquals(3, tasks.count { it == ReviewTask.MEANING })
+    }
+
+    @Test
+    fun recognitionOnlyStartsWithAnEnabledCheck() {
+        assertEquals(
+            ReviewTask.PRONOUNCE,
+            ReviewTaskPlan.forCard(
+                pronunciationEnabled = true,
+                meaningEnabled = false,
+                writingEnabled = false,
+                reps = 0,
+                seed = 0,
+            ),
+        )
+        assertEquals(
+            ReviewTask.MEANING,
+            ReviewTaskPlan.forCard(
+                pronunciationEnabled = false,
+                meaningEnabled = true,
+                writingEnabled = false,
+                reps = 0,
+                seed = 0,
+            ),
+        )
+    }
+
+    @Test
+    fun recognitionOnlyNeverWritesAndUsesEveryEnabledCheck() {
+        val tasks = (1..12).map { reps ->
+            ReviewTaskPlan.forCard(
+                pronunciationEnabled = true,
+                meaningEnabled = true,
+                writingEnabled = false,
+                reps = reps,
+                seed = 0,
+            )
+        }
+        assertFalse(tasks.contains(ReviewTask.WRITE))
+        assertEquals(6, tasks.count { it == ReviewTask.PRONOUNCE })
+        assertEquals(6, tasks.count { it == ReviewTask.MEANING })
+    }
+
+    @Test
+    fun drawingReturnsWhenNoCheckIsEnabled() {
+        assertEquals(
+            ReviewTask.WRITE,
+            ReviewTaskPlan.forCard(
+                pronunciationEnabled = false,
+                meaningEnabled = false,
+                writingEnabled = false,
+                reps = 4,
+                seed = 0,
+            ),
+        )
     }
 }

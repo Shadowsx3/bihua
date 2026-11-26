@@ -50,5 +50,37 @@
     "height": 1920,
     "density": 240,
     "group": "tablet"
+  },
+  "fold-inner-portrait": {
+    "avd": "bihua_fold",
+    "width": 1840,
+    "height": 2208,
+    "density": 420,
+    "group": "fold",
+    "posture": "unfold"
+  },
+  "fold-outer-landscape": {
+    "avd": "bihua_fold",
+    "width": 2092,
+    "height": 1080,
+    "density": 420,
+    "group": "fold",
+    "posture": "fold",
+    "rotation": 1
+  },
+  "tablet-portrait": {
+    "avd": "bihua_tablet",
+    "width": 1600,
+    "height": 2560,
+    "density": 320,
+    "group": "tablet"
+  },
+  "tablet-7-landscape": {
+    "avd": "bihua_tablet",
+    "width": 1920,
+    "height": 1200,
+    "density": 240,
+    "group": "tablet",
+    "rotation": 1
   }
 }

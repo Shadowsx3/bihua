@@ -3,8 +3,8 @@ SHELL := /bin/bash
 
 # Shortcuts for the build, check, and device loop. Run `make help` for the list.
 
-.PHONY: help check quick test lint audit smoke journey journey-standard journey-full nav-gap apk verify install run log crash shot status hooks clean clean-shots \
-	devices ui find tap type draw swipe key release install-release \
+.PHONY: help check quick test lint audit smoke journey journey-standard journey-full nav-gap apk verify play-audit install run log crash shot status hooks clean clean-shots quality quality-full goldens monkey \
+	devices ui find tap type draw swipe key release install-release visual-matrix \
 	db-pull db-cards db-reviews db-reset seed-review seed-learning content content-bump
 
 TEXT ?=
@@ -28,8 +28,15 @@ help:
 	@echo "make journey-standard  phone, fold, tablet core journeys"
 	@echo "make journey-full  local full-app journey matrix"
 	@echo "make nav-gap   bottom bar meets content at 1x and 1.5x"
+	@echo "make quality   local check + phone visual/layout pass"
+	@echo "make quality-full  local check + phone/fold/tablet visual matrix"
+	@echo "make goldens   regenerate visual baselines (phone screen pass)"
+	@echo "make monkey    deterministic random walk on the phone"
+	@echo "make perf      frame snapshot for Characters and a daily session"
+	@echo "make visual-matrix  every mode on phone/fold/tablet in both rotations"
 	@echo "make apk       debug APK only"
 	@echo "make verify    verify the existing APK"
+	@echo "make play-audit  release APK/AAB permissions, signature, version, ABI"
 	@echo "make run       check, then install and launch on the selected device"
 	@echo "make install   install and launch the existing APK"
 	@echo "make log       live logcat for the app"
@@ -84,11 +91,40 @@ nav-gap:
 	@scripts/journey.sh --scenario nav-gap --profile phone --screenshots
 	@scripts/journey.sh --scenario nav-gap --profile phone-compact --font-scale 1.5 --screenshots
 
+gallery:
+	scripts/flow-gallery.sh $(SCENARIO)
+
+quality:
+	@scripts/check.sh
+	@scripts/journey.sh --scenario screen-pass --profile phone --screenshots --goldens --require-goldens --layout-audit --no-build
+	@scripts/journey.sh --scenario spell-long --profile phone --screenshots --layout-audit --no-build
+	@scripts/journey.sh --scenario monkey --profile phone --layout-audit --no-build
+
+quality-full:
+	@scripts/check.sh
+	@scripts/journey.sh --scenario screen-pass --profile phone,fold-inner,tablet --screenshots --goldens --require-goldens --layout-audit --no-build
+	@scripts/journey.sh --scenario monkey --profile phone,fold-inner,tablet --layout-audit --no-build
+
+goldens:
+	@scripts/journey.sh --scenario screen-pass --profile phone,fold-inner,tablet --screenshots --update-goldens --layout-audit --no-build
+
+monkey:
+	@scripts/journey.sh --scenario monkey --profile phone --screenshots --layout-audit --no-build
+
+perf:
+	@scripts/journey.sh --scenario characters-scroll,daily20 --profile phone --perf --no-build
+
+visual-matrix:
+	@scripts/journey.sh --scenario screen-pass,screen-pass-traditional,screen-pass-ja,screen-pass-ko --profile phone,phone-landscape,fold-inner,fold-inner-portrait,fold-outer,fold-outer-landscape,tablet,tablet-portrait --screenshots --layout-audit --parallel 3 --no-build
+
 apk:
 	@. scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"
 
 verify:
 	@scripts/verify-apk.sh
+
+play-audit:
+	@scripts/play-audit.sh
 
 run:
 	@scripts/device.sh run

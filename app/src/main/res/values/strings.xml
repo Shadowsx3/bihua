@@ -78,9 +78,11 @@
     <string name="draw_again">Draw again</string>
 
     <string name="widget_today_label" translatable="false">Today</string>
-    <string name="widget_today_description" translatable="false">Reviews and new lessons at a glance</string>
+    <string name="widget_today_description" translatable="false">Today\'s review and lesson progress, with the next hours</string>
+    <string name="widget_week_label" translatable="false">Week ahead</string>
+    <string name="widget_week_description" translatable="false">The next seven days of reviews, with today\'s share</string>
     <string name="widget_word_label" translatable="false">Word of the day</string>
-    <string name="widget_word_description" translatable="false">A daily word from your current script</string>
+    <string name="widget_word_description" translatable="false">A daily word from your current script, with reviews and lessons left</string>
     <string name="widget_action_study" translatable="false">Study</string>
     <string name="widget_action_open" translatable="false">Open</string>
     <string name="widget_today_greeting" translatable="false">Today</string>

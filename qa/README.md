@@ -61,6 +61,74 @@ scripts/journey.sh --scenario daily20 --profile phone --screenshots --shut-down
 
 `--drain` converts daily and completion scenarios into full drains. Drain runs force pronunciation reviews because they have a “Show answer” path, so the queue can be completed quickly. Drawing and recognition coverage stays in `review-modes`.
 
+## Visual and layout regression
+
+The harness can compare every screenshot with a local golden and audit the live
+hierarchy for layout mistakes. This is the main defence when there is no
+analytics or crash reporting.
+
+```bash
+# Regenerate the local baselines after an intentional UI change
+scripts/journey.sh --scenario screen-pass --profile phone --screenshots --update-goldens
+
+# Compare a run with the baselines and fail on a diff
+scripts/journey.sh --scenario screen-pass --profile phone --screenshots --goldens --require-goldens
+
+# Check controls for clipping, off-screen bounds, tiny targets, and overlaps
+scripts/journey.sh --scenario screen-pass --profile phone --screenshots --layout-audit
+
+# Everything on the phone
+make quality
+
+# Phone, fold inner, and tablet
+make quality-full
+```
+
+Baselines live in `qa/goldens/<profile>/<scenario>/<shot>.png`. The top status
+bar and bottom gesture area are masked; the rest is compared at half resolution
+with a tolerance. A diff writes `visual/<shot>.compare.png` next to the run and
+fails the scenario.
+
+`--layout-audit` writes `layout-<shot>.json` and `layout-<shot>.xml` for every
+screenshot. It reports:
+
+- clickable nodes with no usable size
+- clickable nodes that leave the screen
+- clickable nodes that extend past their parent
+- touch targets below 40 dp (warning)
+- named action controls that overlap
+
+The run also writes `contact-sheet.png` and `contact-sheet.html` for human
+review. Review the sheet before accepting a release; a bad layout can become a
+golden if nobody looks at it.
+
+## Random walk
+
+```bash
+make monkey
+```
+
+The deterministic random walk switches tabs, flings lists, and taps safe
+actions for 60 steps. After every step it checks that Bihua is still the
+foreground app; every tenth step audits the hierarchy for layout errors. It is
+intended to find the awkward combined state that a scripted happy path misses.
+
+## Performance and motion notes
+
+```bash
+make perf
+```
+
+`--perf` records `gfxinfo` at the end of each scenario and writes `perf.json`.
+Use it on a physical device for a meaningful frame result; the emulator uses
+software rendering. `--perf-jank-limit 10` turns the snapshot into a gate.
+
+The harness sets the system animation scales to 0 for deterministic journeys.
+Visual goldens therefore show static backgrounds and no confetti. Use a
+physical device with animation scales at 1 to review motion, the spell effects,
+and the reduced-motion fallback. The app follows the system remove-animations
+switch, and Settings says so.
+
 ## Profiles
 
 | Profile | AVD | Size |
@@ -88,6 +156,10 @@ Guide strokes are drawn with one batched ADB motion-event command per stroke. Th
 | Scenario | What it checks |
 |---|---|
 | `fresh` | onboarding, Skip setup, five new characters |
+| `onboarding-pages` | every onboarding page, the scrollable extra-practice card, and Start writing; phone, tablet, fold |
+| `offline-first-run` | clean device with airplane mode on: skip setup, open Home, and reach a review without waiting for the reader |
+| `rotation-state` | review ink/answer, report draft, Settings section, and Practice survive a turn |
+| `rotation-onboarding` | the script page and setup step survive a turn |
 | `day1` | no reviews, 5 new, new-only session |
 | `daily20` | 20 due, 5 new, mixed block, lesson, leave |
 | `daily80` | 80 due, 5 new, Home counts and session start |
@@ -116,9 +188,20 @@ Guide strokes are drawn with one batched ADB motion-event command per stroke. Th
 | `pronounce-kana` | checks that a kana pronunciation review masks its reading in the meaning |
 | `reminders` | enables reminders, sends a test notification, and checks the notification shade |
 | `nav-gap` | scroll viewport meets the floating bottom bar at 1x and 1.5x; fails above 14dp gap or under 2dp overlap |
-| `progress-ranges` | 7D/30D/90D/1Y labels, Momentum, and the actual streak surviving each window |
+| `progress-ranges` | 7D/30D/90D/1Y/All labels, Momentum, and the actual streak surviving each window |
+| `progress-screen` | the whole report: stats, every range, calendar, charts, and the lower cards |
+| `progress-all-time` | All time outgrows the one-year window and keeps the honest all-time copy |
+| `report-flow` | About rows, the composer with and without a saved crash, preview, Copy, Send handoff, and the rate link; also dark, 1.5x, and landscape |
 | `progress-empty` | untouched course shows New window, no grades, and calm empty cards |
 | `settings-outfit` | pins a widget outfit from Display and checks the dialog labels |
+
+Widget rendering is covered by JVM tests: `ReviewWidgetBinderTest` inflates the
+1.1.1 layout and checks the two big numbers, the colored labels, the
+plain-language forecast line, the short-slot fit, and the empty/vacation
+states; `ReviewWidgetPreviewTest` draws the daily, wide, weekly, and night
+layouts to PNGs under `app/build/reports/`; `WidgetCopyTest` and
+`ProgressStoreModeTest` cover the copy and the scheduler-backed day/week
+amounts. The launcher picker and resize path still need a real launcher pass.
 | `grade-help` | opens the plain-word grade legend from a session |
 | `spell-entry` | opens the quest from the Home Study tools card and from Study tools |
 | `spell-quest` | gate, scene, grimoire gift, result, real 水 draw/cast, brush tray, clue reveals, effect frames, wrong-answer path |
@@ -179,3 +262,38 @@ For pronunciation scheduling it reproduces the app’s Java string hash so tasks
 ```
 
 The whole `.qa/` directory is ignored by git.
+
+## Flow galleries
+
+`scripts/flow-gallery.sh` turns the latest captures for a flow into one image per
+device, so a design review can see every screen in that flow together.
+
+```bash
+# Use the latest runs
+scripts/flow-gallery.sh progress-screen
+scripts/flow-gallery.sh word-whole-canvas,grade-reasons
+scripts/flow-gallery.sh screen-pass --profiles phone,tablet
+
+# Capture a fresh run first (three profiles, no rebuild)
+scripts/flow-gallery.sh progress-pdf-rich --run
+
+# Capture a fresh run and rebuild the debug APK once
+scripts/flow-gallery.sh word-whole-canvas --run --build
+```
+
+The output is a run folder with three device folders:
+
+```text
+qa/gallery/<run-name>/
+  phone/<flow>.png
+  tablet/<flow>.png
+  fold/<flow>.png
+  INDEX.md
+```
+
+Name the run with `--name` (for example `--name 1.1.2-audit`); the default is a
+timestamp. Each sheet labels every capture and notes the source run. These are
+evaluation sheets, not store assets; the store set stays in
+`store/play-assets/` and never includes the Mnemonic palace.
+
+`make gallery SCENARIO=progress-screen` is the short form.

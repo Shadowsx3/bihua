@@ -1,5 +1,7 @@
 <resources>
     <style name="Theme.Bihua" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash_paper</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

@@ -196,7 +196,11 @@ object Pinyin {
         val shown = if (mode == com.bassmd.bihua.content.StudyMode.SIMPLIFIED ||
             mode == com.bassmd.bihua.content.StudyMode.TRADITIONAL
         ) {
-            if (numbers) toNumbered(reading) else reading
+            if (numbers) {
+                toNumbered(reading)
+            } else {
+                reading.split(',').joinToString(",") { numberedToMarked(it) }
+            }
         } else {
             reading
         }

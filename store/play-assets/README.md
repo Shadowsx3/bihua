@@ -1,8 +1,14 @@
-# Bihua 1.1.1 Play Store assets (rebuilt fix set)
+# Bihua 1.1.2 Play Store assets (candidate set — release on hold)
 
-Final set for the 1.1.1 spell-quest build (versionCode 22), rebuilt with the
-practice, reader-readiness, settings, and new grimoire work. Nothing here is
-committed to the app APK.
+The store images deliberately show only the core learning surfaces. The
+Mnemonic palace is available in the app but is not part of the store image set.
+
+The 1.1.2 set updates the previous pack for versionCode 23. Every form factor now
+uses the same warm-paper message cards as the phone. The phone set adds Progress
+and the report composer; the tablet set is rebuilt with captions at 7" and 10";
+the fold set adds Progress and the report composer. The phone widget card in
+`phone/05-widgets.png` uses the real Today, Week ahead, and Word of the Day
+layout. The signed AAB and the renamed upload copies are in `upload-1.1.2/`.
 
 ## Phone — 1080 × 1920, 9:16
 
@@ -12,41 +18,41 @@ committed to the app APK.
 | 2 | `phone/02-every-stroke.png` | Every stroke, in order. | Practice with 谢 and the filled brush guide |
 | 3 | `phone/03-dictionary.png` | A dictionary that teaches. | 爱 entry with example words |
 | 4 | `phone/04-worksheet.png` | One tap. A4 PDF. | Practice sheets builder |
-| 5 | `phone/05-widgets.png` | A small quiet reminder. | Widgets and pinned outfits |
+| 5 | `phone/05-widgets.png` | A little desk on your home screen. | Today, Week ahead, and Word of the Day widgets |
 | 6 | `phone/06-spell-quest.png` | Cast what you remember. | Spell result with a met page and one way through |
+| 7 | `phone/07-progress.png` | See the shape of your memory. | Exact dates, level progress, heatmap, and cumulative line |
+| 8 | `phone/08-report.png` | Tell me what broke. | Report composer with a saved crash attached |
 
-All six are 24-bit PNG with no alpha, under 2 MB.
+All eight are 24-bit PNG with no alpha, under 2 MB.
 
-## Tablet — 16:9
+## Tablet — captioned cards, 16:9
 
-The Play upload uses 16:9 captures from the 2560 × 1600 tablet emulator. The
-spell shots show a real 水 written in the ring, not an empty circle:
+Every tablet image is a warm-paper card with a caption, a note, and the current
+app screen. The 10" files are 2560 × 1440; the 7" files are the same card
+downscaled to 1920 × 1080 so the message stays readable.
 
-| File | Size | Slot |
-|------|------|------|
-| `tablet/7-home.png` | 1920 × 1080 | 7-inch Home |
-| `tablet/7-practice.png` | 1920 × 1080 | 7-inch Practice with 谢 |
-| `tablet/7-spell.png` | 1920 × 1080 | 7-inch spell book with a drawn 水 |
-| `tablet/7-characters.png` | 1920 × 1080 | 7-inch character grid |
-| `tablet/10-home.png` | 2560 × 1440 | 10-inch Home |
-| `tablet/10-practice.png` | 2560 × 1440 | 10-inch Practice with 谢 |
-| `tablet/10-spell.png` | 2560 × 1440 | 10-inch spell book with a drawn 水 |
-| `tablet/10-characters.png` | 2560 × 1440 | 10-inch character grid |
-
-The marketing card at 1600 × 1300 is `store/marketing/tablet-spell-shot.png`;
-it is not part of the Play set.
+| File | Size | Message |
+|------|------|---------|
+| `tablet/7-home.png`, `tablet/10-home.png` | 1920 × 1080 / 2560 × 1440 | Room for the whole desk. |
+| `tablet/7-practice.png`, `tablet/10-practice.png` | 1920 × 1080 / 2560 × 1440 | The square stays wrist-sized. |
+| `tablet/7-characters.png`, `tablet/10-characters.png` | 1920 × 1080 / 2560 × 1440 | The whole dictionary, in reach. |
+| `tablet/7-spell.png`, `tablet/10-spell.png` | 1920 × 1080 / 2560 × 1440 | A quiet spell road. |
+| `tablet/7-progress.png`, `tablet/10-progress.png` | 1920 × 1080 / 2560 × 1440 | See the shape of your memory. |
+| `tablet/7-report.png`, `tablet/10-report.png` | 1920 × 1080 / 2560 × 1440 | Tell me what broke. |
 
 ## Foldable — 1:1, 4:3, 10:16
 
-| File | Size | Slot |
-|------|------|------|
-| `fold/01-home.png` | 2208 × 2208 | inner Home spread, 1:1 |
-| `fold/02-practice.png` | 2208 × 2208 | inner Practice spread, 1:1 |
-| `fold/03-inner-4x3.png` | 2400 × 1800 | inner Practice, 4:3 |
-| `fold/04-outer-10x16.png` | 1200 × 1920 | outer Practice, 10:16 portrait |
-| `fold/05-spell.png` | 2208 × 2208 | inner spell result, 1:1 |
+| File | Size | Message |
+|------|------|---------|
+| `fold/01-home.png` | 2208 × 2208 | Open it like a book. |
+| `fold/02-practice.png` | 2208 × 2208 | Two pages. One square. |
+| `fold/03-inner-4x3.png` | 2400 × 1800 | The page becomes the desk. |
+| `fold/04-outer-10x16.png` | 1200 × 1920 | Folded. Still yours. |
+| `fold/05-spell.png` | 2208 × 2208 | A spell book that remembers. |
+| `fold/06-progress.png` | 2208 × 2208 | Every range, folded open. |
+| `fold/07-report.png` | 2208 × 2208 | Nothing leaves until you send it. |
 
-The five cover the required 1:1, 4:3, and 10:16 shapes.
+The seven cover the required 1:1, 4:3, and 10:16 shapes.
 
 ## Identity
 
@@ -63,9 +69,13 @@ The five cover the required 1:1, 4:3, and 10:16 shapes.
 ## Rebuild
 
 The source layouts are `store/marketing/cards.html` (phone),
-`store/marketing/cards-wide.html` (`?device=tablet|fold&card=home|practice|spell`),
-and `store/marketing/cards-fold.html` (`?card=4x3|10x16|spell`). The banner source is
-`store/marketing/feature-graphic.html`.
+`store/marketing/cards-tablet.html`
+(`?card=home|practice|characters|spell|progress|report`),
+`store/marketing/cards-fold.html`
+(`?card=4x3|10x16|spell|progress|report`), and
+`store/marketing/widget-card.html` (widgets). The banner source is
+`store/marketing/feature-graphic.html`. Render the tablet card at 2560 × 1440,
+then downscale it to 1920 × 1080 for the 7" slot.
 
 ```sh
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -86,22 +96,36 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   "file://$PWD/store/marketing/feature-graphic.html"
 ```
 
-## Upload record
-
-The renamed staging copies live in `upload-1.1.1/`:
-
-- `bihua-1.1.1-phone-01-home.png` … `-06-spell-quest.png`
-- `bihua-1.1.1-tablet-7-home.png`, `-7-practice.png`, `-7-spell.png`,
-  `-7-characters.png`, `-10-home.png`, `-10-practice.png`, `-10-spell.png`,
-  `-10-characters.png`
-- `bihua-1.1.1-fold-1x1-home.png`, `-1x1-practice.png`, `-1x1-spell.png`,
-  `-4x3.png`, `-10x16.png`
-- `bihua-1.1.1-feature-graphic.png`
-
-The app icon keeps the canonical name `icon-512.png`.
-
 ## Before upload
 
 - All screenshots are 24-bit PNG with no alpha and under 2 MB.
+- The tablet and fold cards carry the same captions as the phone and name
+  1.1.2 in the footer.
 - No screenshot shows a personal name, notification, debug badge, or an older build.
 - The listing says A4 or Letter, mentions the four courses, and has the spell quest.
+
+## Upload record 1.1.2
+
+`upload-1.1.2/` is the staging slot. The signed bundle was rebuilt from the
+final 1.1.2 tree on 26 November 2026 (versionCode 23):
+
+- `bihua-1.1.2.aab` SHA-256:
+  `99f0fa7420e6cfd14e4a0c019587034138c6f76e83fd12b88e8831ce0a11c4c1`
+- `app-release.apk` SHA-256:
+  `1abfa45fca0f5180d0ff416506a43329d878e11765ba92d25454384ae3ffc305`
+
+The release name for the closed test is `1.1.2 closed test`. Notes live in
+`store/release-notes-1.1.2.txt`. The renamed image set is:
+
+- `bihua-1.1.2-phone-01-home.png` … `-08-report.png`
+- `bihua-1.1.2-tablet-7-home.png`, `-7-practice.png`, `-7-characters.png`,
+  `-7-spell.png`, `-7-progress.png`, `-7-report.png`
+- `bihua-1.1.2-tablet-10-home.png`, `-10-practice.png`, `-10-characters.png`,
+  `-10-spell.png`, `-10-progress.png`, `-10-report.png`
+- `bihua-1.1.2-fold-1x1-home.png`, `-1x1-practice.png`, `-1x1-spell.png`,
+  `-1x1-progress.png`, `-1x1-report.png`, `-4x3.png`, `-10x16.png`
+- `bihua-1.1.2-feature-graphic.png`
+- `bihua-1.1.2-icon-512.png` (canonical launcher icon)
+
+The tablet and fold upload copies are the captioned cards, not bare screen
+captures. The phone card at `-05-widgets.png` is the current three-widget set.

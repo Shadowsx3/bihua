@@ -62,6 +62,25 @@ class ShippedPuzzlePartsTest {
     }
 
     @Test
+    fun promptsAndNeedsAreShortAndActionable() {
+        parts.obstacles.forEach { obstacle ->
+            assertTrue("${obstacle.id} prompt is blank", obstacle.prompt.isNotBlank())
+            assertTrue(
+                "${obstacle.id} prompt is too long: ${obstacle.prompt}",
+                obstacle.prompt.length <= 64,
+            )
+            assertTrue(
+                "${obstacle.id} need is too long: ${obstacle.need}",
+                obstacle.need.length <= 150,
+            )
+            assertTrue(
+                "${obstacle.id} prompt ends like a sentence: ${obstacle.prompt}",
+                !obstacle.prompt.endsWith("."),
+            )
+        }
+    }
+
+    @Test
     fun shippedCopyAvoidsGenderedAndAdultTropes() {
         val copy = buildList {
             parts.obstacles.forEach {

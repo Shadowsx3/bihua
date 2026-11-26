@@ -15,7 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import java.net.ServerSocket
 import java.net.SocketException
 import java.net.URL
@@ -47,6 +49,7 @@ class SyncServer(
         transfer: TransferScope = TransferScope(),
         onReady: (SyncSession) -> Unit,
         onError: (String) -> Unit,
+        onServed: () -> Unit = {},
     ) {
         stop()
         this.transfer = transfer
@@ -66,6 +69,9 @@ class SyncServer(
         // receiver pins the certificate with it before any data is sent.
         val code = SyncCode.fingerprint(certificate.certificate)
         val session = SyncSession(code, server.localPort)
+        if (com.bassmd.bihua.BuildConfig.DEBUG) {
+            android.util.Log.d("Sync", "listening on ${server.localPort} with code $code")
+        }
 
         val manager = runCatching {
             context.getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -113,28 +119,42 @@ class SyncServer(
                     server.accept().use { client ->
                         client.soTimeout = 15_000
                         (client as SSLSocket).startHandshake()
-                        val request = client.getInputStream().bufferedReader().readLine().orEmpty()
-                        val path = request.split(" ").getOrNull(1).orEmpty()
-                        val supplied = SyncCode.normalize(
-                            path.substringAfter("code=", "").substringBefore("&"),
-                        )
+                        val request = readSyncRequest(client.getInputStream())
+                        val supplied = syncRequestCode(request.requestLine)
                         if (supplied != code) {
-                            client.getOutputStream().write(
-                                "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray()
-                            )
+                            client.getOutputStream().write(syncForbiddenResponse())
                             return@use
+                        }
+                        // The receiver uploads its progress in the same request.
+                        // Applying it here makes the exchange two-way: both
+                        // devices leave with the union of their histories.
+                        if (transfer.progress && request.body.isNotEmpty()) {
+                            // Save a restore point before the other device's
+                            // progress changes this one.
+                            if (SyncUndoStore.snapshot(context, store, progress) == null) {
+                                onError("Could not save a restore point for this sync.")
+                                client.getOutputStream().write(syncServerErrorResponse())
+                                return@use
+                            }
+                            val upload = File(context.cacheDir, "sync-incoming.db")
+                            try {
+                                upload.writeBytes(request.body)
+                                progress.mergeFrom(upload)
+                            } catch (error: Exception) {
+                                onError(error.message ?: "Could not merge the other device's progress.")
+                                client.getOutputStream().write(syncServerErrorResponse())
+                                return@use
+                            } finally {
+                                upload.delete()
+                            }
                         }
                         val body = runCatching { buildPackage() }.getOrElse {
                             onError(it.message ?: "Could not build the sync package.")
-                            client.getOutputStream().write(
-                                "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray()
-                            )
+                            client.getOutputStream().write(syncServerErrorResponse())
                             return@use
                         }
-                        val header = "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\n" +
-                            "Content-Length: ${body.size}\r\nConnection: close\r\n\r\n"
-                        client.getOutputStream().write(header.toByteArray())
-                        client.getOutputStream().write(body)
+                        client.getOutputStream().write(syncOkResponse(body))
+                        onServed()
                     }
                 }.onFailure {
                     // A wrong pin or a device that walks away is a normal
@@ -185,6 +205,15 @@ class SyncServer(
 class SyncClient(private val context: Context) {
 
     suspend fun discover(timeoutMs: Long = 6_000): List<SyncHost> = withContext(Dispatchers.IO) {
+        // Debug-only direct path for emulator pairs; NSD is isolated by the
+        // emulator NAT. Release builds leave these flags null/0.
+        com.bassmd.bihua.ai.QaFlags.syncHost
+            ?.takeIf { it.isNotBlank() && com.bassmd.bihua.ai.QaFlags.syncPort > 0 }
+            ?.let { host ->
+                return@withContext listOf(
+                    SyncHost(host, com.bassmd.bihua.ai.QaFlags.syncPort),
+                )
+            }
         val manager = runCatching {
             context.getSystemService(Context.NSD_SERVICE) as NsdManager
         }.getOrNull() ?: return@withContext emptyList()
@@ -245,7 +274,54 @@ class SyncClient(private val context: Context) {
                 else -> error("The other device could not prepare the transfer.")
             }
             val bytes = connection.inputStream.use { BackupArchive.readAll(it) }
-            readPackage(bytes)
+            readSyncPackage(bytes)
+        } catch (failure: SSLException) {
+            throw IllegalStateException(
+                "The pairing code did not match the other device. Check the code and try again.",
+                failure,
+            )
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /**
+     * Sends this device's progress and receives the other device's package in
+     * one request. The server merges the upload before it answers, so both
+     * devices end up with the combined history.
+     */
+    suspend fun sync(
+        host: SyncHost,
+        code: String,
+        progressBytes: ByteArray,
+    ): SyncPackage = withContext(Dispatchers.IO) {
+        val normalized = SyncCode.normalize(code)
+        require(normalized.length == SyncCode.LENGTH) {
+            "Enter the ${SyncCode.LENGTH}-character pairing code."
+        }
+        val tls = SyncTls.clientContext(normalized)
+        val connection = (
+            URL("https://${hostForUrl(host.host)}:${host.port}/sync?code=$normalized")
+                .openConnection() as HttpsURLConnection
+            ).apply {
+                sslSocketFactory = tls.socketFactory
+                hostnameVerifier = SyncTls.hostnameVerifier(normalized)
+                connectTimeout = 5_000
+                readTimeout = 20_000
+                requestMethod = "POST"
+                doOutput = true
+                setRequestProperty("Content-Type", "application/x-bihua-progress")
+                setFixedLengthStreamingMode(progressBytes.size)
+            }
+        try {
+            connection.outputStream.use { output -> output.write(progressBytes) }
+            when (connection.responseCode) {
+                200 -> Unit
+                403 -> error("The other device rejected the pairing code.")
+                else -> error("The other device could not complete the sync.")
+            }
+            val bytes = connection.inputStream.use { BackupArchive.readAll(it) }
+            readSyncPackage(bytes)
         } catch (failure: SSLException) {
             throw IllegalStateException(
                 "The pairing code did not match the other device. Check the code and try again.",
@@ -258,13 +334,68 @@ class SyncClient(private val context: Context) {
 
     private fun hostForUrl(host: String): String = syncHostForUrl(host)
 
-    private fun readPackage(bytes: ByteArray): SyncPackage {
-        val archive = BackupArchive.decode(bytes)
-        val backup = archive.backupJson?.let { BackupCodec.decode(it) }
-        val progress = archive.progressDb
-        if (backup == null && progress == null) error("The package has no settings or progress.")
-        return SyncPackage(backup, progress)
+}
+
+internal data class SyncHttpRequest(val requestLine: String, val body: ByteArray)
+
+/** Reads the request line, headers, and optional fixed-length body. */
+internal fun readSyncRequest(input: InputStream): SyncHttpRequest {
+    fun line(): String {
+        val out = ByteArrayOutputStream()
+        var value = input.read()
+        while (value != -1 && value != '\n'.code) {
+            if (value != '\r'.code) out.write(value)
+            value = input.read()
+        }
+        return out.toString(Charsets.ISO_8859_1.name())
     }
+    val requestLine = line()
+    var contentLength = 0
+    while (true) {
+        val header = line()
+        if (header.isEmpty()) break
+        if (header.startsWith("Content-Length:", ignoreCase = true)) {
+            contentLength = header.substringAfter(':').trim().toIntOrNull() ?: 0
+        }
+    }
+    val body = ByteArray(contentLength.coerceAtLeast(0))
+    var offset = 0
+    while (offset < body.size) {
+        val read = input.read(body, offset, body.size - offset)
+        if (read <= 0) break
+        offset += read
+    }
+    return SyncHttpRequest(requestLine, if (offset == body.size) body else body.copyOf(offset))
+}
+
+/** The code from a minimal HTTP request line, normalized for comparison. */
+internal fun syncRequestCode(requestLine: String): String =
+    SyncCode.normalize(
+        requestLine.split(" ").getOrNull(1).orEmpty()
+            .substringAfter("code=", "")
+            .substringBefore("&"),
+    )
+
+internal fun syncForbiddenResponse(): ByteArray =
+    "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray()
+
+internal fun syncServerErrorResponse(): ByteArray =
+    "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        .toByteArray()
+
+internal fun syncOkResponse(body: ByteArray): ByteArray {
+    val header = "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\n" +
+        "Content-Length: ${body.size}\r\nConnection: close\r\n\r\n"
+    return header.toByteArray() + body
+}
+
+/** Validates a downloaded sync archive and returns the decoded package. */
+internal fun readSyncPackage(bytes: ByteArray): SyncPackage {
+    val archive = BackupArchive.decode(bytes)
+    val backup = archive.backupJson?.let { BackupCodec.decode(it) }
+    val progress = archive.progressDb
+    if (backup == null && progress == null) error("The package has no settings or progress.")
+    return SyncPackage(backup, progress)
 }
 
 /**

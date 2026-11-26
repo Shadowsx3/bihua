@@ -2,6 +2,7 @@ package com.bassmd.bihua.ai
 
 import com.bassmd.bihua.content.StudyMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -43,6 +44,39 @@ class ModelPreparationTest {
         ModelDownloads.succeeded(StudyMode.SIMPLIFIED)
         assertFalse(ModelDownloads.failed)
         assertEquals(null, ModelDownloads.failedMode)
+    }
+
+    @Test
+    fun offlineFailureIsVisibleUntilTheSameScriptRetries() {
+        ModelDownloads.offlineFailure(StudyMode.KOREAN)
+        assertTrue(ModelDownloads.failed)
+        assertTrue(ModelDownloads.offline)
+        assertEquals(StudyMode.KOREAN, ModelDownloads.failedMode)
+
+        ModelDownloads.starting(StudyMode.KOREAN)
+        assertFalse("a retry supersedes the offline state", ModelDownloads.failed)
+        assertFalse(ModelDownloads.offline)
+        assertNull(ModelDownloads.failedMode)
+    }
+
+    @Test
+    fun aFailureInOneScriptDoesNotLeakIntoAnother() {
+        ModelDownloads.starting(StudyMode.KOREAN)
+        ModelDownloads.failed(StudyMode.KOREAN)
+        ModelDownloads.ending(StudyMode.KOREAN)
+
+        assertTrue(ModelDownloads.stateFor(StudyMode.KOREAN).failed)
+        assertFalse("Japanese inherited the Korean failure", ModelDownloads.stateFor(StudyMode.JAPANESE).failed)
+        assertFalse(ModelDownloads.stateFor(StudyMode.JAPANESE).offline)
+    }
+
+    @Test
+    fun readinessIsCachedUntilTheScriptIsForgotten() {
+        ModelDownloads.recordReady(StudyMode.JAPANESE, true)
+        assertEquals(true, ModelDownloads.cachedReady(StudyMode.JAPANESE))
+
+        ModelDownloads.forgetReady(StudyMode.JAPANESE)
+        assertNull(ModelDownloads.cachedReady(StudyMode.JAPANESE))
     }
 
     @Test

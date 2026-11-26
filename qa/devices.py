@@ -163,6 +163,30 @@ class Device:
         if result.returncode != 0:
             raise RuntimeError(f"could not install debug APK: {result.stdout} {result.stderr}")
 
+    def display_rotation(self) -> int:
+        """0/1/2/3 for ROTATION_0/90/180/270."""
+        out = self.shell(
+            "dumpsys window displays | grep mCurrentRotation | head -1",
+            check=False,
+        )
+        for step in (3, 2, 1, 0):
+            if f"ROTATION_{(step * 90) % 360}" in out:
+                return step
+        return 0
+
+    def ensure_rotation(self, landscape: bool) -> None:
+        # `wm size` alone leaves some emulators in the app's natural
+        # orientation. Rotate the emulator with auto-rotation on, then lock the
+        # result so the launched app cannot fall back to portrait.
+        for _ in range(3):
+            if (self.display_rotation() % 2 == 1) == landscape:
+                break
+            self.shell("settings put system accelerometer_rotation 1")
+            adb("emu", "rotate", serial=self.serial, check=False)
+            time.sleep(0.9)
+        self.shell("settings put system accelerometer_rotation 0")
+        self.shell(f"settings put system user_rotation {1 if landscape else 0}")
+
     def configure(self, profile: dict, headless: bool) -> None:
         self.shell("settings put global window_animation_scale 0")
         self.shell("settings put global transition_animation_scale 0")
@@ -176,17 +200,32 @@ class Device:
             adb("emu", posture, serial=self.serial, check=False)
             time.sleep(1.0)
         width, height = profile.get("width"), profile.get("height")
-        if width and height:
-            self.shell(f"wm size {width}x{height}")
         density = profile.get("density")
-        if density:
-            self.shell(f"wm density {density}")
         rotation = profile.get("rotation")
-        if rotation is not None:
-            self.shell("settings put system accelerometer_rotation 0")
-            self.shell(f"settings put system user_rotation {rotation}")
-        else:
+        group = profile.get("group", "")
+        if rotation is not None and group in {"phone", "fold"}:
+            # Natural size plus a real device rotation. A `wm size` swap
+            # alone can keep the app in its natural orientation.
+            self.shell("wm size reset", check=False)
+            if density:
+                self.shell(f"wm density {density}")
             self.shell("settings put system accelerometer_rotation 1")
+            self.ensure_rotation(rotation % 2 == 1)
+        else:
+            if width and height:
+                self.shell(f"wm size {width}x{height}")
+            if density:
+                self.shell(f"wm density {density}")
+            if group in {"phone", "fold"}:
+                # Portrait profiles must not inherit the previous run's
+                # landscape rotation.
+                self.shell("settings put system accelerometer_rotation 1")
+                self.ensure_rotation(False)
+            else:
+                # Tablets are naturally wide; the size override defines the
+                # orientation. Keep their physical rotation at 0.
+                self.shell("settings put system accelerometer_rotation 0")
+                self.shell("settings put system user_rotation 0")
         self.shell("settings put system font_scale 1.0")
 
     def fold(self, folded: bool) -> None:
@@ -200,7 +239,9 @@ class Device:
     def reset_screen(self) -> None:
         self.shell("wm size reset", check=False)
         self.shell("wm density reset", check=False)
-        self.shell("settings put system accelerometer_rotation 1", check=False)
+        self.shell("settings put system accelerometer_rotation 0", check=False)
+        self.shell("settings put system user_rotation 0", check=False)
+        self.ensure_rotation(False)
         self.shell("settings put system font_scale 1.0", check=False)
 
     def clear_logcat(self) -> None:

@@ -31,6 +31,17 @@ internal object WidgetLook {
         else -> 0xFF4C5F51.toInt()
     }
 
+    /** A warm rose for the review row and a fresh green for lessons. */
+    fun reviewLabel(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> 0xFFF3A7B8.toInt()
+        else -> 0xFFA83E56.toInt()
+    }
+
+    fun lessonLabel(dayPart: DayPart): Int = when (dayPart) {
+        DayPart.NIGHT -> 0xFF9CE7C6.toInt()
+        else -> 0xFF2E7D5B.toInt()
+    }
+
     fun statusBackground(dayPart: DayPart): Int = when (dayPart) {
         DayPart.NIGHT -> R.drawable.widget_status_bg_night
         else -> R.drawable.widget_status_bg

@@ -29,7 +29,7 @@ shasum -a 256 app/build/outputs/apk/release/app-release.apk
 Verify the APK signature before installing it. The release build is invalid if a
 source file changed after it was assembled.
 
-When the landing page hosts the APK, update `docs/download/bihua-1.1.1.apk`,
+When the landing page hosts the APK, update `docs/download/bihua-1.1.2.apk`,
 `docs/download/SHA256SUMS.txt`, the landing hash, and the `?v=` cache-bust query
 together. A Pages deploy can keep the old binary at the unversioned URL, so
 compare the hosted bytes with `curl -sL <url> | shasum -a 256`.
@@ -115,9 +115,17 @@ Hard-won test details:
 - **Do not read the database on the main thread.** `AppWidgetProvider.onUpdate`
   calls `goAsync()`, loads a `WidgetSnapshot` on `Dispatchers.IO`, updates the
   views, and calls `finish()` in `finally`. Do not add a service or a wake lock.
-- **Keep widgets cheap.** Refresh on app resume plus a 30-minute provider
-  period. Both widgets share `WidgetSnapshot.load`; do not duplicate the
-  content, progress, and settings reads.
+- **Keep widgets cheap.** Refresh on app resume/stop, on the nearest boundary
+  (top of the hour, a day part, or the study-day start), and on a six-hour
+  provider period. Every widget shares `WidgetSnapshot.load` and
+  `TodayWidgetBinder`; do not duplicate the content, progress, and settings
+  reads.
+- **The review widgets keep the 1.1.1 shape.** Today shows two big numbers
+  (done of total) and one plain next-hours line; Week ahead keeps the numbers
+  and swaps the line for the next days. Both keep the pet, the colored labels,
+  and the Study button; no bars or chips. The amounts come from
+  `ProgressStore.todayLoad`, which uses the same scheduler and skip rules as
+  Home. Do not recompute due dates in the provider.
 - **The daily word is a showcase.** It is always non-mature, even when the
   dictionary mature setting is on. It must be 2–6 characters and filtered away
   from variants, surnames, place names, archaic/rare/dialect words, and

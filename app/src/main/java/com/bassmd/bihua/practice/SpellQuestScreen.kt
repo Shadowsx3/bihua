@@ -78,6 +78,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -90,6 +91,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.audio.Sfx
 import com.bassmd.bihua.content.CharacterEntry
 import com.bassmd.bihua.content.StudyMode
@@ -239,6 +241,7 @@ private fun SpellQuestContent(
     sharedRecognition: com.bassmd.bihua.ai.InkRecognitionService?,
 ) {
     val context = LocalContext.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val spells = remember(mode) {
         Spellbook.forScript(Spellbook.load(context), mode.name)
     }
@@ -318,13 +321,13 @@ private fun SpellQuestContent(
     LaunchedEffect(bookPick) {
         val pick = bookPick
         bookId = if (pick == null || repository == null) {
-            if (pick != null) android.util.Log.w(QUEST_LOG, "gift ${pick.character}: no content store in scope")
+            if (pick != null && QUEST_DEBUG) android.util.Log.w(QUEST_LOG, "gift ${pick.character}: no content store in scope")
             null
         } else {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 repository.characters(mode).firstOrNull { it.character == pick.character }?.id
             }.also { id ->
-                android.util.Log.d(QUEST_LOG, "gift ${pick.character}: guide id=$id mode=$mode")
+                if (QUEST_DEBUG) android.util.Log.d(QUEST_LOG, "gift ${pick.character}: guide id=$id mode=$mode")
             }
         }
     }
@@ -333,11 +336,17 @@ private fun SpellQuestContent(
     val bookPlayer = rememberStrokeOrderPlayer(
         bookId,
         startComplete = false,
-        strokeDurationMs = guideStrokeMs(bookStrokeCount),
+        // With system animations off, the page is already drawn. Do not make
+        // the learner wait through a playback they chose to disable.
+        strokeDurationMs = if (reduceMotion) 1L else guideStrokeMs(bookStrokeCount),
         resetKey = giftToken,
     )
-    val bookStrokes = remember(bookGuide, bookPick) {
-        if (bookPick == null) emptyList() else bookGuide?.centerlines().orEmpty()
+    val bookStrokes = remember(bookGuide, bookPick, bookId) {
+        if (bookPick == null || bookId == null || bookGuide == null) {
+            emptyList()
+        } else {
+            bookGuide.centerlines()
+        }
     }
     // The gift waits in the circle once it is drawn; the learner decides when to continue.
     var giftTraced by remember { mutableStateOf(false) }
@@ -392,7 +401,7 @@ private fun SpellQuestContent(
     }
 
     LaunchedEffect(mode, progressStore) {
-        android.util.Log.d(QUEST_LOG, "quest progress store=${progressStore != null}")
+        if (QUEST_DEBUG) android.util.Log.d(QUEST_LOG, "quest progress store=${progressStore != null}")
         if (progressStore != null) {
             runCatching {
                 val savedChapter = progressStore.spellQuestChapter(mode.name)
@@ -401,7 +410,7 @@ private fun SpellQuestContent(
                 if (savedChapter != 1) scenes = makeChapter(savedChapter)
                 met = savedMet
             }.onFailure {
-                android.util.Log.w(QUEST_LOG, "spell road could not be restored", it)
+                if (QUEST_DEBUG) android.util.Log.w(QUEST_LOG, "spell road could not be restored", it)
             }
         }
         roadReady = true
@@ -458,36 +467,26 @@ private fun SpellQuestContent(
 
     val recognition = sharedRecognition
         ?: remember { com.bassmd.bihua.ai.InkRecognitionService() }
+    androidx.compose.runtime.DisposableEffect(recognition) {
+        onDispose { if (sharedRecognition == null) recognition.close() }
+    }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val readerDownloading = com.bassmd.bihua.ai.ModelDownloads.active
 
     // Check readiness; do not hold the quest on a download. The app prepares
     // the active model in the background (on mobile data by default), while the
-    // grimoire path stays open. A retry re-checks without blocking the road.
+    // grimoire path stays open. A completed download re-checks automatically.
     LaunchedEffect(
         mode,
         modelCheckToken,
-        com.bassmd.bihua.ai.ModelDownloads.active,
         com.bassmd.bihua.ai.ModelDownloads.completed,
     ) {
         val model = if (mode == StudyMode.KOREAN) StudyMode.TRADITIONAL else mode
-        modelReady = null
-        modelDownloading = true
-        val ready = runCatching { recognition.isModelReady(model) }.getOrDefault(false)
-        modelReady = ready
+        val cached = com.bassmd.bihua.ai.ModelDownloads.cachedReady(model)
+        if (cached != null) modelReady = cached
+        modelReady = cached ?: runCatching { recognition.canReadNow(model) }
+            .getOrDefault(false)
         modelDownloading = false
-        if (!ready && com.bassmd.bihua.ai.NetworkStatus.isOnline()) {
-            // The app may still be finishing the one-time model download. Keep
-            // checking quietly for a short while, so a slow first download does
-            // not strand an otherwise ready learner on the book path.
-            repeat(150) {
-                kotlinx.coroutines.delay(2_000L)
-                if (runCatching { recognition.isModelReady(model) }.getOrDefault(false)) {
-                    modelReady = true
-                    return@LaunchedEffect
-                }
-            }
-        }
     }
 
     /** A page is met when it is cast, or when the learner asks to see the answer. */
@@ -501,7 +500,7 @@ private fun SpellQuestContent(
         milestone = if (met.size % 10 == 0) met.size else 0
         scope.launch {
             runCatching { progressStore?.markSpellQuestMet(mode.name, character) }
-                .onFailure { android.util.Log.w(QUEST_LOG, "spell page could not be saved", it) }
+                .onFailure { if (QUEST_DEBUG) android.util.Log.w(QUEST_LOG, "spell page could not be saved", it) }
         }
     }
 
@@ -514,6 +513,9 @@ private fun SpellQuestContent(
         when (val result = QuestSolver.solve(target.puzzle, family, castCharacter)) {
             is CastResult.Solved -> {
                 Sfx.play(Sfx.Effect.CAST)
+                haptic.performHapticFeedback(
+                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                )
                 markMetPage(castCharacter.ifEmpty { badgeCharacter })
                 solvedText = result.solution.text
                 inkPoints += if (forgotten) 1 else 3
@@ -525,15 +527,13 @@ private fun SpellQuestContent(
                     fxMs = 1400L
                 }
                 badgeCharacter = castCharacter
-                if (immediate) {
-                    // The book gift has already taken its one step. Show the
-                    // result while the circle draws the character.
-                    phase = QuestPhase.RESULT
-                }
+                // The result is ready as soon as the strokes are done. The
+                // channeling effect can continue over the circle; it must not
+                // keep the actions hidden.
+                phase = QuestPhase.RESULT
                 scope.launch {
                     kotlinx.coroutines.delay(resultDelayMs(reduceMotion))
                     channeling = null
-                    if (!immediate) phase = QuestPhase.RESULT
                 }
             }
             is CastResult.Hint -> {
@@ -555,14 +555,23 @@ private fun SpellQuestContent(
     suspend fun doCast(target: QuestScene, strokes: List<com.bassmd.bihua.ink.InkStroke>) {
         reading = true
         castNote = ""
+        // Never hold a cast on a 20-second download wait. The grimoire stays
+        // available, and the app keeps preparing the reader behind it.
+        if (!runCatching { recognition.canReadNow(mode) }.getOrDefault(false)) {
+            reading = false
+            val message = "Mò is still waking the reading model. Try again in a moment, or open the grimoire."
+            castNote = message
+            hint = message
+            return
+        }
         // Korean Hanja and Japanese kanji need the Han model, not the Hangul or
         // kana model. A Han target selects it without narrowing the answer.
         val hanTarget = if (mode == StudyMode.KOREAN || mode == StudyMode.JAPANESE) "漢" else null
         val recognized = runCatching {
-            recognition.recognize(strokes, mode, target = hanTarget, wifiOnly = false)
+            recognition.recognize(strokes, mode, target = hanTarget)
         }.getOrNull()
         reading = false
-        android.util.Log.d(QUEST_LOG, "cast candidates=${recognized?.candidates}")
+        if (QUEST_DEBUG) android.util.Log.d(QUEST_LOG, "cast candidates=${recognized?.candidates}")
         val detected: String? = recognized?.candidates
             ?.firstOrNull { candidate: String -> spells.any { it.character == candidate } }
         if (detected == null) {
@@ -588,17 +597,8 @@ private fun SpellQuestContent(
         castTraced = false
         // The result is the next screen. The circle draws the learner's own
         // strokes there; there is no separate "reading" screen to dismiss.
-        val outcome = QuestSolver.solve(scene.puzzle, castFamily, detected)
-        when (outcome) {
-            is CastResult.Solved -> {
-                solvedText = outcome.solution.text
-                phase = QuestPhase.RESULT
-            }
-            is CastResult.Hint -> {
-                hint = outcome.message
-                phase = QuestPhase.HINT
-            }
-        }
+        // The result waits for the replay to finish, then lands at once. There
+        // is no extra delay after the last stroke.
     }
 
     // Each pick gets its own animation. Wait for the page's guide to arrive,
@@ -635,16 +635,16 @@ private fun SpellQuestContent(
         kotlinx.coroutines.withTimeoutOrNull(giftPlaybackMs(strokes) + 3_000L) {
             androidx.compose.runtime.snapshotFlow { bookPlayer.isComplete }.first { it }
         }
+        // The last stroke is on the page, so the result and its actions are
+        // ready now. The flourish can keep playing underneath; it must never
+        // hold the learner on "Mò is drawing".
+        giftTraced = true
         if (!reduceMotion) {
-            // The flourish: the element plays once more after the last stroke.
             fxFamily = pick.family
             fxKey++
             fxMs = 1200L
             kotlinx.coroutines.delay(1_250L)
-        } else {
-            kotlinx.coroutines.delay(300L)
         }
-        giftTraced = true
     }
 
     /** Continue after a gift: the circle has been drawn, now the spell lands. */
@@ -654,13 +654,15 @@ private fun SpellQuestContent(
     }
 
 
-    LaunchedEffect(castStrokes) {
+    LaunchedEffect(castStrokes, reduceMotion) {
         if (castStrokes.isEmpty()) return@LaunchedEffect
         castTraced = false
-        kotlinx.coroutines.delay(castPlaybackMs(castStrokes.size))
+        // No animation means no playback wait. The ink is already on the
+        // circle, so the result is ready immediately.
+        if (!reduceMotion) {
+            kotlinx.coroutines.delay(castPlaybackMs(castStrokes.size))
+        }
         castTraced = true
-        // The result is already on screen; once the own strokes are done, let
-        // the element play and settle.
         if (bookPick == null) resolve(scene, castFamily)
     }
 
@@ -677,6 +679,7 @@ private fun SpellQuestContent(
         badgeCharacter = ""
         bookPick = null
         giftTraced = false
+        preview = null
         castStrokes = emptyList()
         castTraced = false
         if (index + 1 < scenes.size) {
@@ -687,7 +690,7 @@ private fun SpellQuestContent(
             chapterBanner = chapter
             scope.launch {
                 runCatching { progressStore?.saveSpellQuestChapter(mode.name, chapter) }
-                    .onFailure { android.util.Log.w(QUEST_LOG, "spell chapter could not be saved", it) }
+                    .onFailure { if (QUEST_DEBUG) android.util.Log.w(QUEST_LOG, "spell chapter could not be saved", it) }
             }
             index = 0
         }
@@ -719,6 +722,9 @@ private fun SpellQuestContent(
         castCharacter = pick.character
         giftTraced = false
         hint = ""
+        preview = null
+        castStrokes = emptyList()
+        castTraced = false
         bookPick = pick
         // A book gift is one step: show the result and draw the character there
         // instead of asking for a second "Continue" tap.
@@ -747,6 +753,7 @@ private fun SpellQuestContent(
         bookPick = null
         bookId = null
         giftTraced = false
+        preview = null
         castStrokes = emptyList()
         castTraced = false
         hint = ""
@@ -763,6 +770,7 @@ private fun SpellQuestContent(
     val circleTraced = if (bookPick != null) giftTraced else castTraced
     val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
     val canDraw = modelReady == true
+    val windowHeight = LocalConfiguration.current.screenHeightDp.dp
     val dialogueHeight = when {
         // A hint is short. A 500dp card left a field of empty paper and
         // squeezed the circle; let the hint scroll if it ever needs to.
@@ -776,7 +784,7 @@ private fun SpellQuestContent(
         fontScale > 1.6f -> 300.dp
         fontScale > 1.25f -> 320.dp
         else -> DialogueHeight
-    }
+    }.coerceAtMost((windowHeight - 96.dp).coerceAtLeast(220.dp))
     // The name appears as the strokes arrive: nothing until the first stroke, all of it at the end.
     val drawReveal = if (bookPick != null) {
         if (bookPlayer.strokeCount == 0) 0f else (bookPlayer.progress / bookPlayer.strokeCount).coerceIn(0f, 1f)
@@ -823,15 +831,15 @@ private fun SpellQuestContent(
         return
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().consumeAllInput()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
         val fold = LocalFoldState.current
         val book = fold == FoldState.BOOK && maxWidth >= 700.dp
         // A tablet only opens the spread when it is landscape. A foldable that
         // is folded, rotated, or half-open stays a phone for the story.
         val landscape = maxWidth > maxHeight
         // A short landscape window is still a phone, not a two-page desk.
-        val wideScreen = book ||
-            (fold == FoldState.NONE && landscape && maxWidth >= 700.dp && maxHeight >= 600.dp)
+        // A landscape phone has the same wide, short shape as a book fold.
+        val wideScreen = book || (landscape && maxWidth >= 700.dp)
         SceneBackdrop(place = scene.place, family = family, style = style, animate = !reduceMotion)
 
         // The circle stage: the outer ring with its runes, the drawn circle, the lead-in and
@@ -897,7 +905,7 @@ private fun SpellQuestContent(
                                 character = circleCharacter,
                                 glow = ring,
                                 traced = circleTraced,
-                                player = if (bookPick != null) bookPlayer else null,
+                                player = if (bookPick != null && bookId != null && bookGuide != null) bookPlayer else null,
                                 reduceMotion = reduceMotion,
                                 modifier = Modifier.fillMaxSize(0.78f),
                             )
@@ -979,6 +987,11 @@ private fun SpellQuestContent(
             var showNote by remember(scene.place) { mutableStateOf(false) }
             val bodyScroll = remember(scene.place, phase) { ScrollState(0) }
             var bodyScrolling by remember(scene.place) { mutableStateOf(false) }
+            // A new problem starts at the top; the teacher line and the actions
+            // stay outside the scrolling body.
+            LaunchedEffect(scene.place, phase) {
+                bodyScroll.scrollTo(0)
+            }
             LaunchedEffect(bodyScroll) {
                 snapshotFlow { bodyScroll.isScrollInProgress }.collect { bodyScrolling = it }
             }
@@ -994,112 +1007,149 @@ private fun SpellQuestContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(Modifier.weight(1f)) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(bodyScroll),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        InkMascot(
-                            size = 46.dp,
-                            headwear = com.bassmd.bihua.ui.components.MascotHeadwear.WITCH,
+                // The scene name and speaker are fixed. Only the problem text
+                // scrolls, so a long scene never pushes Draw or Grimoire away.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    InkMascot(
+                        size = 46.dp,
+                        headwear = com.bassmd.bihua.ui.components.MascotHeadwear.WITCH,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            scene.place,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = PlumInk,
+                            maxLines = if (fontScale > 1.25f) 3 else 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         )
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                scene.place,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = PlumInk,
-                                maxLines = if (fontScale > 1.25f) 3 else 2,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                if (phase != QuestPhase.READ) {
-                                    "${scene.speaker} · ${SpellFamilies.name(headerFamily)}"
-                                } else {
-                                    scene.speaker
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PlumSoft,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            )
-                        }
+                        Text(
+                            if (phase != QuestPhase.READ) {
+                                "${scene.speaker} · ${SpellFamilies.name(headerFamily)}"
+                            } else {
+                                scene.speaker
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PlumSoft,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
                     }
+                }
 
-                    val body: String = when (phase) {
-                        QuestPhase.READ -> if (circleActive) {
-                            if (circleTraced) "The shape is drawn. Take your time, then continue."
-                            else if (bookPick != null) "Watch the circle."
-                            else "Watch the circle."
-                        } else {
-                            scene.lines.joinToString("\n")
-                        }
-                        QuestPhase.CAST -> (listOf(scene.castPrompt) + scene.lines.take(1)).joinToString("\n")
-                        QuestPhase.HINT -> if (answerShown) {
-                            "Here is one shape that fits. Take it with you, or walk on."
-                        } else {
-                            hint
-                        }
-                        QuestPhase.RESULT -> solvedText
+                val longTail = if (com.bassmd.bihua.ai.QaFlags.longProblem) {
+                    "\n" + (1..10).joinToString("\n") { line ->
+                        "A long problem line $line keeps the scene going without moving the title or the actions."
                     }
-                    // Every block says what it is, in a colour that matches its meaning.
-                    val label = when (phase) {
-                        QuestPhase.READ -> if (bookPick != null) "A gift" else if (castStrokes.isNotEmpty()) "Your spell" else "Problem"
-                        QuestPhase.CAST -> "Problem"
-                        QuestPhase.HINT -> if (answerShown) {
-                            "One way through"
-                        } else {
-                            val solutions = scene.puzzle.solutions
-                            when {
-                                solutions.any { it.characters.isNotEmpty() } -> "Not that shape"
-                                solutions.any { it.categories.isNotEmpty() } -> "Another chapter"
-                                else -> "A different way"
-                            }
-                        }
-                        QuestPhase.RESULT -> "It worked"
+                } else {
+                    ""
+                }
+                val body: String = when (phase) {
+                    QuestPhase.READ -> if (circleActive) {
+                        if (circleTraced) "The shape is drawn. Take your time, then continue."
+                        else if (bookPick != null) "Watch the circle."
+                        else "Watch the circle."
+                    } else {
+                        scene.lines.joinToString("\n") + longTail
                     }
-                    val labelTint = when (phase) {
-                        QuestPhase.HINT -> if (answerShown) Mint else Peach
-                        QuestPhase.RESULT -> Mint
-                        else -> Butter
+                    QuestPhase.CAST -> scene.lines.take(1).joinToString("\n") + longTail
+                    QuestPhase.HINT -> if (answerShown) {
+                        "Here is one shape that fits. Take it with you, or walk on."
+                    } else {
+                        hint
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        com.bassmd.bihua.ui.components.Pill(label, labelTint)
-                        Spacer(Modifier.weight(1f))
-                        if ((phase == QuestPhase.HINT || phase == QuestPhase.RESULT) && noteEntry != null) {
-                            TextButton(onClick = { showNote = !showNote }) {
-                                Icon(
-                                    Icons.Rounded.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = noteTint,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text("Note", style = MaterialTheme.typography.labelLarge, color = noteTint)
-                            }
+                    QuestPhase.RESULT -> solvedText
+                }
+                val label = when (phase) {
+                    QuestPhase.READ -> if (bookPick != null) "A gift" else if (castStrokes.isNotEmpty()) "Your spell" else "Problem"
+                    QuestPhase.CAST -> "Problem"
+                    QuestPhase.HINT -> if (answerShown) {
+                        "One way through"
+                    } else {
+                        val solutions = scene.puzzle.solutions
+                        when {
+                            solutions.any { it.characters.isNotEmpty() } -> "Not that shape"
+                            solutions.any { it.categories.isNotEmpty() } -> "Another chapter"
+                            else -> "A different way"
                         }
                     }
-                    val speakKey = "${scene.place}-${phase}-${hint.length}-${solvedText.length}"
-                    TypewriterLine(
-                        text = body,
-                        reduceMotion = reduceMotion,
-                        speakerKey = speakKey,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = PlumInk,
-                        // A long problem arrives whole: typing it out would
-                        // fight the reader's scroll. Touching the card or
-                        // scrolling also finishes it at once.
-                        instant = body.length > 220 || bodyScrolling ||
-                            (phase == QuestPhase.READ && suppressReadTyping),
+                    QuestPhase.RESULT -> "It worked"
+                }
+                val labelTint = when (phase) {
+                    QuestPhase.HINT -> if (answerShown) Mint else Peach
+                    QuestPhase.RESULT -> Mint
+                    else -> Butter
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    com.bassmd.bihua.ui.components.Pill(label, labelTint)
+                    Spacer(Modifier.weight(1f))
+                    if ((phase == QuestPhase.HINT || phase == QuestPhase.RESULT) && noteEntry != null) {
+                        TextButton(onClick = { showNote = !showNote }) {
+                            Icon(
+                                Icons.Rounded.AutoAwesome,
+                                contentDescription = null,
+                                tint = noteTint,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Note", style = MaterialTheme.typography.labelLarge, color = noteTint)
+                        }
+                    }
+                }
+                // The goal is fixed above the scrolling situation. It names what
+                // the learner must do, so the scene is never just atmosphere.
+                Text(
+                    scene.castPrompt,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = PlumInk,
+                )
+                if (phase == QuestPhase.READ || phase == QuestPhase.CAST) {
+                    Text(
+                        "Write one character that fits the scene.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = PlumSoft,
                     )
                 }
+                val speakKey = "${scene.place}-${phase}-${hint.length}-${solvedText.length}"
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(bodyScroll),
+                    ) {
+                        TypewriterLine(
+                            text = body,
+                            reduceMotion = reduceMotion,
+                            speakerKey = speakKey,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = PlumInk,
+                            // A long problem arrives whole: typing it out would
+                            // fight the reader's scroll. Touching the text or
+                            // scrolling also finishes it at once.
+                            instant = body.length > 220 || bodyScrolling ||
+                                (phase == QuestPhase.READ && suppressReadTyping),
+                        )
+                    }
+                    // A quiet fade says "there is more" without a scrollbar.
+                    if (bodyScroll.canScrollForward) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(18.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, QuestPaper.copy(alpha = 0.92f)),
+                                    ),
+                                ),
+                        )
+                    }
+                }
                 if (showNote && noteEntry != null) {
-                    // The note is a small anchored card, like the text hint.
-                    // Do not wash or dim the dialogue behind it; that reads as
-                    // a strange effect on the card.
                     Popup(
                         alignment = Alignment.Center,
                         onDismissRequest = { showNote = false },
@@ -1120,8 +1170,6 @@ private fun SpellQuestContent(
                         )
                     }
                 }
-                }
-
                 when (phase) {
                     QuestPhase.READ -> if (circleActive) {
                         QuestDrawingNote("Mò is reading the circle…")
@@ -1259,7 +1307,7 @@ private fun SpellQuestContent(
                             }
                         }
                     }
-                    QuestPhase.RESULT -> if (circleActive && (!circleTraced || channeling != null)) {
+                    QuestPhase.RESULT -> if (bookPick != null && circleActive && !circleTraced) {
                         QuestDrawingNote(
                             if (bookPick != null) "Mò is drawing the character…"
                             else "Mò is reading the circle…",
@@ -1352,10 +1400,10 @@ private fun SpellQuestContent(
                 shapePlayer = shapePlayer,
                 gloss = shortGloss(entryByGlyph[scene.spell.character]?.meaning) ?: scene.spell.meaning,
                 clue = scene.puzzle.fallback,
-                writing = if (bookPick != null && bookStrokes.isNotEmpty()) bookStrokes else null,
+                writing = if (bookPick != null && bookId != null && bookStrokes.isNotEmpty()) bookStrokes else null,
                 // With no guide for this character, the circle still shows it once the
                 // timed draw ends, so the gift is never an empty circle.
-                preview = preview ?: if (bookPick != null && giftTraced && bookStrokes.isEmpty()) {
+                preview = preview ?: if (bookPick != null && bookId != null && giftTraced && bookStrokes.isEmpty()) {
                     bookPick?.character
                 } else {
                     null
@@ -1487,9 +1535,10 @@ private fun QuestGate(
     ) {
         val fold = LocalFoldState.current
         val book = fold == FoldState.BOOK && maxWidth >= 700.dp
+        // A landscape phone reads the gate as a spread too: the intro on one
+        // page, the rules and the start button on the facing page.
         val wideGate = book ||
-            (fold == FoldState.NONE && maxWidth > maxHeight && maxWidth >= 700.dp &&
-                maxHeight >= 600.dp)
+            (fold == FoldState.NONE && maxWidth > maxHeight && maxWidth >= 700.dp)
 
         @Composable
         fun Intro() {
@@ -1555,7 +1604,11 @@ private fun QuestGate(
                 )
                 TextButton(
                     onClick = { showReadingInfo = true },
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        // The rules page scrolls; keep the control named even
+                        // when its label is just below the fold.
+                        .semantics { contentDescription = "About reading ink" },
                 ) {
                     Icon(Icons.Rounded.Info, contentDescription = null, tint = Color.White.copy(alpha = .8f))
                     Spacer(Modifier.width(6.dp))
@@ -1971,6 +2024,16 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle, ani
         EffectStyle.RISE -> Color(0xFF55428F)
         else -> Dawn
     }
+    val accent = chapterColor(SpellFamilies.chapter(family))
+    val speed = when (style) {
+        EffectStyle.BURST -> 1.55f
+        EffectStyle.RIPPLE, EffectStyle.FROST -> 1.15f
+        EffectStyle.GUST -> 1.35f
+        EffectStyle.GROW -> 0.95f
+        EffectStyle.DRIFT, EffectStyle.VEIL -> 0.70f
+        EffectStyle.CLOCK -> 0.55f
+        else -> 1f
+    }
     var drift by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(animate) {
         if (!animate) {
@@ -1993,6 +2056,16 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle, ani
     }
     Canvas(Modifier.fillMaxSize()) {
         drawRect(Brush.verticalGradient(listOf(top, bottom)))
+        // Every chapter gets a quiet colour in the haze behind its hills.
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(accent.copy(alpha = 0.16f), Color.Transparent),
+                center = Offset(size.width * 0.72f, size.height * 0.30f),
+                radius = size.minDimension * 0.55f,
+            ),
+            radius = size.minDimension * 0.55f,
+            center = Offset(size.width * 0.72f, size.height * 0.30f),
+        )
         // Distant hills, three layers, seeded by the place name.
         repeat(3) { layer ->
             val path = Path()
@@ -2015,10 +2088,10 @@ private fun SceneBackdrop(place: String, family: String, style: EffectStyle, ani
         // Drifting motes, so the scene is never completely still.
         repeat(26) { i ->
             val px = ((i * 97 + seed) % 1000) / 1000f
-            val speed = 0.4f + (i % 5) * 0.12f
-            val py = ((i * 53) / 1000f + drift * speed) % 1f
+            val moteSpeed = (0.4f + (i % 5) * 0.12f) * speed
+            val py = ((i * 53) / 1000f + drift * moteSpeed) % 1f
             drawCircle(
-                color = Color.White.copy(alpha = 0.14f + (i % 3) * 0.05f),
+                color = accent.copy(alpha = 0.18f + (i % 3) * 0.07f),
                 radius = (1 + i % 3).dp.toPx(),
                 center = Offset(px * size.width, size.height * (1f - py) * 0.85f),
             )
@@ -2125,8 +2198,13 @@ private fun CastOverlay(
         val fold = LocalFoldState.current
         val book = fold == FoldState.BOOK && maxWidth >= 700.dp
         val landscape = maxWidth > maxHeight
-        val wide = book ||
-            (fold == FoldState.NONE && landscape && maxWidth >= 700.dp && maxHeight >= 600.dp)
+        // A landscape phone has the same wide, short shape as a book fold.
+        // Use the story-and-circle spread instead of a long stacked scroll.
+        val wide = book || (landscape && maxWidth >= 700.dp)
+        // A phone in landscape is wide but short: the open-book frame leaves
+        // too little paper for the circle, clues, and brushes. Use a lighter
+        // two-page desk there, keeping the story and tools on the left page.
+        val shortWide = wide && !book && maxHeight < 620.dp
         val screenWidth = maxWidth
         val screenHeight = maxHeight
         val controls: @Composable (Boolean, Boolean) -> Unit = { onPaper, compact ->
@@ -2222,7 +2300,130 @@ private fun CastOverlay(
             }
         }
 
-        if (wide) {
+        if (shortWide) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(QuestPaper)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(
+                            scene.place,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = QuestMoss,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            scene.castPrompt,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = QuestInk,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        scene.lines.forEach { line ->
+                            Text(
+                                line,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = QuestInk.copy(alpha = 0.86f),
+                            )
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        CastNote(note = note, casting = reading)
+                    }
+                    ClueActions(
+                        onSpeak = onHeard,
+                        onMeaning = { showMeaning = true },
+                        onShape = { showGuide = !showGuide },
+                        shapeShown = showGuide,
+                        onPaper = true,
+                    )
+                    if (!gifting) {
+                        BrushPicker(
+                            selected = brush.tool,
+                            onSelect = onBrush,
+                            onPaper = true,
+                            compact = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(QuestPaper)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val circle = minOf(maxWidth * 0.82f, maxHeight * 0.92f)
+                            .coerceAtLeast(150.dp)
+                        MagicCircle(
+                            scene = scene,
+                            ink = ink,
+                            showGuide = showGuide,
+                            preview = preview,
+                            writing = writing,
+                            shape = shape,
+                            shapePlayer = if (shapeStarted) shapePlayer else null,
+                            glow = glow,
+                            animate = !reduceMotion,
+                            brush = brush,
+                            modifier = Modifier.size(circle),
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    actions(true, false, true)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(onClick = onOpenBook) {
+                            Text(
+                                "Grimoire",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = QuestMoss,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0x143A332A))
+                                .clickable { onClose() }
+                                .padding(horizontal = 16.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Go back",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = QuestInk,
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (wide) {
             // A fold or tablet gets an open book: the story on the left page,
             // the circle on the right page, with a stitched spine between them.
             Row(
@@ -2434,13 +2635,10 @@ private fun CastOverlay(
                             modifier = Modifier.widthIn(max = 420.dp),
                         )
                     }
-                    // The third row uses the space under the tools for the
-                    // named Undo and Clear controls.
-                    controls(false, false)
                 }
-                // Always reachable: the learner can cast (or continue) no
-                // matter how large the text or how short the screen.
-                actions(false, false, false)
+                // Short screens keep the named Undo and Clear controls in the
+                // fixed Cast row; they must not be buried under a scroll.
+                actions(false, false, true)
             }
         }
         if (showMeaning) {
@@ -2476,6 +2674,9 @@ private fun CastOverlay(
 /** One tag for everything the quest logs, so a device run can be filtered with `logcat -s`. */
 internal const val QUEST_LOG = "BihuaQuest"
 
+/** Quest diagnostics stay out of release builds. */
+private val QUEST_DEBUG = BuildConfig.DEBUG
+
 /**
  * A guide animation has a roughly fixed total length, so a 3-stroke character
  * is not over in a blink and a 20-stroke character does not crawl. Short
@@ -2483,20 +2684,22 @@ internal const val QUEST_LOG = "BihuaQuest"
  */
 internal fun guideStrokeMs(strokes: Int): Long {
     if (strokes <= 0) return 620L
-    return (2200L / strokes).coerceIn(140L, 500L)
+    // Complex characters get more time per stroke, but the whole page never
+    // drags past a few seconds.
+    return (2400L / strokes).coerceIn(120L, 500L)
 }
 
 internal fun writingPlaybackMs(strokes: Int): Long {
     val stroke = guideStrokeMs(strokes)
     val gap = (stroke * 0.15f).toLong().coerceAtLeast(30L)
-    return strokes * (stroke + gap) + 250L
+    return (strokes * (stroke + gap) + 250L).coerceAtMost(3_600L)
 }
 
 internal fun giftPlaybackMs(strokes: Int): Long = strokes * guideStrokeMs(strokes) + 150L
 
 internal fun castPlaybackMs(strokes: Int): Long = writingPlaybackMs(strokes) + 350L
 
-internal fun resultDelayMs(reduceMotion: Boolean): Long = if (reduceMotion) 900L else 3000L
+internal fun resultDelayMs(reduceMotion: Boolean): Long = if (reduceMotion) 900L else 1800L
 
 private const val STROKE_MS = 1000f
 private const val STROKE_GAP_MS = 220f
@@ -2518,9 +2721,14 @@ private fun GuideWriting(
     magical: Boolean = true,
     strokeMs: Float = STROKE_MS,
     gapMs: Float = STROKE_GAP_MS,
+    animate: Boolean = true,
 ) {
     var elapsedMs by remember(strokes) { mutableFloatStateOf(0f) }
-    LaunchedEffect(strokes) {
+    LaunchedEffect(strokes, animate) {
+        if (!animate) {
+            elapsedMs = Float.MAX_VALUE
+            return@LaunchedEffect
+        }
         var start = 0L
         val total = strokes.size * (strokeMs + gapMs) + 250f
         while (true) {
@@ -2534,7 +2742,9 @@ private fun GuideWriting(
     Canvas(modifier) {
         strokes.forEachIndexed { index, points ->
             if (points.size < 2) return@forEachIndexed
-            val raw = ((elapsedMs - index * (strokeMs + gapMs)) / strokeMs).coerceIn(0f, 1f)
+            val raw = if (!animate) 1f else {
+                ((elapsedMs - index * (strokeMs + gapMs)) / strokeMs).coerceIn(0f, 1f)
+            }
             if (raw <= 0f) return@forEachIndexed
             val t = easeInOut(raw)
             val visible = partialPoints(points, t).map {
@@ -2602,9 +2812,18 @@ private fun partialPoints(points: List<Offset>, fraction: Float): List<Offset> {
  * learner, and when the recognizer reads their ink.
  */
 @Composable
-private fun WritingReveal(character: String, glow: Color, modifier: Modifier) {
+private fun WritingReveal(
+    character: String,
+    glow: Color,
+    modifier: Modifier,
+    reduceMotion: Boolean = false,
+) {
     var reveal by remember(character) { mutableFloatStateOf(0f) }
-    LaunchedEffect(character) {
+    LaunchedEffect(character, reduceMotion) {
+        if (reduceMotion) {
+            reveal = 1f
+            return@LaunchedEffect
+        }
         var start = 0L
         while (true) {
             withInfiniteAnimationFrameNanos { now ->
@@ -3027,12 +3246,17 @@ private fun MagicCircle(
             contentAlignment = Alignment.Center,
         ) {
             if (writing != null) {
-                GuideWriting(strokes = writing, modifier = Modifier.fillMaxSize(0.92f))
+                GuideWriting(
+                    strokes = writing,
+                    modifier = Modifier.fillMaxSize(0.92f),
+                    animate = animate,
+                )
             } else if (preview != null) {
                 WritingReveal(
                     character = preview,
                     glow = PlumInk,
                     modifier = Modifier.fillMaxSize(0.92f),
+                    reduceMotion = !animate,
                 )
             } else if (showGuide) {
                 // The shape only ever appears as it is being drawn, never as a finished character.
@@ -3041,7 +3265,14 @@ private fun MagicCircle(
                         player = shapePlayer,
                         modifier = Modifier.fillMaxSize(0.92f),
                         showNumbers = false,
-                        strokeColor = PlumInk,
+                        // A coloured, translucent guide stays visible under the
+                        // learner's ink while they trace over it. Use the
+                        // scene's chapter colour, not the neutral ring that is
+                        // waiting for recognition.
+                        strokeColor = chapterColor(
+                            SpellFamilies.chapter(scene.spell.family),
+                        ),
+                        strokeAlpha = 0.65f,
                         paperGap = false,
                     )
                 }
@@ -3173,7 +3404,12 @@ private fun GiftCircle(
             )
         } else if (player != null && character.isNotEmpty()) {
             // A script with no stroke source still gets a readable gift.
-            WritingReveal(character = character, glow = glow, modifier = Modifier.fillMaxSize(0.74f))
+            WritingReveal(
+                character = character,
+                glow = glow,
+                modifier = Modifier.fillMaxSize(0.74f),
+                reduceMotion = reduceMotion,
+            )
         } else if (strokes.isNotEmpty()) {
             GuideWriting(
                 strokes = strokes,
@@ -3183,6 +3419,7 @@ private fun GiftCircle(
                 magical = !learnerInk,
                 strokeMs = guideStrokeMs(strokes.size).toFloat(),
                 gapMs = (guideStrokeMs(strokes.size) * 0.15f).coerceAtLeast(30f),
+                animate = !reduceMotion,
             )
         }
     }
@@ -3541,7 +3778,7 @@ private fun SpellEffectOverlay(
         if (frame >= 1f) {
             drawResidual(color)
         } else {
-            drawEffect(style, color, frame)
+            drawEffect(style, color, frame, family)
             drawMotif(motif, color, frame)
         }
     }
@@ -3668,104 +3905,146 @@ private fun DrawScope.drawMotif(motif: com.bassmd.bihua.spellbook.Motif, color: 
     }
 }
 
-private fun DrawScope.drawEffect(style: EffectStyle, color: Color, progress: Float) {
+private fun DrawScope.drawEffect(
+    style: EffectStyle,
+    color: Color,
+    progress: Float,
+    variant: String = "",
+) {
     val center = Offset(size.width / 2f, size.height * 0.45f)
     val reach = size.minDimension * 0.55f
     val fade = 1f - progress
+    // A stable family seed gives each spell its own cadence even when two
+    // families share an effect style.
+    val seed = variant.hashCode()
+    val n = seed and 0x7fffffff
+    val direction = if (seed and 1 == 0) 1f else -1f
+    val angleOffset = ((n % 360) / 360f) * 6.2832f
     when (style) {
-        EffectStyle.RIPPLE -> repeat(4) { ring ->
-            drawCircle(
-                color = color.copy(alpha = fade * 0.35f),
-                radius = reach * progress * (0.55f + ring * 0.28f),
-                center = center,
-                style = Stroke(width = 3.dp.toPx()),
-            )
+        EffectStyle.RIPPLE -> {
+            val rings = 3 + n % 3
+            repeat(rings) { ring ->
+                drawCircle(
+                    color = color.copy(alpha = fade * (0.28f + (ring % 2) * 0.10f)),
+                    radius = reach * progress * (0.48f + ring * (0.22f + (n % 4) * 0.02f)),
+                    center = center,
+                    style = Stroke(width = (2 + ring % 2).dp.toPx()),
+                )
+            }
         }
-        EffectStyle.BURST -> repeat(26) { i ->
-            val angle = (i / 26f) * 6.2832f
-            val distance = reach * progress * (0.45f + (i % 4) * 0.18f)
-            drawCircle(
-                color = color.copy(alpha = fade * 0.8f),
-                radius = (6 - i % 4).dp.toPx(),
-                center = Offset(center.x + cos(angle) * distance, center.y - sin(angle) * distance),
-            )
+        EffectStyle.BURST -> {
+            val count = 20 + n % 12
+            repeat(count) { i ->
+                val angle = angleOffset + (i / count.toFloat()) * 6.2832f
+                val distance = reach * progress * (0.35f + (i % 5) * 0.16f)
+                drawCircle(
+                    color = color.copy(alpha = fade * 0.8f),
+                    radius = (5 - i % 3).dp.toPx(),
+                    center = Offset(center.x + cos(angle) * distance, center.y - sin(angle) * distance),
+                )
+            }
         }
-        EffectStyle.FROST -> repeat(10) { i ->
-            val angle = (i / 10f) * 6.2832f
-            drawLine(
-                color = color.copy(alpha = fade * 0.6f),
-                start = center,
-                end = Offset(
-                    center.x + cos(angle) * reach * progress,
-                    center.y + sin(angle) * reach * progress,
-                ),
-                strokeWidth = 2.dp.toPx(),
-            )
+        EffectStyle.FROST -> {
+            val rays = 8 + n % 6
+            repeat(rays) { i ->
+                val angle = angleOffset + (i / rays.toFloat()) * 6.2832f
+                drawLine(
+                    color = color.copy(alpha = fade * 0.6f),
+                    start = center,
+                    end = Offset(
+                        center.x + cos(angle) * reach * progress,
+                        center.y + sin(angle) * reach * progress,
+                    ),
+                    strokeWidth = (1.5f + (i % 2)).dp.toPx(),
+                )
+            }
         }
-        EffectStyle.GUST -> repeat(7) { i ->
-            val y = center.y - i * 26.dp.toPx() + progress * 60.dp.toPx()
-            drawLine(
-                color = color.copy(alpha = fade * 0.45f),
-                start = Offset(size.width * 0.05f + progress * reach, y),
-                end = Offset(size.width * 0.95f + progress * reach * 0.2f, y),
-                strokeWidth = (2 + i % 2).dp.toPx(),
-            )
+        EffectStyle.GUST -> {
+            val lines = 5 + n % 6
+            repeat(lines) { i ->
+                val y = center.y - i * 24.dp.toPx() + progress * 60.dp.toPx()
+                drawLine(
+                    color = color.copy(alpha = fade * (0.35f + (i % 2) * 0.10f)),
+                    start = Offset(size.width * (if (direction > 0) 0.05f else 0.95f) + direction * progress * reach, y),
+                    end = Offset(size.width * (if (direction > 0) 0.95f else 0.05f) + direction * progress * reach * 0.2f, y),
+                    strokeWidth = (2 + i % 2).dp.toPx(),
+                )
+            }
         }
-        EffectStyle.GLOW -> drawCircle(
-            color = color.copy(alpha = fade * 0.45f),
-            radius = reach * (0.2f + progress * 1.1f),
-            center = center,
-        )
-        EffectStyle.GROW -> repeat(30) { i ->
-            val angle = i * 0.7f + progress * 4f
-            val distance = reach * progress * (0.25f + i / 40f)
-            drawCircle(
-                color = color.copy(alpha = fade * 0.65f),
-                radius = 4.dp.toPx(),
-                center = Offset(center.x + cos(angle) * distance, center.y - distance),
-            )
+        EffectStyle.GLOW -> {
+            repeat(3) { ring ->
+                drawCircle(
+                    color = color.copy(alpha = fade * (0.38f - ring * 0.08f)),
+                    radius = reach * (0.16f + ring * 0.12f + progress * (1.0f + ring * 0.12f)),
+                    center = center,
+                )
+            }
         }
-        EffectStyle.RISE -> repeat(16) { i ->
-            val seed = i * 1.91f
-            val x = center.x + sin(seed) * reach * 0.62f +
-                sin(progress * 5f + seed) * reach * 0.05f
-            val y = center.y + reach * 0.45f -
-                progress * reach * (0.9f + (i % 5) * 0.12f) -
-                (i % 4) * 8.dp.toPx()
-            val r = (2f + (i % 4)) * 1.dp.toPx()
-            drawCircle(
-                color = color.copy(alpha = fade * 0.5f),
-                radius = r,
-                center = Offset(x, y),
-            )
-            drawLine(
-                color = color.copy(alpha = fade * 0.16f),
-                start = Offset(x, y + r * 3f),
-                end = Offset(x, y),
-                strokeWidth = r,
-            )
+        EffectStyle.GROW -> {
+            val count = 24 + n % 12
+            val turns = 3.2f + (n % 5) * 0.35f
+            repeat(count) { i ->
+                val angle = direction * (i * 0.7f + progress * turns)
+                val distance = reach * progress * (0.25f + i / (count * 1.35f))
+                drawCircle(
+                    color = color.copy(alpha = fade * 0.65f),
+                    radius = (3 + i % 2).dp.toPx(),
+                    center = Offset(center.x + cos(angle) * distance, center.y - distance),
+                )
+            }
         }
-        EffectStyle.DRIFT -> repeat(22) { i ->
-            val x = center.x + cos(i * 1.7f) * reach * 0.8f
-            val y = center.y - reach * progress - i * 10.dp.toPx() + progress * 80.dp.toPx()
-            drawCircle(
-                color = color.copy(alpha = fade * 0.55f),
-                radius = 3.5.dp.toPx(),
-                center = Offset(x, y),
-            )
+        EffectStyle.RISE -> {
+            val count = 12 + n % 8
+            repeat(count) { i ->
+                val sway = i * 1.91f + (n % 7)
+                val x = center.x + sin(sway) * reach * 0.62f +
+                    sin(progress * 5f + sway) * reach * 0.05f
+                val y = center.y + reach * 0.45f -
+                    progress * reach * (0.85f + (i % 5) * 0.14f) -
+                    (i % 4) * 8.dp.toPx()
+                val r = (2f + (i % 4)) * 1.dp.toPx()
+                drawCircle(color.copy(alpha = fade * 0.5f), r, Offset(x, y))
+                drawLine(
+                    color = color.copy(alpha = fade * 0.16f),
+                    start = Offset(x, y + r * 3f),
+                    end = Offset(x, y),
+                    strokeWidth = r,
+                )
+            }
+        }
+        EffectStyle.DRIFT -> {
+            val count = 18 + n % 10
+            val rising = seed and 2 != 0
+            repeat(count) { i ->
+                val x = center.x + cos(i * 1.7f + (n % 9)) * reach * 0.8f
+                val y = if (rising) {
+                    center.y + reach * 0.5f - progress * reach - i * 9.dp.toPx()
+                } else {
+                    center.y - reach * 0.5f + progress * reach + i * 9.dp.toPx()
+                }
+                drawCircle(
+                    color = color.copy(alpha = fade * 0.55f),
+                    radius = (2.5f + i % 3).dp.toPx(),
+                    center = Offset(x, y),
+                )
+            }
         }
         EffectStyle.VEIL -> drawCircle(
-            color = color.copy(alpha = 0.15f + progress * 0.3f),
-            radius = reach * (0.4f + progress * 2f),
+            color = color.copy(alpha = 0.12f + progress * 0.34f),
+            radius = reach * (0.35f + (n % 5) * 0.12f + progress * 1.8f),
             center = center,
         )
-        EffectStyle.PULSE -> repeat(5) { i ->
-            drawCircle(
-                color = color.copy(alpha = fade * 0.3f),
-                radius = reach * progress + i * 22.dp.toPx(),
-                center = center,
-                style = Stroke(width = 2.dp.toPx()),
-            )
+        EffectStyle.PULSE -> {
+            val rings = 4 + n % 3
+            val phase = (n % 10) / 10f
+            repeat(rings) { i ->
+                drawCircle(
+                    color = color.copy(alpha = fade * 0.3f),
+                    radius = reach * progress + i * 22.dp.toPx() + phase * 12.dp.toPx(),
+                    center = center,
+                    style = Stroke(width = (1.5f + (i % 2)).dp.toPx()),
+                )
+            }
         }
         EffectStyle.CLOCK -> {
             drawCircle(
@@ -3774,7 +4053,7 @@ private fun DrawScope.drawEffect(style: EffectStyle, color: Color, progress: Flo
                 center = center,
                 style = Stroke(width = 2.dp.toPx()),
             )
-            val angle = -1.5708f + progress * 12.566f
+            val angle = -1.5708f + direction * progress * 12.566f
             drawLine(
                 color = color.copy(alpha = fade * 0.8f),
                 start = center,

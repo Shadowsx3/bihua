@@ -173,6 +173,8 @@ fun StrokeGuideLayer(
     strokeColor: Color = GuideGreen,
     /** A thin paper-coloured edge around finished strokes. Practice keeps it. */
     paperGap: Boolean = true,
+    /** Opacity of the reference strokes. Lower it on a surface the learner inks over. */
+    strokeAlpha: Float = 0.90f,
 ) {
     val guide = player.guide ?: return
     if (guide.strokes.isEmpty()) return
@@ -219,6 +221,7 @@ fun StrokeGuideLayer(
                     paperColor = if (paperGap) palette.paperWarm else Color.Transparent,
                     kana = guide.kana,
                     muted = dimUnfocused && !focused,
+                    strokeAlpha = strokeAlpha,
                 )
             }
         }
@@ -370,8 +373,12 @@ private fun DrawScope.drawGuideStroke(
     paperColor: Color,
     kana: Boolean = false,
     muted: Boolean = false,
+    strokeAlpha: Float = 0.90f,
 ) {
     val base = size.minDimension * (if (kana) 0.032f else 0.040f)
+    // A transparent paper colour means "no halo"; copy(alpha) must not turn it
+    // into a black outline.
+    val haloAlpha = paperColor.alpha
     val parsedOutline = stroke.outline?.let { raw ->
         val matrix = androidx.compose.ui.graphics.Matrix()
         matrix.values[0] = size.width * 0.84f / 1024f
@@ -393,13 +400,13 @@ private fun DrawScope.drawGuideStroke(
             // stay legible. This is the same shape a brush would leave.
             drawPath(
                 path = parsedOutline,
-                color = paperColor.copy(alpha = 0.96f),
+                color = paperColor.copy(alpha = haloAlpha * 0.96f),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(
                     width = 2.2.dp.toPx(),
                     join = androidx.compose.ui.graphics.StrokeJoin.Round,
                 ),
             )
-            drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
+            drawPath(parsedOutline, guideColor.copy(alpha = strokeAlpha))
             return
         }
         if (stroke.points != null) {
@@ -414,19 +421,19 @@ private fun DrawScope.drawGuideStroke(
                 clipPath(clip) {
                     drawPath(
                         path = parsedOutline,
-                        color = paperColor.copy(alpha = 0.96f),
+                        color = paperColor.copy(alpha = haloAlpha * 0.96f),
                         style = androidx.compose.ui.graphics.drawscope.Stroke(
                             width = 2.2.dp.toPx(),
                             join = androidx.compose.ui.graphics.StrokeJoin.Round,
                         ),
                     )
-                    drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
+                    drawPath(parsedOutline, guideColor.copy(alpha = strokeAlpha))
                 }
                 return
             }
         }
         // A source with an outline but no median can only reveal at the end.
-        drawPath(parsedOutline, guideColor.copy(alpha = 0.90f))
+        drawPath(parsedOutline, guideColor.copy(alpha = strokeAlpha))
         return
     }
     if (stroke.points != null) {
@@ -450,8 +457,8 @@ private fun DrawScope.drawGuideStroke(
             // Dots and very short marks are round, like a brush touching down.
             val center = points.first()
             val radius = base * 0.46f
-            drawCircle(paperColor.copy(alpha = 0.95f), radius = radius + 1.6.dp.toPx(), center = center)
-            drawCircle(guideColor.copy(alpha = 0.90f), radius = radius, center = center)
+            drawCircle(paperColor.copy(alpha = haloAlpha * 0.95f), radius = radius + 1.6.dp.toPx(), center = center)
+            drawCircle(guideColor.copy(alpha = strokeAlpha), radius = radius, center = center)
             return
         }
         if (kana) {
@@ -462,7 +469,7 @@ private fun DrawScope.drawGuideStroke(
             val haloWidth = base + 2.4.dp.toPx()
             drawPath(
                 path = line,
-                color = paperColor.copy(alpha = 0.95f),
+                color = paperColor.copy(alpha = haloAlpha * 0.95f),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(
                     width = haloWidth,
                     cap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -471,7 +478,7 @@ private fun DrawScope.drawGuideStroke(
             )
             drawPath(
                 path = line,
-                color = guideColor.copy(alpha = 0.90f),
+                color = guideColor.copy(alpha = strokeAlpha),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(
                     width = base,
                     cap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -489,16 +496,16 @@ private fun DrawScope.drawGuideStroke(
         // would cut it into a bead, so both halo layers must stay underneath.
         drawPath(
             path = brushPath(points, base, torch = torch, halo = true),
-            color = paperColor.copy(alpha = 0.95f),
+            color = paperColor.copy(alpha = haloAlpha * 0.95f),
         )
-        drawCircle(paperColor.copy(alpha = 0.95f), startRadius + torch, points.first())
-        drawCircle(paperColor.copy(alpha = 0.95f), endRadius + torch, points.last())
+        drawCircle(paperColor.copy(alpha = haloAlpha * 0.95f), startRadius + torch, points.first())
+        drawCircle(paperColor.copy(alpha = haloAlpha * 0.95f), endRadius + torch, points.last())
         drawPath(
             path = brushPath(points, base, torch = torch, halo = false),
-            color = guideColor.copy(alpha = 0.90f),
+            color = guideColor.copy(alpha = strokeAlpha),
         )
-        drawCircle(guideColor.copy(alpha = 0.90f), startRadius, points.first())
-        drawCircle(guideColor.copy(alpha = 0.90f), endRadius, points.last())
+        drawCircle(guideColor.copy(alpha = strokeAlpha), startRadius, points.first())
+        drawCircle(guideColor.copy(alpha = strokeAlpha), endRadius, points.last())
     } else if (stroke.path != null && fraction > 0f) {
         scale(size.width, size.height, pivot = Offset.Zero) {
             drawPath(stroke.path, guideColor.copy(alpha = 0.80f))

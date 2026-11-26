@@ -1,10 +1,17 @@
 package com.bassmd.bihua.audio
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.bassmd.bihua.content.StudyMode
 import java.util.Locale
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class SpeechState { STARTING, READY, UNAVAILABLE }
 
 /**
  * Reading aloud through the device's best installed voice. It prefers an
@@ -19,14 +26,21 @@ class Speech(private val context: Context) : AutoCloseable {
     private var rate = 0.92f
     private var pendingMode: StudyMode? = null
     private var pendingSpeak: Pair<String, StudyMode>? = null
+    private var initTimedOut = false
+    private val handler = Handler(Looper.getMainLooper())
+    private val _state = MutableStateFlow(SpeechState.STARTING)
+    val state: StateFlow<SpeechState> = _state.asStateFlow()
 
     /** Called when a queued first tap cannot play because the script has no voice. */
     var onUnavailable: (() -> Unit)? = null
 
     init {
         engine = TextToSpeech(context.applicationContext) { status ->
+            if (initTimedOut || engine == null) return@TextToSpeech
             ready = status == TextToSpeech.SUCCESS
             failed = !ready
+            _state.value = if (ready) SpeechState.READY else SpeechState.UNAVAILABLE
+            handler.removeCallbacksAndMessages(null)
             engine?.setSpeechRate(rate)
             pendingMode?.let { applyLanguage(it) }
             pendingSpeak?.let { (pendingText, pendingLanguage) ->
@@ -49,6 +63,18 @@ class Speech(private val context: Context) : AutoCloseable {
                 override fun onError(utteranceId: String?) = Unit
             })
         }
+        // Some devices never call back. Do not queue a tap forever.
+        handler.postDelayed({
+            if (!ready && !failed && !initTimedOut) {
+                initTimedOut = true
+                failed = true
+                _state.value = SpeechState.UNAVAILABLE
+                if (pendingSpeak != null) {
+                    pendingSpeak = null
+                    onUnavailable?.invoke()
+                }
+            }
+        }, INIT_TIMEOUT_MS)
     }
 
     fun setRate(value: Float) {
@@ -82,6 +108,7 @@ class Speech(private val context: Context) : AutoCloseable {
     }
 
     override fun close() {
+        handler.removeCallbacksAndMessages(null)
         engine?.stop()
         engine?.shutdown()
         engine = null
@@ -89,6 +116,7 @@ class Speech(private val context: Context) : AutoCloseable {
         failed = false
         pendingMode = null
         pendingSpeak = null
+        _state.value = SpeechState.UNAVAILABLE
     }
 
     private fun applyLanguage(mode: StudyMode): Boolean {
@@ -109,5 +137,10 @@ class Speech(private val context: Context) : AutoCloseable {
         StudyMode.TRADITIONAL -> Locale.TRADITIONAL_CHINESE
         StudyMode.JAPANESE -> Locale.JAPANESE
         StudyMode.KOREAN -> Locale.KOREAN
+    }
+
+    private companion object {
+        /** A voice engine that has not answered by now is not usable. */
+        const val INIT_TIMEOUT_MS = 5_000L
     }
 }

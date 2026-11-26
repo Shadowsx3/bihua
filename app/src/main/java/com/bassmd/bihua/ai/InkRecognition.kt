@@ -4,7 +4,6 @@ import android.util.Log
 import com.bassmd.bihua.BuildConfig
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.ink.InkStroke
-import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognition
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognitionModel
@@ -14,6 +13,7 @@ import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizerOption
 import com.google.mlkit.vision.digitalink.recognition.Ink
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger
 data class RecognitionResult(
     val candidates: List<String>,
     val modelReady: Boolean,
+    /** True when the model is still downloading, so the check skipped the wait. */
+    val preparing: Boolean = false,
 ) {
     val best: String? get() = candidates.firstOrNull()
 }
@@ -36,8 +38,13 @@ data class RecognitionResult(
  */
 class InkRecognitionService {
 
-    private val recognizers = mutableMapOf<String, DigitalInkRecognizer>()
-    private val readyModels = mutableSetOf<String>()
+    // Shared by the whole app, so screens can recognize and preload at once.
+    private val recognizers =
+        java.util.concurrent.ConcurrentHashMap<String, DigitalInkRecognizer>()
+
+    /** Set by [close]; a late call must fail instead of using a dead client. */
+    @Volatile
+    private var closed = false
 
     /** Downloads in flight. Shown as one quiet notice wherever the learner is. */
     private val downloads = DownloadTracker { active ->
@@ -61,20 +68,33 @@ class InkRecognitionService {
     }
 
     suspend fun isModelReady(mode: StudyMode): Boolean {
-        if (QaFlags.noInkModel || QaFlags.missingMode == mode) return false
-        return requiredModelTags(mode).all { tag -> tagReady(tag) }
+        if (QaFlags.noInkModel || QaFlags.missingMode == mode) {
+            ModelDownloads.recordReady(mode, false)
+            return false
+        }
+        val ready = requiredModelTags(mode).all { tag -> tagReady(tag) }
+        ModelDownloads.recordReady(mode, ready)
+        return ready
     }
 
-    /** A short local check for Practice: skip the reader if it is not ready now. */
+    /**
+     * A short local check: skip the reader if it is not ready now. A positive
+     * cached result is instant; a missing or stale result gets one 900 ms
+     * probe. This is the path every check uses, never the 20 s download wait.
+     */
     suspend fun canReadNow(mode: StudyMode): Boolean {
-        if (QaFlags.noInkModel || QaFlags.missingMode == mode) return false
-        if (ModelDownloads.activeModes.contains(mode)) return false
+        if (QaFlags.noInkModel || QaFlags.missingMode == mode) {
+            ModelDownloads.recordReady(mode, false)
+            return false
+        }
+        if (ModelDownloads.cachedReady(mode) == true) return true
         return runCatching {
             kotlinx.coroutines.withTimeoutOrNull(900L) { isModelReady(mode) } ?: false
         }.getOrDefault(false)
     }
 
     private suspend fun tagReady(tag: String): Boolean {
+        if (closed) return false
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return false
         val model = DigitalInkRecognitionModel.builder(identifier).build()
         return runCatching {
@@ -84,15 +104,15 @@ class InkRecognitionService {
         }.getOrDefault(false)
     }
 
-    suspend fun areAllModelsReady(): Boolean =
-        StudyMode.entries.all { isModelReady(it) }
-
-    suspend fun prepare(mode: StudyMode, wifiOnly: Boolean = false): Boolean {
+    suspend fun prepare(mode: StudyMode): Boolean {
+        if (closed) return false
         if (QaFlags.noInkModel) {
+            ModelDownloads.recordReady(mode, false)
             ModelDownloads.failed(mode)
             return false
         }
         if (QaFlags.missingMode == mode) {
+            ModelDownloads.recordReady(mode, false)
             if (NetworkStatus.isOnline()) ModelDownloads.failed(mode)
             else ModelDownloads.offlineFailure(mode)
             return false
@@ -102,6 +122,7 @@ class InkRecognitionService {
         if (!NetworkStatus.isOnline()) {
             val local = runCatching { isModelReady(mode) }.getOrDefault(false)
             if (local) {
+                ModelDownloads.recordReady(mode, true)
                 ModelDownloads.succeeded(mode)
                 return true
             }
@@ -112,8 +133,9 @@ class InkRecognitionService {
             ModelDownloads.starting(mode)
             try {
                 val ready = requiredModelTags(mode)
-                    .map { tag -> prepareTag(tag, wifiOnly) }
+                    .map { tag -> prepareTag(tag) }
                     .all { it }
+                ModelDownloads.recordReady(mode, ready)
                 if (ready) {
                     ModelDownloads.succeeded(mode)
                 } else if (!NetworkStatus.isOnline()) {
@@ -128,7 +150,7 @@ class InkRecognitionService {
         }
     }
 
-    private suspend fun prepareTag(tag: String, wifiOnly: Boolean = false): Boolean {
+    private suspend fun prepareTag(tag: String): Boolean {
         if (QaFlags.noInkModel) return false
         if (QaFlags.slowInkMs > 0L) kotlinx.coroutines.delay(QaFlags.slowInkMs)
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return false
@@ -140,20 +162,21 @@ class InkRecognitionService {
             } ?: false
             if (!downloaded) {
                 if (!NetworkStatus.isOnline()) return false
-                val conditions = DownloadConditions.Builder().apply {
-                    if (wifiOnly) requireWifi()
-                }.build()
+                // The model is required for the ink check, so any usable
+                // connection is fine. Wi-Fi is not a prerequisite.
                 beginDownload()
                 try {
-                    manager.download(model, conditions).await()
+                    manager.download(
+                        model,
+                        com.google.mlkit.common.model.DownloadConditions.Builder().build(),
+                    ).await()
                 } finally {
                     endDownload()
                 }
             }
-            readyModels += tag
             true
         }.onFailure { error ->
-            Log.w("InkRecognition", "model $tag is not available", error)
+            if (BuildConfig.DEBUG) Log.w("InkRecognition", "model $tag is not available", error)
         }.getOrDefault(false)
     }
 
@@ -161,29 +184,67 @@ class InkRecognitionService {
 
     private fun endDownload() = downloads.end()
 
-    suspend fun prepareAll(wifiOnly: Boolean = false): Map<StudyMode, Boolean> =
-        StudyMode.entries.associateWith { prepare(it, wifiOnly) }
-
     suspend fun recognize(
         strokes: List<InkStroke>,
         mode: StudyMode,
         target: String? = null,
-        wifiOnly: Boolean = false,
+    ): RecognitionResult = recognizeInternal(
+        strokes = strokes,
+        mode = mode,
+        target = target,
+        multiCharacter = false,
+    )
+
+    /**
+     * Word practice draws several characters on one page. ML Kit accepts the
+     * whole ink and can return a multi-character candidate; this path keeps
+     * that candidate instead of reducing it to one glyph.
+     */
+    suspend fun recognizeWord(
+        strokes: List<InkStroke>,
+        word: String,
+        mode: StudyMode,
+    ): RecognitionResult = recognizeInternal(
+        strokes = strokes,
+        mode = mode,
+        target = word,
+        multiCharacter = true,
+    )
+
+    private suspend fun recognizeInternal(
+        strokes: List<InkStroke>,
+        mode: StudyMode,
+        target: String?,
+        multiCharacter: Boolean,
     ): RecognitionResult {
-        if (QaFlags.noInkModel) return RecognitionResult(emptyList(), false)
+        if (closed || QaFlags.noInkModel) return RecognitionResult(emptyList(), false)
         // The Korean model reads Hangul, not Hanja. For a Han character we use
         // the Chinese model that matches the glyph tradition instead.
-        val tag = targetLanguageTag(mode, target) ?: return RecognitionResult(emptyList(), false)
+        val tag = if (multiCharacter) {
+            wordLanguageTag(mode, target.orEmpty())
+        } else {
+            targetLanguageTag(mode, target)
+        } ?: return RecognitionResult(emptyList(), false)
         val identifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(tag) ?: return RecognitionResult(emptyList(), false)
         val model = DigitalInkRecognitionModel.builder(identifier).build()
-        // A missing model can wait forever for Wi-Fi. Give the download a
-        // reasonable window, then fail visibly instead of spinning forever.
+        // A missing model can wait a long time on a slow connection. Give the
+        // download a reasonable window, then fail visibly instead of spinning
+        // forever.
+        val wasPreparing = ModelDownloads.activeModes.isNotEmpty()
         val ready = kotlinx.coroutines.withTimeoutOrNull(MODEL_WAIT_MS) {
-            prepareTag(tag, wifiOnly)
+            prepareTag(tag)
         } ?: false
-        if (!ready) return RecognitionResult(emptyList(), false)
+        if (!ready) {
+            ModelDownloads.recordReady(mode, false)
+            return RecognitionResult(
+                emptyList(),
+                false,
+                preparing = wasPreparing || ModelDownloads.activeModes.isNotEmpty(),
+            )
+        }
+        ModelDownloads.recordReady(mode, true)
 
-        val recognizer = recognizers.getOrPut(tag) {
+        val recognizer = recognizers.computeIfAbsent(tag) {
             DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(model).build())
         }
         val ink = Ink.builder().apply {
@@ -205,11 +266,19 @@ class InkRecognitionService {
                     Log.d("InkRecognition", "raw='${it.text}' score=${it.score}")
                 }
             }
-            val candidates = RecognitionSanitizer.sanitize(
-                candidates = result.candidates.map { InkCandidate(it.text, it.score) },
-                target = target,
-                mode = mode,
-            )
+            val candidates = if (multiCharacter) {
+                RecognitionSanitizer.sanitizeWord(
+                    candidates = result.candidates.map { InkCandidate(it.text, it.score) },
+                    word = target.orEmpty(),
+                    mode = mode,
+                )
+            } else {
+                RecognitionSanitizer.sanitize(
+                    candidates = result.candidates.map { InkCandidate(it.text, it.score) },
+                    target = target,
+                    mode = mode,
+                )
+            }
             if (BuildConfig.DEBUG) {
                 Log.d("InkRecognition", "shown=$candidates")
             }
@@ -218,6 +287,7 @@ class InkRecognitionService {
     }
 
     fun close() {
+        closed = true
         recognizers.values.forEach { runCatching { it.close() } }
         recognizers.clear()
     }
@@ -227,6 +297,34 @@ class InkRecognitionService {
         StudyMode.TRADITIONAL -> "zh-Hant"
         StudyMode.JAPANESE -> "ja"
         StudyMode.KOREAN -> "ko"
+    }
+
+    /**
+     * A word can mix kanji and kana, or Hangul and Hanja. Pick the model from
+     * the scripts that are actually present before falling back to the course.
+     */
+    private fun wordLanguageTag(mode: StudyMode, word: String): String? {
+        var hasHan = false
+        var hasKana = false
+        var hasHangul = false
+        var index = 0
+        while (index < word.length) {
+            val codePoint = word.codePointAt(index)
+            index += Character.charCount(codePoint)
+            hasHan = hasHan || isHan(codePoint)
+            hasKana = hasKana || isKana(codePoint)
+            hasHangul = hasHangul || isHangul(codePoint)
+        }
+        return when {
+            hasHangul -> "ko"
+            hasKana -> "ja"
+            hasHan -> when (mode) {
+                StudyMode.SIMPLIFIED -> "zh-Hans"
+                StudyMode.TRADITIONAL, StudyMode.KOREAN -> "zh-Hant"
+                StudyMode.JAPANESE -> "ja"
+            }
+            else -> languageTag(mode)
+        }
     }
 
     /**
@@ -289,6 +387,24 @@ class InkRecognitionService {
  */
 object ModelDownloads {
     private val stateLock = Any()
+
+    /** Last known readiness per script, so screens do not re-probe Play Services. */
+    private val readyCache = mutableStateMapOf<StudyMode, ReadyEntry>()
+
+    fun cachedReady(mode: StudyMode, maxAgeMs: Long = 60_000L): Boolean? {
+        val entry = readyCache[mode] ?: return null
+        return entry.ready.takeIf {
+            System.currentTimeMillis() - entry.atMs <= maxAgeMs
+        }
+    }
+
+    internal fun recordReady(mode: StudyMode, ready: Boolean) = synchronized(stateLock) {
+        readyCache[mode] = ReadyEntry(ready, System.currentTimeMillis())
+    }
+
+    fun forgetReady(mode: StudyMode? = null) = synchronized(stateLock) {
+        if (mode == null) readyCache.clear() else readyCache.remove(mode)
+    }
 
     /** True while any model is being fetched, from any screen. */
     var active by mutableStateOf(false)
@@ -362,7 +478,24 @@ object ModelDownloads {
         failedRuns++
         offline = true
     }
+
+    /** One script's download state, so a failure in another script never leaks. */
+    fun stateFor(mode: StudyMode): ModeDownloadState = synchronized(stateLock) {
+        ModeDownloadState(
+            preparing = activeModes.contains(mode),
+            failed = failed && failedMode == mode,
+            offline = offline && failedMode == mode,
+        )
+    }
 }
+
+data class ModeDownloadState(
+    val preparing: Boolean,
+    val failed: Boolean,
+    val offline: Boolean,
+)
+
+private data class ReadyEntry(val ready: Boolean, val atMs: Long)
 
 /** True only while a download is running and the active script is not ready. */
 internal fun shouldWaitForInk(active: Boolean, ready: Boolean?): Boolean =
