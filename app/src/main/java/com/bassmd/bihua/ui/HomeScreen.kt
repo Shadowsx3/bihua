@@ -209,9 +209,9 @@ fun HomeScreen(
         // the two-page dashboard there too instead of stretching one column.
         val wide = maxWidth >= 700.dp
         val compactHero = maxHeight < 560.dp
-        // A short landscape window must show the study action, not a one-time
-        // invitation above it. The invite returns in a taller window.
-        val showInvite = showTourInvite && maxHeight >= 560.dp
+        // The one-time invitation is the main way into the tour. On a short
+        // window it uses the compact card so the study action still follows.
+        val showInvite = showTourInvite
         if (!book && !wide) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -236,6 +236,7 @@ fun HomeScreen(
                         onStart = onStartTour,
                         onDismiss = onDismissTour,
                         reduceMotion = reduceMotion,
+                        compact = compactHero,
                     )
                 }
             }
@@ -293,6 +294,18 @@ fun HomeScreen(
                                     .fillMaxWidth()
                                     .tourAnchor("home.start"),
                             )
+                            TextButton(
+                                onClick = onOpenQuest,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .tourAnchor("home.spell"),
+                            ) {
+                                Text(
+                                    "Extra practice · Spell quest",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = InkDark,
+                                )
+                            }
                         }
                     }
                 }
@@ -470,10 +483,11 @@ fun HomeScreen(
                     if (showInvite) {
                         item {
                             TourInviteCard(
-                        onStart = onStartTour,
-                        onDismiss = onDismissTour,
-                        reduceMotion = reduceMotion,
-                    )
+                                onStart = onStartTour,
+                                onDismiss = onDismissTour,
+                                reduceMotion = reduceMotion,
+                                compact = compactHero,
+                            )
                         }
                     }
                     if (resumeSession != null && !vacation) {
@@ -530,6 +544,18 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .tourAnchor("home.start"),
                                     )
+                                    TextButton(
+                                        onClick = onOpenQuest,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .tourAnchor("home.spell"),
+                                    ) {
+                                        Text(
+                                            "Extra practice · Spell quest",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = InkDark,
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -94,6 +94,12 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("synonyms", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="synonyms"),
     ScenarioSpec("tour", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour"),
     ScenarioSpec("tour-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="tour"),
+    ScenarioSpec("tour-large", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour", font_scale=1.5),
+    ScenarioSpec("tour-changed", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour_changed"),
+    ScenarioSpec("tour-rotation", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour_rotation"),
+    ScenarioSpec("tour-resume", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="tour_resume"),
+    ScenarioSpec("tour-vacation", level="standard", state={"reviews": 80, "new": 5, "days": 20, "vacation": True}, runner="tour"),
+    ScenarioSpec("tour-caught-up", level="standard", state={"reviews": 0, "new": 0, "known": 20, "goal": 0, "days": 30}, runner="tour"),
     ScenarioSpec("settings-outfit", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="settings_outfit"),
     ScenarioSpec("report-flow", level="standard", state={"reviews": 5, "new": 2, "days": 5}, runner="report_flow"),
     ScenarioSpec("report-flow-dark", level="standard", state={"reviews": 5, "new": 2, "days": 5, "theme": "DARK"}, runner="report_flow"),
@@ -2518,6 +2524,70 @@ def synonyms(journey: Journey, state: ScenarioState) -> None:
     journey.assert_no_crash()
 
 
+# The real control each stop talks about. The tour asks it to reveal itself;
+# if the label is not on screen, the spotlight has nothing honest to show.
+TOUR_TARGETS = {
+    "Hi, I’m Mò": ("Start studying", "Learn 2 new", "Practice instead", "Resume", "End vacation"),
+    "A new character": ("Time to write", "No reviews due", "All done for today", "Continue your lesson", "Reviews are paused"),
+    "Why things come back": ("Time to write", "No reviews due", "All done for today", "Continue your lesson", "Reviews are paused"),
+    "A quiet spell road": ("Extra practice · Spell quest",),
+    "Look anything up": ("Character, meaning, or reading",),
+    "Practice without pressure": ("Handwriting canvas",),
+    "The four buttons": ("Grading", "It slipped away.", "Easy"),
+    "Paper and lists": ("Paper and lists", "Sheets:", "Lists:"),
+    "No pen today?": ("Show-answer mode", "Off by default"),
+    "Phone and tablet, together": ("Start sharing", "This device is the source", "Sync with another device"),
+    "That’s the tour": ("Bihua 1.1.", "Made by Shadowsx3", "No account, no ads"),
+}
+
+
+def _tour_target(journey: Journey, title: str) -> None:
+    labels = TOUR_TARGETS.get(title)
+    if not labels:
+        return
+    deadline = time.time() + 3
+    while time.time() < deadline:
+        for label in labels:
+            if journey.find(label, timeout=0.4, exact=False) is not None:
+                return
+        time.sleep(0.2)
+    raise JourneyFailure(f"{title}: target not on screen: {labels}")
+
+
+def _walk_tour(journey: Journey, prefix: str = "tour") -> None:
+    journey.wait("Hi, I’m Mò", timeout=8)
+    _tour_target(journey, "Hi, I’m Mò")
+    journey.screenshot(f"{prefix}-1")
+    time.sleep(2.8)
+    # Tapping the nameplate advances too. On a narrow 1.5x landscape card the
+    # "Tap to continue" hint can sit below the card's inner scroll.
+    journey.tap("Hi, I’m Mò")
+    time.sleep(2.4)
+    journey.wait("A new character", timeout=8)
+    journey.assert_text("you grade it")
+    _tour_target(journey, "A new character")
+    journey.screenshot(f"{prefix}-2")
+    steps = [
+        ("Why things come back", "hard means sooner"),
+        ("A quiet spell road", "never changes your reviews"),
+        ("Look anything up", "strokes and words"),
+        ("Practice without pressure", "exactly where they are"),
+        ("The four buttons", "Easy: instant"),
+        ("Paper and lists", "Settings → Study"),
+        ("No pen today?", "Off by default"),
+        ("Phone and tablet, together", "choose Merge"),
+        ("That’s the tour", "Go write something"),
+    ]
+    for index, (title, body) in enumerate(steps, start=3):
+        journey.tap("Next")
+        time.sleep(2.4)
+        journey.wait(title, timeout=8)
+        journey.assert_text(body)
+        _tour_target(journey, title)
+        journey.screenshot(f"{prefix}-{index}")
+    journey.tap("Back to app")
+
+
 def tour(journey: Journey, state: ScenarioState) -> None:
     """Skip the invite, then replay Mò's live overlay tour from Settings."""
     with journey.step("invite is optional"):
@@ -2533,33 +2603,111 @@ def tour(journey: Journey, state: ScenarioState) -> None:
         _settings_section(journey, "Help & tour")
         journey.wait("Grading", timeout=8)
         journey.tap_visible("Start tour", max_scrolls=10)
-        journey.wait("Hi, I’m Mò", timeout=8)
         journey.screenshot("tour-1")
-    with journey.step("tap the dialogue to move on"):
-        time.sleep(2.8)
-        journey.tap("Tap to continue")
-        time.sleep(2.4)
+    with journey.step("walk every stop and keep its target visible"):
+        _walk_tour(journey)
+    journey.assert_home()
+
+
+def tour_resume(journey: Journey, state: ScenarioState) -> None:
+    """Open the tour while a paused session replaces the study hero."""
+    with journey.step("leave a session, then come back"):
+        journey.assert_home()
+        journey.start_session()
+        for _ in range(2):
+            journey.grade_one()
+        journey.force_stop()
+        journey.launch()
+        journey.assert_home()
+        journey.wait("Continue your lesson", timeout=8, exact=False)
+        journey.screenshot("tour-resume-home")
+    with journey.step("start from the invite over the resume card"):
+        journey.tap("Show me")
+        journey.wait("Hi, I’m Mò", timeout=8)
+        _walk_tour(journey, prefix="tour-resume")
+    journey.assert_home()
+    journey.assert_no_crash()
+
+
+def tour_rotation(journey: Journey, state: ScenarioState) -> None:
+    """Rotate in the middle of the tour and keep the stop on its target."""
+    with journey.step("start from the late invite in portrait"):
+        journey.assert_home()
+        journey.wait("Need a hand?", timeout=8)
+        journey.tap("Show me")
+        journey.wait("Hi, I’m Mò", timeout=8)
+        _tour_target(journey, "Hi, I’m Mò")
+        journey.screenshot("tour-rotation-portrait")
+    with journey.step("rotate on the second stop"):
+        time.sleep(2.6)
+        journey.tap("Hi, I’m Mò")
+        time.sleep(1.6)
         journey.wait("A new character", timeout=8)
-        journey.assert_text("you grade it")
-        journey.screenshot("tour-2")
-    steps = [
-        ("Why things come back", "hard means sooner"),
-        ("A quiet spell road", "never changes your reviews"),
-        ("Look anything up", "strokes and words"),
-        ("Practice without pressure", "exactly where they are"),
-        ("The four buttons", "Easy: instant"),
-        ("No pen today?", "Off by default"),
-        ("Paper and lists", "Settings → Study"),
-        ("Phone and tablet, together", "choose Merge"),
-        ("That’s the tour", "Go write something"),
-    ]
-    for index, (title, body) in enumerate(steps, start=3):
+        _set_rotation(journey, landscape=True)
+        time.sleep(1.8)
+        journey.wait("A new character", timeout=8)
+        _tour_target(journey, "A new character")
+        journey.screenshot("tour-rotation-landscape")
+    with journey.step("walk the live stops in landscape"):
+        for title, body in (
+            ("Why things come back", "hard means sooner"),
+            ("A quiet spell road", "never changes your reviews"),
+            ("Look anything up", "strokes and words"),
+            ("Practice without pressure", "exactly where they are"),
+        ):
+            journey.tap("Next")
+            time.sleep(2.2)
+            journey.wait(title, timeout=8)
+            journey.assert_text(body)
+            _tour_target(journey, title)
+    with journey.step("rotate back for the settings stops"):
+        _set_rotation(journey, landscape=False)
+        time.sleep(1.8)
         journey.tap("Next")
-        time.sleep(2.4)
-        journey.wait(title, timeout=8)
-        journey.assert_text(body)
-        journey.screenshot(f"tour-{index}")
-    journey.tap("Back to app")
+        time.sleep(2.2)
+        journey.wait("The four buttons", timeout=8)
+        _tour_target(journey, "The four buttons")
+        journey.screenshot("tour-rotation-settings-portrait")
+    with journey.step("finish in portrait"):
+        for title, body in (
+            ("Paper and lists", "Settings → Study"),
+            ("No pen today?", "Off by default"),
+            ("Phone and tablet, together", "choose Merge"),
+            ("That’s the tour", "Go write something"),
+        ):
+            journey.tap("Next")
+            time.sleep(2.2)
+            journey.wait(title, timeout=8)
+            journey.assert_text(body)
+            _tour_target(journey, title)
+        journey.tap("Back to app")
+        journey.assert_home()
+        _set_rotation(journey, landscape=False)
+    journey.assert_no_crash()
+
+
+def tour_changed(journey: Journey, state: ScenarioState) -> None:
+    """Start the tour after changing script, theme, and reduced motion."""
+    with journey.step("dismiss the invite, then change the app"):
+        journey.assert_home()
+        journey.wait("Need a hand?", timeout=8)
+        journey.tap("Not now")
+        time.sleep(0.4)
+        journey.tap("Japanese")
+        time.sleep(1.6)
+        _settings_section(journey, "Display")
+        journey.tap_visible("Dark", max_scrolls=12)
+        time.sleep(1.2)
+        if journey.exists("Back to settings", timeout=1.0):
+            journey.tap("Back to settings")
+            time.sleep(0.6)
+    with journey.step("start from help in the changed state"):
+        _settings_section(journey, "Help & tour")
+        journey.wait("Grading", timeout=8)
+        journey.tap_visible("Start tour", max_scrolls=10)
+        journey.screenshot("tour-changed-1")
+    with journey.step("walk every stop in the changed state"):
+        _walk_tour(journey, prefix="tour-changed")
     journey.assert_home()
 
 
@@ -4306,6 +4454,9 @@ RUNNERS = {
     "meaning_reveal": meaning_reveal,
     "synonyms": synonyms,
     "tour": tour,
+    "tour_changed": tour_changed,
+    "tour_rotation": tour_rotation,
+    "tour_resume": tour_resume,
     "settings_outfit": settings_outfit,
     "grade_help": grade_help,
     "spell_quest": spell_quest,

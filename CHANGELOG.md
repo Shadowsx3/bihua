@@ -54,6 +54,10 @@
   study log. Empty and first-session reports get their own guided layout.
 - Study tools now includes Character PDF, so the A4/Letter worksheet builder is
   one tap from Home instead of only Settings.
+- The guided tour keeps its spotlight on the real control after a script or
+  theme change, scrolls a help card into view, and moves beside its target in
+  landscape. The invitation appears at every window size, and a paused session
+  keeps the spell-quest link.
 - Character review history and the words list collapse independently, so a long
   detail page stays readable. The optional grade note is now a small header
   button after a grade, not a full-width row above the card.

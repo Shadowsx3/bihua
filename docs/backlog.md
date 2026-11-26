@@ -2,6 +2,24 @@
 
 Updated: 2026-11-26
 
+## Status at 20:40 (2026-11-26)
+
+- Guided tour audited on phone (tall, compact, landscape), tablet
+  (landscape, portrait, 7-inch), and both fold shapes, plus dark, 1.5x, a
+  script and theme change, a paused session, vacation, and caught-up data.
+- Tour fixes: an anchor is removed when its control leaves the tree, each stop
+  asks its target to scroll into view, the Help cards compose as one block, the
+  Sync stop anchors the open page, and the dialogue sizes to its copy (62% at
+  large text, 72% otherwise) instead of clipping on a short screen.
+- In landscape the dialogue moves beside a small target instead of covering its
+  label; the Characters search stays readable at 1.0 and 1.5x.
+- The tour invitation now appears on every window size (compact on short ones),
+  and a paused session keeps the Extra practice · Spell quest link so the spell
+  stop still has a real target.
+- New journeys: tour (all profiles), tour-large, tour-dark, tour-changed,
+  tour-rotation (rotate mid-tour), tour-resume, tour-vacation, and
+  tour-caught-up. All green. Onboarding pages pass on the same profiles.
+
 ## Status at 16:40 (2026-11-26)
 
 - The reader now has one shared, cached readiness path; Spell quest no longer
