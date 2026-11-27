@@ -2,6 +2,23 @@
 
 Updated: 2026-11-26
 
+## Status at 03:10 (2026-11-27)
+
+- **iOS release candidate:** 19/19 XCUITest journeys pass on iPhone 17 Pro and
+  iPad Pro 13-inch; Android `make check`, lint, compliance, content check, and
+  `make play-audit` are green.
+- **iOS archive:** `build/ios/Bihua.xcarchive` builds and is signed with the
+  development certificate. No widget, no App Group, no ML Kit. IPA export stops
+  at `No Accounts` / no App Store profile, so TestFlight and upload still need
+  the Xcode account and distribution profile.
+- **Android 1.1.2:** AAB and release APK rebuilt from the final shared tree;
+  versionCode 23, arm64-only, signed; AAB SHA-256
+  `416471f612735844dde0677290c3ee1d99d953f98f1f2e7ab54919fa4dfa5b06`.
+- **Docs:** privacy, support, App Privacy answers, age 16+, content rights,
+  screenshots, and the release runbook are current. Widgets and local sync are
+  absent by design; spell quest, PDF, compare, ML Kit reader, and sounds are
+  post-1.0.
+
 ## Status at 01:45 (2026-11-27)
 
 - **iOS 1.0 is feature-complete for the first review scope.** Onboarding,

@@ -173,8 +173,8 @@ make release
 . scripts/env.sh && ./gradlew :composeApp:bundleRelease
 ```
 
-`make release` writes `composeApp/build/outputs/apk/release/app-release.apk`; the bundle
-is `composeApp/build/outputs/bundle/release/app-release.aab`. Verify the signature and
+`make release` writes `composeApp/build/outputs/apk/release/composeApp-release.apk`; the bundle
+is `composeApp/build/outputs/bundle/release/composeApp-release.aab`. Verify the signature and
 version before hosting or uploading:
 
 ```bash
