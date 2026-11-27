@@ -39,8 +39,14 @@ class IosContentRepository {
             .filter { includeMature || !it.mature }
             .filter {
                 it.word.contains(needle, ignoreCase = true) ||
-                    it.reading.contains(needle, ignoreCase = true) ||
-                    it.meaning.contains(needle, ignoreCase = true)
+                    it.meaning.contains(needle, ignoreCase = true) ||
+                    Pinyin.matches(it.reading, needle) ||
+                    (mode == StudyMode.JAPANESE &&
+                        Romaji.normalise(Romaji.toHiragana(needle)).let { kana ->
+                            kana.isNotEmpty() && Romaji.normalise(it.reading).contains(kana)
+                        }) ||
+                    (mode == StudyMode.KOREAN &&
+                        Hangul.romanise(it.reading).lowercase().contains(needle))
             }
             .take(limit)
             .map { word ->

@@ -2,6 +2,8 @@ package com.bassmd.bihua.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,13 +92,21 @@ fun IosOnboardingScreen(
         }
 
         Spacer(Modifier.height(20.dp))
-        when (page) {
-            0 -> WelcomePage()
-            1 -> LoopPage()
-            2 -> CoursePage(selected = mode, onSelect = { mode = it })
-            else -> PetPage(petId = petId, onSelect = { petId = it })
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            when (page) {
+                0 -> WelcomePage()
+                1 -> LoopPage()
+                2 -> CoursePage(selected = mode, onSelect = { mode = it })
+                else -> PetPage(petId = petId, onSelect = { petId = it })
+            }
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             repeat(pages) { index ->
                 Box(

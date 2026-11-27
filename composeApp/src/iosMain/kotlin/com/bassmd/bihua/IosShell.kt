@@ -298,6 +298,7 @@ fun IosRouteScreen(
                 onOpenSettings = { onSelectTab(IosRoute.SETTINGS.id) },
                 onStudy = { onPush("review") },
                 onBrowse = { onSelectTab(IosRoute.CHARACTERS.id) },
+                onStudyList = { onPush("lists") },
                 onPractice = { onSelectTab(IosRoute.PRACTICE.id) },
                 onOpenCharacter = { entry -> onPush("character/${entry.id}") },
                 onPracticeWord = { word ->

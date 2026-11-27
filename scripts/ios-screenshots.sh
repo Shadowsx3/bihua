@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 # App Store 6.9-inch: iPhone 17 Pro Max. iPad 13-inch: iPad Pro 13-inch (M5).
 SIM="${1:-iPhone 17 Pro Max}"
-OUT=".qa/ios/store"
+OUT=".qa/ios/store/$(printf '%s' "$SIM" | tr ' ()' '-')"
 mkdir -p "$OUT"
 BUNDLE=com.bassmd.bihua
 

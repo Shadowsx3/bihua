@@ -602,6 +602,25 @@ fun HomeScreen(
                             }
                         }
                     }
+                    item {
+                        SoftCard(Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "Study lists",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = InkDark,
+                                    )
+                                    Text(
+                                        "A small set for a chapter, a trip, or a stubborn group.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = InkSoft,
+                                    )
+                                }
+                                TextButton(onClick = onStudyList) { Text("Open") }
+                            }
+                        }
+                    }
                 }
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxHeight(),

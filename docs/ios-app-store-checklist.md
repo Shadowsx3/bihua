@@ -106,7 +106,7 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 
 - iPhone 6.9-inch and iPad 13-inch, light and dark, from the frozen build.
 - Real captures of Home, the review loop, the dictionary, Characters, Practice,
-  and Progress. No splash, no widget imagery, no Mnemonic palace.
+  stroke order, and Progress. No splash, no widget imagery, no Mnemonic palace.
 - App icon: 1024 × 1024, no alpha. Confirm the final mark before submission.
 - Feature graphic is Play-only and must not be reused as an App Store asset.
 
