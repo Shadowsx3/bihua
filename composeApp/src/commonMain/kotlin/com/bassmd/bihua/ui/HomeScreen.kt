@@ -136,6 +136,8 @@ fun HomeScreen(
     onOpenStudyTools: () -> Unit = {},
     onOpenQuest: () -> Unit = {},
     onOpenMnemonicPalace: () -> Unit = {},
+    showStudyTools: Boolean = true,
+    showSpellQuest: Boolean = true,
     playerStats: com.bassmd.bihua.progress.PlayerStats,
     studyDays: Int,
     newToday: Int,
@@ -284,17 +286,19 @@ fun HomeScreen(
                                     .fillMaxWidth()
                                     .tourAnchor("home.start"),
                             )
-                            TextButton(
-                                onClick = onOpenQuest,
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .tourAnchor("home.spell"),
-                            ) {
-                                Text(
-                                    "Extra practice · Spell quest",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = InkDark,
-                                )
+                            if (showSpellQuest) {
+                                TextButton(
+                                    onClick = onOpenQuest,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .tourAnchor("home.spell"),
+                                ) {
+                                    Text(
+                                        "Extra practice · Spell quest",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = InkDark,
+                                    )
+                                }
                             }
                         }
                     }
@@ -314,6 +318,7 @@ fun HomeScreen(
                         onPractice = onPractice,
                         onEndVacation = { showEndVacation = true },
                         onOpenQuest = onOpenQuest,
+                        showSpellQuest = showSpellQuest,
                         compact = compactHero,
                     )
                 }
@@ -369,18 +374,20 @@ fun HomeScreen(
                     )
                 }
             }
-            item {
-                StudyToolsCard(
-                    summary = studySummary,
-                    entries = studyList,
-                    onOpenStudyTools = onOpenStudyTools,
-                    onOpenQuest = onOpenQuest,
-                    onOpenMnemonicPalace = onOpenMnemonicPalace,
-                    canOpenQuest = true,
-                    onDrill = onDrill,
-                    onPaper = onPaper,
-                    onStudyList = onStudyList,
-                )
+            if (showStudyTools) {
+                item {
+                    StudyToolsCard(
+                        summary = studySummary,
+                        entries = studyList,
+                        onOpenStudyTools = onOpenStudyTools,
+                        onOpenQuest = onOpenQuest,
+                        onOpenMnemonicPalace = onOpenMnemonicPalace,
+                        canOpenQuest = true,
+                        onDrill = onDrill,
+                        onPaper = onPaper,
+                        onStudyList = onStudyList,
+                    )
+                }
             }
             item {
                 SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
@@ -527,17 +534,19 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .tourAnchor("home.start"),
                                     )
-                                    TextButton(
-                                        onClick = onOpenQuest,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .tourAnchor("home.spell"),
-                                    ) {
-                                        Text(
-                                            "Extra practice · Spell quest",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = InkDark,
-                                        )
+                                    if (showSpellQuest) {
+                                        TextButton(
+                                            onClick = onOpenQuest,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .tourAnchor("home.spell"),
+                                        ) {
+                                            Text(
+                                                "Extra practice · Spell quest",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = InkDark,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -557,6 +566,7 @@ fun HomeScreen(
                                 onPractice = onPractice,
                                 onEndVacation = { showEndVacation = true },
                                 onOpenQuest = onOpenQuest,
+                                showSpellQuest = showSpellQuest,
                                 compact = compactHero,
                             )
                         }
@@ -593,18 +603,20 @@ fun HomeScreen(
                             onDayClick = { selectedDay = it },
                         )
                     }
-                    item {
-                        StudyToolsCard(
-                            summary = studySummary,
-                            entries = studyList,
-                            onOpenStudyTools = onOpenStudyTools,
-                            onOpenQuest = onOpenQuest,
-                            onOpenMnemonicPalace = onOpenMnemonicPalace,
-                            canOpenQuest = true,
-                            onDrill = onDrill,
-                            onPaper = onPaper,
-                            onStudyList = onStudyList,
-                        )
+                    if (showStudyTools) {
+                        item {
+                            StudyToolsCard(
+                                summary = studySummary,
+                                entries = studyList,
+                                onOpenStudyTools = onOpenStudyTools,
+                                onOpenQuest = onOpenQuest,
+                                onOpenMnemonicPalace = onOpenMnemonicPalace,
+                                canOpenQuest = true,
+                                onDrill = onDrill,
+                                onPaper = onPaper,
+                                onStudyList = onStudyList,
+                            )
+                        }
                     }
                     item {
                         SoftCard(Modifier.fillMaxWidth(), color = PaperWarm) {
@@ -840,6 +852,7 @@ private fun StudyHero(
     onPractice: () -> Unit,
     onEndVacation: () -> Unit,
     onOpenQuest: () -> Unit,
+    showSpellQuest: Boolean = true,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
@@ -953,7 +966,7 @@ private fun StudyHero(
                 Spacer(Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }
-            TextButton(
+            if (showSpellQuest) TextButton(
                 onClick = onOpenQuest,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)

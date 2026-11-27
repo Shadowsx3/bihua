@@ -108,7 +108,9 @@ composer.
 
 ## Third-party SDKs and AI
 
-Bihua includes Google ML Kit Digital Ink for handwriting candidates. The ink and
+On Android, Bihua includes Google ML Kit Digital Ink for handwriting candidates.
+The first iOS build does not link ML Kit; its review is self-graded against the
+reference and downloads no recognition model. The ink and
 the recognition candidates are processed on the device. Bihua does not send the
 ink itself, notes, review history, or study list to Google.
 
@@ -132,7 +134,7 @@ advertising SDK. ML Kit is the only third-party SDK that processes data for its
 own diagnostics. The app does not include an advertising ID permission and does
 not use the advertising identifier on either platform.
 
-For Google Play Data safety, the ML Kit diagnostics above are declared as
+For Google Play Data safety, the Android ML Kit diagnostics above are declared as
 collected by the app through the SDK and not shared. For the App Store privacy
 labels, the same diagnostics are declared under App info and performance, not
 linked to identity and not used for tracking. Bihua itself has no server and

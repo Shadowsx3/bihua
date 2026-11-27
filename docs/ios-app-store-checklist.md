@@ -52,13 +52,14 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 | Privacy policy URL | `https://shadowsx3.github.io/bihua/privacy.html`, now rewritten for Android and iOS (26 November 2026) | `docs/privacy.html`, `PRIVACY.md` |
 | Support URL | `https://github.com/shadowsx3/bihua` | repository |
 | Marketing URL | `https://shadowsx3.github.io/bihua/` | landing page |
-| Data collected by the developer | None. No name, photo, account, analytics, or ads | Architecture; `docs/compliance.md` |
-| Third-party SDK collection | ML Kit may send limited diagnostics and usage analytics; disclosed in About, the policy, and the listing | About paragraph, `PRIVACY.md` |
-| Data linked to the user | No account, so no identity link; declare App info/performance Diagnostics for ML Kit per Google's guidance | App Privacy answers |
+| Data collected by the developer | None. No name, photo, account, developer analytics, or ads. | Architecture; `docs/compliance.md` |
+| Third-party SDK collection | None in the first iOS build. ML Kit is not linked; no model download. | Podfile, build phase |
+| Data linked to the user | No. No account and no identity link. | App Privacy answers |
+| App Privacy answer | **Data Not Collected.** Do not select Diagnostics for iOS 1.0. Revisit if a later build links ML Kit. | App Privacy answers |
 | Tracking | No; no advertising identifier, no ATT prompt | `PrivacyInfo.xcprivacy` (`NSPrivacyTracking=false`) |
 | Tracking domains | None | manifest |
 | Privacy manifest | Shipped at `iosApp/Bihua/PrivacyInfo.xcprivacy`; the ML Kit pods ship their own | build bundle |
-| Required-reason APIs | File timestamps (`C617.1`), disk space (`E174.1`), system boot time (`35F9.1`). Add user defaults (`CA92.1`) only if NSUserDefaults is used. Trim with the first ITMS-91053 report | manifest |
+| Required-reason APIs | User defaults (`CA92.1`), file timestamps (`C617.1`), disk space (`E174.1`), system boot time (`35F9.1`). Trim with the first ITMS-91053 report | manifest |
 | iCloud backup | App data is written outside iCloud backup and `UIFileSharingEnabled=false` | Info.plist, Files seam |
 
 ## Encryption and export compliance
@@ -84,27 +85,28 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 1. Bihua has no account, sign-in, purchase, subscription, name field, or ads.
    The profile is a built-in drawn pet; no photo library is used. Open the app
    and it is ready.
-2. The first launch works offline: skip the optional setup, reach Home, and
-   start a review.
-3. The handwriting model is an optional download of about 20 MB. The app names
-   the size and stays usable without it; shape and stroke-order feedback runs
-   locally. This is data, not executable code (2.5.2).
-4. The reader uses Google ML Kit on-device. It receives no learner text or ink
-   off the device; diagnostics are disclosed in the policy and About.
-5. Local sync, home-screen widgets, and foldable layouts are Android-only in
-   the first iOS build and are absent, not shown as "Android only" inside the
-   app. The deferred WidgetKit code is not an Xcode target and is not embedded.
-6. The report composer ships without crash-file attachment on iOS and says so.
-7. The app is universal: test on iPhone and iPad, portrait and landscape. The
+2. The first launch works fully offline: reach Home, tap Learn 5 new, write on
+   the ink pad, reveal the reference, and grade the attempt.
+3. The first iOS build uses self-grading against the reference. There is no
+   handwriting-model download and no ML Kit reader in this build, so nothing is
+   sent to Google from the app itself.
+4. Local sync, home-screen widgets, foldable layouts, PDF reports, and crash
+   attachment are absent from this build, not shown as "Android only" inside
+   the app. The deferred WidgetKit code is not an Xcode target.
+5. The app is universal: test on iPhone and iPad, portrait and landscape. The
    profile uses drawn pet looks and asks for no personal data.
-8. Mature dictionary glosses are off by default and gated behind a
+6. Mature dictionary glosses are off by default and gated behind a
    confirmation; the rating is 16+.
+7. Privacy policy: https://shadowsx3.github.io/bihua/privacy.html
+   Choices: https://shadowsx3.github.io/bihua/privacy.html#rights
+8. App Privacy: **Data Not Collected**. The first iOS build does not link ML
+   Kit and downloads no model. Android separately declares ML Kit diagnostics.
 
 ## Screenshots and artwork
 
 - iPhone 6.9-inch and iPad 13-inch, light and dark, from the frozen build.
-- Real captures of Home, a review, the spell quest, Progress, and the report
-  composer. No splash, no widget imagery, no Mnemonic palace.
+- Real captures of Home, the review loop, the dictionary, Characters, Practice,
+  and Progress. No splash, no widget imagery, no Mnemonic palace.
 - App icon: 1024 × 1024, no alpha. Confirm the final mark before submission.
 - Feature graphic is Play-only and must not be reused as an App Store asset.
 

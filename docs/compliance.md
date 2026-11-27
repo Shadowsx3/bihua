@@ -5,11 +5,11 @@ document that proves them, and the checks that still need a person. The
 automated part is `make compliance`; the manual part is listed at the end.
 
 Status: Android 1.1.2 is built and held until iOS reaches parity. The iOS client
-is in P3: a native UIKit tab bar hosts shared Home, Progress, and Settings on
-iPhone and iPad. Widgets are deferred from the first build, so there is no
-`.appex`, no App Group, and no widget screenshot. Review, characters, practice,
-the shared data stores, and the remaining Swift seams are still being ported.
-Do not submit the iOS build until the P7 list is green.
+is now a working study app: native tab shell, real content, persisted FSRS
+progress, review, Characters, Dictionary, Practice, Progress, and Settings.
+Widgets and sync are absent from the first build. The iOS 1.0 binary does not
+link ML Kit, so App Privacy is **Data Not Collected**. Remaining parity work:
+spell quest, study lists, PDF/backup export, and the Swift seams.
 
 ## Product facts (both stores)
 
@@ -34,7 +34,7 @@ Do not submit the iOS build until the P7 list is green.
 | Requirement | Answer | Proof |
 |---|---|---|
 | Privacy policy URL | `https://shadowsx3.github.io/bihua/privacy.html` | `PRIVACY.md`, `docs/privacy.html` (deploy `docs/` before upload) |
-| Data safety | No developer collection. ML Kit diagnostics declared, collected, not shared; encryption yes; deletion by Start over/uninstall | `store/PLAY-CONSOLE-POLICY.md` |
+| Data safety | No developer collection. Android ML Kit diagnostics declared, collected, not shared; encryption yes; deletion by Start over/uninstall | `store/PLAY-CONSOLE-POLICY.md` |
 | Permissions | Internet, network state, notifications, WorkManager declarations only; no camera/mic/location/photos/contacts/all files/exact alarm/ad ID | `make compliance`, `make play-audit` |
 | Ads | No ads, no ad ID | Manifest, listing |
 | Families | Not directed to children; 16+ | Listing, policy |
@@ -45,11 +45,20 @@ Do not submit the iOS build until the P7 list is green.
 
 ## App Store
 
+**App Store Connect → App Privacy → Data Collection: choose “No, we do not
+collect data from this app” for the first iOS build.** The binary contains no
+ML Kit pod, no analytics SDK, no ads, no account, and no tracking. The policy
+must say the same thing (it does: the iOS 1.0 build does not include ML Kit).
+If a later build links ML Kit, change the answer to Yes → Diagnostics, not
+linked, not tracking, purposes App Functionality and Analytics, and update the
+policy in the same release.
+
+
 | Requirement | Answer | Proof |
 |---|---|---|
 | Privacy policy | Same page, iOS-aware | `PRIVACY.md`, `docs/privacy.html` |
-| App Privacy | No data collected by the developer; ML Kit diagnostics under App info and performance, not linked, not tracking | `docs/ios-app-store-checklist.md` |
-| Privacy manifest | `PrivacyInfo.xcprivacy`, tracking false; file timestamps, disk space, boot time | Built bundle, `make compliance` |
+| App Privacy | **Data Not Collected.** The iOS 1.0 build does not link ML Kit, has no account, analytics, ads, or tracking. Android separately declares ML Kit **Diagnostics** in Play Data safety. | `docs/ios-app-store-checklist.md`, `PRIVACY.md` |
+| Privacy manifest | `PrivacyInfo.xcprivacy`, tracking false; user defaults, file timestamps, disk space, boot time | Built bundle, `make compliance` |
 | Dynamic Type | All twelve content-size categories, xS to AX5, live update | `IosDynamicType`, `iosSimulatorArm64Test`, Home screenshot at Accessibility Large |
 | Pointer / trackpad | Indirect input events on | `Info.plist`, `make compliance` |
 | Permissions | Notifications only; no camera, microphone, photos, location, local network, ATT | `Info.plist`, `make compliance` |

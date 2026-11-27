@@ -111,6 +111,7 @@ fi
 if [ -f "$MANIFEST" ]; then
   grep -q "NSPrivacyTracking" "$MANIFEST" && grep -A1 "NSPrivacyTracking" "$MANIFEST" | grep -q "<false/>" \
     && ok "iOS privacy manifest tracking=false" || bad "iOS privacy manifest tracking missing/false"
+  grep -q "NSPrivacyAccessedAPICategoryUserDefaults" "$MANIFEST" && grep -q "CA92.1" "$MANIFEST" && ok "iOS manifest user defaults" || bad "iOS user-defaults reason missing"
   grep -q "NSPrivacyAccessedAPICategoryFileTimestamp" "$MANIFEST" && ok "iOS manifest file timestamps" || warn "iOS file timestamp reason missing"
   grep -q "NSPrivacyAccessedAPICategoryDiskSpace" "$MANIFEST" && ok "iOS manifest disk space" || warn "iOS disk reason missing"
   grep -q "NSPrivacyAccessedAPICategorySystemBootTime" "$MANIFEST" && ok "iOS manifest boot time" || warn "iOS boot-time reason missing"

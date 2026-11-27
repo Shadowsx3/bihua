@@ -339,7 +339,7 @@ answers are `docs/ios-app-store-checklist.md`.
       RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE only.
 - [ ] Confirm no debug/test flags, no debug signing, no analytics, no ads.
 - [ ] Data safety: ML Kit diagnostics, local crash files, no account/server.
-- [ ] Content rating and audience: 13+, mature opt-in, no Families.
+- [ ] Content rating and audience: 16+, mature opt-in, no Families.
 - [ ] Reviewer notes: no account, clean offline device usable, optional reader
       download, local crash report, arm64-only.
 - [ ] Privacy policy and landing page current.

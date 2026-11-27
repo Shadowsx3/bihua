@@ -62,6 +62,7 @@ fun ReviewOverviewScreen(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
     startRevealed: Boolean = false,
+    onGrade: (CharacterEntry, Int) -> Unit = { _, _ -> },
 ) {
     var index by rememberSaveable { mutableIntStateOf(0) }
     var revealed by rememberSaveable { mutableStateOf(startRevealed) }
@@ -102,6 +103,7 @@ fun ReviewOverviewScreen(
 
     val card = cards[index]
     fun advance(grade: Int) {
+        onGrade(card, grade)
         grades = grades + grade
         index += 1
         revealed = false

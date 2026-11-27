@@ -7,7 +7,7 @@ final class BihuaUITests: XCTestCase {
 
     private func launch(_ arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-reset-settings"] + arguments
+        app.launchArguments = ["-reset-settings", "-reset-progress"] + arguments
         app.launch()
         return app
     }
@@ -18,6 +18,12 @@ final class BihuaUITests: XCTestCase {
 
     /// iPhone exposes the native tab bar as `tabBars`; iPadOS 26 draws it as a
     /// top control. Accept either, then fall back to any element with the label.
+    private func containing(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", label))
+            .firstMatch
+    }
+
     private func tabButton(_ app: XCUIApplication, _ label: String) -> XCUIElement {
         let tab = app.tabBars.buttons[label]
         if tab.waitForExistence(timeout: 2) { return tab }
@@ -28,7 +34,7 @@ final class BihuaUITests: XCTestCase {
 
     func testHomeStartsAReviewAndGradesIt() {
         let app = launch()
-        let start = element(app, "Start studying")
+        let start = element(app, "Learn 5 new")
         XCTAssertTrue(start.waitForExistence(timeout: 15))
         start.tap()
 
@@ -42,7 +48,13 @@ final class BihuaUITests: XCTestCase {
         XCTAssertTrue(good.waitForExistence(timeout: 5))
         good.tap()
 
-        XCTAssertTrue(app.staticTexts["2 / 4"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["2 / 5"].waitForExistence(timeout: 5))
+
+        // The grade is written to the progress file, not just to local state.
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(app.staticTexts["4 new characters ready"].waitForExistence(timeout: 15))
     }
 
     func testTabsAndSettingsPersistACourseChoice() {
@@ -131,6 +143,38 @@ final class BihuaUITests: XCTestCase {
         let start = element(app, "Start studying")
         XCTAssertTrue(start.waitForExistence(timeout: 15))
         XCTAssertTrue(start.isHittable)
+    }
+
+    func testDictionarySearchesTheOfflineWords() {
+        let app = launch()
+        tabButton(app, "Characters").tap()
+        element(app, "Dictionary").tap()
+        XCTAssertTrue(app.staticTexts["Words in Simplified"].waitForExistence(timeout: 10))
+        let field = element(app, "Search a word, reading, or mean...")
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        origin.withOffset(CGVector(dx: field.frame.midX, dy: field.frame.midY)).tap()
+        app.typeText("love")
+        XCTAssertTrue(element(app, "爱情").waitForExistence(timeout: 10))
+    }
+
+    func testSettingsShowsThePracticeControls() {
+        let app = launch()
+        tabButton(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Appearance"].waitForExistence(timeout: 10))
+        for _ in 0..<3 {
+            app.swipeUp()
+        }
+        XCTAssertTrue(app.staticTexts["Daily new lessons"].waitForExistence(timeout: 5))
+        let write = containing(app, "Write the character")
+        let mature = containing(app, "Mature examples")
+        let reduce = containing(app, "Reduce motion")
+        for _ in 0..<6 where !mature.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(write.exists)
+        XCTAssertTrue(mature.exists)
+        XCTAssertTrue(reduce.exists)
     }
 
     func testPracticeTabOpensTheFreePad() {

@@ -121,11 +121,20 @@ struct RootTabsView: UIViewControllerRepresentable {
             image: UIImage(systemName: icon),
             selectedImage: UIImage(systemName: icon)
         )
+        if route == "characters" {
+            let dictionary = UIBarButtonItem(
+                image: UIImage(systemName: "character.book.closed.fill"),
+                primaryAction: UIAction { _ in onPush("dictionary") }
+            )
+            dictionary.accessibilityLabel = "Dictionary"
+            screen.navigationItem.rightBarButtonItem = dictionary
+        }
         return navigation
     }
 
     private static func title(for route: String) -> String {
         if route == "review" { return "Review" }
+        if route == "dictionary" { return "Dictionary" }
         let last = route.split(separator: "/").last.map(String.init) ?? route
         return last.split(separator: ":").last.map(String.init) ?? last
     }

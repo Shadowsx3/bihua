@@ -1,15 +1,20 @@
 package com.bassmd.bihua.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -21,6 +26,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.settings.AppSettings
@@ -50,6 +58,7 @@ fun SettingsOverviewScreen(
     onCourseChange: (StudyMode) -> Unit,
     onPetChange: (String) -> Unit,
     onOpenPrivacy: () -> Unit,
+    onSettingsChange: (AppSettings) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -103,6 +112,82 @@ fun SettingsOverviewScreen(
                             onClick = { onCourseChange(mode) },
                         )
                     }
+                }
+            }
+        }
+        item {
+            SoftCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Daily new lessons", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    Text(
+                        "A small number is easier to keep. Reviews always come first.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StepButton("−", enabled = settings.dailyNewGoal > 1) {
+                            onSettingsChange(settings.copy(dailyNewGoal = settings.dailyNewGoal - 1))
+                        }
+                        Text(
+                            "${settings.dailyNewGoal}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = InkDark,
+                            modifier = Modifier.padding(horizontal = 18.dp),
+                        )
+                        StepButton("+", enabled = settings.dailyNewGoal < 20) {
+                            onSettingsChange(settings.copy(dailyNewGoal = settings.dailyNewGoal + 1))
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            SoftCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Practice", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    ToggleRow("Write the character", "The core task. Keep it on unless you only need to read.", settings.writingPractice) {
+                        onSettingsChange(settings.copy(writingPractice = it))
+                    }
+                    ToggleRow("Say it aloud", "Adds a pronunciation task to the rotation.", settings.pronunciationPractice) {
+                        onSettingsChange(settings.copy(pronunciationPractice = it))
+                    }
+                    ToggleRow("Choose the meaning", "Adds a meaning task to the rotation.", settings.meaningPractice) {
+                        onSettingsChange(settings.copy(meaningPractice = it))
+                    }
+                    ToggleRow("Read aloud", "Use the system voice on the word card.", settings.readAloud) {
+                        onSettingsChange(settings.copy(readAloud = it))
+                    }
+                    ToggleRow("Sound effects", "Short, quiet feedback for a finished action.", settings.soundEffects) {
+                        onSettingsChange(settings.copy(soundEffects = it))
+                    }
+                    ToggleRow("Mature examples", "Show explicit dictionary examples after a confirmation.", settings.includeMatureContent) {
+                        onSettingsChange(settings.copy(includeMatureContent = it))
+                    }
+                    ToggleRow("Reduce motion", "Stop bobbing, confetti, and long transitions.", settings.reduceMotion) {
+                        onSettingsChange(settings.copy(reduceMotion = it))
+                    }
+                }
+            }
+        }
+        item {
+            SoftCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Reminders", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    ToggleRow(
+                        "Study reminder",
+                        "One quiet local notification at ${settings.reminderHour.toString().padStart(2, '0')}:" +
+                            "${settings.reminderMinute.toString().padStart(2, '0')} on the days you choose. " +
+                            "Off by default.",
+                        settings.remindersEnabled,
+                    ) {
+                        onSettingsChange(settings.copy(remindersEnabled = it))
+                    }
+                    Text(
+                        "The system asks for notification permission only when you turn this on. " +
+                            "No reminder is sent to a server.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
                 }
             }
         }
@@ -167,6 +252,68 @@ private fun ChoicePill(
             style = MaterialTheme.typography.labelLarge,
             color = InkDark,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = if (enabled) Mint.copy(alpha = 0.24f) else InkSoft.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, InkSoft.copy(alpha = 0.16f)),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleLarge,
+            color = if (enabled) InkDark else InkSoft.copy(alpha = 0.4f),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    title: String,
+    detail: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = InkDark)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+        }
+        Spacer(Modifier.width(10.dp))
+        IosToggle(checked)
+    }
+}
+
+@Composable
+private fun IosToggle(checked: Boolean) {
+    val track = if (checked) Mint else InkSoft.copy(alpha = 0.22f)
+    Box(
+        modifier = Modifier
+            .width(51.dp)
+            .height(31.dp)
+            .clip(CircleShape)
+            .background(track),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .padding(2.dp)
+                .size(27.dp)
+                .clip(CircleShape)
+                .background(Color.White),
         )
     }
 }

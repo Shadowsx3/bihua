@@ -8,9 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		1501DEF88436A97C4248392A /* BihuaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F1FC04F37A2AA63702FBB4 /* BihuaUITests.swift */; };
+		48724F787D07411149DCA698 /* content_traditional.json in Resources */ = {isa = PBXBuildFile; fileRef = B7F13160EFB76B885ECE52D8 /* content_traditional.json */; };
+		4C7265C4D41610CE2CE9F23D /* content_simplified.json in Resources */ = {isa = PBXBuildFile; fileRef = F51A9C1E7FF2C9C8C67283B3 /* content_simplified.json */; };
+		5B95988B7E089773F9F732DB /* content_korean.json in Resources */ = {isa = PBXBuildFile; fileRef = 73848E353725A6A4F18A3247 /* content_korean.json */; };
 		94F77BC643DFC9D979A7B7EE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */; };
 		986E73724D57C8FF0A419AFD /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02E01D5A5353BE7B82B3B288 /* RootView.swift */; };
 		9B31D7AEB59F1D37DDEF8AFF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */; };
+		A49F5C3D9A2C169551BF3952 /* content_japanese.json in Resources */ = {isa = PBXBuildFile; fileRef = 5C69D627F53E6903BB82063E /* content_japanese.json */; };
 		BB79D99DAB7D2383FD37F384 /* RootTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */; };
 		D2112E265BEE9CD9FA758228 /* BihuaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */; };
 /* End PBXBuildFile section */
@@ -30,11 +34,15 @@
 		10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BihuaApp.swift; sourceTree = "<group>"; };
 		1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabs.swift; sourceTree = "<group>"; };
 		463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		5C69D627F53E6903BB82063E /* content_japanese.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = content_japanese.json; sourceTree = "<group>"; };
 		5CB651110315480FC65479AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		68F9259BE20FC70B401F1E70 /* Bihua.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Bihua.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		73848E353725A6A4F18A3247 /* content_korean.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = content_korean.json; sourceTree = "<group>"; };
 		B5F1FC04F37A2AA63702FBB4 /* BihuaUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BihuaUITests.swift; sourceTree = "<group>"; };
+		B7F13160EFB76B885ECE52D8 /* content_traditional.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = content_traditional.json; sourceTree = "<group>"; };
 		BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F3955A1EC61C6756854D436E /* BihuaUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BihuaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F51A9C1E7FF2C9C8C67283B3 /* content_simplified.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = content_simplified.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -56,6 +64,17 @@
 			);
 			sourceTree = "<group>";
 		};
+		AF13AD20EBAA8800F3F15C43 /* Content */ = {
+			isa = PBXGroup;
+			children = (
+				5C69D627F53E6903BB82063E /* content_japanese.json */,
+				73848E353725A6A4F18A3247 /* content_korean.json */,
+				F51A9C1E7FF2C9C8C67283B3 /* content_simplified.json */,
+				B7F13160EFB76B885ECE52D8 /* content_traditional.json */,
+			);
+			path = Content;
+			sourceTree = "<group>";
+		};
 		E1CCB903792FA7B1E1AE472A /* Bihua */ = {
 			isa = PBXGroup;
 			children = (
@@ -65,6 +84,7 @@
 				463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */,
 				1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */,
 				02E01D5A5353BE7B82B3B288 /* RootView.swift */,
+				AF13AD20EBAA8800F3F15C43 /* Content */,
 			);
 			path = Bihua;
 			sourceTree = "<group>";
@@ -158,6 +178,10 @@
 			files = (
 				94F77BC643DFC9D979A7B7EE /* Assets.xcassets in Resources */,
 				9B31D7AEB59F1D37DDEF8AFF /* PrivacyInfo.xcprivacy in Resources */,
+				A49F5C3D9A2C169551BF3952 /* content_japanese.json in Resources */,
+				5B95988B7E089773F9F732DB /* content_korean.json in Resources */,
+				4C7265C4D41610CE2CE9F23D /* content_simplified.json in Resources */,
+				48724F787D07411149DCA698 /* content_traditional.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
