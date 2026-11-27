@@ -1,10 +1,10 @@
 package com.bassmd.bihua.spellbook
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 import kotlin.random.Random
 
 class PuzzleForgeTest {
@@ -51,8 +51,8 @@ class PuzzleForgeTest {
             puzzle.solutions.forEach { solution ->
                 val family = solution.families.single()
                 assertTrue(
-                    "$family carries no accepted tag for ${obstacle.id}",
                     parts.familyTags.getValue(family).any { it in obstacle.accepts },
+                    "$family carries no accepted tag for ${obstacle.id}",
                 )
             }
         }
@@ -66,7 +66,7 @@ class PuzzleForgeTest {
             val solved = puzzle.solutions.flatMap { it.families }.toSet()
             parts.familyTags.forEach { (family, tags) ->
                 if (tags.any { it in obstacle.accepts }) {
-                    assertTrue("$family fits ${obstacle.id} but was not accepted", family in solved)
+                    assertTrue(family in solved, "$family fits ${obstacle.id} but was not accepted")
                 }
             }
         }
@@ -162,8 +162,8 @@ class PuzzleForgeTest {
     fun everyFamilyPuzzleHasSeveralHonestAnswers() {
         repeat(200) { seed ->
             val puzzle = PuzzleForge.generate(parts, Random(seed))
-            assertTrue("${puzzle.prompt} has ${puzzle.solutions.size} answers",
-                puzzle.solutions.size >= 2)
+            assertTrue(puzzle.solutions.size >= 2,
+                "${puzzle.prompt} has ${puzzle.solutions.size} answers")
         }
     }
 
@@ -198,12 +198,13 @@ class PuzzleForgeTest {
         )
         repeat(500) { seed ->
             val place = PuzzleForge.generate(parts, Random(seed)).place
-            assertTrue("double under: $place", !place.lowercase().contains("under") ||
-                place.lowercase().indexOf("under") == place.lowercase().lastIndexOf("under"))
+            assertTrue(!place.lowercase().contains("under") ||
+                place.lowercase().indexOf("under") == place.lowercase().lastIndexOf("under"),
+                "double under: $place")
             val words = place.lowercase().split(" ").filter { it.isNotBlank() }
-            words.zipWithNext().forEach { (a, b) -> assertTrue("repeat in $place", a != b) }
+            words.zipWithNext().forEach { (a, b) -> assertTrue(a != b, "repeat in $place") }
             clashes.forEach { (a, b) ->
-                assertTrue("$a/$b in $place", !(a in place.lowercase() && b in place.lowercase()))
+                assertTrue(!(a in place.lowercase() && b in place.lowercase()), "$a/$b in $place")
             }
         }
     }

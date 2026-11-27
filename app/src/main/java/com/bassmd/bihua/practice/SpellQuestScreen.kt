@@ -110,10 +110,12 @@ import com.bassmd.bihua.spellbook.EffectStyle
 import com.bassmd.bihua.spellbook.QuestGenerator
 import com.bassmd.bihua.spellbook.QuestScene
 import com.bassmd.bihua.spellbook.QuestSolver
+import com.bassmd.bihua.spellbook.PuzzleParts
 import com.bassmd.bihua.spellbook.QuestSpell
 import com.bassmd.bihua.spellbook.Spell
 import com.bassmd.bihua.spellbook.SpellFamilies
 import com.bassmd.bihua.spellbook.Spellbook
+import com.bassmd.bihua.spellbook.load
 import com.bassmd.bihua.ui.FoldState
 import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding
@@ -247,7 +249,7 @@ private fun SpellQuestContent(
     }
     // The authored obstacle and setting parts. Every scene is built fresh from
     // these; there is no fixed puzzle library in the app.
-    val parts = remember { com.bassmd.bihua.spellbook.PuzzleParts.load(context) }
+    val parts = remember { PuzzleParts.load(context) }
     val byGlyph = remember(characters) {
         characters.associate { entry ->
             entry.character to QuestSpell(entry.character, "", entry.reading, entry.meaning)

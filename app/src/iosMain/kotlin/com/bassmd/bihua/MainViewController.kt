@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
 import kotlin.math.roundToInt
 import androidx.compose.ui.window.ComposeUIViewController
+import com.bassmd.bihua.platform.IosPlatformServices
+import com.bassmd.bihua.platform.Services
 import platform.UIKit.UIViewController
 
 private val SpikePaper = Color(0xFFF7F1E3)
@@ -164,4 +166,7 @@ private fun PressureProbe() {
     }
 }
 
-fun MainViewController(): UIViewController = ComposeUIViewController { IosSpikeScreen() }
+fun MainViewController(): UIViewController {
+    Services.install(IosPlatformServices())
+    return ComposeUIViewController { IosSpikeScreen() }
+}

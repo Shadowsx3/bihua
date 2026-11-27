@@ -1,5 +1,7 @@
 package com.bassmd.bihua.spellbook
 
+import com.bassmd.bihua.spellbook.fromDatabase
+
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals

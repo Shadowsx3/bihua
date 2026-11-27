@@ -65,6 +65,7 @@ import com.bassmd.bihua.content.StudyStatus
 import com.bassmd.bihua.spellbook.Spell
 import com.bassmd.bihua.spellbook.SpellCategories
 import com.bassmd.bihua.spellbook.Spellbook
+import com.bassmd.bihua.spellbook.load
 import com.bassmd.bihua.ui.FoldState
 import com.bassmd.bihua.ui.LocalFoldState
 import com.bassmd.bihua.ui.appNavigationBarsPadding

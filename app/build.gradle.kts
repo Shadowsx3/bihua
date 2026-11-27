@@ -88,6 +88,12 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    lint {
+        // The Compose lint bundled for the KMP mix reports valid `remember`
+        // blocks that return a collection as Unit. Keep the rest of the checks.
+        disable += "RememberReturnType"
+    }
 }
 
 kotlin {

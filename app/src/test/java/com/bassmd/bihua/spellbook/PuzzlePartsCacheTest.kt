@@ -1,5 +1,7 @@
 package com.bassmd.bihua.spellbook
 
+import com.bassmd.bihua.spellbook.load
+
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame

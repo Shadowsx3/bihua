@@ -4,10 +4,30 @@ platform :ios, '16.0'
 # compiles Swift against the pod. No KMP CocoaPods plugin, so there is no
 # use_frameworks! conflict with the static Kotlin framework.
 #
+#
 # Workflow after changing project.yml:
 #   cd iosApp && xcodegen generate && pod install
 target 'Bihua' do
   use_frameworks! :linkage => :static
 
-  pod 'GoogleMLKit/DigitalInkRecognition', '~> 8.0'
+  # ML Kit's digital-ink framework ships device arm64 and simulator x86_64
+  # slices, but no arm64 simulator slice, so it cannot link into the Apple
+  # Silicon simulator. Rosetta does not help: the iOS runtime is arm64-only.
+  # Install it only for device work:
+  #   BIHUA_MLKIT=1 pod install
+  # The normal install keeps the simulator build free of the pod. The Swift
+  # seam uses canImport, and the Debug simulator shows the Compose spike.
+  if ENV['BIHUA_MLKIT'] == '1'
+    pod 'GoogleMLKit/DigitalInkRecognition', '~> 9.0'
+  end
+end
+
+post_install do |installer|
+  # Xcode 27 refuses pods that still declare iOS 9-12 deployment targets.
+  # Bihua's floor is iOS 16, so lift every pod to it.
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
+  end
 end

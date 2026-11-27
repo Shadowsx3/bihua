@@ -13,8 +13,30 @@ struct ComposeView: UIViewControllerRepresentable {
 }
 
 struct RootView: View {
+    @State private var probe = "Compose host"
+
     var body: some View {
-        ComposeView()
-            .ignoresSafeArea(.container, edges: .all)
+        ZStack(alignment: .bottom) {
+            ComposeView()
+                .ignoresSafeArea(.container, edges: .all)
+            Text(probe)
+                .font(.caption2)
+                .foregroundStyle(.black.opacity(0.72))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.white.opacity(0.78), in: Capsule())
+                .padding(.bottom, 18)
+        }
+        .task {
+            #if DEBUG
+            #if canImport(MLKitDigitalInkRecognition)
+            MlKitProbe.run { result in
+                DispatchQueue.main.async { probe = result }
+            }
+            #else
+            probe = "BihuaKit · simulator"
+            #endif
+            #endif
+        }
     }
 }

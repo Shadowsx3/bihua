@@ -1,10 +1,10 @@
 package com.bassmd.bihua.spellbook
 
 import kotlin.random.Random
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class QuestGeneratorTest {
 
@@ -85,8 +85,8 @@ class QuestGeneratorTest {
             val scenes = QuestGenerator.chapter(6, 1, Random(seed), spells, byGlyph, emptySet(), parts)
             scenes.forEach { scene ->
                 assertTrue(
-                    "${scene.spell.family} cannot solve ${scene.puzzle.prompt}",
                     QuestSolver.solve(scene.puzzle, scene.spell.family, scene.spell.character) is CastResult.Solved,
+                    "${scene.spell.family} cannot solve ${scene.puzzle.prompt}",
                 )
             }
         }

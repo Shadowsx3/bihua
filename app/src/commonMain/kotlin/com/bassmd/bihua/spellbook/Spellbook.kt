@@ -1,5 +1,7 @@
 package com.bassmd.bihua.spellbook
 
+import kotlin.concurrent.Volatile
+
 /**
  * One spell in the grimoire. Written by tools/spells/build_spellbook.py and
  * checked by tools/audit_spells.py; the app only reads it.
@@ -26,12 +28,12 @@ object Spellbook {
     @Volatile
     private var cached: List<Spell>? = null
 
-    /** Parses the shipped table once per process; the book and quest share it. */
-    fun load(context: android.content.Context): List<Spell> =
-        cached ?: synchronized(this) {
-            cached ?: context.assets.open("spellbook.csv").bufferedReader().useLines { parse(it) }
-                .also { cached = it }
-        }
+    /**
+     * Parses the shipped table once per process; the book and quest share it.
+     * The platform supplies the rows, so this stays in commonMain.
+     */
+    fun load(rows: () -> Sequence<String>): List<Spell> =
+        cached ?: parse(rows()).also { cached = it }
 
     /**
      * Parses the spellbook CSV. Notes are the last column and may contain
