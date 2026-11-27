@@ -72,6 +72,7 @@ help:
 	@echo "make ios-ipad-device  the same on the connected iPad"
 	@echo "make ios-ipad-device-shot NAME=home  capture the iPad"
 	@echo "make compliance  Play and App Store compliance audit"
+	@echo "make ios-ui-test XCUITest journeys on the iPhone simulator"
 	@echo "make hooks     install the git pre-commit hook"
 	@echo "make clean     remove build output (keeps screenshots)"
 	@echo "make clean-shots  delete screenshots"
@@ -270,6 +271,9 @@ ios-ipad-device-id:
 
 compliance:
 	@scripts/compliance.sh
+
+ios-ui-test:
+	@scripts/ios.sh ui-test "$${BIHUA_IOS_DEVICE:-iPhone 17 Pro}"
 
 hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"

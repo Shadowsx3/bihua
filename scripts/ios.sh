@@ -4,6 +4,7 @@
 #   scripts/ios.sh run [simulator]      build, boot, install, launch
 #   scripts/ios.sh build                framework + Xcode Debug simulator build
 #   scripts/ios.sh test                 Android unit tests + iosSimulatorArm64Test
+#   scripts/ios.sh ui-test [device]     XCUITest journeys on a simulator
 #   scripts/ios.sh shot [name]          screenshot to .qa/ios/<name>.png
 #   scripts/ios.sh boot [simulator]     boot a simulator
 #   scripts/ios.sh reset [simulator]    uninstall the app (clean first run)
@@ -78,6 +79,17 @@ framework() {
     *) task=":composeApp:linkDebugFrameworkIosSimulatorArm64" ;;
   esac
   ./gradlew "$task" --console=plain
+}
+
+ui_test() {
+  local dest
+  dest="$(sim_udid "${1:-iPhone 17 Pro}")"
+  xcodebuild test \
+    -project iosApp/Bihua.xcodeproj \
+    -scheme Bihua \
+    -destination "id=$dest" \
+    -derivedDataPath "$DERIVED" \
+    CODE_SIGNING_ALLOWED=NO
 }
 
 build() {
@@ -172,6 +184,7 @@ case "${1:-run}" in
   test)
     ./gradlew :composeApp:testDebugUnitTest :composeApp:iosSimulatorArm64Test --console=plain
     ;;
+  ui-test) ui_test "${2:-}" ;;
   shot) shot "${2:-screen}" ;;
   reset) xcrun simctl uninstall "$(sim_udid)" "$BUNDLE_ID" 2>/dev/null || true ;;
   devices)
@@ -186,7 +199,7 @@ case "${1:-run}" in
   device-shot) device_shot "${2:-device}" "${3:-}" ;;
   device-id) physical_udid "${2:-}" ;;
   *)
-    echo "usage: scripts/ios.sh [run|build|test|shot|boot|reset|devices|dark|light|pods|mlkit-pods|device-build|device-run|device-shot|device-id] [simulator or name]" >&2
+    echo "usage: scripts/ios.sh [run|build|test|ui-test|shot|boot|reset|devices|dark|light|pods|mlkit-pods|device-build|device-run|device-shot|device-id] [simulator or name]" >&2
     exit 2
     ;;
 esac

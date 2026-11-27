@@ -81,7 +81,12 @@ fun IosRouteScreen(
         BihuaTheme(themeMode = settings.themeMode) {
             BihuaBackground(decorated = true) {
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-                    ReviewOverviewScreen(cards = cards, onDone = onPop)
+                    ReviewOverviewScreen(
+                        cards = cards,
+                        onDone = onPop,
+                        startRevealed = platform.Foundation.NSProcessInfo.processInfo.arguments
+                            .contains("-review-answer"),
+                    )
                 }
             }
         }

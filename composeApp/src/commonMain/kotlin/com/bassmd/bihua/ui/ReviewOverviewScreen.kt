@@ -61,9 +61,10 @@ fun ReviewOverviewScreen(
     cards: List<CharacterEntry>,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    startRevealed: Boolean = false,
 ) {
     var index by rememberSaveable { mutableIntStateOf(0) }
-    var revealed by rememberSaveable { mutableStateOf(false) }
+    var revealed by rememberSaveable { mutableStateOf(startRevealed) }
     var grades by remember { mutableStateOf(listOf<Int>()) }
     var strokes by remember { mutableStateOf(listOf<List<Offset>>()) }
     var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
@@ -205,20 +206,6 @@ fun ReviewOverviewScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
-        }
-        if (revealed) {
-            item {
-                SoftCard(Modifier.fillMaxWidth(), color = Mint.copy(alpha = 0.16f)) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text(card.character, fontSize = 64.sp, color = InkDark)
-                        Text(
-                            card.meaning,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkSoft,
-                        )
-                    }
-                }
-            }
         }
     }
     if (revealed) {
