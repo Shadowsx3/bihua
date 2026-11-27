@@ -19,10 +19,14 @@ class IosGuideRepository {
     private val shards = mutableMapOf<Int, Map<String, GuideDto>>()
 
     suspend fun guide(glyphGroupId: String): CharacterGuide? = withContext(Dispatchers.Default) {
+        runCatching { loadGuide(glyphGroupId) }.getOrNull()
+    }
+
+    private fun loadGuide(glyphGroupId: String): CharacterGuide? {
         val shard = glyphGroupId.sumOf { it.code } % 32
         val entries = shards.getOrPut(shard) { load(shard) }
-        val dto = entries[glyphGroupId] ?: return@withContext null
-        CharacterGuide(
+        val dto = entries[glyphGroupId] ?: return null
+        return CharacterGuide(
             strokes = dto.strokes.map { stroke ->
                 GuideStroke(
                     points = stroke.points.map { Offset(it[0], it[1]) },

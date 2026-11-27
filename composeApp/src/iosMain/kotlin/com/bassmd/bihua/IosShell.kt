@@ -19,6 +19,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,7 +120,7 @@ fun IosRouteScreen(
     }
 
     val characters by produceState<List<CharacterEntry>?>(null, mode) {
-        value = IosDesk.content.characters(mode)
+        value = runCatching { IosDesk.content.characters(mode) }.getOrDefault(emptyList())
     }
     val revision = IosDesk.progress.revision
     val decorated = remember(characters, revision) {
@@ -127,21 +128,29 @@ fun IosRouteScreen(
     }
     val activity = remember(revision, today) { IosDesk.progress.activity(35) }
     val featured by produceState<WordContext?>(null, mode, today) {
-        value = IosDesk.content.featuredWord(
-            mode = mode,
-            epochDay = today.toEpochDays().toInt(),
-        )
+        value = runCatching {
+            IosDesk.content.featuredWord(
+                mode = mode,
+                epochDay = today.toEpochDays().toInt(),
+            )
+        }.getOrNull()
     }
 
     if (routeId?.startsWith("stroke/") == true) {
         val id = routeId.removePrefix("stroke/")
         Themed(settings.themeMode, maxWidth = 760.dp) {
             val entry = decorated?.firstOrNull { it.id == id }
+            var guideFinished by androidx.compose.runtime.remember(entry?.id) {
+                androidx.compose.runtime.mutableStateOf(false)
+            }
             val guide by androidx.compose.runtime.produceState<com.bassmd.bihua.content.CharacterGuide?>(
                 initialValue = null,
                 entry?.glyphGroupId,
             ) {
-                if (entry != null) value = IosDesk.guides.guide(entry.glyphGroupId)
+                if (entry != null) {
+                    value = runCatching { IosDesk.guides.guide(entry.glyphGroupId) }.getOrNull()
+                }
+                guideFinished = true
             }
             if (entry == null) {
                 Loading()
@@ -149,7 +158,7 @@ fun IosRouteScreen(
                 StrokeOrderScreen(
                     entry = entry,
                     guide = guide,
-                    loading = guide == null,
+                    loading = !guideFinished,
                 )
             }
         }

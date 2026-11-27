@@ -21,7 +21,7 @@ class IosContentRepository {
     private val cache = mutableMapOf<StudyMode, LoadedContent>()
 
     suspend fun characters(mode: StudyMode): List<CharacterEntry> =
-        withContext(Dispatchers.Default) { load(mode).characters }
+        withContext(Dispatchers.Default) { runCatching { load(mode).characters }.getOrDefault(emptyList()) }
 
     suspend fun find(mode: StudyMode, id: String): CharacterEntry? =
         withContext(Dispatchers.Default) { load(mode).characters.firstOrNull { it.id == id } }
@@ -34,7 +34,7 @@ class IosContentRepository {
     ): List<WordContext> = withContext(Dispatchers.Default) {
         val needle = query.trim().lowercase()
         if (needle.isEmpty()) return@withContext emptyList()
-        load(mode).words
+        runCatching { load(mode).words }.getOrDefault(emptyList())
             .asSequence()
             .filter { includeMature || !it.mature }
             .filter {
@@ -66,7 +66,7 @@ class IosContentRepository {
         epochDay: Int,
         includeMature: Boolean = false,
     ): WordContext? = withContext(Dispatchers.Default) {
-        val words = load(mode).words
+        val words = runCatching { load(mode).words }.getOrDefault(emptyList())
             .filter { !it.mature || includeMature }
             .filter { it.level != null && it.level <= 2 }
         if (words.isEmpty()) return@withContext null
