@@ -31,16 +31,32 @@ The script generates the Xcode project, archives `Release`, writes an
 `ExportOptions.plist` for App Store Connect, and exports the IPA to
 `build/ios/export/`.
 
-If Xcode reports “No Accounts”, sign in under Xcode → Settings → Accounts and
-enable automatic signing for `com.bassmd.bihua`. The first iOS build needs no
-App Group and no special capability.
+The archive itself succeeds on the tested tree:
+
+```bash
+build/ios/Bihua.xcarchive
+```
+
+Export currently stops with:
+
+```text
+error: exportArchive No Accounts
+error: No profiles for 'com.bassmd.bihua' were found
+```
+
+That is an account/provisioning blocker, not a code failure. Sign in under
+Xcode → Settings → Accounts, enable automatic signing for `com.bassmd.bihua`,
+and re-run the script. The first iOS build needs no App Group, widgets, or ML
+Kit capability.
 
 ## Upload
 
 Use Xcode Organizer, Transporter, or `altool` with an App Store Connect API key.
 The key file and issuer id stay outside the repository (`*.p8` is ignored).
-The key id from the filename is only half of the credential; the issuer id is
-in App Store Connect → Users and Access → Integrations.
+The key id from the filename is only half of the credential; the issuer id and
+the provider public id are in App Store Connect → Users and Access →
+Integrations. `altool` needs the issuer id; Transporter can use the key after it
+is installed.
 
 ```bash
 xcrun altool --upload-app -f build/ios/export/Bihua.ipa -t ios \

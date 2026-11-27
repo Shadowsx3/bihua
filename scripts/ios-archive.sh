@@ -17,8 +17,15 @@ mkdir -p "$OUT"
 
 (cd iosApp && xcodegen generate >/dev/null && pod install >/dev/null 2>&1)
 
+WORKSPACE=()
+if [ -d iosApp/Bihua.xcworkspace ]; then
+  WORKSPACE=(-workspace iosApp/Bihua.xcworkspace)
+else
+  WORKSPACE=(-project iosApp/Bihua.xcodeproj)
+fi
+
 xcodebuild archive \
-  -project iosApp/Bihua.xcodeproj \
+  "${WORKSPACE[@]}" \
   -scheme Bihua \
   -configuration Release \
   -destination "generic/platform=iOS" \
