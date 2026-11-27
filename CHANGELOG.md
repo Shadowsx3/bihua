@@ -1,5 +1,8 @@
 ## 1.1.2 (in progress)
 
+- The profile is a hand-drawn Mò pet in twelve looks, chosen from a 3 x 4 grid.
+  There is no name field and no photo picker; the app never opens the photo
+  library. Home greets you by time of day instead of by name.
 - Report a problem, a mistake, or an idea from Settings. Crash reports stay on
   your phone until you send one, and the composer shows exactly what will be
   sent. In landscape the sheet is centred on the screen and keeps its words and

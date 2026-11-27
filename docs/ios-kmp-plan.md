@@ -1,10 +1,20 @@
-# Bihua iOS plan — Compose Multiplatform, no widgets, no local sync
+# Bihua iOS plan — Compose Multiplatform, native shell, WidgetKit
 
-Status: **P0 complete, P1 in progress on `ios/kmp`**, branched from
-`android-1.1.2-rc23` (then kept current with `main`). Android on `main` stays
-the shippable client; the iOS target and Apple dependencies exist only on the
-port branch. The Apple Developer Program is renewed through November 2027
-(team `DUST62RX27`); a real iPhone is connected for device evidence.
+Status: **P3 in progress on `main`**. The port no longer lives on a branch:
+`composeApp/` and `iosApp/` sit side by side in this repository. Home, Progress,
+Settings, the theme, calendar, charts, and pet render on iPhone and iPad behind
+a native UIKit tab bar. The WidgetKit extension is built. Review, characters,
+practice, the shared stores, and the remaining seams are next. Android 1.1.2 is
+built but held until iOS reaches parity. The Apple Developer Program is renewed
+through November 2027 (team `DUST62RX27`); a real iPhone and iPad are connected
+for device evidence.
+
+> **Superseded decisions (26 November 2026).** D3 changed: WidgetKit is now in
+> scope and the Today, Week ahead, and Word widgets are built in
+> `iosApp/BihuaWidgets`. iOS still has no local sync, foldable target, or crash
+> attachment. Anything later in this historical plan that says "no widgets" or
+> "widgets are Android-only" is superseded by `docs/ios-architecture.md` and
+> `docs/ios-feature-parity.md`.
 
 Working documents:
 
@@ -77,7 +87,7 @@ Before P0:
 |---|---|---|
 | D1 | Share the Compose UI, not just the domain | 35,000 of 45,660 lines are Compose screens. A SwiftUI rewrite would be 250 to 400 hours of UI and a permanent second codebase. |
 | D2 | Swift only for platform seams | ML Kit, speech, PDF, file picking, sharing, notifications, stylus force, image decode. Twelve small files, not a second app. |
-| D3 | No home-screen widgets on iOS | Deferred. Android widgets stay. WidgetKit is a separate project with its own art pipeline. |
+| D3 | WidgetKit widgets on iOS | Superseded 26 November 2026: Today, Week ahead, and Word widgets now ship in `iosApp/BihuaWidgets`. They read one App Group snapshot and never link Compose. |
 | D4 | No local sync on iOS | Removes the only Kotlin/Native-hostile piece (`java.net.ServerSocket`, `javax.net.ssl`, NSD). Android keeps it. |
 | D5 | No crash attachment on iOS at launch | AGENTS already states this. `CrashLog`/`CrashHandler` stay Android. The report composer ships without the checkbox. |
 | D6 | No SKIE | With a shared UI, Swift never consumes Kotlin flows or suspend functions. Seams are callback-based interfaces exported as ObjC protocols. |
@@ -177,7 +187,7 @@ Package sizes for planning:
 | `practice` | 6,967 | `SpellQuestScreen`, `GrimoireScreen` context use | `commonMain` |
 | `audio` | 553 | all | `androidMain` + Swift |
 | `reminder` | 245 | all | `androidMain` + Swift |
-| `widget` | 882 | all | Android only |
+| `widget` | 882 | Android providers | Android providers stay; iOS has SwiftUI WidgetKit views and a shared snapshot contract |
 | `worksheet` | 439 | `WorksheetPdf` | shared layout + Swift PDF |
 | `sync` | 437 | all | Android only |
 | `ai` | 569 | 2 files | mixed |
@@ -668,7 +678,7 @@ Plan:
 | Feature | Android | iOS | Guard |
 |---|---|---|---|
 | Local sync | Full TLS pairing | Absent | `capabilities.localSync = false`; hide row and search entry |
-| Widgets / outfit | Today, Week, Word | Absent | `capabilities.widgets = false`; hide Display rows |
+| Widgets / outfit | Today, Week, Word with outfit picker | Today, Week, Word with hour/state costume; outfit picker absent | `capabilities.widgets = true`; no outfit row on iOS |
 | Foldables | Book, tabletop | Absent | `capabilities.foldables = false` |
 | Crash attachment | Checkbox in report | Absent | `capabilities.crashAttach = false`; copy says traces are Android only |
 | Rate | Play listing | `apps.apple.com/app/id…` | `capabilities.rateUrl` |
@@ -721,8 +731,8 @@ Every guard needs a test: the Settings search must not return a hidden row, and
    empty.
 7. **PDF page model.** Worksheet grid geometry and the progress report render the
    expected page count, and text is extractable from the generated file.
-8. **Capability hiding.** Search "sync" and "widget" in Settings and get nothing
-   on iOS.
+8. **Capability hiding.** Search "sync" and "foldable" in Settings and get
+   nothing on iOS; widgets are present.
 9. **Dynamic Type layout.** 1.5x and 2.0x on Home, review, Settings, character
    detail: no clipped titles, no content under the home indicator.
 10. **No other-platform leakage (2.3.10).** A test over every user-facing string
@@ -824,8 +834,8 @@ Nothing here may claim an iOS feature that does not exist.
 Updated 26 November 2026: `PRIVACY.md` and `docs/privacy.html` now cover both
 platforms (Android-only sync, iOS Application Support and no iCloud backup, ML
 Kit AI/third-party SDK, both permission sets, App Store rating row). The landing
-page marks widgets, foldables, and sync as Android, states that iOS is in
-progress, and adds no App Store link before the build exists. The App Store
+page marks foldables and sync as Android, states that widgets are on Android
+and built for iOS, and that iOS is in progress, and adds no App Store link before the build exists. The App Store
 checklist and local listing are in `docs/ios-app-store-checklist.md` and
 `store/ios-listing.md`. Deploy `docs/` before linking the policy from either
 store.
@@ -860,11 +870,11 @@ learner taps; the App Store page is opened by the OS.
 |---|---|---|
 | 74 | kicker "Android · pen or finger · offline" | "Android and iOS · pen or finger · offline" |
 | 88 | "Android 10+ · arm64" | Add "iOS 16+" beside it |
-| 193 | "the widgets use the same paper-ink pet" | "on Android"; iOS has no widgets |
+| 193 | "the widgets use the same paper-ink pet" | "on both platforms"; WidgetKit draws the same pet |
 | 239 | "Apple Pencil is not supported because Bihua is an Android app." | Replace with the truth: Pencil draws; pressure detail is Android-only until the force spike lands |
 | 522–538 | foldables section | Mark Android-only, or move under an Android heading |
 | download section | APK only | Add the App Store link, keep the APK card, and label both |
-| 595–602 | "Today and Week ahead widgets" | "on Android" |
+| 595–602 | "Today and Week ahead widgets" | "on Android, and built for iPhone/iPad" |
 | feature table / chips | "Local sync", "widgets" | Add "Android" tags |
 
 Also update `docs/manifest.webmanifest` description if it names Android, and the
@@ -884,9 +894,9 @@ Per AGENTS, store material stays local in `store/`. Create
   no tracking; no advertising identifier.
 - No IAP, no subscription, no donation link.
 - Screenshots: iPhone 6.9-inch and iPad 13-inch, light and dark, from the frozen
-  build; no widget imagery.
+  build; widget captures are allowed.
 - Review notes: offline first run works, the model download is optional, there is
-  no account, and local sync/widgets are Android-only.
+  no account, local sync and foldables are Android-only, and widgets are present.
 
 ### Things to keep true
 
@@ -928,7 +938,7 @@ Assumes one agent working continuously. Hours are work, not calendar.
 | P2 | SQLDelight + schema 18 + fixture test; settings via path DataStore; content copy; backup zip | 40–64 | Android fixture opens and round-trips on iOS |
 | P3 | Compose UI to `commonMain`: Home, review, characters, dictionary, settings, progress | 80–120 | Screen pass on iPhone and iPad, light/dark, 1.5x |
 | P4 | Swift seams: ML Kit, speech, sounds, share, picker, PDF, reminders, network, links, clipboard | 48–72 | Every seam has a Swift test and a Kotlin fake |
-| P5 | Spell quest, worksheet PDF, study lists, tour, onboarding | 40–56 | Feature parity list green except sync/widgets/crash |
+| P5 | Spell quest, worksheet PDF, study lists, tour, onboarding | 40–56 | Feature parity list green except sync/foldables/crash |
 | P6 | Test migration, idb harness, goldens, a11y pass, performance | 40–64 | 20 iOS scenarios green; no clipped layouts at 2.0x |
 | P7 | Store: signing (needs the owner), TestFlight, privacy labels, screenshots | 16–24 | Build approved for TestFlight |
 | — | **Total** | **304–464 h** | Roughly 25 to 38 days at a 55% duty cycle |
@@ -958,7 +968,7 @@ notes text.
 | 35 Compose tests stay Android-only | Less coverage on iOS | XCUITest + `idb` scenarios; commonTest for all pure logic |
 | No Apple account yet | No TestFlight, simulator only | Start enrollment in parallel; simulator evidence is enough until P7 |
 | Android branch churn | Merge pain | Freeze 1.1.2; do the split on `ios/kmp` from the tagged release |
-| Scope creep back to widgets/sync | Weeks lost | Written out of scope; guards in `Capabilities` and tests that assert the rows are gone |
+| Scope creep back to a second sync stack | Weeks lost | Local sync stays out of scope; guards in `Capabilities` and tests that assert the row is gone |
 | Liquid Glass mismatch on iOS 26 | Looks dated, or a late shell rewrite | Option A with the migration seams; decide after the first visual pass; option B costs +30 to 50 h and is documented |
 | Age rating disagreement over mature glosses | Rejection or a removal request | 16+ with the descriptor; off by default; offer a build without explicit glosses if a reviewer objects |
 | DSA trader status missed | App pulled from all EU storefronts | Decide before submission; EU off is an acceptable first release |
@@ -975,8 +985,8 @@ notes text.
       implementation, and a fake for tests.
 - [ ] A real Android v18 database opens, reviews, and round-trips through backup
       on iOS.
-- [ ] Settings search returns nothing for sync, widgets, or crash attachment on
-      iOS, and the fields survive a backup.
+- [ ] Settings search returns nothing for sync, foldables, or crash attachment
+      on iOS, and the fields survive a backup. Widgets are present.
 - [ ] Offline first run works: skip setup, Home, start a review, Show answer.
 - [ ] Recognition degrades to local shape and order feedback when the model is
       absent, with a readable notice.

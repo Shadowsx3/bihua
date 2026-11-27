@@ -2,6 +2,36 @@
 
 Updated: 2026-11-26
 
+## Status at 23:30 (2026-11-26)
+
+- **1.1.2 is on hold until iOS reaches parity.** The Android AAB and APK are
+  built and audited; do not upload until both clients are ready.
+- **Native iOS shell:** `UITabBarController` + one `UINavigationController` per
+  tab now hosts the shared Home, Characters, Progress, and Settings screens.
+  Home hides the navigation bar; the other tabs use large titles. Character
+  detail pushes another Compose screen with a native back button. The tab bar
+  is the iOS 26 system glass bar.
+- **Shared iOS screens:** Settings covers appearance, course, the twelve-pet
+  picker, and About/privacy. Progress covers level, known/review/new, the study
+  calendar, and the learned chart. Characters covers search, status filters, a
+  real grid, and a read-only detail with example words. All use the shared
+  theme and models; the data is sample state until the P2 stores land.
+- **WidgetKit extension:** Today, Week ahead, and Word of the day, with small,
+  medium, large, and lock-screen families, drawn in SwiftUI from the same
+  palette and pet. The app writes one App Group snapshot; the extension never
+  links Compose.
+- **Profile and compliance:** no name, no photo picker, no photo library; twelve
+  drawn pets. Dynamic Type xS–AX5, pointer events, system light/dark, privacy
+  manifest, opaque 1024 icon, and `make compliance` checks are in place.
+- **Blocker:** the team provisioning profile has no App Groups capability, so
+  real-device builds stop at signing for the app and the widget extension.
+  Enable `group.com.bassmd.bihua` for both bundle ids in the Apple Developer
+  account and sign Xcode in; do not remove the entitlement to force a build.
+  Simulator builds and `make compliance` are green.
+- **Next:** shared settings/progress/content stores, then review, practice,
+  dictionary, study lists, and the Swift seams (ML Kit, speech, share, picker,
+  PDF, reminders).
+
 ## Status at 20:40 (2026-11-26)
 
 - Guided tour audited on phone (tall, compact, landscape), tablet

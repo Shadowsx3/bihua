@@ -17,8 +17,6 @@ data class BackupBundle(
     val exportedAtEpochMs: Long,
     val profile: UserProfile,
     val settings: AppSettings,
-    /** The current avatar, embedded so a backup can move to another device. */
-    val photoBase64: String? = null,
 ) {
     companion object {
         const val FORMAT = "bihua-backup"

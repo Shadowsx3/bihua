@@ -12,22 +12,22 @@ design).
 |---|---|---|---|---|
 | Onboarding pages | Yes | shared | P5 | Script, pace, brush, recall; skip works offline |
 | Guided tour | Yes | shared | P5 | Anchors, spotlight, invite, rotation; no Android-only copy |
-| Home | Yes | shared | P3 | Today, resume, word of the day, stats |
+| Home | Yes | shared | done | Today, resume, word of the day, stats, calendar, pet; sample state until the shared stores land |
 | Review session | Yes | shared | P3 | Meet/Trace/Write/Reveal, grades, reasons, undo |
 | Pronunciation / meaning tasks | Yes | shared | P3 | Optional modes, no canvas |
-| Characters grid and detail | Yes | shared | P3 | Search, filters, notes, synonyms, history |
+| Characters grid and detail | Yes | shared | in progress | Search, status filters, real tiles, and a read-only detail with example words; notes, synonyms, history, and the store follow |
 | Dictionary | Yes | shared | P3 | Offline, four scripts |
 | Practice canvas | Yes | shared | P3 | Free practice, guide, stroke playback |
 | Compare | Yes | shared | P3 | Up to four characters |
 | Word practice | Yes | shared | P5 | Whole-word canvas and one-by-one fallback |
 | Spell quest and grimoire | Yes | shared domain + UI | P5 | Puzzle data bundled |
-| Progress | Yes | shared | P3 | Ranges, heatmap, study days |
+| Progress | Yes | shared | done | Level, known/review/new, calendar, learned chart; sample state until P2 |
 | Progress PDF | Yes | shared model + Swift writer | P4 | Save/Share through the picker and share sheet |
 | Worksheet PDF | Yes | shared model + Swift writer | P5 | A4/Letter |
 | Study lists | Yes | shared | P5 | Create, rename, import, export |
 | Known-list import | Yes | shared | P5 | Parser and preview; picker seam |
 | Backup export/import | Yes | shared zip + picker | P4 | Android backup round-trips on iOS |
-| Settings and search | Yes | shared | P3 | Hidden rows are absent from search on iOS |
+| Settings and search | Yes | shared | in progress | Appearance, course, pet, About/privacy; platform rows land with their capabilities |
 | Reminders | Yes | seam | P4 | `UNUserNotificationCenter` one-shot |
 | Speech | Yes | seam | P4 | `AVSpeechSynthesizer`, 5 s init timeout |
 | Sounds | Yes | seam | P4 | `AVAudioEngine` with the same tables |
@@ -39,7 +39,7 @@ design).
 | Rate | Play listing | seam | P4 | App Store URL once the record exists |
 | Clipboard | ClipboardManager | seam | P4 | `UIPasteboard` |
 | Local sync | Yes | **Android** | — | `capabilities.localSync = false`; absent from Settings and search |
-| Widgets and outfits | Yes | **Android** | — | `capabilities.widgets = false` |
+| Widgets | Yes | WidgetKit SwiftUI | done | Today, Week ahead, Word of the day in small/medium/large where families allow, plus lock-screen accessory families. The app writes one App Group snapshot; the extension never links Compose. Outfit choice stays Android-only. |
 | Foldable book layouts | Yes | **Android** | — | iOS is iPhone/iPad only, no foldable target; `capabilities.foldables = false` |
 | Crash attachment in report | Yes | **Android** | — | `capabilities.crashAttach = false`; the composer says traces are Android only on the store page, not in the app |
 | Privacy policy | Yes | shared link | P7 | About to the iOS-aware page |
@@ -48,8 +48,8 @@ design).
 ## Parity gates
 
 1. `docs/ios-feature-parity.md` has no "planned" row left for a 1.0 feature.
-2. Settings search on iOS returns nothing for sync, widgets, foldables, or
-   crash attachment.
+2. Settings search on iOS returns nothing for sync, foldables, or crash
+   attachment; widgets are present.
 3. The iOS bundle contains no "Android" string, Play badge, or Android-only
    imagery. The report composer prints `iOS` and the device model.
 4. Every Android journey that covers a shared screen has an iOS equivalent in
@@ -61,7 +61,9 @@ design).
 
 ## Deliberate differences
 
-- iOS has no local sync, widgets, or foldable-fold layout.
+- iOS has no local sync or foldable-fold layout. Widgets are present but the
+  Android outfit picker does not apply; the iOS pet costume follows the hour
+  and state.
 - iOS notifications use the system permission sheet; iOS may hide the app's
   reminder row until permission is granted.
 - The iOS home indicator and safe areas replace Android's gesture insets; the

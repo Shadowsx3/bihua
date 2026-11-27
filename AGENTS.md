@@ -30,19 +30,33 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 - Android is the shipped client. Version 1.1.2 (code 23) is the release
   candidate; the signed RC is built and audited but not uploaded. Release is on
   hold.
-- The iOS port is **P0 complete, P1 in progress on `ios/kmp`**. `main` stays
-  the shippable Android client; never add Apple dependencies or an iOS target
-  to `main`. Branch rules and the phase order are in `docs/ios-kmp-plan.md`.
-- Shared today: the `spellbook` domain and the platform seams
-  (`AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`). The architecture,
-  source-set rules, and migration ledger are in `docs/ios-architecture.md`.
-- iOS hides sync, widgets, foldable layouts, and crash attachment through
-  `Capabilities`. It never labels them "Android only" inside the app. The
-  parity table is `docs/ios-feature-parity.md`.
+- The iOS port lives on `main` in the same repository: `composeApp/` is the
+  shared KMP module and `iosApp/` is the Xcode host plus the WidgetKit
+  extension. Do not create a second branch or a separate app folder.
+- Shared today: theme, components, Home, Progress, Settings, pet avatars,
+  calendar, charts, content and settings models, FSRS, spellbook, and the
+  platform seams (`AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`). The
+  architecture and migration ledger are in `docs/ios-architecture.md`.
+- iOS uses a native `UITabBarController` + `UINavigationController` shell; the
+  screen content is Compose. iOS hides sync, foldable layouts, and crash
+  attachment through `Capabilities`; it has WidgetKit widgets and never labels
+  an absent feature "Android only". The parity table is
+  `docs/ios-feature-parity.md`.
+- The app and the `BihuaWidgets` extension share only the App Group
+  `group.com.bassmd.bihua`, keyed `widget_snapshot`. Keep the Kotlin wire names
+  and `iosApp/WidgetShared/WidgetSnapshot.swift` in sync; never put user notes,
+  review history, or personal data in the widget document.
 - ML Kit iOS has no arm64 simulator slice. Use `make ios-mlkit-pods` for a
   device build; the simulator stays on the Compose host. Recognition is proven
   on a real iPad.
-- New in 1.1.2: Today and Week ahead widgets; Progress All time and the year
+- Widgets need the App Group `group.com.bassmd.bihua` on both bundle ids
+  (`com.bassmd.bihua` and `com.bassmd.bihua.widgets`). The current team
+  provisioning profile does not include it, so `make ios-device-build` stops at
+  signing until the capability is enabled in the Apple Developer account and
+  Xcode is signed in. Simulator builds work with `CODE_SIGNING_ALLOWED=NO`;
+  never remove the App Group to make a device build pass.
+- New in 1.1.2: Today, Week ahead, and Word widgets on Android, with the same
+  three WidgetKit widgets built for iOS; Progress All time and the year
   heatmap; local crash files and the report composer; the seamless splash;
   two-page Home/Practice and spell-quest landscape; the 65% chapter-coloured
   guide; and the offline first-run path.
@@ -262,7 +276,7 @@ scripts/journey.sh --standard --screenshots
   pulse when motion is reduced; screen readers get the full line at once.
 - Sound cues are optional (`soundEffects`) and synthesised in `audio/Sfx.kt`.
   Use them for meaningful feedback, not every tap.
-- The widget pet wears one tiny costume from the same Mò palette: a graduation
+- The Android widget pet wears one tiny costume from the same Mò palette: a graduation
   hat while work waits by day, a monocle on the Word widget, a witch hat in the
   evening, a vampire at night, a nightcap on vacation, and a party hat when the
   desk is clear. Settings → Display → Mò's widget outfit opens a preview-and-

@@ -4,8 +4,11 @@ This is the working contract for the port. The product plan and phases stay in
 `docs/ios-kmp-plan.md`; this file explains how the code is arranged, what is
 allowed in each source set, and how to build, run, and test both clients.
 
-Status: P0 complete, P1 in progress on `ios/kmp`. The shared UI and data layer
-grow in P2-P5. Nothing here changes the Android release on `main`.
+Status: P3 in progress on `main`. Home, Progress, Settings, the theme, calendar,
+charts, and pet avatars are shared and render behind a native UIKit tab bar and
+navigation stack. The WidgetKit extension is built. Review, characters,
+practice, the shared data stores, and the remaining Swift seams are next. The
+Android release stays on hold until iOS reaches parity.
 
 ## Source sets
 
@@ -24,8 +27,12 @@ composeApp/src/
   androidDebug/AndroidManifest.xml
   androidUnitTest/kotlin/   Robolectric and JVM-only tests
   androidUnitTest/resources/
-  iosMain/kotlin/           Compose entry point, Foundation platform services
+  iosMain/kotlin/           Compose entry point, routes, Foundation services, widget snapshot
   iosTest/kotlin/           native-driver tests (P2)
+iosApp/
+  Bihua/                    Swift host, native tab bar, gallery, privacy manifest
+  WidgetShared/             WidgetKit views and the Codable snapshot contract
+  BihuaWidgets/             WidgetKit extension and timeline providers
 ```
 
 Rules:
@@ -34,8 +41,10 @@ Rules:
   SDK. It may use Compose Multiplatform and `kotlinx.*`.
 - `androidMain` keeps the current behaviour. It is allowed to import Android
   and Jetpack Compose while the shared UI is not there yet.
-- Android-only packages stay out of iOS: `sync`, `widget`, `reminder` worker,
-  the crash handler, the ML Kit Android service.
+- Android-only packages stay out of iOS: `sync`, the Android `widget`
+  provider, `reminder` worker, the crash handler, the ML Kit Android service.
+  iOS widgets live in `iosApp/BihuaWidgets` and share only the App Group
+  snapshot; they never link the Compose framework.
 - `iosMain` never imports Android packages. Swift holds only platform seams,
   never screen code or business logic.
 - Compose code that is shared must be portable: no `LocalContext`, no
@@ -54,7 +63,7 @@ Implemented in P0/P1:
 |---|---|---|---|
 | `AppInfo` | version, build, platform, device, OS, debug | `BuildConfig`, `Build` | `NSBundle`, `UIDevice` |
 | `AppFiles` | app-private dirs, byte read/write/delete | `Context.filesDir` | Application Support / Caches, excluded from iCloud backup |
-| `Capabilities` | what this build offers | sync, widgets, foldables, crash attach true | all false; rate URL empty until the App Store record |
+| `Capabilities` | what this build offers | sync, widgets, foldables, crash attach true | widgets true; sync, foldables, crash attach false; rate URL empty until the App Store record |
 | `LinkOpener` | open a URL | `Intent.ACTION_VIEW` | `UIApplication.openURL` |
 
 `Services.install(...)` is called once by each shell before the first Compose
@@ -117,8 +126,6 @@ imports a picture.
 - Motion: `reduceMotion` comes from settings and the platform accessibility
   flag. Perpetual UI animation is not allowed (it breaks TalkBack and
   uiautomator idle).
-- Dynamic Type: map `UIContentSizeCategory` to a font scale and test 1.5x and
-  2.0x.
 
 ## Capabilities and parity
 
@@ -129,11 +136,35 @@ native shell and screen review list is `docs/ios-design-guidelines.md`.
 Every platform-only row is checked by a capability, never by an OS name in the
 UI:
 
-- iOS hides Sync, widgets, crash attachment, and foldable-only rows.
+- iOS hides Sync, crash attachment, and foldable-only rows; widgets are present.
 - Search finds none of the hidden entries.
 - The iOS report composer prints `iOS` and the device model, never an Android
   release or SDK string.
 - The strings test fails on "Android" or Play imagery in the iOS bundle.
+
+## Widgets
+
+Three WidgetKit widgets live in `iosApp/BihuaWidgets`: Today (small, medium,
+lock-screen accessory), Week ahead (medium, large, accessory), and Word of the
+day (small, medium, accessory). They are pure SwiftUI, so the extension never
+loads the Compose framework or a database. The app writes one JSON document to
+the App Group `group.com.bassmd.bihua` under `widget_snapshot`; the shared Kotlin
+model is `commonMain/widget/SharedWidgetSnapshot.kt` and the Swift decoder is
+`iosApp/WidgetShared/WidgetSnapshot.swift`.
+
+Rules:
+
+- The snapshot carries counts, the featured word, a short week summary, the pet
+  id, and the study-day start. It carries no name, note, review history, or
+  account.
+- The extension's entitlements and the app's entitlements list the same App
+  Group. The widget bundle id is `com.bassmd.bihua.widgets` and is embedded in
+  `Bihua.app/PlugIns/BihuaWidgets.appex`.
+- `WidgetCenter.shared.reloadAllTimelines()` is called after the app publishes
+  a new snapshot. The timeline has one entry per hour for a day, so the palette,
+  greeting, and word change at the same boundaries as Android.
+- `-widget-gallery today|week|word|all` in a Debug build renders the real widget
+  views at system sizes for screenshots; it is excluded from Release.
 
 ## Build and run
 

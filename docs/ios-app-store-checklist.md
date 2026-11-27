@@ -91,8 +91,9 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
    locally. This is data, not executable code (2.5.2).
 4. The reader uses Google ML Kit on-device. It receives no learner text or ink
    off the device; diagnostics are disclosed in the policy and About.
-5. Local sync, home-screen widgets, and foldable layouts are Android-only and
-   are absent from the iOS build, not shown as "Android only" inside the app.
+5. Local sync and foldable layouts are Android-only and are absent from the iOS
+   build, not shown as "Android only" inside the app. Home-screen and lock-screen
+   widgets are present through WidgetKit and read only the app group snapshot.
 6. The report composer ships without crash-file attachment on iOS and says so.
 7. The app is universal: test on iPhone and iPad, portrait and landscape. The
    profile uses drawn pet looks and asks for no personal data.
@@ -102,10 +103,9 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 ## Screenshots and artwork
 
 - iPhone 6.9-inch and iPad 13-inch, light and dark, from the frozen build.
-- Real captures of Home, a review, the spell quest, Progress, and the report
-  composer. No splash, no widget art, no Mnemonic palace.
-- App icon: 1024 × 1024, no alpha. The current file is a 2× render of the
-  existing Android icon; re-render from the vector source before submission.
+- Real captures of Home, a review, the spell quest, Progress, the report
+  composer, and the Today/Week/Word widgets. No splash, no Mnemonic palace.
+- App icon: 1024 × 1024, no alpha. Confirm the final mark before submission.
 - Feature graphic is Play-only and must not be reused as an App Store asset.
 
 ## DSA trader status (EU)

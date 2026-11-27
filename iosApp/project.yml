@@ -18,9 +18,15 @@ targets:
     platform: iOS
     sources:
       - path: Bihua
+      - path: WidgetShared
+    dependencies:
+      - target: BihuaWidgets
+        embed: true
+      - sdk: WidgetKit.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua
+        CODE_SIGN_ENTITLEMENTS: Bihua/Bihua.entitlements
         PRODUCT_NAME: Bihua
         INFOPLIST_FILE: Bihua/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -63,3 +69,23 @@ targets:
               ;;
           esac
           ./gradlew "$TASK" --console=plain
+
+  BihuaWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: WidgetShared
+      - path: BihuaWidgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua.widgets
+        PRODUCT_NAME: BihuaWidgets
+        INFOPLIST_FILE: BihuaWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BihuaWidgets/BihuaWidgets.entitlements
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework

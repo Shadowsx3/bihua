@@ -131,7 +131,7 @@ fi
 
 # Other-platform names in the iOS UI sources (Swift only for now; shared UI
 # strings are audited as they move to commonMain).
-if grep -RIn --include='*.swift' -E "Android|Play Store|Google Play" iosApp/Bihua >/dev/null 2>&1; then
+if grep -RIn --include='*.swift' -E "Android|Play Store|Google Play" iosApp/Bihua iosApp/WidgetShared iosApp/BihuaWidgets >/dev/null 2>&1; then
   bad "other-platform wording in iOS Swift UI"
 else
   ok "no Android/Play wording in iOS Swift UI"
@@ -142,7 +142,7 @@ if grep -q "PrivacyInfo.xcprivacy" iosApp/project.yml; then
 fi
 
 # No photo, camera, microphone, contacts, location, or tracking code on iOS.
-if grep -RIn --include='*.kt' --include='*.swift' -E "UIImagePickerController|PHPhotoLibrary|AVCaptureDevice|AVAudioRecorder|CNContactStore|CLLocationManager|ATTrackingManager|AppTrackingTransparency" composeApp/src/iosMain iosApp/Bihua >/dev/null 2>&1; then
+if grep -RIn --include='*.kt' --include='*.swift' -E "UIImagePickerController|PHPhotoLibrary|AVCaptureDevice|AVAudioRecorder|CNContactStore|CLLocationManager|ATTrackingManager|AppTrackingTransparency" composeApp/src/iosMain iosApp/Bihua iosApp/WidgetShared iosApp/BihuaWidgets >/dev/null 2>&1; then
   bad "iOS source uses a photo/camera/contact/location/tracking API"
 else
   ok "iOS source has no photo/camera/contact/location/tracking APIs"
@@ -153,6 +153,38 @@ if grep -q "IosDynamicType" composeApp/src/iosMain/kotlin/com/bassmd/bihua/MainV
   ok "iOS Dynamic Type bridge"
 else
   bad "iOS Dynamic Type bridge missing"
+fi
+
+# WidgetKit extension, App Group, and snapshot contract.
+WIDGET_APPEX="iosApp/DerivedData/Build/Products/Debug-iphonesimulator/Bihua.app/PlugIns/BihuaWidgets.appex"
+if [ -d "$WIDGET_APPEX" ]; then
+  if [ -x "$WIDGET_APPEX/BihuaWidgets" ]; then
+    ok "WidgetKit extension embedded"
+  else
+    bad "widget extension binary missing"
+  fi
+else
+  warn "widget extension not built yet; run make ios-build"
+fi
+if grep -q "com.apple.security.application-groups" iosApp/Bihua/Bihua.entitlements 2>/dev/null   && grep -q "group.com.bassmd.bihua" iosApp/Bihua/Bihua.entitlements   && grep -q "com.apple.security.application-groups" iosApp/BihuaWidgets/BihuaWidgets.entitlements 2>/dev/null   && grep -q "group.com.bassmd.bihua" iosApp/BihuaWidgets/BihuaWidgets.entitlements; then
+  ok "App Group shared by app and widget"
+else
+  bad "App Group entitlement missing or mismatched"
+fi
+if grep -q "com.apple.widgetkit-extension" iosApp/BihuaWidgets/Info.plist; then
+  ok "WidgetKit extension point"
+else
+  bad "WidgetKit extension point missing"
+fi
+if grep -q "widget_snapshot" composeApp/src/iosMain/kotlin/com/bassmd/bihua/widget/IosWidgetStore.kt   && grep -q "widget_snapshot" iosApp/WidgetShared/WidgetSnapshot.swift; then
+  ok "widget snapshot key shared"
+else
+  bad "widget snapshot key mismatch"
+fi
+if grep -RIn --include='*.swift' -E "displayName|photoPath|reviewHistory|userNotes" iosApp/WidgetShared iosApp/BihuaWidgets >/dev/null 2>&1; then
+  bad "widget source reads personal profile data"
+else
+  ok "widget source has no personal profile data"
 fi
 
 # The privacy policy must be reachable from inside the app.

@@ -33,9 +33,18 @@ sync instead.
 
 App data is written to the app's Application Support directory and excluded
 from iCloud backup, so the promise above holds on iOS too. `UIFileSharingEnabled`
-is false, so the app's data is not browsable in the Files app. Bihua has no
-CloudKit, iCloud sync, push, or sign-in. A backup leaves the app only when the
+is false, so the app's data is not browsable in the Files app. The small widget
+snapshot is not study history and is never sent to Bihua; if the learner has
+iCloud Backup on, the system may include the app group container in a device
+backup, just as it may include any app's preferences. Bihua has no CloudKit,
+iCloud sync, push, or sign-in. A backup leaves the app only when the
 learner chooses Export and picks a destination in the system file picker.
+
+The iOS widgets read a small snapshot (course, due and new counts, the featured
+word, and a short week summary) from the app's App Group container. The app and
+the widget extension share that container on the device. The snapshot is never
+sent to a server and carries no account, name, or photo. Removing the widgets or
+uninstalling the app removes it.
 
 Data remains on the device until the learner deletes it in the app, removes the
 relevant item, or uninstalls the app.

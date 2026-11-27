@@ -4,17 +4,22 @@ Bihua's iOS client follows the Apple Human Interface Guidelines and the iOS 26
 system appearance. The shell is native UIKit navigation; Compose renders screen
 content. Nothing here is a claim about the Android app.
 
-Status: P3. The shared Home, theme, components, calendar, and pet render on
-iPhone and iPad; the native tab bar/navigation shell and the remaining screens
-are next. Use this page as the review checklist for that pass.
+Status: P3. Home, Characters, Progress, and Settings render on iPhone and iPad inside a
+native `UITabBarController` with one `UINavigationController` per tab. WidgetKit
+Today, Week ahead, and Word widgets are built. Characters, review, and practice
+are the remaining screens. Use this page as the review checklist for that pass.
 
 ## Shell and navigation
 
-- [ ] `UITabBarController` with Home, Characters, Progress, Practice, Settings.
-      One `UINavigationController` per tab keeps each stack.
+- [x] `UITabBarController` with Home, Characters, Progress, Settings (Practice
+      and Review join as their stores land). One `UINavigationController` per
+      tab keeps each stack; the tab bar is the iOS 26 system bar.
+- [x] Character detail is a native push with a native back button and inline
+      title, not a Compose modal.
 - [ ] System tab bar and navigation bar. No Compose-drawn bottom bar or title
       bar on iOS.
-- [ ] Large titles on top-level routes; inline titles on pushed screens.
+- [x] Large titles on Progress and Settings; Home hides the navigation bar and
+      starts with its own greeting. Inline titles on pushed screens.
 - [ ] Interactive swipe-back from every pushed screen, including the Settings
       section stack and character detail.
 - [ ] Tab selection restores the last route in that tab; a second tap pops to
@@ -24,7 +29,9 @@ are next. Use this page as the review checklist for that pass.
 - [ ] No Android back arrow or "Close" button where the system provides the
       gesture or the sheet's grabber.
 - [ ] iPad: split view and Stage Manager work; content uses a readable width
-      (max ~700 pt) and the tab bar or a sidebar follows the size class.
+      and the tab bar or a sidebar follows the size class. The current iPad
+      dashboard still uses the Android two-page breakpoint; review it on a 13"
+      iPad before release.
 
 ## Layout and type
 
@@ -66,6 +73,21 @@ are next. Use this page as the review checklist for that pass.
 - [ ] Loading uses a system spinner or a quiet skeleton, never a perpetual
       decorative animation.
 
+## Widgets
+
+- [x] Today, Week ahead, and Word of the day in the WidgetKit gallery, with the
+      same copy and palette as Android.
+- [x] Small and medium Today; medium and large Week; small and medium Word;
+      lock-screen accessory families where they add value.
+- [x] `containerBackground` on iOS 17+, a paper fallback on iOS 16; no
+      hard-coded widget margins.
+- [x] The pet is drawn in SwiftUI from the same Mò parts; no raster avatar and
+      no photo library.
+- [ ] Check all families in light and dark, 1.0 and 2.0 text, on iPhone and
+      iPad; check the gallery on a real device before release.
+- [ ] Confirm the App Group entitlement is present in the device provisioning
+      profile for both the app and the extension.
+
 ## System integration
 
 - [ ] Share sheet for the report composer and PDFs; document picker for import
@@ -75,7 +97,7 @@ are next. Use this page as the review checklist for that pass.
 - [ ] Speech uses the system voice and does not interrupt other audio
       unexpectedly.
 - [ ] No local network permission (no sync); no camera, microphone, contacts,
-      photo library, or tracking prompts.
+      photo library, or tracking prompts. Widgets use the App Group only.
 - [ ] App Store rating row opens the listing only after a tap.
 
 ## Accessibility

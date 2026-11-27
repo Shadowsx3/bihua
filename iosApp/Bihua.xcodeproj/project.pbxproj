@@ -7,51 +7,96 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		047D24040D77EE75339A7B09 /* BihuaWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF9C54911A3432C4755857E /* BihuaWidgets.swift */; };
+		0EDFF1AFF2DBD9410EBC9DE5 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76C896440827ED144E901C6 /* WidgetSnapshot.swift */; };
+		3C1CA7136AF25B4530D1160A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CE394341614206965A081AB /* WidgetKit.framework */; };
+		5ECEA816A0D355884CA8DB55 /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D4814D36522A28112B4564 /* WidgetViews.swift */; };
+		88B88CD09DD9D00E420715FF /* PetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0853661E5C8F1EF3ACA5F6 /* PetView.swift */; };
+		92222A250E0F565C66EF87EB /* BihuaWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 16DDA75B06F52FAE6FEBFC40 /* BihuaWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		94F77BC643DFC9D979A7B7EE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */; };
 		986E73724D57C8FF0A419AFD /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02E01D5A5353BE7B82B3B288 /* RootView.swift */; };
 		9B31D7AEB59F1D37DDEF8AFF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */; };
-		B543717C40041D01F86E6D45 /* Pods_Bihua.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5482AB4EA01EE1E5A3F62AAB /* Pods_Bihua.framework */; };
+		A053D38D75DFE00F95BF6268 /* WidgetPreviewGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7CD202877C2D40273EAB68 /* WidgetPreviewGallery.swift */; };
+		B5DEE485AC85345B0AA70A78 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CCA9F3204963B26DDDB69E /* SwiftUI.framework */; };
+		BB79D99DAB7D2383FD37F384 /* RootTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */; };
+		C830EEC2F47164DEDA4AB287 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76C896440827ED144E901C6 /* WidgetSnapshot.swift */; };
 		D2112E265BEE9CD9FA758228 /* BihuaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */; };
+		E81EA8BAC5CFEEE6BEAF712F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CE394341614206965A081AB /* WidgetKit.framework */; };
+		F78CD2C551A8E3F519018C07 /* PetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0853661E5C8F1EF3ACA5F6 /* PetView.swift */; };
+		FF265A1A9CF50B2A8289726F /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D4814D36522A28112B4564 /* WidgetViews.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		45B5AF177B4BD5091F29820F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4527D4A1B3E655B4C649A8F8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 54A45FE8D7A3D54BA6BD765B;
+			remoteInfo = BihuaWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0F89F88B9411B8AA61AA4996 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				92222A250E0F565C66EF87EB /* BihuaWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		02E01D5A5353BE7B82B3B288 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		093CFDDC19ED2E1652C03B27 /* Pods-Bihua.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bihua.debug.xcconfig"; path = "Target Support Files/Pods-Bihua/Pods-Bihua.debug.xcconfig"; sourceTree = "<group>"; };
 		10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BihuaApp.swift; sourceTree = "<group>"; };
-		4174FBEA49899D873914348A /* Pods-Bihua.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bihua.release.xcconfig"; path = "Target Support Files/Pods-Bihua/Pods-Bihua.release.xcconfig"; sourceTree = "<group>"; };
+		16DDA75B06F52FAE6FEBFC40 /* BihuaWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = BihuaWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabs.swift; sourceTree = "<group>"; };
+		2CE394341614206965A081AB /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		5482AB4EA01EE1E5A3F62AAB /* Pods_Bihua.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Bihua.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B2D2AC05659DB014B9AA7E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5CB651110315480FC65479AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		68F9259BE20FC70B401F1E70 /* Bihua.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Bihua.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		72F0BBB502337868CCCDD04A /* Bihua.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bihua.entitlements; sourceTree = "<group>"; };
+		8B7CD202877C2D40273EAB68 /* WidgetPreviewGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPreviewGallery.swift; sourceTree = "<group>"; };
 		BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D76C896440827ED144E901C6 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		DAF9C54911A3432C4755857E /* BihuaWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BihuaWidgets.swift; sourceTree = "<group>"; };
+		E9D4814D36522A28112B4564 /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
+		F8CCA9F3204963B26DDDB69E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FD5819EF4F2135FEB2F5D895 /* BihuaWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BihuaWidgets.entitlements; sourceTree = "<group>"; };
+		FF0853661E5C8F1EF3ACA5F6 /* PetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		74E989083A79538F33E93CEB /* Frameworks */ = {
+		35F96E598DA25A4174FAD2C8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B543717C40041D01F86E6D45 /* Pods_Bihua.framework in Frameworks */,
+				3C1CA7136AF25B4530D1160A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8969D87996139731E12EBB20 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E81EA8BAC5CFEEE6BEAF712F /* WidgetKit.framework in Frameworks */,
+				B5DEE485AC85345B0AA70A78 /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3682FDE5DD977B1428A635F1 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				093CFDDC19ED2E1652C03B27 /* Pods-Bihua.debug.xcconfig */,
-				4174FBEA49899D873914348A /* Pods-Bihua.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		4298075FC1FBCABCFC1D6BD9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				68F9259BE20FC70B401F1E70 /* Bihua.app */,
+				16DDA75B06F52FAE6FEBFC40 /* BihuaWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -60,28 +105,53 @@
 			isa = PBXGroup;
 			children = (
 				E1CCB903792FA7B1E1AE472A /* Bihua */,
+				DAE3C095503EF4FEB1067223 /* BihuaWidgets */,
+				A713BDBE001C4E1752DAA105 /* WidgetShared */,
+				B26A3BB5D8C7CB5DF3C5D3D3 /* Frameworks */,
 				4298075FC1FBCABCFC1D6BD9 /* Products */,
-				3682FDE5DD977B1428A635F1 /* Pods */,
-				D4F1CA36C53718E96DA19F56 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
-		D4F1CA36C53718E96DA19F56 /* Frameworks */ = {
+		A713BDBE001C4E1752DAA105 /* WidgetShared */ = {
 			isa = PBXGroup;
 			children = (
-				5482AB4EA01EE1E5A3F62AAB /* Pods_Bihua.framework */,
+				FF0853661E5C8F1EF3ACA5F6 /* PetView.swift */,
+				D76C896440827ED144E901C6 /* WidgetSnapshot.swift */,
+				E9D4814D36522A28112B4564 /* WidgetViews.swift */,
+			);
+			path = WidgetShared;
+			sourceTree = "<group>";
+		};
+		B26A3BB5D8C7CB5DF3C5D3D3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F8CCA9F3204963B26DDDB69E /* SwiftUI.framework */,
+				2CE394341614206965A081AB /* WidgetKit.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		DAE3C095503EF4FEB1067223 /* BihuaWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				FD5819EF4F2135FEB2F5D895 /* BihuaWidgets.entitlements */,
+				DAF9C54911A3432C4755857E /* BihuaWidgets.swift */,
+				5B2D2AC05659DB014B9AA7E5 /* Info.plist */,
+			);
+			path = BihuaWidgets;
 			sourceTree = "<group>";
 		};
 		E1CCB903792FA7B1E1AE472A /* Bihua */ = {
 			isa = PBXGroup;
 			children = (
 				BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */,
+				72F0BBB502337868CCCDD04A /* Bihua.entitlements */,
 				10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */,
 				5CB651110315480FC65479AF /* Info.plist */,
 				463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */,
+				1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */,
 				02E01D5A5353BE7B82B3B288 /* RootView.swift */,
+				8B7CD202877C2D40273EAB68 /* WidgetPreviewGallery.swift */,
 			);
 			path = Bihua;
 			sourceTree = "<group>";
@@ -89,21 +159,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CF87208CEFF06EDC5B79F47A /* Bihua */ = {
+		54A45FE8D7A3D54BA6BD765B /* BihuaWidgets */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 496C289DA6B9DA787B1D9F4A /* Build configuration list for PBXNativeTarget "Bihua" */;
+			buildConfigurationList = 7988EC561AA9E52AA63549FF /* Build configuration list for PBXNativeTarget "BihuaWidgets" */;
 			buildPhases = (
-				F453A1AF967D90D3BEF89C33 /* [CP] Check Pods Manifest.lock */,
-				0186B68DFF496E1CC4CFF994 /* Build BihuaKit */,
-				5B5074DF831DFBEE29D73CF5 /* Sources */,
-				68EC76D79A745ACFE57D50BF /* Resources */,
-				74E989083A79538F33E93CEB /* Frameworks */,
+				2BD125816B0A707BA276C5EC /* Sources */,
+				8969D87996139731E12EBB20 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
+			name = BihuaWidgets;
+			packageProductDependencies = (
+			);
+			productName = BihuaWidgets;
+			productReference = 16DDA75B06F52FAE6FEBFC40 /* BihuaWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CF87208CEFF06EDC5B79F47A /* Bihua */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 496C289DA6B9DA787B1D9F4A /* Build configuration list for PBXNativeTarget "Bihua" */;
+			buildPhases = (
+				0186B68DFF496E1CC4CFF994 /* Build BihuaKit */,
+				5B5074DF831DFBEE29D73CF5 /* Sources */,
+				68EC76D79A745ACFE57D50BF /* Resources */,
+				35F96E598DA25A4174FAD2C8 /* Frameworks */,
+				0F89F88B9411B8AA61AA4996 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B80BEE19DC946F1554DFCD94 /* PBXTargetDependency */,
+			);
 			name = Bihua;
+			packageProductDependencies = (
+			);
 			productName = Bihua;
 			productReference = 68F9259BE20FC70B401F1E70 /* Bihua.app */;
 			productType = "com.apple.product-type.application";
@@ -134,6 +225,7 @@
 			projectRoot = "";
 			targets = (
 				CF87208CEFF06EDC5B79F47A /* Bihua */,
+				54A45FE8D7A3D54BA6BD765B /* BihuaWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -170,49 +262,71 @@
 			shellPath = /bin/sh;
 			shellScript = "cd \"$SRCROOT/..\"\ncase \"$SDK_NAME\" in\n  iphoneos*)\n    if [ \"$CONFIGURATION\" = \"Release\" ]; then\n      TASK=\":composeApp:linkReleaseFrameworkIosArm64\"\n    else\n      TASK=\":composeApp:linkDebugFrameworkIosArm64\"\n    fi\n    ;;\n  *)\n    if [ \"$CONFIGURATION\" = \"Release\" ]; then\n      TASK=\":composeApp:linkReleaseFrameworkIosSimulatorArm64\"\n    else\n      TASK=\":composeApp:linkDebugFrameworkIosSimulatorArm64\"\n    fi\n    ;;\nesac\n./gradlew \"$TASK\" --console=plain\n";
 		};
-		F453A1AF967D90D3BEF89C33 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Bihua-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2BD125816B0A707BA276C5EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				047D24040D77EE75339A7B09 /* BihuaWidgets.swift in Sources */,
+				F78CD2C551A8E3F519018C07 /* PetView.swift in Sources */,
+				0EDFF1AFF2DBD9410EBC9DE5 /* WidgetSnapshot.swift in Sources */,
+				5ECEA816A0D355884CA8DB55 /* WidgetViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5B5074DF831DFBEE29D73CF5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				D2112E265BEE9CD9FA758228 /* BihuaApp.swift in Sources */,
+				88B88CD09DD9D00E420715FF /* PetView.swift in Sources */,
+				BB79D99DAB7D2383FD37F384 /* RootTabs.swift in Sources */,
 				986E73724D57C8FF0A419AFD /* RootView.swift in Sources */,
+				A053D38D75DFE00F95BF6268 /* WidgetPreviewGallery.swift in Sources */,
+				C830EEC2F47164DEDA4AB287 /* WidgetSnapshot.swift in Sources */,
+				FF265A1A9CF50B2A8289726F /* WidgetViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B80BEE19DC946F1554DFCD94 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 54A45FE8D7A3D54BA6BD765B /* BihuaWidgets */;
+			targetProxy = 45B5AF177B4BD5091F29820F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		3B34419DC4C7E0540F6A4C1A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BihuaWidgets/BihuaWidgets.entitlements;
+				INFOPLIST_FILE = BihuaWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bassmd.bihua.widgets;
+				PRODUCT_NAME = BihuaWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		953ED54BD10763B3481F163B /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4174FBEA49899D873914348A /* Pods-Bihua.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bihua/Bihua.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
@@ -238,6 +352,26 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		9D0C336D427E4AD6289ADE30 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BihuaWidgets/BihuaWidgets.entitlements;
+				INFOPLIST_FILE = BihuaWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bassmd.bihua.widgets;
+				PRODUCT_NAME = BihuaWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
 		};
 		DA060FC14422D8DC7A6BBC51 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -307,10 +441,10 @@
 		};
 		ECD47485A3904B96B8B6668D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 093CFDDC19ED2E1652C03B27 /* Pods-Bihua.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bihua/Bihua.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
@@ -414,6 +548,15 @@
 			buildConfigurations = (
 				DA060FC14422D8DC7A6BBC51 /* Debug */,
 				FF53F3D32E05C6CB7A931AC9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7988EC561AA9E52AA63549FF /* Build configuration list for PBXNativeTarget "BihuaWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D0C336D427E4AD6289ADE30 /* Debug */,
+				3B34419DC4C7E0540F6A4C1A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

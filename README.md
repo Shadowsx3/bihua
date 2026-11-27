@@ -6,8 +6,9 @@
 [![iOS 16+ in progress](https://img.shields.io/badge/iOS-16%2B%20in%20progress-999999.svg)](docs/ios-kmp-plan.md)
 [![Version](https://img.shields.io/badge/version-1.1.2-e89a6b.svg)](CHANGELOG.md)
 
-**An offline, handwriting-first Android app for learning to write and read
-Simplified Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja).**
+**An offline, handwriting-first app for learning to write and read Simplified
+Chinese, Traditional Chinese, Japanese, and Korean (Hangul and Hanja). Android
+is shipped; the iPhone and iPad build is in progress on the same shared code.**
 
 The hand is the interface. Bihua asks the learner to produce a character from a
 cue, fades the reference guide over time, and schedules the next review with
@@ -38,11 +39,14 @@ no developer-run analytics.
 
 ## iOS port (in progress)
 
-The same Compose Multiplatform client is being ported on the `ios/kmp` branch.
-Android on `main` remains the shipped client. The plan, the shared architecture,
-and the feature parity table live in `docs/ios-kmp-plan.md`,
-`docs/ios-architecture.md`, and `docs/ios-feature-parity.md`. Build and run with
-`make ios` or `make ios-ipad`. iPhone and iPad are the supported devices.
+The same Compose Multiplatform client now lives on `main` in `composeApp/` with
+the Xcode host in `iosApp/`. Home, Characters, Progress, Settings, the pet
+picker, calendar, and charts already render on iPhone and iPad behind a native
+UIKit tab bar and navigation stack; character detail uses a native push. The widget extension is built; review, characters, practice,
+and the shared data stores are the remaining port work. Android remains the
+shipped client. The plan and parity table live in `docs/ios-kmp-plan.md` and
+`docs/ios-feature-parity.md`. Build and run with `make ios` or `make ios-ipad`.
+iPhone and iPad are the supported devices; there is no iOS foldable target.
 
 ## New in 1.1.2
 
@@ -50,7 +54,8 @@ and the feature parity table live in `docs/ios-kmp-plan.md`,
   and lessons as done and total, with one plain next-hours line. A dedicated
   Week ahead widget shows the next seven days. Word of the Day stays its own
   card. They refresh at day-part and study-day boundaries, on app changes, and
-  on clock/date changes.
+  on clock/date changes. The same three widgets are built for iPhone and iPad
+  with WidgetKit and arrive with the iOS release.
 - **Progress gained All time and a year map.** All time is a real window, not a
   renamed year. Year and All use a GitHub-style mint heatmap with month labels,
   a weekday gutter, a legend, and horizontal scrolling.

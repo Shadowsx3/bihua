@@ -66,7 +66,6 @@ class SettingsStore(private val context: Context) {
             exportedAtEpochMs = exportedAtEpochMs,
             profile = profile,
             settings = settings,
-            photoBase64 = null,
         )
     }
 

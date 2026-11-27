@@ -49,7 +49,7 @@ class IosPlatformServices : PlatformServices {
 
     override val capabilities = Capabilities(
         localSync = false,
-        widgets = false,
+        widgets = true,
         foldables = false,
         crashAttach = false,
         // Filled in when the App Store record exists.

@@ -46,6 +46,7 @@ text metrics and rendering differ.
 | Simulator smoke | `python3 qa/ios/smoke.py` | boot, install, launch, app label, screenshot |
 | Driver | `qa/ios/driver.py` | idb `find`, `tap_label`, `text`, `swipe`, `screenshot` |
 | Build gate | `make ios-check` | native tests plus the Xcode Debug build |
+| Native shell | `make ios` / `make ios-ipad` | tab bar, large titles, safe areas, Dynamic Type, light/dark |
 | Store policy | `make compliance` | documents, permissions, privacy manifest, export, other-platform wording |
 | XCUITest | `iosAppTests` (P6) | rotation, keyboard, VoiceOver, permission sheets |
 
@@ -159,7 +160,8 @@ Devices: iPhone 17 Pro, iPad Pro 13-inch, iPhone Duo (foldable), light and dark,
 | Practice feedback | Handwriting check, coach, repair modes, shape evidence, mint closure | manual phone/tablet review |
 | Pinyin display | Tone marks default, numbers optional, numeric input still accepted | `PinyinTest` and `ReadingCheckTest` plus manual Settings review |
 | Feedback colour | No punitive red for a missing stroke or a recognition difference | manual light/dark review |
-| Home-screen widgets | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
+| Home-screen widgets (Android) | Today/Word layouts inflate, time copy, action, picker preview | `WidgetCopyTest` plus manual launcher review |
+| Widgets (iOS) | Today/Week/Word in small, medium, and large; hour palette; accessory families | Debug gallery at `-widget-gallery`, WidgetKit extension build, real-device pass |
 | Study lists | Named character and word lists, migration, presets, quick add, word bookmark and queue | `StudyListsTest`, `StudyListImportTest`, `study-lists` journey |
 | List import | TXT, CSV, TSV, JSON streaming; BOM, nested names; words kept; no item cap | `StudyListImportTest` plus manual file-picker import |
 | List export | `.txt` round-trips characters and words | manual file-picker export |
