@@ -16,7 +16,8 @@ Nothing here uploads by itself; the upload is a separate, confirmed action.
    - **Data Collection:** “No, we do not collect data from this app.”
    - **Age rating:** 16+ (mature glosses are off by default and gated).
    - Privacy policy URL and choices URL above.
-   - Screenshots from `.qa/ios/store/`, captured from the test build.
+   - Screenshots from `.qa/ios/store/iPhone-17-Pro-Max/` and
+     `.qa/ios/store/iPad-Pro-13-inch-M5/`, captured from the test build.
 6. Clean install test with no network: onboarding → Home → Learn 5 new →
    write → reveal → grade → relaunch → progress kept.
 

@@ -17,7 +17,7 @@ warn() { printf "  warn: %s\n" "$1"; }
 echo "bihua compliance"
 
 # ---------- shared documents ----------
-for file in PRIVACY.md docs/privacy.html docs/ios-app-store-checklist.md \
+for file in PRIVACY.md docs/privacy.html docs/support.html docs/ios-app-store-checklist.md \
             store/PLAY-CONSOLE-POLICY.md store/PLAY-UPLOAD.md store/ios-listing.md; do
   if [ -f "$file" ]; then ok "document $file"; else bad "missing $file"; fi
 done

@@ -99,6 +99,6 @@ stores, replace a real-device pass, or run the UI accessibility matrix.
 3. Walk the HIG checklist with VoiceOver and 2.0x text; fix any clipped screen.
 4. Confirm the App Privacy answers and the Play Data safety form match this page.
 5. Decide DSA trader status or leave EU storefronts out of 1.0.
-6. Capture final screenshots from the frozen build; no personal names, widgets,
-   or Mnemonic palace.
+6. Capture final screenshots from the frozen build into
+   `.qa/ios/store/<device>/`; no personal names, widgets, or Mnemonic palace.
 7. Run `make check`, `make lint`, `make compliance`, `make play-audit`.

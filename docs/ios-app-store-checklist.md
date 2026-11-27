@@ -27,6 +27,7 @@ Plan: `docs/ios-kmp-plan.md`. The local listing draft is `store/ios-listing.md`
 | Question | Answer |
 |---|---|
 | Made for Kids / Kids Category | No |
+| Content rights | Yes, third-party dictionary and stroke data; licences in `THIRD_PARTY_NOTICES.md` | `THIRD_PARTY_NOTICES.md` |
 | Age rating | 16+ |
 | Sexual content or nudity | Infrequent/Mild (52 mature dictionary entries, off by default and gated) |
 | Profanity or crude humour | No |
@@ -50,7 +51,7 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 | Question | Answer | Evidence |
 |---|---|---|
 | Privacy policy URL | `https://shadowsx3.github.io/bihua/privacy.html`, now rewritten for Android and iOS (26 November 2026) | `docs/privacy.html`, `PRIVACY.md` |
-| Support URL | `https://github.com/shadowsx3/bihua` | repository |
+| Support URL | `https://shadowsx3.github.io/bihua/support.html` | support page |
 | Marketing URL | `https://shadowsx3.github.io/bihua/` | landing page |
 | Data collected by the developer | None. No name, photo, account, developer analytics, or ads. | Architecture; `docs/compliance.md` |
 | Third-party SDK collection | None in the first iOS build. ML Kit is not linked; no model download. | Podfile, build phase |
