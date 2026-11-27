@@ -224,6 +224,7 @@ private fun CharacterCard(entry: CharacterEntry, onClick: () -> Unit) {
 fun CharacterDetailOverviewScreen(
     entry: CharacterEntry,
     onStrokeOrder: (() -> Unit)? = null,
+    onCompare: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val reading = Pinyin.display(entry.reading, entry.mode, numbers = false)
@@ -251,12 +252,22 @@ fun CharacterDetailOverviewScreen(
                             Pill("${entry.strokeCount} strokes", PaperWarm)
                         }
                     }
-                    if (onStrokeOrder != null) {
+                    if (onStrokeOrder != null || onCompare != null) {
                         Spacer(Modifier.height(10.dp))
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = onStrokeOrder,
-                            shape = RoundedCornerShape(50),
-                        ) { Text("Stroke order") }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (onStrokeOrder != null) {
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = onStrokeOrder,
+                                    shape = RoundedCornerShape(50),
+                                ) { Text("Stroke order") }
+                            }
+                            if (onCompare != null) {
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = onCompare,
+                                    shape = RoundedCornerShape(50),
+                                ) { Text("Compare") }
+                            }
+                        }
                     }
                 }
             }

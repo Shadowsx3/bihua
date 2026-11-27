@@ -42,6 +42,7 @@ fun ProgressOverviewScreen(
     studyDays: Int,
     stats: PlayerStats,
     onDayClick: (DayActivity) -> Unit = {},
+    onExportPdf: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val counts = characters.groupingBy { it.status }.eachCount()
@@ -105,6 +106,15 @@ fun ProgressOverviewScreen(
         item {
             SoftCard(Modifier.fillMaxWidth()) {
                 LearnedChart(history = activity, periodLabel = "Across the last 35 days")
+            }
+        }
+        if (onExportPdf != null) {
+            item {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onExportPdf,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Export progress PDF") }
             }
         }
         item {

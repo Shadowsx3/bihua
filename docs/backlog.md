@@ -4,7 +4,7 @@ Updated: 2026-11-26
 
 ## Status at 03:10 (2026-11-27)
 
-- **iOS release candidate:** 19/19 XCUITest journeys pass on iPhone 17 Pro and
+- **iOS release candidate:** 21/21 XCUITest journeys pass on iPhone 17 Pro and
   iPad Pro 13-inch; Android `make check`, lint, compliance, content check, and
   `make play-audit` are green.
 - **iOS archive:** `build/ios/Bihua.xcarchive` builds and is signed with the
@@ -23,8 +23,9 @@ Updated: 2026-11-26
 
 - **iOS 1.0 is feature-complete for the first review scope.** Onboarding,
   real content, persisted FSRS-7 progress, review, Characters, Dictionary,
-  Practice, Word practice, stroke-order playback, Progress, Settings, study
-  lists, speech, reminders, and JSON backup export/import are working. Widgets, sync, PDF, spell quest,
+  Practice, Word practice, stroke-order playback, Compare, Progress PDF,
+  Settings, study lists, speech, sounds, reminders, and JSON backup
+  export/import are working. Widgets, sync, PDF, spell quest,
   compare, the ML Kit reader, and sounds are deliberately out.
 - **Backup transfer works both ways**: Settings → Data exports a JSON file
   through the share sheet and imports it through the Files picker. The file

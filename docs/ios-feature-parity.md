@@ -20,19 +20,19 @@ design).
 | Review loop | Yes | shared | in progress | Cue, ink, reveal, grade, next; sample cards and local advance until the shared FSRS/progress store lands |
 | Dictionary | Yes | shared | done | Real offline word search for the active course; mature examples opt-in |
 | Practice canvas | Yes | shared | done | Free pad with guide toggle, clear, undo, and a smooth local stroke; per-character brush sizes follow |
-| Compare | Yes | **not in 1.0** | — | Deferred; no entry point is shown |
+| Compare | Yes | shared | done | Up to four characters side by side, search to add, remove; entry from character detail |
 | Word practice | Yes | shared | done | Whole-word pad from Home and Dictionary; never scheduled |
 | Spell quest and grimoire | Yes | **not in 1.0** | — | Deferred; the Home link and Study tools card are hidden |
 | Progress | Yes | shared | in progress | Real level, known/review/new, calendar, learned chart, and study days; range selector and PDF follow |
-| Progress PDF | Yes | **not in 1.0** | — | Deferred |
-| Worksheet PDF | Yes | **not in 1.0** | — | Deferred |
+| Progress PDF | Yes | shared model + Swift writer | done | Real local stats and characters, US Letter PDF through the share sheet; entry at the end of Progress |
+| Worksheet PDF | Yes | **not in 1.0** | — | Deferred; no entry point is shown |
 | Study lists | Yes | shared | in progress | Create, rename, add/remove, persist; Android-format import/export follows |
 | Known-list import | Yes | **not in 1.0** | — | Deferred |
 | Backup export/import | Yes | shared JSON + picker | done | iOS JSON backup of settings, pet, and progress; system share sheet and Files picker. The Android database format is not read yet. |
 | Settings and search | Yes | shared | in progress | Appearance, course, pet, daily goal, practice, mature, motion, reminders, study lists, backup, reset, About/privacy; search row follows |
 | Reminders | Yes | seam | done | Optional local weekday notifications at the saved time; no server. Time/day picker follows. |
 | Speech | Yes | seam | done | `AVSpeechSynthesizer` with a course-matched voice |
-| Sounds | Yes | **not in 1.0** | — | Deferred; the setting is hidden |
+| Sounds | Yes | seam | done | Shared synthesis recipe ported to AVAudioPlayer; quiet ticks, add, grade, reveal, session; toggle in Settings |
 | Reader / handwriting model | ML Kit Android | **not in 1.0** | — | Deferred; the iOS review is self-graded and downloads no model |
 | Ink pressure | Android stylus + finger | **not in 1.0** | — | Uniform width; Pencil pressure deferred |
 | File picker | SAF | seam | P4 | `UIDocumentPickerViewController` |

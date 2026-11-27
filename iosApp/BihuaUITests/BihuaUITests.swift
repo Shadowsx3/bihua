@@ -207,6 +207,12 @@ final class BihuaUITests: XCTestCase {
         XCTAssertTrue(element(app, "爱情").waitForExistence(timeout: 10))
     }
 
+    func testCompareShowsTheInitialCharacter() {
+        let app = launch(["-push", "compare/SIMPLIFIED:U+7231"])
+        XCTAssertTrue(app.staticTexts["爱"].waitForExistence(timeout: 15))
+        XCTAssertTrue(containing(app, "Up to four characters").exists)
+    }
+
     func testStrokeOrderGuidePlays() {
         let app = launch(["-push", "stroke/SIMPLIFIED:U+7231"])
         XCTAssertTrue(app.buttons["Play again"].waitForExistence(timeout: 15))
@@ -256,6 +262,21 @@ final class BihuaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["1 character"].waitForExistence(timeout: 10))
     }
 
+    func testProgressPdfOpensTheShareSheet() {
+        let app = launch()
+        tabButton(app, "Progress").tap()
+        let export = containing(app, "Export progress PDF")
+        for _ in 0..<10 where !export.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(export.isHittable)
+        usleep(500_000)
+        export.tap()
+        let sheet = app.sheets.firstMatch
+        let activity = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10) || activity.waitForExistence(timeout: 2))
+    }
+
     func testBackupExportOpensTheShareSheet() {
         let app = launch()
         tabButton(app, "Settings").tap()
@@ -303,6 +324,7 @@ final class BihuaUITests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(containing(app, "Read aloud").exists)
+        XCTAssertTrue(containing(app, "Sound effects").exists)
         XCTAssertTrue(mature.exists)
         XCTAssertTrue(reduce.exists)
     }

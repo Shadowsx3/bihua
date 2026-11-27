@@ -30,7 +30,6 @@
 		899810FBDE17825474B0F6EB /* guide_16.json in Resources */ = {isa = PBXBuildFile; fileRef = 41EF4B36A6C68AC6A72E126C /* guide_16.json */; };
 		928B97F08A24A1560E7EF4DB /* guide_15.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F3CCEA1A444F7F439221983 /* guide_15.json */; };
 		94F77BC643DFC9D979A7B7EE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */; };
-		9553E7A49C30EEE4948C81B9 /* Pods_Bihua.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D784E93FC71299DC6E79CD25 /* Pods_Bihua.framework */; };
 		986E73724D57C8FF0A419AFD /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02E01D5A5353BE7B82B3B288 /* RootView.swift */; };
 		98A7029C7146746D9D49ABFB /* guide_03.json in Resources */ = {isa = PBXBuildFile; fileRef = 603553AF6D8C5A83C4A7C76F /* guide_03.json */; };
 		9B31D7AEB59F1D37DDEF8AFF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */; };
@@ -39,6 +38,7 @@
 		A788BE2D5451DF1FF12BDD18 /* guide_25.json in Resources */ = {isa = PBXBuildFile; fileRef = 24AB25DA921E5B85D1D86921 /* guide_25.json */; };
 		B2B8E1F928DEB908BDF8CEC4 /* guide_10.json in Resources */ = {isa = PBXBuildFile; fileRef = 0F5459F494D2E88CF332E514 /* guide_10.json */; };
 		BB79D99DAB7D2383FD37F384 /* RootTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */; };
+		C58112C37F5E44D4EE368A0D /* ProgressPdfRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FD5BFFD12B18F6D9770E26 /* ProgressPdfRenderer.swift */; };
 		C804E50A00F0C191B9DABC85 /* guide_00.json in Resources */ = {isa = PBXBuildFile; fileRef = FE6E2B88AA4C160AB1859B15 /* guide_00.json */; };
 		C94E431440D93B933D7C3579 /* guide_02.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B58112748DB6E512F4BABE0 /* guide_02.json */; };
 		D2112E265BEE9CD9FA758228 /* BihuaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */; };
@@ -72,14 +72,12 @@
 		262C0D33336298AD1AE69A97 /* guide_11.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_11.json; sourceTree = "<group>"; };
 		2B35BF41EC46A0BC2A68C95E /* guide_24.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_24.json; sourceTree = "<group>"; };
 		312950953E1D5D343264703B /* guide_26.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_26.json; sourceTree = "<group>"; };
-		352B0739697E1CDBE0852EAF /* Pods-Bihua.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bihua.debug.xcconfig"; path = "Target Support Files/Pods-Bihua/Pods-Bihua.debug.xcconfig"; sourceTree = "<group>"; };
 		39E039EF9E02A658EF302F3B /* guide_09.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_09.json; sourceTree = "<group>"; };
 		3BC2B5BF9C5EBFF966C89266 /* guide_18.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_18.json; sourceTree = "<group>"; };
 		4057272350F0B0CE832BEC4E /* guide_04.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_04.json; sourceTree = "<group>"; };
 		41EF4B36A6C68AC6A72E126C /* guide_16.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_16.json; sourceTree = "<group>"; };
 		43ED0E39E59A36C42432F7F7 /* guide_28.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_28.json; sourceTree = "<group>"; };
 		463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		48C286867AC81B478A5E058E /* Pods-Bihua.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bihua.release.xcconfig"; path = "Target Support Files/Pods-Bihua/Pods-Bihua.release.xcconfig"; sourceTree = "<group>"; };
 		4B58112748DB6E512F4BABE0 /* guide_02.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_02.json; sourceTree = "<group>"; };
 		5C69D627F53E6903BB82063E /* content_japanese.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = content_japanese.json; sourceTree = "<group>"; };
 		5CB651110315480FC65479AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -102,7 +100,7 @@
 		BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BE4DB2EA13796A94B1793EC4 /* guide_31.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_31.json; sourceTree = "<group>"; };
 		CE561102323641C2D29A3DC3 /* guide_23.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_23.json; sourceTree = "<group>"; };
-		D784E93FC71299DC6E79CD25 /* Pods_Bihua.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Bihua.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2FD5BFFD12B18F6D9770E26 /* ProgressPdfRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressPdfRenderer.swift; sourceTree = "<group>"; };
 		E2793D5B4B12DEED0AEA04E7 /* guide_17.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_17.json; sourceTree = "<group>"; };
 		E8D8272D6664CF47B8C2F53B /* guide_01.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_01.json; sourceTree = "<group>"; };
 		EBD911E06C15A98C4093D338 /* guide_27.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_27.json; sourceTree = "<group>"; };
@@ -113,36 +111,7 @@
 		FE6E2B88AA4C160AB1859B15 /* guide_00.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = guide_00.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		D9A8AFCDDD0CE3D608F1BBA8 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				9553E7A49C30EEE4948C81B9 /* Pods_Bihua.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
-		137DD7D14B815C36828EB69E /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				D784E93FC71299DC6E79CD25 /* Pods_Bihua.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		154B97AB9AA982198568CA02 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				352B0739697E1CDBE0852EAF /* Pods-Bihua.debug.xcconfig */,
-				48C286867AC81B478A5E058E /* Pods-Bihua.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		4298075FC1FBCABCFC1D6BD9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -158,8 +127,6 @@
 				E1CCB903792FA7B1E1AE472A /* Bihua */,
 				EF8DF2C591C3FD8166715D5A /* BihuaUITests */,
 				4298075FC1FBCABCFC1D6BD9 /* Products */,
-				154B97AB9AA982198568CA02 /* Pods */,
-				137DD7D14B815C36828EB69E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -213,6 +180,7 @@
 				10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */,
 				5CB651110315480FC65479AF /* Info.plist */,
 				463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */,
+				D2FD5BFFD12B18F6D9770E26 /* ProgressPdfRenderer.swift */,
 				1C40D2C9C8E2D79990C3A39E /* RootTabs.swift */,
 				02E01D5A5353BE7B82B3B288 /* RootView.swift */,
 				AF13AD20EBAA8800F3F15C43 /* Content */,
@@ -235,17 +203,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 496C289DA6B9DA787B1D9F4A /* Build configuration list for PBXNativeTarget "Bihua" */;
 			buildPhases = (
-				4F2F8694515A9E255582F46A /* [CP] Check Pods Manifest.lock */,
 				0186B68DFF496E1CC4CFF994 /* Build BihuaKit */,
 				5B5074DF831DFBEE29D73CF5 /* Sources */,
 				68EC76D79A745ACFE57D50BF /* Resources */,
-				D9A8AFCDDD0CE3D608F1BBA8 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = Bihua;
+			packageProductDependencies = (
+			);
 			productName = Bihua;
 			productReference = 68F9259BE20FC70B401F1E70 /* Bihua.app */;
 			productType = "com.apple.product-type.application";
@@ -262,6 +230,8 @@
 				01AC377266499BE83BB9C9AF /* PBXTargetDependency */,
 			);
 			name = BihuaUITests;
+			packageProductDependencies = (
+			);
 			productName = BihuaUITests;
 			productReference = F3955A1EC61C6756854D436E /* BihuaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -368,28 +338,6 @@
 			shellPath = /bin/sh;
 			shellScript = "cd \"$SRCROOT/..\"\ncase \"$SDK_NAME\" in\n  iphoneos*)\n    if [ \"$CONFIGURATION\" = \"Release\" ]; then\n      TASK=\":composeApp:linkReleaseFrameworkIosArm64\"\n    else\n      TASK=\":composeApp:linkDebugFrameworkIosArm64\"\n    fi\n    ;;\n  *)\n    if [ \"$CONFIGURATION\" = \"Release\" ]; then\n      TASK=\":composeApp:linkReleaseFrameworkIosSimulatorArm64\"\n    else\n      TASK=\":composeApp:linkDebugFrameworkIosSimulatorArm64\"\n    fi\n    ;;\nesac\n./gradlew \"$TASK\" --console=plain\n";
 		};
-		4F2F8694515A9E255582F46A /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Bihua-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -406,6 +354,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D2112E265BEE9CD9FA758228 /* BihuaApp.swift in Sources */,
+				C58112C37F5E44D4EE368A0D /* ProgressPdfRenderer.swift in Sources */,
 				BB79D99DAB7D2383FD37F384 /* RootTabs.swift in Sources */,
 				986E73724D57C8FF0A419AFD /* RootView.swift in Sources */,
 			);
@@ -442,7 +391,6 @@
 		};
 		953ED54BD10763B3481F163B /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 48C286867AC81B478A5E058E /* Pods-Bihua.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -558,7 +506,6 @@
 		};
 		ECD47485A3904B96B8B6668D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 352B0739697E1CDBE0852EAF /* Pods-Bihua.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

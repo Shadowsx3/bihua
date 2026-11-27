@@ -33,15 +33,20 @@ import com.bassmd.bihua.content.IosGuideRepository
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.content.WordContext
 import com.bassmd.bihua.platform.IosReminders
+import com.bassmd.bihua.platform.IosSfx
 import com.bassmd.bihua.platform.IosSpeech
 import com.bassmd.bihua.platform.Services
 import com.bassmd.bihua.progress.IosProgressStore
+import com.bassmd.bihua.progress.PdfCharacter
+import com.bassmd.bihua.progress.PdfStat
+import com.bassmd.bihua.progress.ProgressPdfData
 import com.bassmd.bihua.progress.PlayerStats
 import com.bassmd.bihua.settings.IosSettingsStore
 import com.bassmd.bihua.settings.IosStudyListStore
 import com.bassmd.bihua.settings.ThemeMode
 import com.bassmd.bihua.settings.currentLocalDate
 import com.bassmd.bihua.ui.CharacterDetailOverviewScreen
+import com.bassmd.bihua.ui.CompareOverviewScreen
 import com.bassmd.bihua.ui.WordPracticeScreen
 import com.bassmd.bihua.ui.CharactersOverviewScreen
 import com.bassmd.bihua.ui.DictionaryOverviewScreen
@@ -78,6 +83,7 @@ private object IosDesk {
     val content = IosContentRepository()
     val progress = IosProgressStore()
     val speech = IosSpeech()
+    val sfx = IosSfx()
     val studyLists = IosStudyListStore()
     val guides = IosGuideRepository()
     var pendingWord: WordContext? = null
@@ -93,6 +99,7 @@ fun IosRouteScreen(
     onShareFile: (String) -> Unit = {},
     onRequestFilePicker: () -> Unit = {},
     onOnboardingChanged: (Boolean) -> Unit = {},
+    onRenderProgressPdf: (String) -> Unit = {},
 ) {
     val route = IosRoute.from(routeId)
     val settings = IosDesk.store.settings
@@ -103,6 +110,10 @@ fun IosRouteScreen(
 
     LaunchedEffect(settings.onboarded) {
         onOnboardingChanged(!settings.onboarded)
+    }
+
+    LaunchedEffect(settings.soundEffects) {
+        IosDesk.sfx.enabled = settings.soundEffects
     }
 
     LaunchedEffect(settings.remindersEnabled) {
@@ -136,6 +147,18 @@ fun IosRouteScreen(
         }.getOrNull()
     }
 
+    if (routeId?.startsWith("compare/") == true) {
+        val id = routeId.removePrefix("compare/")
+        Themed(settings.themeMode, maxWidth = 900.dp) {
+            val entry = decorated?.firstOrNull { it.id == id }
+            if (entry == null) {
+                Loading()
+            } else {
+                CompareOverviewScreen(initial = entry, allCharacters = decorated.orEmpty())
+            }
+        }
+        return
+    }
     if (routeId?.startsWith("stroke/") == true) {
         val id = routeId.removePrefix("stroke/")
         Themed(settings.themeMode, maxWidth = 760.dp) {
@@ -191,7 +214,10 @@ fun IosRouteScreen(
                     list = list,
                     allCharacters = loaded,
                     onRename = { name -> IosDesk.studyLists.rename(id, name) },
-                    onAdd = { entry -> IosDesk.studyLists.add(id, entry.id) },
+                    onAdd = { entry ->
+                        IosDesk.studyLists.add(id, entry.id)
+                        IosDesk.sfx.play(IosSfx.Effect.ADD)
+                    },
                     onRemove = { entry -> IosDesk.studyLists.remove(id, entry.id) },
                 )
             }
@@ -247,6 +273,7 @@ fun IosRouteScreen(
                         .contains("-review-answer"),
                     onGrade = { entry, grade ->
                         IosDesk.progress.grade(entry, grade, settings)
+                        IosDesk.sfx.play(IosSfx.Effect.GRADE)
                     },
                 )
             }
@@ -278,6 +305,7 @@ fun IosRouteScreen(
                 onDone = { nextSettings, nextProfile ->
                     IosDesk.store.updateSettings { nextSettings }
                     IosDesk.store.updateProfile { nextProfile }
+                    IosDesk.sfx.play(IosSfx.Effect.SESSION)
                 },
             )
         }
@@ -361,6 +389,36 @@ fun IosRouteScreen(
                 today = today,
                 studyDays = activity.count { it.reviewed + it.learned > 0 },
                 stats = PlayerStats.forXp(IosDesk.progress.totalReviews * 10),
+                onExportPdf = {
+                    val data = ProgressPdfData(
+                        title = "Progress report",
+                        course = mode.label,
+                        generatedOn = today.toString(),
+                        stats = listOf(
+                            PdfStat("Level", "${PlayerStats.forXp(IosDesk.progress.totalReviews * 10).level}"),
+                            PdfStat("Reviews", "${IosDesk.progress.totalReviews}"),
+                            PdfStat("Known", "${loaded.orEmpty().count { it.status == com.bassmd.bihua.content.StudyStatus.KNOWN }}"),
+                            PdfStat("Study days", "${activity.count { it.reviewed + it.learned > 0 }}"),
+                        ),
+                        characters = loaded.orEmpty()
+                            .filter { it.status != com.bassmd.bihua.content.StudyStatus.NEW }
+                            .ifEmpty { loaded.orEmpty().take(20) }
+                            .map { entry ->
+                            PdfCharacter(
+                                character = entry.character,
+                                reading = entry.reading,
+                                meaning = entry.meaning,
+                                status = entry.status.label,
+                            )
+                        },
+                    )
+                    val text = kotlinx.serialization.json.Json { encodeDefaults = true }
+                        .encodeToString(ProgressPdfData.serializer(), data)
+                    val name = "bihua-progress-${today}.json"
+                    if (Services.current.files.writeBytes(name, text.encodeToByteArray())) {
+                        onRenderProgressPdf("${Services.current.files.filesDir}/$name")
+                    }
+                },
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             IosRoute.SETTINGS -> SettingsOverviewScreen(

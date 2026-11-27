@@ -39,6 +39,20 @@ struct RootTabsView: UIViewControllerRepresentable {
             }
             navigation.present(activity, animated: true)
         }
+        let renderProgressPdf: (String) -> Void = { [weak controller] path in
+            guard let controller else { return }
+            if let pdf = ProgressPdfRenderer.make(from: path) {
+                shareFile(pdf)
+            } else {
+                let alert = UIAlertController(
+                    title: "Could not create the PDF",
+                    message: "The report data was not readable.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                controller.present(alert, animated: true)
+            }
+        }
         let onboardingChanged: (KotlinBoolean) -> Void = { [weak controller] visible in
             controller?.tabBar.isHidden = visible.boolValue
         }
@@ -93,7 +107,8 @@ struct RootTabsView: UIViewControllerRepresentable {
                 onPop: pop,
                 onShareFile: shareFile,
                 onRequestFilePicker: requestFilePicker,
-                onOnboardingChanged: onboardingChanged
+                onOnboardingChanged: onboardingChanged,
+                onRenderProgressPdf: renderProgressPdf
             )
             screen.navigationItem.title = Self.title(for: route)
             screen.hidesBottomBarWhenPushed = route == "review"
@@ -101,11 +116,11 @@ struct RootTabsView: UIViewControllerRepresentable {
             navigation.pushViewController(screen, animated: true)
         }
         controller.viewControllers = [
-            tab(title: "Home", icon: "house.fill", route: "home", hidesBar: true, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
-            tab(title: "Characters", icon: "square.grid.2x2.fill", route: "characters", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
-            tab(title: "Practice", icon: "paintbrush.pointed.fill", route: "practice", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
-            tab(title: "Progress", icon: "chart.bar.xaxis", route: "progress", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
-            tab(title: "Settings", icon: "gearshape.fill", route: "settings", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
+            tab(title: "Home", icon: "house.fill", route: "home", hidesBar: true, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged, onRenderProgressPdf: renderProgressPdf),
+            tab(title: "Characters", icon: "square.grid.2x2.fill", route: "characters", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged, onRenderProgressPdf: renderProgressPdf),
+            tab(title: "Practice", icon: "paintbrush.pointed.fill", route: "practice", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged, onRenderProgressPdf: renderProgressPdf),
+            tab(title: "Progress", icon: "chart.bar.xaxis", route: "progress", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged, onRenderProgressPdf: renderProgressPdf),
+            tab(title: "Settings", icon: "gearshape.fill", route: "settings", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged, onRenderProgressPdf: renderProgressPdf),
         ]
 
         let ink = UIColor(red: 0.12, green: 0.17, blue: 0.14, alpha: 1)
@@ -140,7 +155,8 @@ struct RootTabsView: UIViewControllerRepresentable {
         onThemeChange: @escaping (KotlinBoolean) -> Void,
         onShareFile: @escaping (String) -> Void,
         onRequestFilePicker: @escaping () -> Void,
-        onOnboardingChanged: @escaping (KotlinBoolean) -> Void
+        onOnboardingChanged: @escaping (KotlinBoolean) -> Void,
+        onRenderProgressPdf: @escaping (String) -> Void
     ) -> UINavigationController {
         var screen: UIViewController!
         let navigation = RootNavigationController()
@@ -155,7 +171,8 @@ struct RootTabsView: UIViewControllerRepresentable {
             },
             onShareFile: onShareFile,
             onRequestFilePicker: onRequestFilePicker,
-            onOnboardingChanged: onOnboardingChanged
+            onOnboardingChanged: onOnboardingChanged,
+            onRenderProgressPdf: onRenderProgressPdf
         )
         screen.navigationItem.title = title
         navigation.setViewControllers([screen], animated: false)
@@ -185,6 +202,7 @@ struct RootTabsView: UIViewControllerRepresentable {
         if route == "lists" { return "Study lists" }
         if route.hasPrefix("list/") { return "Study list" }
         if route.hasPrefix("stroke/") { return "Stroke order" }
+        if route.hasPrefix("compare/") { return "Compare" }
         if route.hasPrefix("character/") {
             let id = route.split(separator: "/").last.map(String.init) ?? ""
             let codepoint = id.split(separator: ":").last.map(String.init) ?? ""

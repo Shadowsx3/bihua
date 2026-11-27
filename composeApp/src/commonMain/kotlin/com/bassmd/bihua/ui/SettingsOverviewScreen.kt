@@ -165,6 +165,9 @@ fun SettingsOverviewScreen(
                         if (enabled) confirmMature = true
                         else onSettingsChange(settings.copy(includeMatureContent = false))
                     }
+                    ToggleRow("Sound effects", "Short, quiet feedback for a finished action.", settings.soundEffects) {
+                        onSettingsChange(settings.copy(soundEffects = it))
+                    }
                     ToggleRow("Reduce motion", "Stop bobbing, confetti, and long transitions.", settings.reduceMotion) {
                         onSettingsChange(settings.copy(reduceMotion = it))
                     }

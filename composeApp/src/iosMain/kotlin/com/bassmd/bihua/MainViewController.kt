@@ -18,6 +18,7 @@ fun MainViewController(
     onShareFile: (String) -> Unit,
     onRequestFilePicker: () -> Unit,
     onOnboardingChanged: (Boolean) -> Unit,
+    onRenderProgressPdf: (String) -> Unit,
 ): UIViewController {
     Services.install(IosPlatformServices())
     return ComposeUIViewController {
@@ -31,6 +32,7 @@ fun MainViewController(
                 onShareFile = onShareFile,
                 onRequestFilePicker = onRequestFilePicker,
                 onOnboardingChanged = onOnboardingChanged,
+                onRenderProgressPdf = onRenderProgressPdf,
             )
         }
     }
