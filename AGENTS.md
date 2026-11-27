@@ -15,13 +15,13 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
 ## Repository layout
 
-- `app/src/commonMain/kotlin` shared domain and, from P3, shared Compose UI.
-- `app/src/commonTest/kotlin` tests that run on Android and iOS.
-- `app/src/androidMain/kotlin` Android code, `androidMain/res`, `androidMain/assets`,
+- `composeApp/src/commonMain/kotlin` shared domain and, from P3, shared Compose UI.
+- `composeApp/src/commonTest/kotlin` tests that run on Android and iOS.
+- `composeApp/src/androidMain/kotlin` Android code, `androidMain/res`, `androidMain/assets`,
   and `androidMain/AndroidManifest.xml`.
-- `app/src/androidUnitTest` JVM/Robolectric tests; `app/src/androidDebug` the QA
+- `composeApp/src/androidUnitTest` JVM/Robolectric tests; `composeApp/src/androidDebug` the QA
   bridge and debug manifest.
-- `app/src/iosMain/kotlin` the Compose entry point and Foundation services.
+- `composeApp/src/iosMain/kotlin` the Compose entry point and Foundation services.
 - `iosApp/` XcodeGen project, Swift host, Info.plist, privacy manifest, Podfile.
 - `qa/ios/` the idb simulator driver; `scripts/ios.sh` the build and device loop.
 
@@ -211,7 +211,7 @@ scripts/journey.sh --standard --screenshots
 
 - Bump `versionCode` and `versionName` for a release; do not rebuild a version
   that is already published.
-- `make release` and `./gradlew :app:bundleRelease`, then verify the version and
+- `make release` and `./gradlew :composeApp:bundleRelease`, then verify the version and
   signature, install the signed APK, and smoke-test the main flow.
 - Update `docs/download/`, `SHA256SUMS.txt`, the landing hash/link, the release
   checklist, roadmap, README, changelog, and `docs/play-store-submission.md`.
@@ -455,7 +455,7 @@ Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
 - Dependency policy: `docs/dependency-updates.md`.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
-- Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/androidDebug`.
+- Local journey harness: `qa/README.md`; debug-only setup bridge is `composeApp/src/androidDebug`.
 - Flow galleries: `scripts/flow-gallery.sh <flow> --name <run>` writes
   `qa/gallery/<run>/phone|tablet|fold/<flow>.png` and an `INDEX.md`; use it
   for visual reviews, not for store assets.
@@ -979,7 +979,7 @@ changing `docs/` does not update it.
 After every source change that reaches a release, rebuild and re-smoke the APK,
 then update all three places together:
 
-1. Copy `app/build/outputs/apk/release/app-release.apk` to
+1. Copy `composeApp/build/outputs/apk/release/app-release.apk` to
    `docs/download/bihua-1.1.2.apk`.
 2. Put the new SHA-256 in `docs/download/SHA256SUMS.txt` and the landing card.
 3. Change the landing download query to `?v=<first 8 hash chars>` so the Pages

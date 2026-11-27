@@ -83,10 +83,10 @@ quick:
 	@scripts/check.sh --quick
 
 test:
-	@. scripts/env.sh && ./gradlew :app:testDebugUnitTest --console=plain -q && echo "unit tests ok"
+	@. scripts/env.sh && ./gradlew :composeApp:testDebugUnitTest --console=plain -q && echo "unit tests ok"
 
 lint:
-	@. scripts/env.sh && ./gradlew :app:lintDebug --console=plain -q && echo "lint ok"
+	@. scripts/env.sh && ./gradlew :composeApp:lintDebug --console=plain -q && echo "lint ok"
 
 audit:
 	@python3 tools/audit_content.py
@@ -134,7 +134,7 @@ visual-matrix:
 	@scripts/journey.sh --scenario screen-pass,screen-pass-traditional,screen-pass-ja,screen-pass-ko --profile phone,phone-landscape,fold-inner,fold-inner-portrait,fold-outer,fold-outer-landscape,tablet,tablet-portrait --screenshots --layout-audit --parallel 3 --no-build
 
 apk:
-	@. scripts/env.sh && ./gradlew :app:assembleDebug --console=plain -q && echo "apk ok"
+	@. scripts/env.sh && ./gradlew :composeApp:assembleDebug --console=plain -q && echo "apk ok"
 
 verify:
 	@scripts/verify-apk.sh

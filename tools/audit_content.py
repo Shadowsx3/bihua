@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DB = ROOT / "app/src/androidMain/assets/bihua_content.db"
+DB = ROOT / "composeApp/src/androidMain/assets/bihua_content.db"
 CRITICAL = 0
 MATURE_GLOSS = re.compile(
     r"\b(?:sexual(?:ly)?|sex organs?|genital(?:ia|s)?|penile|vaginal|semen|sperm|"

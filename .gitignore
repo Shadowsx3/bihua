@@ -17,7 +17,7 @@ signing.properties
 
 # Content datasets are generated locally by the import tool and checked in only as checksums
 # (see docs in the plan folder). Uncomment when the content pipeline lands.
-# app/src/main/assets/bihua_content.db
+# composeApp/src/main/assets/bihua_content.db
 
 # Downloaded open datasets. Recreate with tools/fetch-content.sh; the manifest is tracked.
 tools/data/raw/

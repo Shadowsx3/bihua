@@ -146,7 +146,7 @@ Additional 2026 requirements:
 
 | Measure | Value |
 |---|---|
-| Kotlin files in `app/src/main/java` | 147 |
+| Kotlin files in `composeApp/src/androidMain/kotlin` | 147 |
 | Kotlin lines | 45,660 |
 | Compose screen lines (`ui`, `practice`, `settings`, `learn`) | ~35,000 |
 | Files importing `android.*` directly | 36 |
@@ -185,7 +185,7 @@ Package sizes for planning:
 ## 2. Target architecture
 
 ```
-app/                      single Kotlin Multiplatform module (the Compose app)
+composeApp/                      single Kotlin Multiplatform module (the Compose app)
   src/commonMain/kotlin/    every screen, every pure domain package
   src/commonMain/composeResources/   only if a string or drawable must be a resource
   src/androidMain/kotlin/   Android services, Activity, Application, widgets, sync
@@ -307,7 +307,7 @@ Xcode build phase (target → Build Phases → Run Script, before Compile Source
 
 ```sh
 cd "$SRCROOT/.."
-./gradlew :app:embedAndSignAppleFrameworkForXcode
+./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
 ```
 
 ### Entry point
@@ -396,7 +396,7 @@ App size: the 30 MB content DB, Skia, and the ML Kit pod put the download near
 60 to 80 MB. Acceptable for a language app with a dictionary inside; measure
 before P7 and state it on the listing.
 
-`app/src/androidDebug` (the QA bridge) must not leak into `commonMain`.
+`composeApp/src/androidDebug` (the QA bridge) must not leak into `commonMain`.
 
 ---
 
@@ -805,7 +805,7 @@ Add `scripts/ios-journey.sh` with the same flags as `scripts/journey.sh`
 ### CI
 
 - macOS runner: `xcodebuild -scheme Bihua -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test`.
-- Gradle: `:app:iosSimulatorArm64Test`, `:app:testDebugUnitTest`.
+- Gradle: `:composeApp:iosSimulatorArm64Test`, `:composeApp:testDebugUnitTest`.
 - Cache Gradle, Xcode DerivedData, and the ML Kit pod.
 - No device farm. Screenshots and journeys stay local, like Android.
 
@@ -918,7 +918,7 @@ Assumes one agent working continuously. Hours are work, not calendar.
 | Phase | Work | Hours | Exit criteria |
 |---|---|---|---|
 | P0 | Toolchain spike: KMP module, CMP on the simulator, ASCII text field, Pencil force probe, ML Kit pod link | 16–24 | One Compose screen runs on both platforms from the same source |
-| P1 | Source-set split; move pure packages; `expect/actual` skeleton; Android still green | 24–40 | `make check` and `make lint` green; `:app:iosSimulatorArm64Test` runs |
+| P1 | Source-set split; move pure packages; `expect/actual` skeleton; Android still green | 24–40 | `make check` and `make lint` green; `:composeApp:iosSimulatorArm64Test` runs |
 | P2 | SQLDelight + schema 18 + fixture test; settings via path DataStore; content copy; backup zip | 40–64 | Android fixture opens and round-trips on iOS |
 | P3 | Compose UI to `commonMain`: Home, review, characters, dictionary, settings, progress | 80–120 | Screen pass on iPhone and iPad, light/dark, 1.5x |
 | P4 | Swift seams: ML Kit, speech, sounds, share, picker, PDF, reminders, network, links, clipboard | 48–72 | Every seam has a Swift test and a Kotlin fake |

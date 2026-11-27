@@ -14,6 +14,6 @@ fi
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/build-tools/36.0.0:$PATH"
 
-APK_DEBUG="$BIHUA_ROOT/app/build/outputs/apk/debug/app-debug.apk"
+APK_DEBUG="$BIHUA_ROOT/composeApp/build/outputs/apk/debug/composeApp-debug.apk"
 APP_ID="com.bassmd.bihua"
 export APK_DEBUG APP_ID

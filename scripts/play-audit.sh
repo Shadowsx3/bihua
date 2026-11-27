@@ -7,8 +7,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 . scripts/env.sh
 
-APK="${1:-app/build/outputs/apk/release/app-release.apk}"
-AAB="${2:-app/build/outputs/bundle/release/app-release.aab}"
+APK="${1:-composeApp/build/outputs/apk/release/app-release.apk}"
+AAB="${2:-composeApp/build/outputs/bundle/release/app-release.aab}"
 FAIL=0
 ok() { printf '  ok:   %s\n' "$1"; }
 bad() { printf '  FAIL: %s\n' "$1"; FAIL=$((FAIL + 1)); }

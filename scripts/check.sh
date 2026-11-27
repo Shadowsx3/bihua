@@ -44,19 +44,19 @@ run() {
 }
 
 echo "bihua check"
-run "compile" ./gradlew :app:compileDebugKotlin --console=plain -q
+run "compile" ./gradlew :composeApp:compileDebugKotlin --console=plain -q
 
 if [ "$QUICK" -eq 1 ]; then
   echo "bihua check: compile ok"
   exit 0
 fi
 
-run "unit tests" ./gradlew :app:testDebugUnitTest --console=plain -q
+run "unit tests" ./gradlew :composeApp:testDebugUnitTest --console=plain -q
 run "content audit" python3 tools/audit_content.py
-run "debug apk" ./gradlew :app:assembleDebug --console=plain -q
+run "debug apk" ./gradlew :composeApp:assembleDebug --console=plain -q
 
 if [ "$LINT" -eq 1 ]; then
-  run "lint" ./gradlew :app:lintDebug --console=plain -q
+  run "lint" ./gradlew :composeApp:lintDebug --console=plain -q
 fi
 
 if ! "$BIHUA_ROOT/scripts/verify-apk.sh" >"$LOG" 2>&1; then

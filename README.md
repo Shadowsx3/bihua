@@ -163,17 +163,17 @@ falls back to the debug key and is not a release candidate.
 
 ```bash
 make release
-. scripts/env.sh && ./gradlew :app:bundleRelease
+. scripts/env.sh && ./gradlew :composeApp:bundleRelease
 ```
 
-`make release` writes `app/build/outputs/apk/release/app-release.apk`; the bundle
-is `app/build/outputs/bundle/release/app-release.aab`. Verify the signature and
+`make release` writes `composeApp/build/outputs/apk/release/app-release.apk`; the bundle
+is `composeApp/build/outputs/bundle/release/app-release.aab`. Verify the signature and
 version before hosting or uploading:
 
 ```bash
 APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
-"$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
-adb install -r app/build/outputs/apk/release/app-release.apk
+"$APKSIGNER" verify --print-certs composeApp/build/outputs/apk/release/app-release.apk
+adb install -r composeApp/build/outputs/apk/release/app-release.apk
 ```
 
 Copy the APK to `docs/download/`, update `docs/download/SHA256SUMS.txt`, the
@@ -236,7 +236,7 @@ word examples come from the Korean Wiktionary extract, ranked by FrequencyWords.
 ## Repository map
 
 ```text
-app/                 Android app
+composeApp/                 Android app
 docs/                landing page and methodology
 licenses/            full third-party licence texts
 tools/import/        content importer and generator

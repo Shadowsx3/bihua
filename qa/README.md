@@ -199,7 +199,7 @@ Widget rendering is covered by JVM tests: `ReviewWidgetBinderTest` inflates the
 1.1.1 layout and checks the two big numbers, the colored labels, the
 plain-language forecast line, the short-slot fit, and the empty/vacation
 states; `ReviewWidgetPreviewTest` draws the daily, wide, weekly, and night
-layouts to PNGs under `app/build/reports/`; `WidgetCopyTest` and
+layouts to PNGs under `composeApp/build/reports/`; `WidgetCopyTest` and
 `ProgressStoreModeTest` cover the copy and the scheduler-backed day/week
 amounts. The launcher picker and resize path still need a real launcher pass.
 | `grade-help` | opens the plain-word grade legend from a session |
@@ -246,7 +246,7 @@ For pronunciation scheduling it reproduces the app’s Java string hash so tasks
 
 ## Debug-only bridge
 
-`app/src/debug/.../QaBridgeReceiver.kt` accepts base64 settings and profile JSON, writes them through the real `SettingsStore`, and marks completion. Release builds do not contain it.
+`composeApp/src/debug/.../QaBridgeReceiver.kt` accepts base64 settings and profile JSON, writes them through the real `SettingsStore`, and marks completion. Release builds do not contain it.
 
 ## Artifacts
 

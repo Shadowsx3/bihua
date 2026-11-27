@@ -9,11 +9,11 @@ grow in P2-P5. Nothing here changes the Android release on `main`.
 
 ## Source sets
 
-One Gradle module, `:app`, with two clients and canonical KMP source sets. No
+One Gradle module, `:composeApp`, with two clients and canonical KMP source sets. No
 source-dir overrides remain in `build.gradle.kts`.
 
 ```
-app/src/
+composeApp/src/
   commonMain/kotlin/        shared domain and Compose UI
   commonTest/kotlin/        pure tests that run on Android and iOS
   androidMain/kotlin/       Android code, services, widgets, sync

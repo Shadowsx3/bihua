@@ -32,7 +32,7 @@ built, how the game loop works, and what is still missing. The working handoff
 
 ### Data
 
-- `app/src/androidMain/assets/spellbook.csv`: about 1,390 spells across four scripts
+- `composeApp/src/androidMain/assets/spellbook.csv`: about 1,390 spells across four scripts
   (Simplified, Traditional, Japanese kanji, Korean Hanja), 35 families, and 10
   chapters (Tides, Flame, Sky, Ground, Creatures, Craft, Mind, Time, Arcana, Spirit).
   Each script has roughly 30–35 choices in every chapter. A spell row carries its
@@ -46,7 +46,7 @@ built, how the game loop works, and what is still missing. The working handoff
   26 times of day, 20 weathers, and the place-kind tables that keep obstacles and
   settings honest). The compatible frames give 19,607 unique places and 520,488
   obstacle-place pairs; each obstacle still fits 9–38 settings. Source of truth.
-  `tools/spells/build_parts.py` compiles it to `app/src/androidMain/assets/puzzle_parts.db`.
+  `tools/spells/build_parts.py` compiles it to `composeApp/src/androidMain/assets/puzzle_parts.db`.
 - The fixed 1500-variant library and its seed/build files are retired. Every scene is
   built from `puzzle_parts.db`; there is no fallback puzzle database in the app.
 - Content store: `bihua_content.db` provides the stroke guides (path-only strokes are

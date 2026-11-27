@@ -89,7 +89,7 @@ def build_apk(no_build: bool) -> None:
         return
     print("building debug APK")
     result = subprocess.run(
-        [str(ROOT / "gradlew"), ":app:assembleDebug", "-q", "--console=plain"],
+        [str(ROOT / "gradlew"), ":composeApp:assembleDebug", "-q", "--console=plain"],
         cwd=ROOT,
         text=True,
         capture_output=True,

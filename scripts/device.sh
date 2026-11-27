@@ -165,7 +165,7 @@ seed_card() {
   [ -n "$character" ] || { echo "usage: seed-$kind <character> [mode] [reps] [dueMinutes]" >&2; exit 1; }
   require_run_as
 
-  local content="$BIHUA_ROOT/app/src/androidMain/assets/bihua_content.db"
+  local content="$BIHUA_ROOT/composeApp/src/androidMain/assets/bihua_content.db"
   local row
   row=$(sqlite3 -separator '|' "$content" \
     "SELECT id, glyph_group_id, mode FROM character WHERE character='$character' AND mode='$mode' LIMIT 1;")
@@ -401,12 +401,12 @@ PY
 
   content)
     python3 tools/import/build_content_db.py
-    ls -lh app/src/androidMain/assets/bihua_content.db
-    sqlite3 app/src/androidMain/assets/bihua_content.db "SELECT key || '=' || value FROM meta WHERE key IN ('structureEntries','words','glyphGroups');"
+    ls -lh composeApp/src/androidMain/assets/bihua_content.db
+    sqlite3 composeApp/src/androidMain/assets/bihua_content.db "SELECT key || '=' || value FROM meta WHERE key IN ('structureEntries','words','glyphGroups');"
     if [ "${1:-}" = "--bump" ]; then
       python3 - <<'PY'
 import re
-p = 'app/src/main/java/com/bassmd/bihua/content/ContentRepository.kt'
+p = 'composeApp/src/main/java/com/bassmd/bihua/content/ContentRepository.kt'
 s = open(p).read()
 m = re.search(r'contentVersion = (\d+)', s)
 if not m:
@@ -420,12 +420,12 @@ PY
     ;;
 
   release)
-    ./gradlew :app:assembleRelease --console=plain 2>&1 | grep -E "^e: |FAILED|BUILD" | tail -5
-    apk=app/build/outputs/apk/release/app-release.apk
+    ./gradlew :composeApp:assembleRelease --console=plain 2>&1 | grep -E "^e: |FAILED|BUILD" | tail -5
+    apk=composeApp/build/outputs/apk/release/app-release.apk
     [ -f "$apk" ] || { echo "release APK missing" >&2; exit 1; }
     python3 - <<'PY'
 import json
-p = 'app/build/outputs/apk/release/output-metadata.json'
+p = 'composeApp/build/outputs/apk/release/output-metadata.json'
 d = json.load(open(p))['elements'][0]
 print(f"release {d.get('versionName')} ({d.get('versionCode')})")
 PY
@@ -439,7 +439,7 @@ PY
 
   install-release)
     resolve_device
-    apk=app/build/outputs/apk/release/app-release.apk
+    apk=composeApp/build/outputs/apk/release/app-release.apk
     [ -f "$apk" ] || { echo "Run scripts/device.sh release first." >&2; exit 1; }
     adb -s "$DEVICE" install -r "$apk" >/dev/null
     launch

@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Bihua"
-include(":app")
+include(":composeApp")

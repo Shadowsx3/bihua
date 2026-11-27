@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 QA = ROOT / ".qa"
 APP_ID = "com.bassmd.bihua"
-DEBUG_APK = ROOT / "app/build/outputs/apk/debug/app-debug.apk"
+DEBUG_APK = ROOT / "composeApp/build/outputs/apk/debug/composeApp-debug.apk"
 ANDROID_HOME = Path(os.environ.get("ANDROID_HOME", str(Path.home() / "Library/Android/sdk")))
 
 

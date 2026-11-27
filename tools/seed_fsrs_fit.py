@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTENT = ROOT / "app/src/androidMain/assets/bihua_content.db"
+CONTENT = ROOT / "composeApp/src/androidMain/assets/bihua_content.db"
 DAY = 86_400_000
 MODES = ["SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN"]
 

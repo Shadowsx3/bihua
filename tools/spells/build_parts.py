@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "tools/spells/parts.sql"
-OUT = ROOT / "app/src/androidMain/assets/puzzle_parts.db"
+OUT = ROOT / "composeApp/src/androidMain/assets/puzzle_parts.db"
 
 
 def main() -> None:

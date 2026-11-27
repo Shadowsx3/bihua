@@ -340,7 +340,7 @@ Unit tests, new files unless noted:
 11. `ReportTextTest.trimsTraceBeforeWords` — with a 60 KB trace and long words,
     the words survive and the trace is cut.
 12. `ReportTextTest.capsWordsAt8000` — `[trimmed]` marker present.
-13. `app/src/test/java/com/bassmd/bihua/settings/RateLinkTest.kt` — the URI is
+13. `composeApp/src/test/java/com/bassmd/bihua/settings/RateLinkTest.kt` — the URI is
     exactly
     `https://play.google.com/store/apps/details?id=com.bassmd.bihua`, built from
     `BuildConfig.APPLICATION_ID`, with no `market://` variant anywhere.

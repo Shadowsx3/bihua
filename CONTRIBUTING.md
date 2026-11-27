@@ -59,7 +59,7 @@ the failing `result.json`/`failed.png`. The harness needs local emulators; see
 The app code is MIT-licensed. Bundled content keeps its upstream terms. If you
 add a dataset, update `tools/data/manifest.json`, add the licence text under
 `licenses/`, update `THIRD_PARTY_NOTICES.md`, and copy the notice into
-`app/src/main/assets/licenses/`.
+`composeApp/src/main/assets/licenses/`.
 
 ## Conduct
 

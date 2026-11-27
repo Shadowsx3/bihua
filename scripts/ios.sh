@@ -74,8 +74,8 @@ raise SystemExit(f"no paired {kind} with Developer Mode enabled")
 framework() {
   local task
   case "$1" in
-    device) task=":app:linkDebugFrameworkIosArm64" ;;
-    *) task=":app:linkDebugFrameworkIosSimulatorArm64" ;;
+    device) task=":composeApp:linkDebugFrameworkIosArm64" ;;
+    *) task=":composeApp:linkDebugFrameworkIosSimulatorArm64" ;;
   esac
   ./gradlew "$task" --console=plain
 }
@@ -170,7 +170,7 @@ case "${1:-run}" in
   boot) boot ;;
   run) run ;;
   test)
-    ./gradlew :app:testDebugUnitTest :app:iosSimulatorArm64Test --console=plain
+    ./gradlew :composeApp:testDebugUnitTest :composeApp:iosSimulatorArm64Test --console=plain
     ;;
   shot) shot "${2:-screen}" ;;
   reset) xcrun simctl uninstall "$(sim_udid)" "$BUNDLE_ID" 2>/dev/null || true ;;
