@@ -185,8 +185,17 @@ struct RootTabsView: UIViewControllerRepresentable {
         if route == "lists" { return "Study lists" }
         if route.hasPrefix("list/") { return "Study list" }
         if route.hasPrefix("stroke/") { return "Stroke order" }
-        let last = route.split(separator: "/").last.map(String.init) ?? route
-        return last.split(separator: ":").last.map(String.init) ?? last
+        if route.hasPrefix("character/") {
+            let id = route.split(separator: "/").last.map(String.init) ?? ""
+            let codepoint = id.split(separator: ":").last.map(String.init) ?? ""
+            if codepoint.hasPrefix("U+"),
+               let value = UInt32(codepoint.dropFirst(2), radix: 16),
+               let scalar = UnicodeScalar(value) {
+                return String(Character(scalar))
+            }
+            return "Character"
+        }
+        return route
     }
 }
 
