@@ -6,9 +6,10 @@ automated part is `make compliance`; the manual part is listed at the end.
 
 Status: Android 1.1.2 is built and held until iOS reaches parity. The iOS client
 is in P3: a native UIKit tab bar hosts shared Home, Progress, and Settings on
-iPhone and iPad, and the WidgetKit extension is built. Review, characters,
-practice, the shared data stores, and the remaining Swift seams are still being
-ported. Do not submit the iOS build until the P7 list is green.
+iPhone and iPad. Widgets are deferred from the first build, so there is no
+`.appex`, no App Group, and no widget screenshot. Review, characters, practice,
+the shared data stores, and the remaining Swift seams are still being ported.
+Do not submit the iOS build until the P7 list is green.
 
 ## Product facts (both stores)
 
@@ -23,7 +24,7 @@ ported. Do not submit the iOS build until the P7 list is green.
 | Third-party SDK that processes data | Google ML Kit Digital Ink, on-device recognition; limited diagnostics and usage metrics |
 | Tracking | No. No ATT prompt, no advertising identifier, no tracking domains |
 | User-generated public content | None. Notes and lists stay local. |
-| Widgets | Today, Week ahead, Word of the day; read one on-device App Group snapshot; no server |
+| Widgets | Android only. Deferred from the first iOS build; no App Group, no `.appex`, no widget screenshots. |
 | Account deletion | Not applicable; there is no account |
 | Age rating | 16+; mature dictionary glosses off by default and gated |
 | Encryption | Standard HTTPS for the optional model download; `ITSAppUsesNonExemptEncryption=false` |
@@ -49,7 +50,6 @@ ported. Do not submit the iOS build until the P7 list is green.
 | Privacy policy | Same page, iOS-aware | `PRIVACY.md`, `docs/privacy.html` |
 | App Privacy | No data collected by the developer; ML Kit diagnostics under App info and performance, not linked, not tracking | `docs/ios-app-store-checklist.md` |
 | Privacy manifest | `PrivacyInfo.xcprivacy`, tracking false; file timestamps, disk space, boot time | Built bundle, `make compliance` |
-| Widgets | Today, Week ahead, Word; App Group snapshot on device only | `.appex` in the bundle, gallery screenshots, entitlements checked by `make compliance` |
 | Dynamic Type | All twelve content-size categories, xS to AX5, live update | `IosDynamicType`, `iosSimulatorArm64Test`, Home screenshot at Accessibility Large |
 | Pointer / trackpad | Indirect input events on | `Info.plist`, `make compliance` |
 | Permissions | Notifications only; no camera, microphone, photos, location, local network, ATT | `Info.plist`, `make compliance` |
@@ -72,9 +72,10 @@ make compliance
 It checks the store documents, policy wording (no name/photo), Android
 version/target/permissions against an allowlist, iOS Info.plist privacy and
 export keys, sensitive usage strings, the privacy manifest, the iPhone/iPad
-target, the 1024 icon, pointer events, the Dynamic Type bridge, the widget extension and its App Group
-entitlements, the absence of photo/camera/contact/location/tracking APIs in iOS
-sources, and other-platform wording in Swift.
+target, the 1024 icon, pointer events, the Dynamic Type bridge, the absence of a widget extension and
+App Group in the first build, the absence of
+photo/camera/contact/location/tracking APIs in iOS sources, and other-platform
+wording in Swift.
 
 It does not prove the App Privacy/Data safety answers are accepted by the
 stores, replace a real-device pass, or run the UI accessibility matrix.

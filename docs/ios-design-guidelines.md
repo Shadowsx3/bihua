@@ -4,10 +4,10 @@ Bihua's iOS client follows the Apple Human Interface Guidelines and the iOS 26
 system appearance. The shell is native UIKit navigation; Compose renders screen
 content. Nothing here is a claim about the Android app.
 
-Status: P3. Home, Characters, Progress, and Settings render on iPhone and iPad inside a
-native `UITabBarController` with one `UINavigationController` per tab. WidgetKit
-Today, Week ahead, and Word widgets are built. Characters, review, and practice
-are the remaining screens. Use this page as the review checklist for that pass.
+Status: P3. Home, Characters, Progress, and Settings render on iPhone and iPad
+inside a native `UITabBarController` with one `UINavigationController` per tab;
+review and character detail use native pushes. Widgets are deferred from the
+first build. Practice, the shared stores, and the remaining seams are next.
 
 ## Shell and navigation
 
@@ -73,21 +73,6 @@ are the remaining screens. Use this page as the review checklist for that pass.
 - [ ] Loading uses a system spinner or a quiet skeleton, never a perpetual
       decorative animation.
 
-## Widgets
-
-- [x] Today, Week ahead, and Word of the day in the WidgetKit gallery, with the
-      same copy and palette as Android.
-- [x] Small and medium Today; medium and large Week; small and medium Word;
-      lock-screen accessory families where they add value.
-- [x] `containerBackground` on iOS 17+, a paper fallback on iOS 16; no
-      hard-coded widget margins.
-- [x] The pet is drawn in SwiftUI from the same Mò parts; no raster avatar and
-      no photo library.
-- [ ] Check all families in light and dark, 1.0 and 2.0 text, on iPhone and
-      iPad; check the gallery on a real device before release.
-- [ ] Confirm the App Group entitlement is present in the device provisioning
-      profile for both the app and the extension.
-
 ## System integration
 
 - [ ] Share sheet for the report composer and PDFs; document picker for import
@@ -97,7 +82,8 @@ are the remaining screens. Use this page as the review checklist for that pass.
 - [ ] Speech uses the system voice and does not interrupt other audio
       unexpectedly.
 - [ ] No local network permission (no sync); no camera, microphone, contacts,
-      photo library, or tracking prompts. Widgets use the App Group only.
+      photo library, or tracking prompts. No App Group or widget extension in
+      the first build.
 - [ ] App Store rating row opens the listing only after a tap.
 
 ## Accessibility

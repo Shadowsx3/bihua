@@ -76,7 +76,7 @@ fun SettingsOverviewScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ThemeMode.entries.forEach { mode ->
                             ChoicePill(
-                                text = mode.label,
+                                text = if (mode == ThemeMode.SYSTEM) "Auto" else mode.label,
                                 selected = settings.themeMode == mode,
                                 onClick = { onThemeChange(mode) },
                                 modifier = Modifier.weight(1f),

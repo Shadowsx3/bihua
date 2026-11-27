@@ -9,28 +9,27 @@ Updated: 2026-11-26
 - **Native iOS shell:** `UITabBarController` + one `UINavigationController` per
   tab now hosts the shared Home, Characters, Progress, and Settings screens.
   Home hides the navigation bar; the other tabs use large titles. Character
-  detail pushes another Compose screen with a native back button. The tab bar
-  is the iOS 26 system glass bar.
+  detail and the review loop push Compose screens with native back buttons.
+  The tab bar is the iOS 26 system glass bar.
 - **Shared iOS screens:** Settings covers appearance, course, the twelve-pet
-  picker, and About/privacy. Progress covers level, known/review/new, the study
-  calendar, and the learned chart. Characters covers search, status filters, a
-  real grid, and a read-only detail with example words. All use the shared
-  theme and models; the data is sample state until the P2 stores land.
-- **WidgetKit extension:** Today, Week ahead, and Word of the day, with small,
-  medium, large, and lock-screen families, drawn in SwiftUI from the same
-  palette and pet. The app writes one App Group snapshot; the extension never
-  links Compose.
+  picker, and About/privacy, and now persists through `IosSettingsStore`.
+  Progress covers level, known/review/new, the study calendar, and the learned
+  chart. Characters covers search, status filters, a real grid, and a read-only
+  detail with example words. Review has cue, ink, reveal, and grading with a
+  sticky grade bar. The data is sample state until the P2 stores land.
+- **Widgets are deferred from the first iOS build.** The SwiftUI WidgetKit
+  views stay in `iosApp/BihuaWidgets` but are not an Xcode target, not embedded,
+  and have no App Group. This keeps the first review focused on the study app.
 - **Profile and compliance:** no name, no photo picker, no photo library; twelve
   drawn pets. Dynamic Type xS–AX5, pointer events, system light/dark, privacy
   manifest, opaque 1024 icon, and `make compliance` checks are in place.
-- **Blocker:** the team provisioning profile has no App Groups capability, so
-  real-device builds stop at signing for the app and the widget extension.
-  Enable `group.com.bassmd.bihua` for both bundle ids in the Apple Developer
-  account and sign Xcode in; do not remove the entitlement to force a build.
-  Simulator builds and `make compliance` are green.
-- **Next:** shared settings/progress/content stores, then review, practice,
-  dictionary, study lists, and the Swift seams (ML Kit, speech, share, picker,
-  PDF, reminders).
+- **Device pass:** the first build has no App Group, so the previous signing
+  blocker is gone. Run the signed build on the connected iPhone and iPad once
+  the Xcode account is signed in; simulator builds and `make compliance` are
+  green, and the XCUITest suite passes on iPhone and iPad simulators.
+- **Next:** shared progress/content stores, then real review scheduling,
+  practice, dictionary, study lists, and the Swift seams (ML Kit, speech,
+  share, picker, PDF, reminders). Widgets come after the first release.
 
 ## Status at 20:40 (2026-11-26)
 

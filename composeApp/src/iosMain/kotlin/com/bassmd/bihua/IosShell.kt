@@ -1,5 +1,6 @@
 package com.bassmd.bihua
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,17 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.content.StudyMode
 import com.bassmd.bihua.platform.Services
 import com.bassmd.bihua.progress.PlayerStats
-import com.bassmd.bihua.settings.AppSettings
+import com.bassmd.bihua.settings.IosSettingsStore
 import com.bassmd.bihua.settings.ThemeMode
-import com.bassmd.bihua.settings.UserProfile
 import com.bassmd.bihua.settings.currentLocalDate
 import com.bassmd.bihua.ui.LocalHangulRomanization
 import com.bassmd.bihua.ui.LocalPinyinNumbers
@@ -25,6 +23,7 @@ import androidx.compose.material3.Text
 import com.bassmd.bihua.ui.CharacterDetailOverviewScreen
 import com.bassmd.bihua.ui.CharactersOverviewScreen
 import com.bassmd.bihua.ui.ProgressOverviewScreen
+import com.bassmd.bihua.ui.ReviewOverviewScreen
 import com.bassmd.bihua.ui.SettingsOverviewScreen
 import com.bassmd.bihua.ui.SharedHomeShowcase
 import com.bassmd.bihua.ui.components.BihuaBackground
@@ -51,8 +50,7 @@ enum class IosRoute(val id: String) {
  * A single object means every tab sees the same course, theme, and pet.
  */
 private object IosDesk {
-    var settings by mutableStateOf(AppSettings())
-    var profile by mutableStateOf(UserProfile())
+    val store = IosSettingsStore()
 }
 
 @Composable
@@ -60,10 +58,35 @@ fun IosRouteScreen(
     routeId: String?,
     onSelectTab: (String) -> Unit = {},
     onPush: (String) -> Unit = {},
+    onThemeChange: (Boolean) -> Unit = {},
+    onPop: () -> Unit = {},
 ) {
     val route = IosRoute.from(routeId)
-    val settings = IosDesk.settings
-    val profile = IosDesk.profile
+    val settings = IosDesk.store.settings
+    val profile = IosDesk.store.profile
+    val systemDark = isSystemInDarkTheme()
+    LaunchedEffect(settings.themeMode, systemDark) {
+        onThemeChange(
+            when (settings.themeMode) {
+                ThemeMode.SYSTEM -> systemDark
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            },
+        )
+    }
+    if (routeId == "review") {
+        val cards = showcaseCharacters(settings.studyMode)
+            .filter { it.status == com.bassmd.bihua.content.StudyStatus.REVIEW }
+            .take(4)
+        BihuaTheme(themeMode = settings.themeMode) {
+            BihuaBackground(decorated = true) {
+                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                    ReviewOverviewScreen(cards = cards, onDone = onPop)
+                }
+            }
+        }
+        return
+    }
     if (routeId?.startsWith("character/") == true) {
         val id = routeId.removePrefix("character/")
         val entry = showcaseCharacters(settings.studyMode).firstOrNull { it.id == id }
@@ -85,8 +108,8 @@ fun IosRouteScreen(
             settings = settings,
             profile = profile,
             onOpenSettings = { onSelectTab(IosRoute.SETTINGS.id) },
-            onStudy = { onSelectTab(IosRoute.PROGRESS.id) },
-            onPractice = { onSelectTab(IosRoute.PROGRESS.id) },
+            onStudy = { onPush("review") },
+            onPractice = { onPush("review") },
         )
         return
     }
@@ -133,13 +156,13 @@ fun IosRouteScreen(
                                 "${info.versionName} (${info.versionCode})"
                             },
                             onThemeChange = { mode: ThemeMode ->
-                                IosDesk.settings = IosDesk.settings.copy(themeMode = mode)
+                                IosDesk.store.updateSettings { it.copy(themeMode = mode) }
                             },
                             onCourseChange = { mode: StudyMode ->
-                                IosDesk.settings = IosDesk.settings.copy(studyMode = mode)
+                                IosDesk.store.updateSettings { it.copy(studyMode = mode) }
                             },
                             onPetChange = { id: String ->
-                                IosDesk.profile = IosDesk.profile.copy(petId = id)
+                                IosDesk.store.updateProfile { it.copy(petId = id) }
                             },
                             onOpenPrivacy = {
                                 Services.current.links.open(

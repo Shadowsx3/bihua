@@ -3,7 +3,6 @@ package com.bassmd.bihua
 import androidx.compose.ui.window.ComposeUIViewController
 import com.bassmd.bihua.platform.IosPlatformServices
 import com.bassmd.bihua.platform.Services
-import com.bassmd.bihua.widget.IosWidgetStore
 import platform.UIKit.UIViewController
 
 /**
@@ -14,12 +13,11 @@ fun MainViewController(
     route: String,
     onSelectTab: (String) -> Unit,
     onPush: (String) -> Unit,
+    onThemeChange: (Boolean) -> Unit,
+    onPop: () -> Unit,
 ): UIViewController {
     Services.install(IosPlatformServices())
-    // The widget reads the shared App Group document; P2 replaces this sample
-    // with the real settings/progress snapshot.
-    IosWidgetStore.publishShowcase()
     return ComposeUIViewController {
-        IosDynamicType { IosRouteScreen(route, onSelectTab, onPush) }
+        IosDynamicType { IosRouteScreen(route, onSelectTab, onPush, onThemeChange, onPop) }
     }
 }

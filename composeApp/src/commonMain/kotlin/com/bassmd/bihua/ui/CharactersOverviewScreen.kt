@@ -95,7 +95,9 @@ fun CharactersOverviewScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
-                placeholder = { Text("Search character or meaning") },
+                placeholder = {
+                    Text("Search characters", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {

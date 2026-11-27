@@ -31,32 +31,30 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
   candidate; the signed RC is built and audited but not uploaded. Release is on
   hold.
 - The iOS port lives on `main` in the same repository: `composeApp/` is the
-  shared KMP module and `iosApp/` is the Xcode host plus the WidgetKit
-  extension. Do not create a second branch or a separate app folder.
+  shared KMP module and `iosApp/` is the Xcode host plus the deferred WidgetKit
+  code. Do not create a second branch or a separate app folder.
 - Shared today: theme, components, Home, Progress, Settings, pet avatars,
   calendar, charts, content and settings models, FSRS, spellbook, and the
   platform seams (`AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`). The
   architecture and migration ledger are in `docs/ios-architecture.md`.
 - iOS uses a native `UITabBarController` + `UINavigationController` shell; the
-  screen content is Compose. iOS hides sync, foldable layouts, and crash
-  attachment through `Capabilities`; it has WidgetKit widgets and never labels
-  an absent feature "Android only". The parity table is
-  `docs/ios-feature-parity.md`.
-- The app and the `BihuaWidgets` extension share only the App Group
-  `group.com.bassmd.bihua`, keyed `widget_snapshot`. Keep the Kotlin wire names
-  and `iosApp/WidgetShared/WidgetSnapshot.swift` in sync; never put user notes,
-  review history, or personal data in the widget document.
+  screen content is Compose. iOS hides sync, widgets, foldable layouts, and
+  crash attachment through `Capabilities`; it never labels an absent feature
+  "Android only". The parity table is `docs/ios-feature-parity.md`.
+- iOS WidgetKit code is **deferred from the first iOS build**. It lives in
+  `iosApp/BihuaWidgets` and `iosApp/WidgetShared` but is not an Xcode target and
+  is not embedded. Do not add it to the first archive; the checklist is in
+  `iosApp/BihuaWidgets/README.md`. Android widgets are unaffected.
 - ML Kit iOS has no arm64 simulator slice. Use `make ios-mlkit-pods` for a
   device build; the simulator stays on the Compose host. Recognition is proven
   on a real iPad.
-- Widgets need the App Group `group.com.bassmd.bihua` on both bundle ids
-  (`com.bassmd.bihua` and `com.bassmd.bihua.widgets`). The current team
-  provisioning profile does not include it, so `make ios-device-build` stops at
-  signing until the capability is enabled in the Apple Developer account and
-  Xcode is signed in. Simulator builds work with `CODE_SIGNING_ALLOWED=NO`;
-  never remove the App Group to make a device build pass.
-- New in 1.1.2: Today, Week ahead, and Word widgets on Android, with the same
-  three WidgetKit widgets built for iOS; Progress All time and the year
+- The first iOS build has no App Group and no widget extension, so the previous
+  App Groups signing blocker is gone. A later widget release needs the App
+  Group `group.com.bassmd.bihua` on both bundle ids and a provisioning profile
+  that includes it; do not add the entitlement without enabling the capability
+  in the Apple Developer account.
+- New in 1.1.2: Today, Week ahead, and Word widgets on Android; Progress All
+  time and the year
   heatmap; local crash files and the report composer; the seamless splash;
   two-page Home/Practice and spell-quest landscape; the 65% chapter-coloured
   guide; and the offline first-run path.

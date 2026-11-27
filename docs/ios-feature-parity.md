@@ -16,6 +16,7 @@ design).
 | Review session | Yes | shared | P3 | Meet/Trace/Write/Reveal, grades, reasons, undo |
 | Pronunciation / meaning tasks | Yes | shared | P3 | Optional modes, no canvas |
 | Characters grid and detail | Yes | shared | in progress | Search, status filters, real tiles, and a read-only detail with example words; notes, synonyms, history, and the store follow |
+| Review loop | Yes | shared | in progress | Cue, ink, reveal, grade, next; sample cards and local advance until the shared FSRS/progress store lands |
 | Dictionary | Yes | shared | P3 | Offline, four scripts |
 | Practice canvas | Yes | shared | P3 | Free practice, guide, stroke playback |
 | Compare | Yes | shared | P3 | Up to four characters |
@@ -39,7 +40,7 @@ design).
 | Rate | Play listing | seam | P4 | App Store URL once the record exists |
 | Clipboard | ClipboardManager | seam | P4 | `UIPasteboard` |
 | Local sync | Yes | **Android** | — | `capabilities.localSync = false`; absent from Settings and search |
-| Widgets | Yes | WidgetKit SwiftUI | done | Today, Week ahead, Word of the day in small/medium/large where families allow, plus lock-screen accessory families. The app writes one App Group snapshot; the extension never links Compose. Outfit choice stays Android-only. |
+| Widgets and outfits | Yes | **Android** | — | Deferred from the first iOS build. The SwiftUI WidgetKit code stays in `iosApp/BihuaWidgets` but is not an Xcode target and is not embedded; `capabilities.widgets = false`. |
 | Foldable book layouts | Yes | **Android** | — | iOS is iPhone/iPad only, no foldable target; `capabilities.foldables = false` |
 | Crash attachment in report | Yes | **Android** | — | `capabilities.crashAttach = false`; the composer says traces are Android only on the store page, not in the app |
 | Privacy policy | Yes | shared link | P7 | About to the iOS-aware page |
@@ -48,8 +49,8 @@ design).
 ## Parity gates
 
 1. `docs/ios-feature-parity.md` has no "planned" row left for a 1.0 feature.
-2. Settings search on iOS returns nothing for sync, foldables, or crash
-   attachment; widgets are present.
+2. Settings search on iOS returns nothing for sync, widgets, foldables, or
+   crash attachment.
 3. The iOS bundle contains no "Android" string, Play badge, or Android-only
    imagery. The report composer prints `iOS` and the device model.
 4. Every Android journey that covers a shared screen has an iOS equivalent in
@@ -61,9 +62,7 @@ design).
 
 ## Deliberate differences
 
-- iOS has no local sync or foldable-fold layout. Widgets are present but the
-  Android outfit picker does not apply; the iOS pet costume follows the hour
-  and state.
+- iOS has no local sync, widgets, or foldable-fold layout in the first build.
 - iOS notifications use the system permission sheet; iOS may hide the app's
   reminder row until permission is granted.
 - The iOS home indicator and safe areas replace Android's gesture insets; the

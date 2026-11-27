@@ -12,21 +12,33 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
 
+schemes:
+  Bihua:
+    build:
+      targets:
+        Bihua: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - BihuaUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
 targets:
   Bihua:
     type: application
     platform: iOS
     sources:
       - path: Bihua
-      - path: WidgetShared
-    dependencies:
-      - target: BihuaWidgets
-        embed: true
-      - sdk: WidgetKit.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua
-        CODE_SIGN_ENTITLEMENTS: Bihua/Bihua.entitlements
         PRODUCT_NAME: Bihua
         INFOPLIST_FILE: Bihua/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -70,22 +82,16 @@ targets:
           esac
           ./gradlew "$TASK" --console=plain
 
-  BihuaWidgets:
-    type: app-extension
+  BihuaUITests:
+    type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: WidgetShared
-      - path: BihuaWidgets
+      - path: BihuaUITests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua.widgets
-        PRODUCT_NAME: BihuaWidgets
-        INFOPLIST_FILE: BihuaWidgets/Info.plist
-        CODE_SIGN_ENTITLEMENTS: BihuaWidgets/BihuaWidgets.entitlements
-        SKIP_INSTALL: YES
-        APPLICATION_EXTENSION_API_ONLY: YES
-        TARGETED_DEVICE_FAMILY: "1,2"
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        PRODUCT_BUNDLE_IDENTIFIER: com.bassmd.bihua.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Bihua
+        CODE_SIGNING_ALLOWED: NO
     dependencies:
-      - sdk: WidgetKit.framework
-      - sdk: SwiftUI.framework
+      - target: Bihua

@@ -42,8 +42,9 @@ no developer-run analytics.
 The same Compose Multiplatform client now lives on `main` in `composeApp/` with
 the Xcode host in `iosApp/`. Home, Characters, Progress, Settings, the pet
 picker, calendar, and charts already render on iPhone and iPad behind a native
-UIKit tab bar and navigation stack; character detail uses a native push. The widget extension is built; review, characters, practice,
-and the shared data stores are the remaining port work. Android remains the
+UIKit tab bar and navigation stack; review and character detail use native
+pushes. Widgets are deferred from the first iOS build; the shared data stores,
+practice, dictionary, and the remaining seams are the port work. Android remains the
 shipped client. The plan and parity table live in `docs/ios-kmp-plan.md` and
 `docs/ios-feature-parity.md`. Build and run with `make ios` or `make ios-ipad`.
 iPhone and iPad are the supported devices; there is no iOS foldable target.
@@ -54,8 +55,8 @@ iPhone and iPad are the supported devices; there is no iOS foldable target.
   and lessons as done and total, with one plain next-hours line. A dedicated
   Week ahead widget shows the next seven days. Word of the Day stays its own
   card. They refresh at day-part and study-day boundaries, on app changes, and
-  on clock/date changes. The same three widgets are built for iPhone and iPad
-  with WidgetKit and arrive with the iOS release.
+  on clock/date changes. iOS widgets are deferred from the first iOS build, so
+  the App Store review stays focused on the core study app.
 - **Progress gained All time and a year map.** All time is a real window, not a
   renamed year. Year and All use a GitHub-style mint heatmap with month labels,
   a weekday gutter, a legend, and horizontal scrolling.

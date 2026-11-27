@@ -155,36 +155,22 @@ else
   bad "iOS Dynamic Type bridge missing"
 fi
 
-# WidgetKit extension, App Group, and snapshot contract.
+# First iOS build: widgets are deferred, so no extension and no App Group.
 WIDGET_APPEX="iosApp/DerivedData/Build/Products/Debug-iphonesimulator/Bihua.app/PlugIns/BihuaWidgets.appex"
 if [ -d "$WIDGET_APPEX" ]; then
-  if [ -x "$WIDGET_APPEX/BihuaWidgets" ]; then
-    ok "WidgetKit extension embedded"
-  else
-    bad "widget extension binary missing"
-  fi
+  bad "widget extension is embedded in the first build"
 else
-  warn "widget extension not built yet; run make ios-build"
+  ok "no widget extension in the first build"
 fi
-if grep -q "com.apple.security.application-groups" iosApp/Bihua/Bihua.entitlements 2>/dev/null   && grep -q "group.com.bassmd.bihua" iosApp/Bihua/Bihua.entitlements   && grep -q "com.apple.security.application-groups" iosApp/BihuaWidgets/BihuaWidgets.entitlements 2>/dev/null   && grep -q "group.com.bassmd.bihua" iosApp/BihuaWidgets/BihuaWidgets.entitlements; then
-  ok "App Group shared by app and widget"
+if grep -Rq "com.apple.security.application-groups" iosApp/Bihua/*.entitlements 2>/dev/null; then
+  bad "App Group entitlement present in the first build"
 else
-  bad "App Group entitlement missing or mismatched"
+  ok "no App Group entitlement in the first build"
 fi
-if grep -q "com.apple.widgetkit-extension" iosApp/BihuaWidgets/Info.plist; then
-  ok "WidgetKit extension point"
+if grep -q "BihuaWidgets" iosApp/project.yml; then
+  bad "widget target is still in project.yml"
 else
-  bad "WidgetKit extension point missing"
-fi
-if grep -q "widget_snapshot" composeApp/src/iosMain/kotlin/com/bassmd/bihua/widget/IosWidgetStore.kt   && grep -q "widget_snapshot" iosApp/WidgetShared/WidgetSnapshot.swift; then
-  ok "widget snapshot key shared"
-else
-  bad "widget snapshot key mismatch"
-fi
-if grep -RIn --include='*.swift' -E "displayName|photoPath|reviewHistory|userNotes" iosApp/WidgetShared iosApp/BihuaWidgets >/dev/null 2>&1; then
-  bad "widget source reads personal profile data"
-else
-  ok "widget source has no personal profile data"
+  ok "widget target absent from project.yml"
 fi
 
 # The privacy policy must be reachable from inside the app.

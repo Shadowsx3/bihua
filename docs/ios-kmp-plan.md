@@ -1,20 +1,20 @@
-# Bihua iOS plan — Compose Multiplatform, native shell, WidgetKit
+# Bihua iOS plan — Compose Multiplatform, native shell, deferred widgets
 
 Status: **P3 in progress on `main`**. The port no longer lives on a branch:
-`composeApp/` and `iosApp/` sit side by side in this repository. Home, Progress,
-Settings, the theme, calendar, charts, and pet render on iPhone and iPad behind
-a native UIKit tab bar. The WidgetKit extension is built. Review, characters,
-practice, the shared stores, and the remaining seams are next. Android 1.1.2 is
-built but held until iOS reaches parity. The Apple Developer Program is renewed
-through November 2027 (team `DUST62RX27`); a real iPhone and iPad are connected
-for device evidence.
+`composeApp/` and `iosApp/` sit side by side in this repository. Home,
+Characters, Progress, and Settings render on iPhone and iPad behind a native
+UIKit tab bar; review and character detail use native pushes. The first iOS
+build has no widgets. The shared stores, practice, dictionary, and the remaining
+seams are next. Android 1.1.2 is built but held until iOS reaches parity. The
+Apple Developer Program is renewed through November 2027 (team `DUST62RX27`); a
+real iPhone and iPad are connected for device evidence.
 
-> **Superseded decisions (26 November 2026).** D3 changed: WidgetKit is now in
-> scope and the Today, Week ahead, and Word widgets are built in
-> `iosApp/BihuaWidgets`. iOS still has no local sync, foldable target, or crash
-> attachment. Anything later in this historical plan that says "no widgets" or
-> "widgets are Android-only" is superseded by `docs/ios-architecture.md` and
-> `docs/ios-feature-parity.md`.
+> **Superseded decisions (26 November 2026).** WidgetKit work is kept in
+> `iosApp/BihuaWidgets` but deferred from the first build to keep the review
+> scope small. The app has no App Group and no `.appex`. iOS still has no local
+> sync, foldable target, or crash attachment. Anything later in this historical
+> plan that says widgets are in scope is superseded by
+> `docs/ios-architecture.md` and `docs/ios-feature-parity.md`.
 
 Working documents:
 
@@ -87,7 +87,7 @@ Before P0:
 |---|---|---|
 | D1 | Share the Compose UI, not just the domain | 35,000 of 45,660 lines are Compose screens. A SwiftUI rewrite would be 250 to 400 hours of UI and a permanent second codebase. |
 | D2 | Swift only for platform seams | ML Kit, speech, PDF, file picking, sharing, notifications, stylus force, image decode. Twelve small files, not a second app. |
-| D3 | WidgetKit widgets on iOS | Superseded 26 November 2026: Today, Week ahead, and Word widgets now ship in `iosApp/BihuaWidgets`. They read one App Group snapshot and never link Compose. |
+| D3 | No widgets in the first iOS build | Deferred. The SwiftUI WidgetKit views are kept in `iosApp/BihuaWidgets` but are not an Xcode target; a later release can enable them with an App Group. |
 | D4 | No local sync on iOS | Removes the only Kotlin/Native-hostile piece (`java.net.ServerSocket`, `javax.net.ssl`, NSD). Android keeps it. |
 | D5 | No crash attachment on iOS at launch | AGENTS already states this. `CrashLog`/`CrashHandler` stay Android. The report composer ships without the checkbox. |
 | D6 | No SKIE | With a shared UI, Swift never consumes Kotlin flows or suspend functions. Seams are callback-based interfaces exported as ObjC protocols. |
@@ -870,7 +870,7 @@ learner taps; the App Store page is opened by the OS.
 |---|---|---|
 | 74 | kicker "Android · pen or finger · offline" | "Android and iOS · pen or finger · offline" |
 | 88 | "Android 10+ · arm64" | Add "iOS 16+" beside it |
-| 193 | "the widgets use the same paper-ink pet" | "on both platforms"; WidgetKit draws the same pet |
+| 193 | "the widgets use the same paper-ink pet" | "on Android"; iOS widgets are deferred |
 | 239 | "Apple Pencil is not supported because Bihua is an Android app." | Replace with the truth: Pencil draws; pressure detail is Android-only until the force spike lands |
 | 522–538 | foldables section | Mark Android-only, or move under an Android heading |
 | download section | APK only | Add the App Store link, keep the APK card, and label both |
