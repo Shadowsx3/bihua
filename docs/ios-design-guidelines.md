@@ -4,9 +4,9 @@ Bihua's iOS client follows the Apple Human Interface Guidelines and the iOS 26
 system appearance. The shell is native UIKit navigation; Compose renders screen
 content. Nothing here is a claim about the Android app.
 
-Status: P0 host only. The shell and screens arrive in P3; this page is the
-review checklist for that pass. The probe screen is temporary and is not part
-of the design.
+Status: P3. The shared Home, theme, components, calendar, and pet render on
+iPhone and iPad; the native tab bar/navigation shell and the remaining screens
+are next. Use this page as the review checklist for that pass.
 
 ## Shell and navigation
 
@@ -30,11 +30,15 @@ of the design.
 
 - [ ] Safe areas and the home indicator respected on every screen; the paper
       background extends under the status bar and indicator.
-- [ ] Keyboard avoidance on every text field: report composer, profile name,
+- [ ] Keyboard avoidance on every text field: report composer,
       study-list name, weights import, pairing code, notes, synonyms, meaning.
       The field and its primary action stay above the keyboard.
-- [ ] Dynamic Type from xS to AX5. Compose maps `UIContentSizeCategory` to a
-      font scale; test 1.5x and 2.0x on Home, review, Settings, detail.
+- [x] Dynamic Type from xS to AX5. `IosDynamicType` maps every
+      `UIContentSizeCategory` to the Apple body-text multiplier and updates on
+      the system notification; verified on Home at Accessibility Large. Still
+      to re-check on review, Settings, and detail.
+- [x] Pointer and trackpad support (`UIApplicationSupportsIndirectInputEvents`);
+      hover and click work on iPad without a compatibility mode.
 - [ ] SF for system chrome; the Bihua serif only where it is intentional and
       still scales. No fixed-height text containers.
 - [ ] 44 x 44 pt minimum touch targets; 8 pt spacing grid; no clipped labels.
@@ -88,6 +92,8 @@ of the design.
 
 ## Privacy and compliance
 
+- [ ] Profile uses the twelve drawn pet looks in a 3 x 4 grid; no name field,
+      photo picker, or photo-library permission.
 - [ ] Permission strings are specific and appear only when needed.
 - [ ] `PrivacyInfo.xcprivacy` ships; required-reason APIs match the archive
       report.

@@ -1,5 +1,6 @@
 package com.bassmd.bihua.progress
 
+import kotlinx.datetime.toJavaLocalDate
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -183,7 +184,7 @@ object ProgressReportPdf {
             add(
                 "You studied on $studyDays of ${data.days.size} days" +
                     if (strongest != null && (strongest.reviewed + strongest.learned) > 0) {
-                        "; strongest day: ${shortDate(strongest.date)}."
+                        "; strongest day: ${shortDate(strongest.date.toJavaLocalDate())}."
                     } else {
                         "."
                     },
@@ -414,7 +415,7 @@ object ProgressReportPdf {
             if (index % 2 == 0) {
                 canvas.drawRect(rect.left + 12f, y - 11f, rect.right - 12f, y + 6f, paint(1f, 0xFFFAF5E9.toInt()))
             }
-            canvas.drawText(shortDate(day.date), rect.left + 16f, y, body)
+            canvas.drawText(shortDate(day.date.toJavaLocalDate()), rect.left + 16f, y, body)
             canvas.drawText(day.reviewed.toString(), rect.left + 250f, y, body)
             canvas.drawText(day.learned.toString(), rect.left + 360f, y, body)
         }
@@ -1221,8 +1222,8 @@ object ProgressReportPdf {
         val grouped = LinkedHashMap<String, MutableList<DayActivity>>()
         days.forEach { day ->
             val key = when {
-                byMonth -> YearMonth.from(day.date).toString()
-                byWeek -> day.date.minusDays((day.date.dayOfWeek.value - 1).toLong()).toString()
+                byMonth -> YearMonth.from(day.date.toJavaLocalDate()).toString()
+                byWeek -> day.date.toJavaLocalDate().minusDays((day.date.toJavaLocalDate().dayOfWeek.value - 1).toLong()).toString()
                 else -> day.date.toString()
             }
             grouped.getOrPut(key) { mutableListOf() }.add(day)

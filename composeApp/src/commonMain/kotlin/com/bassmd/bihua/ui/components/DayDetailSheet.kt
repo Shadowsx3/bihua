@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +37,7 @@ fun DayDetailSheet(day: DayActivity, onDismiss: () -> Unit) {
                 .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
         ) {
             Text(
-                day.date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)),
+                longDateLabel(day.date),
                 style = MaterialTheme.typography.headlineSmall,
                 color = InkDark,
             )

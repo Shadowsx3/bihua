@@ -26,7 +26,7 @@ class SettingsTransferTest {
         )
         val bundle = BackupBundle(
             exportedAtEpochMs = 1L,
-            profile = UserProfile(displayName = "Test"),
+            profile = UserProfile(petId = "pet-mo"),
             settings = settings,
         )
         val decoded = BackupCodec.decode(BackupCodec.encode(bundle))
@@ -53,7 +53,7 @@ class SettingsTransferTest {
         )
         val decoded = BackupCodec.decode(BackupCodec.encode(BackupBundle(
             exportedAtEpochMs = 1L,
-            profile = UserProfile(displayName = "Test"),
+            profile = UserProfile(petId = "pet-mo"),
             settings = settings,
         )))
         assertEquals(2.1f, decoded.settings.brushFor(com.bassmd.bihua.settings.DrawingTool.PEN).minWidthDp, 0.001f)
@@ -93,7 +93,7 @@ class SettingsTransferTest {
         )
         val bundle = BackupBundle(
             exportedAtEpochMs = 1L,
-            profile = UserProfile(displayName = "Test"),
+            profile = UserProfile(petId = "pet-mo"),
             settings = settings,
         )
         val decoded = BackupCodec.decode(BackupCodec.encode(bundle))

@@ -74,14 +74,14 @@ class SyncProtocolTest {
     fun decodesSettingsAndProgress() {
         val bundle = BackupBundle(
             exportedAtEpochMs = 7L,
-            profile = UserProfile(displayName = "Sync test"),
+            profile = UserProfile(petId = "pet-scholar"),
             settings = AppSettings(onboarded = true),
         )
         val json = BackupCodec.encode(bundle)
         val db = byteArrayOf(1, 2, 3, 4)
         val pkg = readSyncPackage(BackupArchive.encode(json, db))
 
-        assertEquals("Sync test", pkg.backup?.profile?.displayName)
+        assertEquals("pet-scholar", pkg.backup?.profile?.petId)
         assertTrue(pkg.backup?.settings?.onboarded == true)
         assertEquals(db.toList(), pkg.progressDb?.toList())
     }
@@ -90,13 +90,13 @@ class SyncProtocolTest {
     fun decodesSettingsOnlyAndProgressOnly() {
         val bundle = BackupBundle(
             exportedAtEpochMs = 7L,
-            profile = UserProfile(displayName = "Only settings"),
+            profile = UserProfile(petId = "pet-reader"),
             settings = AppSettings(),
         )
         val settings = readSyncPackage(
             BackupArchive.encode(BackupCodec.encode(bundle), null),
         )
-        assertEquals("Only settings", settings.backup?.profile?.displayName)
+        assertEquals("pet-reader", settings.backup?.profile?.petId)
         assertNull(settings.progressDb)
 
         val progress = readSyncPackage(BackupArchive.encode(null, byteArrayOf(9)))

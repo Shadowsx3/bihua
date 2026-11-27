@@ -2,6 +2,8 @@
 
 package com.bassmd.bihua.ui
 
+import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toKotlinLocalDate
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -409,7 +411,7 @@ fun DashboardScreen(
                 }
                 StudyCalendarCard(
                     days = calendarDays,
-                    today = today,
+                    today = today.toKotlinLocalDate(),
                     label = if (window.isCustom) window.label else null,
                     onDayClick = { selectedDay = it },
                 )
@@ -443,14 +445,14 @@ fun DashboardScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         ForecastCard(
                             days = forecast,
-                            onDayClick = { selectedDay = DayActivity(date = it.date, due = it.due) },
+                            onDayClick = { selectedDay = DayActivity(date = it.date.toKotlinLocalDate(), due = it.due) },
                             modifier = Modifier.weight(1f),
                         )
                         MemoryCard(memoryBuckets, new, Modifier.weight(1f))
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        ForecastCard(days = forecast, onDayClick = { selectedDay = DayActivity(date = it.date, due = it.due) })
+                        ForecastCard(days = forecast, onDayClick = { selectedDay = DayActivity(date = it.date.toKotlinLocalDate(), due = it.due) })
                         MemoryCard(memoryBuckets, new)
                     }
                 }
@@ -1629,7 +1631,7 @@ private fun TimelineCard(days: List<DayActivity>, modifier: Modifier = Modifier)
     val values = chartDays.map { it.reviewed }
     val max = (values.maxOrNull() ?: 0).coerceAtLeast(1)
     val firstLabel = chartDays.firstOrNull()?.date
-        ?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")) ?: "Start"
+        ?.toJavaLocalDate()?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")) ?: "Start"
     val soft = InkSoft
     if (reviews == 0) {
         SoftCard(modifier.fillMaxWidth()) {

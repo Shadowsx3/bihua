@@ -175,7 +175,7 @@ fun StudyListsScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         importing = true
         scope.launch {
-            val displayName = withContext(Dispatchers.IO) {
+            val importFileName = withContext(Dispatchers.IO) {
                 runCatching {
                     context.contentResolver.query(
                         uri,
@@ -190,7 +190,7 @@ fun StudyListsScreen(
                 runCatching {
                     context.contentResolver.openInputStream(uri)?.use { input ->
                         input.bufferedReader().use { reader ->
-                            StudyListImport.read(reader, displayName, characters)
+                            StudyListImport.read(reader, importFileName, characters)
                         }
                     }
                 }.getOrNull()

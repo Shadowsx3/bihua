@@ -1,6 +1,6 @@
 package com.bassmd.bihua.content
 
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 /**
  * One day of writing activity. The fields are real once the progress store is
@@ -13,4 +13,3 @@ data class DayActivity(
     val due: Int = 0,
     val characters: List<String> = emptyList(),
 )
-

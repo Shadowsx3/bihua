@@ -1,7 +1,6 @@
 package com.bassmd.bihua.settings
 
 import android.content.Context
-import android.util.Base64
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -12,13 +11,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
-import java.io.File
 
 private val Context.preferences: DataStore<Preferences> by preferencesDataStore(name = "bihua_prefs")
 
 /** A restored avatar is capped before Base64 decoding, so a bad file cannot exhaust memory. */
-private const val MAX_RESTORED_PHOTO_CHARS = 8_000_000
-private const val MAX_EXPORTED_PHOTO_BYTES = 4_000_000
 
 /**
  * Settings and profile, stored as JSON in DataStore. The stored shape is the same
@@ -66,35 +62,20 @@ class SettingsStore(private val context: Context) {
         val prefs = context.preferences.data.first()
         val profile = decodeOr(prefs[profileKey], UserProfile())
         val settings = decodeOr(prefs[settingsKey], AppSettings())
-        val photo = profile.photoPath
-            ?.let { File(it) }
-            ?.takeIf { it.isFile && it.length() <= MAX_EXPORTED_PHOTO_BYTES }
-            ?.readBytes()
-            ?.let { Base64.encodeToString(it, Base64.NO_WRAP) }
         return BackupBundle(
             exportedAtEpochMs = exportedAtEpochMs,
             profile = profile,
             settings = settings,
-            photoBase64 = photo,
+            photoBase64 = null,
         )
     }
 
     /** Replaces the profile and settings with the backup's. Values are clamped to valid ranges. */
     suspend fun restore(bundle: BackupBundle) {
-        val restoredProfile = bundle.photoBase64
-            ?.takeIf { it.length <= MAX_RESTORED_PHOTO_CHARS }
-            ?.let { encoded ->
-                runCatching {
-                    val directory = File(context.filesDir, "profile").apply { mkdirs() }
-                    val target = File(directory, "avatar-restored.jpg")
-                    target.writeBytes(Base64.decode(encoded, Base64.NO_WRAP))
-                    bundle.profile.copy(photoPath = target.absolutePath)
-                }.getOrElse { bundle.profile.copy(photoPath = null) }
-            } ?: bundle.profile.copy(photoPath = null)
         context.preferences.edit { prefs ->
             prefs[profileKey] = json.encodeToString(
                 UserProfile.serializer(),
-                restoredProfile.sanitized(),
+                bundle.profile.sanitized(),
             )
             prefs[settingsKey] = json.encodeToString(
                 AppSettings.serializer(),

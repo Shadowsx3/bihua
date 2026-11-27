@@ -184,21 +184,6 @@ class SettingsSanitizeTest {
     }
 
     @Test
-    fun profileNameIsTrimmedAndBounded() {
-        val profile = UserProfile(
-            displayName = "  A\nvery long " + "name ".repeat(40),
-            createdAtEpochMs = -20L,
-            photoPath = "/tmp/photo.jpg",
-        ).sanitized()
-
-        assertEquals(40, profile.displayName.length)
-        assertTrue(profile.displayName.startsWith("Avery long"))
-        assertEquals(0L, profile.createdAtEpochMs)
-        assertEquals("/tmp/photo.jpg", profile.photoPath)
-    }
-
-
-    @Test
     fun oldNumberedPinyinIsMovedToToneMarksOnce() {
         val migrated = AppSettings(pinyinNumbers = true).sanitized()
 
@@ -211,5 +196,13 @@ class SettingsSanitizeTest {
             pinyinToneMigrated = true,
         ).sanitized()
         assertTrue(chosen.pinyinNumbers)
+    }
+
+    @Test
+    fun profilePetIdKeepsTheChosenLook() {
+        assertEquals("pet-mo", UserProfile().petId)
+        assertEquals("pet-scholar", UserProfile(petId = "pet-scholar").sanitized().petId)
+        assertEquals("petmo", UserProfile(petId = " pet mo! ").sanitized().petId)
+        assertEquals("pet-mo", UserProfile(petId = "").sanitized().petId)
     }
 }

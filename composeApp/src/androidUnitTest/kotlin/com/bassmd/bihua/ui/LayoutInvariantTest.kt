@@ -41,7 +41,7 @@ class LayoutInvariantTest {
             BihuaTheme(ThemeMode.LIGHT) {
                 CompositionLocalProvider(LocalPinyinNumbers provides false) {
                     HomeScreen(
-                        profile = UserProfile(displayName = "Learner"),
+                        profile = UserProfile(petId = "pet-mo"),
                         mode = StudyMode.SIMPLIFIED,
                         characters = sampleCharacters(),
                         playerStats = PlayerStats.forXp(0),
@@ -81,7 +81,7 @@ class LayoutInvariantTest {
                     LocalPinyinNumbers provides false,
                 ) {
                     HomeScreen(
-                        profile = UserProfile(displayName = "Learner"),
+                        profile = UserProfile(petId = "pet-mo"),
                         mode = StudyMode.SIMPLIFIED,
                         characters = sampleCharacters(),
                         playerStats = PlayerStats.forXp(0),

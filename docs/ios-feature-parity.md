@@ -35,7 +35,7 @@ design).
 | Ink pressure | Android stylus + finger | Compose pressure on device | P4 | Pencil force probed; ship uniform width if it is not reliable |
 | File picker | SAF | seam | P4 | `UIDocumentPickerViewController` |
 | Share sheet | Intent | seam | P4 | `UIActivityViewController` |
-| Images/avatar | BitmapFactory | shared Skia decode | P4 | No Swift decoder |
+| Avatar / pet | Photo picker (1.1.x) | shared Compose pets | done | Twelve drawn Mò looks in a 3 x 4 picker; no photo library, file read, or image decoder. There is no name field and no photo access. |
 | Rate | Play listing | seam | P4 | App Store URL once the record exists |
 | Clipboard | ClipboardManager | seam | P4 | `UIPasteboard` |
 | Local sync | Yes | **Android** | — | `capabilities.localSync = false`; absent from Settings and search |

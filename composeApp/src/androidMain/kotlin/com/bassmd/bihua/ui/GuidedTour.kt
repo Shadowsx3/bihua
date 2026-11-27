@@ -41,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -66,10 +64,6 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -219,44 +213,6 @@ val TOUR_STEPS = listOf(
         prop = MoProp.STAR,
     ),
 )
-
-/**
- * Bounds are reported by the live app and read by the overlay. Entries are
- * removed when their composable leaves, so a stale anchor from a previous
- * screen or an earlier UI state can never highlight an empty spot. Each anchor
- * also carries a [BringIntoViewRequester] so a step can scroll its target into
- * view before the spotlight is drawn.
- */
-object TourAnchors {
-    val bounds = androidx.compose.runtime.mutableStateMapOf<String, Rect>()
-    private val requesters = mutableMapOf<String, BringIntoViewRequester>()
-
-    internal fun register(id: String, requester: BringIntoViewRequester) {
-        requesters[id] = requester
-    }
-
-    internal fun unregister(id: String, requester: BringIntoViewRequester) {
-        if (requesters[id] === requester) {
-            requesters.remove(id)
-            bounds.remove(id)
-        }
-    }
-
-    internal fun requester(id: String): BringIntoViewRequester? = requesters[id]
-}
-
-fun Modifier.tourAnchor(id: String): Modifier = composed {
-    val requester = remember { BringIntoViewRequester() }
-    DisposableEffect(id, requester) {
-        TourAnchors.register(id, requester)
-        onDispose { TourAnchors.unregister(id, requester) }
-    }
-    this
-        .bringIntoViewRequester(requester)
-        .onGloballyPositioned { coordinates ->
-            TourAnchors.bounds[id] = coordinates.boundsInWindow()
-        }
-}
 
 @Composable
 fun TourInviteCard(

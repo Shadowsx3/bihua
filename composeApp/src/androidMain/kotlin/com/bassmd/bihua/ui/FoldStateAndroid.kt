@@ -7,21 +7,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
-
-/** The posture that matters to the book-like layouts. */
-enum class FoldState {
-    NONE,
-    BOOK,
-    TABLETOP,
-    /** A folding device that is rotated, folded, or otherwise not open as a book. */
-    FOLDABLE,
-}
-
-val LocalFoldState = staticCompositionLocalOf { FoldState.NONE }
 
 /**
  * Watches the window for a separating fold. A flat vertical fold is a book:

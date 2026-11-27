@@ -524,16 +524,16 @@ data class AppSettings(
 /** The learner's own details. Stored only on this device. */
 @Serializable
 data class UserProfile(
-    val displayName: String = "",
     val createdAtEpochMs: Long = 0L,
-    val photoPath: String? = null,
+    /** One of the built-in pet looks. The UI falls back to the first style. */
+    val petId: String = "pet-mo",
 ) {
     fun sanitized(): UserProfile = copy(
-        displayName = displayName
-            .filterNot { it == '\n' || it == '\r' || it == '\t' }
-            .trim()
-            .take(40),
         createdAtEpochMs = createdAtEpochMs.coerceAtLeast(0L),
+        petId = petId
+            .filter { it.isLetterOrDigit() || it == '-' }
+            .take(24)
+            .ifBlank { "pet-mo" },
     )
 }
 

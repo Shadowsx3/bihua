@@ -42,7 +42,7 @@ class SyncClientTest {
         val pkg = runBlocking {
             SyncClient(context).pull(server.host, server.code)
         }
-        assertEquals("Sync test", pkg.backup?.profile?.displayName)
+        assertEquals("pet-scholar", pkg.backup?.profile?.petId)
         assertEquals(true, pkg.backup?.settings?.onboarded)
         assertArrayEquals(byteArrayOf(1, 2, 3), pkg.progressDb)
     }
@@ -54,7 +54,7 @@ class SyncClientTest {
         val settingsOnly = runBlocking {
             SyncClient(context).pull(server.host, server.code)
         }
-        assertEquals("Sync test", settingsOnly.backup?.profile?.displayName)
+        assertEquals("pet-scholar", settingsOnly.backup?.profile?.petId)
         assertNull(settingsOnly.progressDb)
     }
 
@@ -165,7 +165,7 @@ class SyncClientTest {
     ): ByteArray {
         val bundle = BackupBundle(
             exportedAtEpochMs = 1L,
-            profile = UserProfile(displayName = "Sync test"),
+            profile = UserProfile(petId = "pet-scholar"),
             settings = AppSettings(onboarded = true),
         )
         return BackupArchive.encode(

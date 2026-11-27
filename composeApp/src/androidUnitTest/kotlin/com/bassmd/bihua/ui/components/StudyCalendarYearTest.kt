@@ -4,7 +4,9 @@ import com.bassmd.bihua.content.DayActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 /** The year view turns a year into GitHub-style weeks instead of a tall grid. */
 class StudyCalendarYearTest {
@@ -12,8 +14,8 @@ class StudyCalendarYearTest {
 
     @Test
     fun aYearBecomesSundayFirstWeekColumns() {
-        val first = LocalDate.of(2025, 11, 26) // Wednesday
-        val days = (0 until 365).map { day(first.plusDays(it.toLong())) }
+        val first = LocalDate(2025, 11, 26) // Wednesday
+        val days = (0 until 365).map { day(first.plus(it, DateTimeUnit.DAY)) }
         val weeks = yearWeeks(days)
         assertEquals(53, weeks.size)
         assertTrue(weeks.all { it.size == 7 })
@@ -24,8 +26,8 @@ class StudyCalendarYearTest {
 
     @Test
     fun yearMonthLabelsNeverOverlap() {
-        val first = LocalDate.of(2025, 11, 26)
-        val days = (0 until 365).map { day(first.plusDays(it.toLong())) }
+        val first = LocalDate(2025, 11, 26)
+        val days = (0 until 365).map { day(first.plus(it, DateTimeUnit.DAY)) }
         val labels = monthLabels(yearWeeks(days))
         val shown = labels.withIndex().filter { it.value != null }
         assertEquals("Nov", shown.first().value)

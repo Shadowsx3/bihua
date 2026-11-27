@@ -56,7 +56,7 @@ Paste these into App access / review notes:
 No storage, camera, microphone, contacts, location, SMS, call log, calendar,
 body sensors, activity recognition, exact-alarm, overlay, accessibility,
 device-admin, package-query, or all-files permission is requested. Profile
-photos use the Android system photo picker, so no photo permission is needed.
+the avatar is a built-in drawn pet, so no photo picker or photo permission is needed.
 
 ## Data safety answers
 

@@ -3,6 +3,7 @@
 
 package com.bassmd.bihua.ui
 
+import kotlinx.datetime.toKotlinLocalDate
 import com.bassmd.bihua.settings.DayBoundaryJava
 import android.app.Activity
 import android.widget.Toast
@@ -1962,7 +1963,7 @@ fun BihuaApp(
                                 profile = profile,
                                 mode = mode,
                                 recognitionService = handwriting,
-                                profileName = profile.displayName,
+                                profileName = "",
                                 preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
@@ -2111,7 +2112,7 @@ fun BihuaApp(
                                 profile = profile,
                                 mode = mode,
                                 recognitionService = handwriting,
-                                profileName = profile.displayName,
+                                profileName = "",
                                 preparingInk = preparingInk,
                                 characters = visibleCharacters,
                                 characterId = characterId,
@@ -2597,7 +2598,7 @@ private fun AppContent(
             easeBackUntilMs = easeBackUntilMs,
             onEndVacation = onEndVacation,
             activity = activity,
-            today = today,
+            today = today.toKotlinLocalDate(),
             onOpenSettings = onOpenSettings,
             onStudy = onStudy,
             onBrowse = onBrowse,
@@ -2609,8 +2610,14 @@ private fun AppContent(
             onSpeak = onSpeak,
             reduceMotion = settings.reduceMotion,
             showTourInvite = !settings.tourInviteDismissed,
-            onStartTour = onStartTour,
-            onDismissTour = onDismissTour,
+            tourInvite = { compact ->
+                TourInviteCard(
+                    onStart = onStartTour,
+                    onDismiss = onDismissTour,
+                    reduceMotion = settings.reduceMotion,
+                    compact = compact,
+                )
+            },
         )
 
         Tab.CHARACTERS -> CharactersScreen(

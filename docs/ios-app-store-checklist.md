@@ -52,7 +52,7 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 | Privacy policy URL | `https://shadowsx3.github.io/bihua/privacy.html`, now rewritten for Android and iOS (26 November 2026) | `docs/privacy.html`, `PRIVACY.md` |
 | Support URL | `https://github.com/shadowsx3/bihua` | repository |
 | Marketing URL | `https://shadowsx3.github.io/bihua/` | landing page |
-| Data collected by the developer | None | Architecture: no developer analytics, no account, no ads |
+| Data collected by the developer | None. No name, photo, account, analytics, or ads | Architecture; `docs/compliance.md` |
 | Third-party SDK collection | ML Kit may send limited diagnostics and usage analytics; disclosed in About, the policy, and the listing | About paragraph, `PRIVACY.md` |
 | Data linked to the user | No account, so no identity link; declare App info/performance Diagnostics for ML Kit per Google's guidance | App Privacy answers |
 | Tracking | No; no advertising identifier, no ATT prompt | `PrivacyInfo.xcprivacy` (`NSPrivacyTracking=false`) |
@@ -81,7 +81,8 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 
 ## Review notes (what App Review needs to know)
 
-1. Bihua has no account, sign-in, purchase, subscription, or ads. Open the app
+1. Bihua has no account, sign-in, purchase, subscription, name field, or ads.
+   The profile is a built-in drawn pet; no photo library is used. Open the app
    and it is ready.
 2. The first launch works offline: skip the optional setup, reach Home, and
    start a review.
@@ -93,7 +94,8 @@ Avoid 18+: several regions now block 18+ downloads without adult confirmation.
 5. Local sync, home-screen widgets, and foldable layouts are Android-only and
    are absent from the iOS build, not shown as "Android only" inside the app.
 6. The report composer ships without crash-file attachment on iOS and says so.
-7. The app is universal: test on iPhone and iPad, portrait and landscape.
+7. The app is universal: test on iPhone and iPad, portrait and landscape. The
+   profile uses drawn pet looks and asks for no personal data.
 8. Mature dictionary glosses are off by default and gated behind a
    confirmation; the rating is 16+.
 

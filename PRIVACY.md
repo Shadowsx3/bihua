@@ -7,7 +7,7 @@ public page is `docs/privacy.html` and
 
 ## What stays on the device
 
-- Profile name and optional photo (the photo is copied into app-private storage)
+- The chosen built-in pet avatar. Bihua does not ask for a name and does not open the photo library.
 - Settings and study preferences
 - Review history, schedule, XP, notes, study list, grade reasons, memory hooks,
   palace pieces, and word-practice history
@@ -16,9 +16,10 @@ public page is `docs/privacy.html` and
 - Downloaded handwriting models
 - Exported backup files and PDF reports chosen by the learner
 
-The profile name and photo are part of the settings snapshot. They are included
-when the learner exports a full backup or sends a settings sync, but only when
-the learner starts that action.
+The pet choice is part of the settings snapshot. It is included when the
+learner exports a full backup or sends a settings sync, but only when the
+learner starts that action. A legacy photo path from a 1.1.x settings file
+may remain in the JSON, but current builds never read or display it.
 
 ### Android
 
@@ -88,7 +89,8 @@ composer.
 - No storage, camera, microphone, contacts, location, SMS, call log, calendar,
   body sensor, activity recognition, exact alarm, overlay, accessibility,
   device-admin, package-query, all-files, or advertising ID permission is
-  requested. The system content picker returns only the chosen profile photo.
+  requested. The avatar is drawn by the app; no photo picker or photo-library
+  permission is used.
 
 ### iOS
 
@@ -143,7 +145,7 @@ data. A backup leaves the app only when the learner chooses a destination in the
 system file picker. A settings sync on Android sends only the parts selected
 directly to the other device on the local network; the developer does not
 receive that transfer. A full backup or settings sync can include the profile
-name and photo when set. Google ML Kit receives the diagnostic data described
+pet when set. Google ML Kit receives the diagnostic data described
 above; Google does not receive notes or study history through Bihua.
 
 Local data is retained until the learner deletes it, clears it through
@@ -158,7 +160,7 @@ server account to delete.
 ## Backups
 
 A full backup is created only when the learner chooses Export. It contains the
-settings JSON, the local progress database, and the profile name and photo when
+settings JSON, the local progress database, and the pet choice when
 set. Downloaded models and local crash files are not included. The Android file
 picker or the iOS Files sheet chooses the destination; Bihua does not upload the
 file. The learner controls where it goes and who can open it.
@@ -170,7 +172,7 @@ when it is no longer needed.
 ## Reports and PDFs
 
 A progress report PDF and a practice-sheet PDF are built on the device. The
-progress report can include the profile name, the selected range, totals, level
+progress report can include the selected range, totals, level
 progress, and the characters in that range. The practice sheet includes only the
 chosen characters. On Android the system file picker chooses where each file
 goes; on iOS the Files sheet or the share sheet does. Bihua does not upload
@@ -226,7 +228,7 @@ delete; clearing the app's storage or uninstalling it removes the local data.
 - Delete individual data in the app where available, or use Settings → Data →
   Start over to clear cards, reviews, XP, and confusions. Notes, study lists,
   hooks, reasons, and settings stay until removed.
-- Remove the profile photo and name in Settings → Profile.
+- Choose a different pet or clear the name in Settings → Profile.
 - Uninstall the app to remove its local database, downloaded models, and local
   crash files.
 - Turn off read-aloud, sound effects, notifications, and local sync (Android) at

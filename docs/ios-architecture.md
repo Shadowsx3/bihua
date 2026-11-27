@@ -66,7 +66,9 @@ suspend/Flow across the Swift boundary):
 
 `SettingsEngine`, `DatabaseFactory`, `ContentSource`, `InkRecognizer`,
 `Speaker`, `SfxPlayer`, `Sharer`, `FilePicker`, `PdfWriter`, `Reminders`,
-`NetworkState`, `ImageDecoder`, `Clipboard`.
+`NetworkState`, `Clipboard`. There is no image decoder for avatars: the twelve
+pet looks are drawn by Compose. Add an image seam only if a future screen
+imports a picture.
 
 ## Data
 
@@ -99,6 +101,15 @@ suspend/Flow across the Swift boundary):
   menus, swipe actions, system share and document pickers, and iOS press
   feedback instead of Material ripples. iPhone and iPad only; no foldable
   target.
+- Profile: the learner picks one of twelve hand-drawn Mò looks in a 3 x 4 grid.
+  There is no name field, no photo picker, and no photo-library permission on
+  either platform.
+- Dynamic Type: `IosDynamicType` reads `UIApplication.preferredContentSizeCategory`
+  and provides the matching Apple body-text font scale to Compose, updating on
+  `UIContentSizeCategoryDidChangeNotification`. Text grows with the system
+  setting; spacing in dp does not.
+- Pointer: `UIApplicationSupportsIndirectInputEvents` is on so iPad trackpad and
+  mouse clicks are real touches, not a compatibility overlay.
 - Insets: the floating bar and content use `safeDrawing`/`safeContent`, not a
   hard-coded 72 dp. The Android shell's measurement is the reference.
 - Keyboard: Compose iOS reports the IME as an inset; report, study-list, and
@@ -195,7 +206,7 @@ iOS, never iOS against Android: text metrics differ.
 | `settings` pure files | part | `MeaningSanitizer`, `MemoryModel`; `Models.kt` still needs the `LocalDate` boundary moved to `kotlinx-datetime` |
 | `progress` pure files | next | Ranges, queue, session filter, writing pace |
 | `backup` | P2 | Okio zip |
-| UI packages | P3 | Home, review, characters, dictionary, settings, progress |
+| UI packages | P3 | Theme, components, Home, pet avatars, calendar, charts in `commonMain`; review, characters, dictionary, settings, progress follow. The iOS Home renders the real Home composable with a sample state until the data layer lands. |
 
 ## Ground rules
 

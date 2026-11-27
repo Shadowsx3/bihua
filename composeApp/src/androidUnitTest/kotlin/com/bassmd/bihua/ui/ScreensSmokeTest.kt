@@ -35,7 +35,7 @@ class ScreensSmokeTest {
             BihuaTheme(ThemeMode.LIGHT) {
                 CompositionLocalProvider(LocalPinyinNumbers provides false) {
                 HomeScreen(
-                    profile = UserProfile(displayName = "Learner"),
+                    profile = UserProfile(petId = "pet-mo"),
                     mode = StudyMode.SIMPLIFIED,
                     characters = sampleCharacters(),
                     playerStats = PlayerStats.forXp(0),
@@ -54,7 +54,7 @@ class ScreensSmokeTest {
             }
         }
 
-        compose.onNodeWithText("Hello, Learner").assertIsDisplayed()
+        compose.onNodeWithText(greetingForHour(currentHour())).assertIsDisplayed()
         compose.onNodeWithContentDescription("Start studying").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Extra practice · Spell quest", useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
@@ -89,7 +89,7 @@ class ScreensSmokeTest {
             BihuaTheme(ThemeMode.LIGHT) {
                 CompositionLocalProvider(LocalPinyinNumbers provides false) {
                 HomeScreen(
-                    profile = UserProfile(displayName = "Learner"),
+                    profile = UserProfile(petId = "pet-mo"),
                     mode = StudyMode.SIMPLIFIED,
                     characters = sampleCharacters(),
                     playerStats = PlayerStats.forXp(0),

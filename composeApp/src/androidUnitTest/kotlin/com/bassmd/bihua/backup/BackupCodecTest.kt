@@ -16,7 +16,7 @@ class BackupCodecTest {
 
     private val sample = BackupBundle(
         exportedAtEpochMs = 1_700_000_000_000L,
-        profile = UserProfile(displayName = "Bassmd", createdAtEpochMs = 1_690_000_000_000L),
+        profile = UserProfile(createdAtEpochMs = 1_690_000_000_000L, petId = "pet-scholar"),
         settings = AppSettings(
             uiLanguage = UiLanguage.SIMPLIFIED,
             reduceMotion = true,

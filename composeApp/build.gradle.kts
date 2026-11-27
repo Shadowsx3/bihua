@@ -133,7 +133,6 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.datastore.preferences)
-            implementation(libs.androidx.exifinterface)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.okhttp)
             implementation(libs.okhttp.tls)

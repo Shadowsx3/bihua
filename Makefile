@@ -71,6 +71,7 @@ help:
 	@echo "make ios-device-id  print the connected iPhone UDID"
 	@echo "make ios-ipad-device  the same on the connected iPad"
 	@echo "make ios-ipad-device-shot NAME=home  capture the iPad"
+	@echo "make compliance  Play and App Store compliance audit"
 	@echo "make hooks     install the git pre-commit hook"
 	@echo "make clean     remove build output (keeps screenshots)"
 	@echo "make clean-shots  delete screenshots"
@@ -266,6 +267,9 @@ ios-ipad-device-shot:
 
 ios-ipad-device-id:
 	@scripts/ios.sh device-id ipad
+
+compliance:
+	@scripts/compliance.sh
 
 hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"

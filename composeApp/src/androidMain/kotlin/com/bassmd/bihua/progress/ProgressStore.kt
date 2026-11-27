@@ -1,5 +1,6 @@
 package com.bassmd.bihua.progress
 
+import kotlinx.datetime.toKotlinLocalDate
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -205,43 +206,6 @@ data class TaskStat(
     val averageGrade: Float,
 ) {
     val passRate: Float get() = if (reviews == 0) 0f else passed.toFloat() / reviews
-}
-
-data class PlayerStats(
-    val totalXp: Int,
-    val level: Int,
-    val title: String,
-    val xpIntoLevel: Int,
-    val xpForNextLevel: Int,
-) {
-    val progress: Float get() = if (xpForNextLevel <= 0) 0f else (xpIntoLevel.toFloat() / xpForNextLevel).coerceIn(0f, 1f)
-
-    companion object {
-        fun forXp(totalXp: Int): PlayerStats {
-            var level = 1
-            while (level < 99 && totalXp >= xpForLevel(level + 1)) level++
-            val base = xpForLevel(level)
-            val next = xpForLevel(level + 1)
-            return PlayerStats(
-                totalXp = totalXp,
-                level = level,
-                title = titleFor(level),
-                xpIntoLevel = totalXp - base,
-                xpForNextLevel = (next - base).coerceAtLeast(1),
-            )
-        }
-
-        fun xpForLevel(level: Int): Int = 25 * (level - 1) * (level + 2)
-
-        fun titleFor(level: Int): String = when {
-            level >= 15 -> "Master of Strokes"
-            level >= 10 -> "Calligrapher"
-            level >= 7 -> "Ink Adept"
-            level >= 5 -> "Stroke Keeper"
-            level >= 3 -> "Brushhand"
-            else -> "Inkling"
-        }
-    }
 }
 
 data class ReviewOutcome(
@@ -1970,7 +1934,7 @@ class ProgressStore(private val context: Context) :
         (0 until dayCount).map { offset ->
             val date = startDate.plusDays(offset.toLong())
             DayActivity(
-                date = date,
+                date = date.toKotlinLocalDate(),
                 reviewed = reviews[date] ?: 0,
                 learned = learned[date] ?: 0,
             )
@@ -2040,7 +2004,7 @@ class ProgressStore(private val context: Context) :
         (0 until dayCount).map { offset ->
             val date = startDate.plusDays(offset.toLong())
             running += perDay[date] ?: 0
-            DayActivity(date = date, reviewed = running, learned = perDay[date] ?: 0)
+            DayActivity(date = date.toKotlinLocalDate(), reviewed = running, learned = perDay[date] ?: 0)
         }
     }
 

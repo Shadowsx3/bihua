@@ -77,12 +77,12 @@
     <article class="article" id="article">
       <div class="callout">
         <strong>Short version</strong>
-        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. A full backup or an Android settings sync can include your profile name and photo, but only when you start it. Google ML Kit processes limited diagnostics and usage data as a service provider, as described below. iOS has no local sync, no widgets, and no crash attachment.</p>
+        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. A full backup or an Android settings sync can include your pet choice, but only when you start it. Google ML Kit processes limited diagnostics and usage data as a service provider, as described below. iOS has no local sync, no widgets, and no crash attachment.</p>
       </div>
 
       <h2 id="stored">What is stored on the device</h2>
       <ul>
-        <li>Profile name and an optional profile photo. The photo is copied into Bihua's app-private storage; Bihua does not keep access to your photo library.</li>
+        <li>The chosen built-in pet avatar. Bihua does not ask for a name and does not open the photo library.</li>
         <li>Study settings: course, scheduler, theme, writing guide, practice modes, custom progress range, and notification choices.</li>
         <li>Review history and scheduling state: cards, due dates, review logs (including optional grade reasons), XP, known-character levels, notes, study list, and word-practice history.</li>
         <li>Optional memory hooks and the reusable palace pieces you write.</li>
@@ -96,7 +96,7 @@
       <p>Android cloud backup and device-to-device app-data transfer are disabled in the app manifest, so the operating system does not copy the app's database, notes, profile, or downloaded models as part of its own backup or migration. Bihua turns that off on purpose: it keeps your study data out of a Google backup account. Use Settings → Data → Export when you want a backup you control.</p>
       <h3>iOS</h3>
       <p>App data is written to the app's Application Support directory and excluded from iCloud backup, so the same promise holds on iOS. File sharing is off, so the app's data is not browsable in the Files app. Bihua has no CloudKit, iCloud sync, push, or sign-in. Use Settings → Data → Export and the system Files sheet when you want a backup you control.</p>
-      <p>A full backup or an Android settings sync includes the profile name and photo when you have set them, because the profile is part of the settings.</p>
+      <p>A full backup or an Android settings sync includes the pet choice when you have set it, because the pet is part of the settings. A legacy photo path from a 1.1.x settings file may remain in the JSON, but current builds never read or display it.</p>
 
       <h2 id="network">Network access</h2>
       <p>Bihua does not run a developer-operated server. Network access is used only for these actions:</p>
@@ -117,7 +117,7 @@
         <li><code>POST_NOTIFICATIONS</code> for optional study reminders. The permission is requested only when you turn reminders on; reminders are off by default.</li>
         <li><code>WAKE_LOCK</code>, <code>RECEIVE_BOOT_COMPLETED</code>, and <code>FOREGROUND_SERVICE</code> come from Android WorkManager, which runs the one-shot reminder job and restores it after a reboot. Bihua does not start a long-running foreground service.</li>
       </ul>
-      <p>Bihua does not request storage, camera, microphone, contacts, location, SMS, call log, calendar, body sensors, activity recognition, exact alarm, overlay, accessibility, device-admin, package-query, or all-files access. It does not request the advertising ID permission. The profile photo uses Android's system content picker, which returns only the image you choose; no photo-library permission is needed. Newer Android versions may show a system prompt for local-network access, which Bihua uses only while the sync screen is open.</p>
+      <p>Bihua does not request storage, camera, microphone, contacts, location, SMS, call log, calendar, body sensors, activity recognition, exact alarm, overlay, accessibility, device-admin, package-query, or all-files access. It does not request the advertising ID permission. The avatar is drawn by the app; no photo picker or photo-library permission is used. Newer Android versions may show a system prompt for local-network access, which Bihua uses only while the sync screen is open.</p>
       <h3>iOS</h3>
       <ul>
         <li>Notifications: optional study reminders only; the system prompt appears when you turn them on.</li>
@@ -134,15 +134,15 @@
       <p>For Google Play Data safety, the diagnostics above are declared as collected by the app through the SDK and not shared. For the App Store privacy labels, the same diagnostics are declared under App info and performance, not linked to identity and not used for tracking. Bihua itself has no server and receives none of that diagnostic data.</p>
 
       <h2 id="sharing">Sharing, sale, and retention</h2>
-      <p>Bihua does not sell, rent, or trade personal data. It does not share data for advertising. The developer does not receive your notes, review history, or study data. A backup leaves the app only when you choose a destination in the system file picker. An Android settings sync sends only the parts you select directly to the other device on your local network; the developer does not receive that transfer. A full backup or settings sync can include your profile name and photo when you have set them. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
+      <p>Bihua does not sell, rent, or trade personal data. It does not share data for advertising. The developer does not receive your notes, review history, or study data. A backup leaves the app only when you choose a destination in the system file picker. An Android settings sync sends only the parts you select directly to the other device on your local network; the developer does not receive that transfer. A full backup or settings sync can include your pet choice when you have set it. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
       <p>Local data is retained until you delete it, clear it through Settings → Data → Start over, or uninstall the app. Downloaded models remain in app storage until you uninstall the app or clear its storage. Android crash files remain until you send or copy a report, or the app prunes old files. Backups you exported remain wherever you saved them until you delete them. If you send a report to the developer, the developer keeps it only as long as needed to read and respond, then deletes it when practical. Bihua has no user accounts, so there is no server account to delete.</p>
 
       <h2 id="backups">Backups</h2>
-      <p>A full backup is created only when you choose Export. It contains the settings JSON, the local progress database, and the profile name and photo when you have set them. Downloaded models and local crash files are not included. The Android file picker or the iOS Files sheet chooses the destination; Bihua does not upload the file. You control where it goes and who can open it.</p>
+      <p>A full backup is created only when you choose Export. It contains the settings JSON, the local progress database, and the pet choice when you have set it. Downloaded models and local crash files are not included. The Android file picker or the iOS Files sheet chooses the destination; Bihua does not upload the file. You control where it goes and who can open it.</p>
       <p>Bihua does not encrypt the exported zip. Treat it like any other file that contains your study history and profile: save it somewhere you trust and delete it when you no longer need it.</p>
 
       <h2 id="pdf">Reports and PDFs</h2>
-      <p>You can export a progress report as a PDF from Progress, and a practice sheet from Study tools. Bihua builds both on the device. The progress report can include your profile name, the selected range, review and lesson totals, level progress, and the characters in that range. The practice sheet includes only the characters you choose. On Android the system file picker chooses where each file goes; on iOS the Files sheet or the share sheet does. Bihua does not upload either one.</p>
+      <p>You can export a progress report as a PDF from Progress, and a practice sheet from Study tools. Bihua builds both on the device. The progress report can include the selected range, review and lesson totals, level progress, and the characters in that range. The practice sheet includes only the characters you choose. On Android the system file picker chooses where each file goes; on iOS the Files sheet or the share sheet does. Bihua does not upload either one.</p>
 
       <h2 id="crash">Crash reports and feedback</h2>
       <p>On Android, a crash can be saved locally in app-private storage. It stays on the device until you include it in a report from Settings → About and tap Send or Copy. The composer shows the app version, build type, course, day-start hour, device manufacturer and model, Android release and SDK, locale, timestamp, thread, your words, and the crash trace if you include it. Send opens Android's share sheet so you choose the app; Copy puts the same text on the clipboard. Nothing is sent automatically. The local crash file is deleted after a successful send or copy. Crash files are not part of a backup or a settings sync.</p>
@@ -160,7 +160,7 @@
       <h2 id="rights">Your choices and rights</h2>
       <ul>
         <li>Delete individual data from the app where available, or use Settings → Data → Start over to clear cards, reviews, XP, and confusions. Notes, study lists, hooks, reasons, and settings stay until you remove them.</li>
-        <li>Remove the profile photo and name in Settings → Profile.</li>
+        <li>Choose a different pet or clear the name in Settings → Profile.</li>
         <li>Uninstall the app to remove its local database, downloaded models, and local crash files.</li>
         <li>Turn off read-aloud, sound effects, notifications, and local sync (Android) at any time.</li>
         <li>Delete exported backups wherever you saved them.</li>

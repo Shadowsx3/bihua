@@ -58,6 +58,7 @@ make ios-check      # native tests + the Xcode Debug build
 make ios-pods       # CocoaPods, simulator-safe (no ML Kit)
 make ios-mlkit-pods # ML Kit for a device build
 make ios-shot NAME=home
+make compliance      # Play + App Store policy checks
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
 make ios-device-id
@@ -75,8 +76,12 @@ python3 qa/ios/smoke.py
 - Keep Android `make check` green after every move; a move is behaviour
   preserving or behind a capability.
 - App Store questions and answers: `docs/ios-app-store-checklist.md`; the
-  local listing draft is `store/ios-listing.md`; the iOS guideline review list
-  is `docs/ios-design-guidelines.md`.
+  store matrix is `docs/compliance.md`; the local listing draft is
+  `store/ios-listing.md`; the iOS guideline review list is
+  `docs/ios-design-guidelines.md`.
+- The app has no name and no photo. Profile is a name-free pet avatar from the
+  twelve drawn looks; never add a name field, photo picker, or photo-library
+  permission without a store review and a policy change.
 - Privacy and store copy move together: `PRIVACY.md`, `docs/privacy.html`,
   Google Play Data safety, App Store App Privacy, and
   `PrivacyInfo.xcprivacy` must agree. Never claim an iOS feature before the

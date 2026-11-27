@@ -60,6 +60,11 @@ Before P0:
   the simulator did not catch it.
 - The iOS app supports iPhone and iPad only. There is no iOS foldable target
   and no Duo test; the Android fold journeys remain the layout referee.
+- P3 milestone: the real shared Home composable renders on the iPhone and iPad
+  simulators and on the connected iPhone, with the theme, pet avatar, calendar,
+  word card, and stats. It uses a sample state until P2 connects settings,
+  progress, and content. Dynamic Type and pointer support are wired at the iOS
+  root. The native tab bar/navigation shell is next.
 - Android stayed green after every move (`make check`). `spellbook` is now in
   `commonMain` with native tests; the shared platform seams are installed in
   both shells.
@@ -765,6 +770,7 @@ make ios-check      # native tests plus the Xcode Debug build
 make ios-pods       # CocoaPods, simulator-safe
 make ios-mlkit-pods # ML Kit for a device build
 make ios-shot NAME=home
+make compliance      # Play + App Store policy checks
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
 make ios-device-id

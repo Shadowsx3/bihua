@@ -35,7 +35,6 @@ import com.bassmd.bihua.content.DayActivity
 import com.bassmd.bihua.ui.theme.InkDark
 import com.bassmd.bihua.ui.theme.InkSoft
 import com.bassmd.bihua.ui.theme.Rose
-import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 /**
@@ -68,7 +67,6 @@ fun LearnedChart(
     var picked by remember(chartHistory) { mutableStateOf<Int?>(null) }
     val values = chartHistory.map { it.reviewed }
     val maxValue = values.maxOrNull()?.coerceAtLeast(1) ?: 1
-    val labelFormat = DateTimeFormatter.ofPattern("MMM d")
     val selected = picked?.let { chartHistory.getOrNull(it) } ?: chartHistory.lastOrNull()
     val soft = InkSoft
 
@@ -101,7 +99,7 @@ fun LearnedChart(
                 ) {
                     Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
                         Text(
-                            day.date.format(labelFormat),
+                            shortDateLabel(day.date),
                             style = MaterialTheme.typography.labelSmall,
                             color = InkSoft,
                         )
@@ -199,13 +197,13 @@ fun LearnedChart(
         }
         Row(Modifier.fillMaxWidth()) {
             Text(
-                history.first().date.format(labelFormat),
+                shortDateLabel(history.first().date),
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
             )
             Spacer(Modifier.weight(1f))
             Text(
-                history.last().date.format(labelFormat),
+                shortDateLabel(history.last().date),
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSoft,
             )

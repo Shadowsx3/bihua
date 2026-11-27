@@ -193,6 +193,23 @@ answers are `docs/ios-app-store-checklist.md`.
 - External: the Apple Developer account is being renewed (simulator work needs
   no account; TestFlight in P7 does).
 
+## Status at 23:10 (2026-11-26)
+
+- Shared iOS Home: the real `HomeScreen`, theme, components, calendar, charts,
+  and profile pet render on iPhone and iPad from `commonMain`. The data is a
+  sample state until P2; the native shell and settings/progress/content are
+  next.
+- Profile simplified for privacy and stores: no name field, no photo picker,
+  no photo library, no image decoder. Twelve hand-drawn Mò looks in a 3 x 4
+  grid; the pet is part of the settings snapshot and backups.
+- Home greeting is name-free and time-aware: Good morning, Good afternoon,
+  Good evening, Hi there.
+- `make compliance` audits Play/App Store documents, Android permissions and
+  target SDK, iOS Info.plist, privacy manifest, export compliance, and
+  other-platform wording. `docs/compliance.md` is the single answer matrix.
+- Root layout is `composeApp/` + `iosApp/`; the Android module no longer sits
+  in an `app/` folder.
+
 ## P0 — Android 1.1.2 stability and release readiness
 
 - [x] Full screen-pass matrix: phone, phone-landscape, tablet, tablet-portrait,

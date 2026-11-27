@@ -82,7 +82,6 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RecordVoiceOver
-import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PlaylistAddCheck
 import androidx.compose.material.icons.rounded.Print
 import androidx.compose.material.icons.rounded.School
@@ -176,10 +175,10 @@ import com.bassmd.bihua.sync.SyncUndoInfo
 import com.bassmd.bihua.sync.SyncUndoStore
 import com.bassmd.bihua.ui.components.BihuaSnackbarHost
 import com.bassmd.bihua.ui.components.BusyDialog
+import com.bassmd.bihua.ui.components.PetPicker
 import com.bassmd.bihua.ui.components.ProfileAvatar
 import com.bassmd.bihua.ui.components.Pill
 import com.bassmd.bihua.ui.components.SoftCard
-import com.bassmd.bihua.ui.components.saveProfilePhoto
 import com.bassmd.bihua.ui.theme.GuideGreen
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.AccentInk
@@ -227,7 +226,6 @@ fun SettingsScreen(
 
     var settings by remember { mutableStateOf(AppSettings()) }
     var profile by remember { mutableStateOf(UserProfile()) }
-    var nameDraft by remember { mutableStateOf("") }
     var pendingImport by remember { mutableStateOf<BackupBundle?>(null) }
     var pendingProgress by remember { mutableStateOf<ByteArray?>(null) }
     var exportScope by remember { mutableStateOf(TransferScope()) }
@@ -380,7 +378,6 @@ fun SettingsScreen(
     LaunchedEffect(store) {
         store.profile.collectLatest {
             profile = it
-            nameDraft = it.displayName
         }
     }
     LaunchedEffect(settings.dailyNewGoal, settings.studyMode, settings.fsrsWeights, settings.fsrsProfiles) {
@@ -482,19 +479,6 @@ fun SettingsScreen(
             enableReminders()
         } else {
             message = "Notifications are blocked. Allow them in Android Settings."
-        }
-    }
-
-    fun saveName() {
-        val cleaned = nameDraft.trim().take(40)
-        scope.launch {
-            store.updateProfile {
-                it.copy(
-                    displayName = cleaned,
-                    createdAtEpochMs = if (it.createdAtEpochMs == 0L) System.currentTimeMillis() else it.createdAtEpochMs,
-                )
-            }
-            message = "Profile saved."
         }
     }
 
@@ -653,25 +637,6 @@ fun SettingsScreen(
         runCatching { writeText(context, uri, text) }
             .onSuccess { message = "FSRS weights saved." }
             .onFailure { message = "Could not save the weights." }
-    }
-
-    val photoLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            val path = withContext(Dispatchers.IO) {
-                runCatching {
-                    saveProfilePhoto(context.filesDir, uri, context.contentResolver)
-                }.getOrNull()
-            }
-            if (path != null) {
-                store.updateProfile { it.copy(photoPath = path) }
-                message = "Photo updated."
-            } else {
-                message = "Could not use that photo."
-            }
-        }
     }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -921,64 +886,25 @@ fun SettingsScreen(
                             ProfileAvatar(profile = profile, size = 64.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Your name", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                                Text("Your pet", style = MaterialTheme.typography.titleMedium, color = InkDark)
                                 Text(
-                                    "A photo and a name make Bihua feel like yours.",
+                                    "Mò keeps you company. Pick a look; it shows on Home and on this page.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = InkSoft,
                                 )
                             }
                         }
-                        Row(
-                            modifier = Modifier.padding(top = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            TextButton(onClick = { photoLauncher.launch("image/*") }) {
-                                Icon(Icons.Rounded.PhotoCamera, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(if (profile.photoPath == null) "Choose photo" else "Change photo")
-                            }
-                            if (profile.photoPath != null) {
-                                TextButton(onClick = {
-                                    scope.launch {
-                                        store.updateProfile { it.copy(photoPath = null) }
-                                        message = "Photo removed."
-                                    }
-                                }) { Text("Remove") }
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = nameDraft,
-                            onValueChange = { nameDraft = it.take(40) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            placeholder = { Text("How should Bihua greet you?") },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            shape = RoundedCornerShape(16.dp),
+                        Spacer(Modifier.height(14.dp))
+                        PetPicker(
+                            selectedId = profile.petId,
+                            onSelect = { id ->
+                                profile = profile.copy(petId = id)
+                                scope.launch { store.updateProfile { it.copy(petId = id) } }
+                            },
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            Text(
-                                if (profile.createdAtEpochMs == 0L) "New here" else "Learner since ${formatDate(profile.createdAtEpochMs)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = InkSoft,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Button(
-                                onClick = ::saveName,
-                                enabled = nameDraft.trim() != profile.displayName,
-                                shape = RoundedCornerShape(50),
-                            ) { Text("Save") }
-                        }
                     }
                 }
             }
-
             }
             if (settingsSection == "Practice") {
             item {
@@ -4034,9 +3960,9 @@ private data class SettingsEntry(
 
 private val SETTINGS_ENTRIES = listOf(
     SettingsEntry(
-        "Profile", "Profile", "Name, photo, greeting",
+        "Profile", "Profile", "Your pet and home look",
         Icons.Rounded.Person, Lilac, "YOU",
-        "name photo avatar greeting profile",
+        "pet avatar companion profile",
     ),
     SettingsEntry(
         "Practice", "Practice", "Writing, pronunciation, meaning",

@@ -46,6 +46,7 @@ text metrics and rendering differ.
 | Simulator smoke | `python3 qa/ios/smoke.py` | boot, install, launch, app label, screenshot |
 | Driver | `qa/ios/driver.py` | idb `find`, `tap_label`, `text`, `swipe`, `screenshot` |
 | Build gate | `make ios-check` | native tests plus the Xcode Debug build |
+| Store policy | `make compliance` | documents, permissions, privacy manifest, export, other-platform wording |
 | XCUITest | `iosAppTests` (P6) | rotation, keyboard, VoiceOver, permission sheets |
 
 Devices: iPhone 17 Pro, iPad Pro 13-inch, iPhone Duo (foldable), light and dark,

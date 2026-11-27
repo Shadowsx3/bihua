@@ -42,10 +42,13 @@ import com.bassmd.bihua.ui.theme.Mint
 import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
-import java.time.LocalDate
-import java.time.Month
-import java.time.format.TextStyle
-import java.util.Locale
+import com.bassmd.bihua.settings.currentLocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 private val rainbow = listOf(Rose, Peach, Butter, Mint, Sky, Lilac, Gem)
 
@@ -56,7 +59,7 @@ private val rainbow = listOf(Rose, Peach, Butter, Mint, Sky, Lilac, Gem)
 @Composable
 fun StudyCalendarCard(
     days: List<DayActivity>,
-    today: LocalDate = LocalDate.now(),
+    today: LocalDate = currentLocalDate(),
     label: String? = null,
     onDayClick: (DayActivity) -> Unit,
     modifier: Modifier = Modifier,
@@ -86,13 +89,13 @@ fun StudyCalendarCard(
             }
             if (practiced == 0) {
                 Spacer(Modifier.height(10.dp))
-                val weekStart = today.minusDays((today.dayOfWeek.value % 7).toLong())
+                val weekStart = today.minus((today.dayOfWeek.isoDayNumber % 7), DateTimeUnit.DAY)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     repeat(7) { index ->
-                        val day = weekStart.plusDays(index.toLong())
+                        val day = weekStart.plus(index, DateTimeUnit.DAY)
                         val isToday = day == today
                         Box(
                             modifier = Modifier
@@ -112,7 +115,7 @@ fun StudyCalendarCard(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                day.dayOfMonth.toString(),
+                                day.day.toString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (isToday) InkDark else InkSoft,
                                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
@@ -170,7 +173,7 @@ private fun CalendarGrid(
 ) {
     if (days.isEmpty()) return
     val first = days.first().date
-    val leading = first.dayOfWeek.value % 7
+    val leading = first.dayOfWeek.isoDayNumber % 7
     val cells: List<DayActivity?> = List(leading) { null } + days
     val padded = cells + List((7 - cells.size % 7) % 7) { null }
     val rows = padded.chunked(7)
@@ -186,7 +189,7 @@ private fun CalendarGrid(
                     } else {
                         val wrote = day.reviewed + day.learned > 0
                         val color = if (wrote) {
-                            rainbow[(day.date.toEpochDay().toInt() and Int.MAX_VALUE) % rainbow.size]
+                            rainbow[(day.date.toEpochDays().toInt() and Int.MAX_VALUE) % rainbow.size]
                         } else {
                             MaterialTheme.colorScheme.surfaceVariant
                         }
@@ -210,7 +213,7 @@ private fun CalendarGrid(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                day.date.dayOfMonth.toString(),
+                                day.date.day.toString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (wrote) InkDark else InkSoft,
                                 fontWeight = if (day.date == today) FontWeight.Bold else FontWeight.Normal,
@@ -399,7 +402,7 @@ private fun HeatmapLegend() {
 /** Seven-day columns for the year heatmap, Sunday first, with leading blanks. */
 internal fun yearWeeks(days: List<DayActivity>): List<List<DayActivity?>> {
     if (days.isEmpty()) return emptyList()
-    val leading = days.first().date.dayOfWeek.value % 7
+    val leading = days.first().date.dayOfWeek.isoDayNumber % 7
     val cells: List<DayActivity?> = List(leading) { null } + days
     val padded = cells + List((7 - cells.size % 7) % 7) { null }
     return padded.chunked(7)
@@ -414,14 +417,14 @@ internal fun monthLabels(weeks: List<List<DayActivity?>>): List<String?> {
     var previous: Month? = null
     var lastLabelIndex = -10
     return weeks.mapIndexed { index, week ->
-        val month = week.firstOrNull { it != null && it.date.dayOfMonth == 1 }?.date?.month
+        val month = week.firstOrNull { it != null && it.date.day == 1 }?.date?.month
             ?: if (index == 0) week.firstOrNull { it != null }?.date?.month else null
         if (month == null) return@mapIndexed null
         val show = month != previous && index - lastLabelIndex >= 4
         previous = month
         if (show) {
             lastLabelIndex = index
-            month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+            month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
         } else {
             null
         }

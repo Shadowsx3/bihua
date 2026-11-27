@@ -236,6 +236,8 @@ fun InkMascot(
     brushSwing: Float = 0f,
     /** A tiny costume, shared with the home-screen widgets. */
     headwear: MascotHeadwear = MascotHeadwear.NONE,
+    /** The coral sticker halo; pet styles use other paper accents. */
+    halo: Color = Coral,
 ) {
     // The pet is a fixed paper-and-ink sticker: it must not invert with the theme.
     val petPaper = Color(0xFFFFFDF4)
@@ -246,7 +248,7 @@ fun InkMascot(
         val detailed = w > 26.dp.toPx()
 
         // Coral badge and sticker halo.
-        drawCircle(Coral, radius = w * 0.44f, center = Offset(w * 0.50f, h * 0.50f))
+        drawCircle(halo, radius = w * 0.44f, center = Offset(w * 0.50f, h * 0.50f))
         drawCircle(
             petPaper,
             radius = w * 0.375f,

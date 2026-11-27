@@ -1,14 +1,16 @@
 package com.bassmd.bihua.progress
 
 import com.bassmd.bihua.content.DayActivity
-import java.time.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class StudyStreakTest {
 
     private fun day(date: Long, reviewed: Int = 0, learned: Int = 0) =
-        DayActivity(date = LocalDate.of(2026, 11, 1).plusDays(date), reviewed = reviewed, learned = learned)
+        DayActivity(date = LocalDate(2026, 11, 1).plus(date.toInt(), DateTimeUnit.DAY), reviewed = reviewed, learned = learned)
 
     @Test
     fun countsBackFromToday() {

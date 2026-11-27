@@ -95,7 +95,6 @@ import com.bassmd.bihua.ui.components.ProfileAvatar
 import com.bassmd.bihua.ui.components.StudyCalendarCard
 import com.bassmd.bihua.ui.components.SoftCard
 import com.bassmd.bihua.ui.components.TonalAction
-import androidx.compose.ui.res.stringResource
 import com.bassmd.bihua.ui.theme.Butter
 import com.bassmd.bihua.ui.theme.Gem
 import com.bassmd.bihua.ui.theme.InkDark
@@ -109,6 +108,8 @@ import com.bassmd.bihua.ui.theme.Peach
 import com.bassmd.bihua.ui.theme.Rose
 import com.bassmd.bihua.ui.theme.Sky
 import com.bassmd.bihua.ui.theme.SkyInk
+import com.bassmd.bihua.settings.currentLocalDate
+import kotlinx.datetime.LocalDate
 
 /**
  * The home screen answers one question: what should I do now? The Study button
@@ -143,7 +144,7 @@ fun HomeScreen(
     easeBackUntilMs: Long = 0L,
     onEndVacation: () -> Unit = {},
     activity: List<DayActivity>,
-    today: java.time.LocalDate = java.time.LocalDate.now(),
+    today: LocalDate = currentLocalDate(),
     onOpenSettings: () -> Unit,
     onStudy: () -> Unit,
     onBrowse: () -> Unit,
@@ -155,13 +156,12 @@ fun HomeScreen(
     reduceMotion: Boolean = false,
     onSpeak: (String) -> Unit = {},
     showTourInvite: Boolean = false,
-    onStartTour: () -> Unit = {},
-    onDismissTour: () -> Unit = {},
+    tourInvite: (@Composable (compact: Boolean) -> Unit)? = null,
 ) {
     val vacation = com.bassmd.bihua.settings.Vacation.isActive(vacationStartedAtMs)
     val easeBack = com.bassmd.bihua.settings.EaseBack.isActive(
         easeBackUntilMs,
-        System.currentTimeMillis(),
+        nowEpochMs(),
     )
     val due = if (dueNow >= 0) {
         dueNow
@@ -177,10 +177,7 @@ fun HomeScreen(
     val fresh = if (vacation) 0 else newToday
     var showEndVacation by remember { mutableStateOf(false) }
     val known = characters.count { it.status == StudyStatus.KNOWN }
-    val greeting = when {
-        profile.displayName.isBlank() -> "Hello there"
-        else -> "Hello, ${profile.displayName}"
-    }
+    val greeting = greetingForHour(currentHour())
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
     var showMore by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
@@ -230,15 +227,8 @@ fun HomeScreen(
                     profile = profile,
                 )
             }
-            if (showInvite) {
-                item {
-                    TourInviteCard(
-                        onStart = onStartTour,
-                        onDismiss = onDismissTour,
-                        reduceMotion = reduceMotion,
-                        compact = compactHero,
-                    )
-                }
+            if (showInvite && tourInvite != null) {
+                item { tourInvite(compactHero) }
             }
             if (resumeSession != null && !vacation) {
                 item {
@@ -480,15 +470,8 @@ fun HomeScreen(
                             profile = profile,
                         )
                     }
-                    if (showInvite) {
-                        item {
-                            TourInviteCard(
-                                onStart = onStartTour,
-                                onDismiss = onDismissTour,
-                                reduceMotion = reduceMotion,
-                                compact = compactHero,
-                            )
-                        }
+                    if (showInvite && tourInvite != null) {
+                        item { tourInvite(compactHero) }
                     }
                     if (resumeSession != null && !vacation) {
                         item {
@@ -1131,7 +1114,7 @@ private fun WeeklyBars(days: List<DayActivity>, onDayClick: (DayActivity) -> Uni
                     val barWidth = size.width * 0.55f
                     val barHeight = (size.height * value).coerceAtLeast(5.dp.toPx())
                     drawRoundRect(
-                        color = if (day.date == java.time.LocalDate.now()) Mint else Sky.copy(alpha = 0.55f),
+                        color = if (day.date == currentLocalDate()) Mint else Sky.copy(alpha = 0.55f),
                         topLeft = Offset((size.width - barWidth) / 2f, size.height - barHeight),
                         size = Size(barWidth, barHeight),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f),
@@ -1487,7 +1470,11 @@ private fun StudyMode.label(): String = when (this) {
     StudyMode.KOREAN -> "Korean"
 }
 
-fun formatCount(value: Int): String = java.text.NumberFormat.getIntegerInstance().format(value)
+fun formatCount(value: Int): String {
+    val digits = value.toString()
+    if (digits.length <= 3) return digits
+    return digits.reversed().chunked(3).joinToString(",").reversed()
+}
 
 fun statusColor(status: StudyStatus): Color = when (status) {
     StudyStatus.NEW -> Sky
@@ -1496,3 +1483,6 @@ fun statusColor(status: StudyStatus): Color = when (status) {
     StudyStatus.KNOWN -> Mint
     StudyStatus.LEECH -> Rose
 }
+
+@OptIn(kotlin.time.ExperimentalTime::class)
+internal fun nowEpochMs(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()

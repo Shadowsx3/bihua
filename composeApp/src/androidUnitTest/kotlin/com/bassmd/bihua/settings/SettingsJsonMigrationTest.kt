@@ -42,7 +42,7 @@ class SettingsJsonMigrationTest {
     fun aLegacyBackupKeepsItsRevealChoices() {
         val bundle = BackupBundle(
             exportedAtEpochMs = 1L,
-            profile = UserProfile(displayName = "Test"),
+            profile = UserProfile(petId = "pet-mo"),
             settings = AppSettings(
                 revealWriting = true,
                 revealPronunciation = true,
