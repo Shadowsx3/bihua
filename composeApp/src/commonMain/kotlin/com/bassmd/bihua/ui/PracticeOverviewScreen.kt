@@ -39,10 +39,10 @@ import com.bassmd.bihua.ui.theme.Sky
 fun PracticeOverviewScreen(
     modeLabel: String,
     guide: CharacterEntry?,
+    onStrokeOrder: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var strokes by remember { mutableStateOf(listOf<List<Offset>>()) }
-    var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var showGuide by rememberSaveable { mutableStateOf(true) }
 
     LazyColumn(
@@ -81,8 +81,15 @@ fun PracticeOverviewScreen(
                 ) {
                     Text(if (showGuide) "Hide guide" else "Show guide")
                 }
+                if (onStrokeOrder != null && guide != null) {
+                    OutlinedButton(
+                        onClick = onStrokeOrder,
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Stroke order") }
+                }
                 OutlinedButton(
-                    onClick = { strokes = emptyList(); current = emptyList() },
+                    onClick = { strokes = emptyList() },
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.weight(1f),
                 ) { Text("Clear") }
@@ -91,13 +98,7 @@ fun PracticeOverviewScreen(
         item {
             InkPad(
                 strokes = strokes,
-                current = current,
-                onStart = { current = listOf(it) },
-                onMove = { current = current + it },
-                onEnd = {
-                    if (current.isNotEmpty()) strokes = strokes + listOf(current)
-                    current = emptyList()
-                },
+                onStroke = { strokes = strokes + listOf(it) },
                 height = 420.dp,
                 showCross = true,
                 guideCharacter = if (showGuide) guide?.character else null,

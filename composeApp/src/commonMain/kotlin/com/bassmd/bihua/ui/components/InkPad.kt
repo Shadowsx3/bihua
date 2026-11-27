@@ -11,6 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +39,7 @@ import com.bassmd.bihua.ui.theme.PaperWarm
 @Composable
 fun InkPad(
     strokes: List<List<Offset>>,
-    current: List<Offset>,
-    onStart: (Offset) -> Unit,
-    onMove: (Offset) -> Unit,
-    onEnd: () -> Unit,
+    onStroke: (List<Offset>) -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = 300.dp,
     showCross: Boolean = true,
@@ -47,6 +48,9 @@ fun InkPad(
     val ink = InkDark
     val guideColor = InkSoft.copy(alpha = 0.16f)
     val referenceColor = InkDark.copy(alpha = 0.12f)
+    // The in-progress stroke is local to the pad, so a moving finger does not
+    // recompose the review buttons, progress bar, or the rest of the screen.
+    var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -55,13 +59,19 @@ fun InkPad(
             .background(PaperWarm)
             .pointerInput(Unit) {
                 detectDragGestures(
-                    onDragStart = { onStart(it) },
+                    onDragStart = { current = listOf(it) },
                     onDrag = { change, _ ->
                         change.consume()
-                        onMove(change.position)
+                        current = current + change.position
                     },
-                    onDragEnd = { onEnd() },
-                    onDragCancel = { onEnd() },
+                    onDragEnd = {
+                        if (current.isNotEmpty()) onStroke(current)
+                        current = emptyList()
+                    },
+                    onDragCancel = {
+                        if (current.isNotEmpty()) onStroke(current)
+                        current = emptyList()
+                    },
                 )
             },
     ) {

@@ -5,6 +5,7 @@ package com.bassmd.bihua.settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSUserDefaults
@@ -53,8 +54,8 @@ class IosSettingsStore {
         if (args.contains("-reset-settings")) {
             updateSettings { AppSettings() }
             updateProfile { UserProfile() }
-            return
         }
+        if (args.contains("-skip-onboarding")) updateSettings { it.copy(onboarded = true) }
         if (args.contains("-theme-dark")) updateSettings { it.copy(themeMode = ThemeMode.DARK) }
         if (args.contains("-theme-light")) updateSettings { it.copy(themeMode = ThemeMode.LIGHT) }
         if (args.contains("-course-japanese")) {
@@ -65,6 +66,25 @@ class IosSettingsStore {
 
     private val isDebugBinary: Boolean
         get() = kotlin.native.Platform.isDebugBinary
+
+    fun exportBackup(progressJson: String, exportedAtEpochMs: Long): String =
+        json.encodeToString(
+            IosBackup.serializer(),
+            IosBackup(
+                exportedAtEpochMs = exportedAtEpochMs,
+                settings = settings,
+                profile = profile,
+                progressJson = progressJson,
+            ),
+        )
+
+    /** Applies the settings/profile and returns the progress document, or null. */
+    fun importBackup(text: String): String? = runCatching {
+        val backup = json.decodeFromString(IosBackup.serializer(), text)
+        updateSettings { backup.settings }
+        updateProfile { backup.profile }
+        backup.progressJson
+    }.getOrNull()
 
     private fun loadSettings(): AppSettings {
         val text = defaults.stringForKey(SETTINGS_KEY) ?: return AppSettings().sanitized()
@@ -86,3 +106,13 @@ class IosSettingsStore {
         const val PROFILE_KEY = "profile_json"
     }
 }
+
+@Serializable
+private data class IosBackup(
+    val format: String = "bihua-ios-backup",
+    val version: Int = 1,
+    val exportedAtEpochMs: Long,
+    val settings: AppSettings,
+    val profile: UserProfile,
+    val progressJson: String,
+)

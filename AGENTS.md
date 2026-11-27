@@ -33,6 +33,11 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 - The iOS port lives on `main` in the same repository: `composeApp/` is the
   shared KMP module and `iosApp/` is the Xcode host plus the deferred WidgetKit
   code. Do not create a second branch or a separate app folder.
+- iOS 1.0 is now a working study app: onboarding, real content, persisted
+  FSRS-7 progress, review, Characters, Dictionary, Practice, Word practice,
+  Progress, Settings, study lists, speech, reminders, and JSON backup
+  export/import. Widgets, sync, PDF, spell quest, compare, reader, and sounds
+  are absent from the first build and must stay out of the metadata.
 - Shared today: theme, components, Home, Progress, Settings, pet avatars,
   calendar, charts, content and settings models, FSRS, spellbook, and the
   platform seams (`AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`). The
@@ -45,9 +50,10 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
   `iosApp/BihuaWidgets` and `iosApp/WidgetShared` but is not an Xcode target and
   is not embedded. Do not add it to the first archive; the checklist is in
   `iosApp/BihuaWidgets/README.md`. Android widgets are unaffected.
-- ML Kit iOS has no arm64 simulator slice. Use `make ios-mlkit-pods` for a
-  device build; the simulator stays on the Compose host. Recognition is proven
-  on a real iPad.
+- ML Kit iOS is **not linked in the first build**, so App Privacy is Data Not
+  Collected. If a later build adds it, declare Diagnostics and update the
+  policy in the same release. The pod has no arm64 simulator slice, so it can
+  only be tested on a device.
 - The first iOS build has no App Group and no widget extension, so the previous
   App Groups signing blocker is gone. A later widget release needs the App
   Group `group.com.bassmd.bihua` on both bundle ids and a provisioning profile
@@ -60,7 +66,22 @@ The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
   guide; and the offline first-run path.
 - The live maintenance checklist is `docs/backlog.md`. Keep it current.
 
-## iOS work (`ios/kmp`)
+## iOS verification loop
+
+```bash
+make verify          # Android check/lint + compliance + iOS content + iOS unit tests
+make verify-ui       # the above plus all XCUITest journeys on iPhone and iPad
+make ios-content-check
+make ios-screenshots # store captures in .qa/ios/store
+```
+
+- Never mark an iOS-only change done without `make check`: the shared module
+  compiles for Android too.
+- Regenerate `iosApp/Bihua/Content/*.json` after a content DB change with
+  `python3 scripts/export-ios-content.py`; `make ios-content-check` fails when
+  the shipped JSON is stale.
+
+## iOS work
 
 ```bash
 make ios            # iPhone 17 Pro: build, boot, install, launch
@@ -70,6 +91,11 @@ make ios-check      # native tests + the Xcode Debug build
 make ios-pods       # CocoaPods, simulator-safe (no ML Kit)
 make ios-mlkit-pods # ML Kit for a device build
 make ios-shot NAME=home
+make ios-ui-test
+make verify
+make verify-ui
+make ios-content-check
+make ios-screenshots
 make compliance      # Play + App Store policy checks
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
@@ -1033,3 +1059,39 @@ signed build.
 - Foldable, desktop, and XR screenshots are intentionally not supplied.
 - The 1.1.2 release candidate still needs the full matrix green and a real-phone
   smoke before upload.
+
+## iOS lessons that keep the port stable
+
+- **Compose iOS text fields are `UITextView`.** XCUITest cannot use
+  `app.textFields`. Tap the visible placeholder's frame with
+  `coordinate(withNormalizedOffset:).withOffset(...)` and call `app.typeText`.
+- **Scroll settling matters.** After `swipeUp()` to reach a Settings or list
+  button, `usleep(500_000)` before `.tap()` or the tap can land on the previous
+  content.
+- **iPadOS 26 uses a top tab bar.** `app.tabBars.buttons` works on iPhone but
+  not iPad; use the `tabButton` helper that also tries `segmentedControls` and
+  `buttons`.
+- **Set `.portrait` in `setUpWithError`.** A failed landscape test otherwise
+  leaves the next test in landscape and hides Settings rows.
+- **Interactive swipe-back needs an explicit delegate.** `RootNavigationController`
+  owns `interactivePopGestureRecognizer` and only enables it when
+  `viewControllers.count > 1`; test both character detail and review.
+- **`SoftCard` content is a Box.** Put multiple children in a `Column`; otherwise
+  they overlap. This was the Progress/Settings header bug.
+- **The macOS host must be in portrait for store screenshots.** Use
+  `scripts/ios-screenshots.sh`, which resets settings/progress and selects each
+  route.
+- **Nested Kotlin callbacks do not cross to Swift reliably.** Use a small
+  pending object plus a top-level function (see `IosFileImport`) for the
+  document picker; do not pass a block inside a block.
+- **Backup and Start over are real features.** `IosSettingsStore` and
+  `IosProgressStore` write JSON in Application Support; `IosStudyListStore`
+  writes lists. Keep their file names and sanitizers stable.
+- **Long UI sessions can drop the iOS 26 test runner.** A single `xcodebuild
+  test` with 20 relaunches can restart after the duplicate WebKit
+  accessibility-class warning. Use `scripts/ios-ui-tests.sh` (one fresh runner
+  per test, also what `make verify-ui` calls). A restart is a runner failure,
+  not an app failure, but do not ignore it.
+- **Android is the referee.** Any change to `commonMain` must keep
+  `make check`, `make lint`, and the Android APK audit green before an iOS
+  change is considered done.

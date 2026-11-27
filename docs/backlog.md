@@ -2,6 +2,27 @@
 
 Updated: 2026-11-26
 
+## Status at 01:45 (2026-11-27)
+
+- **iOS 1.0 is feature-complete for the first review scope.** Onboarding,
+  real content, persisted FSRS-7 progress, review, Characters, Dictionary,
+  Practice, Word practice, stroke-order playback, Progress, Settings, study
+  lists, speech, reminders, and JSON backup export/import are working. Widgets, sync, PDF, spell quest,
+  compare, the ML Kit reader, and sounds are deliberately out.
+- **Backup transfer works both ways**: Settings → Data exports a JSON file
+  through the share sheet and imports it through the Files picker. The file
+  carries settings, pet, and progress.
+- **Every core journey is in XCUITest** on iPhone and iPad: onboarding, review
+  grading and persistence, tabs, course/pet persistence, character detail and
+  swipe-back, dictionary search, study lists, Start over, backup sheet/picker,
+  Practice, landscape, Dynamic Type, and dark chrome.
+- **Privacy**: iOS App Privacy is Data Not Collected because the first build
+  does not link ML Kit. The live policy now says that explicitly and still
+  declares Android ML Kit diagnostics separately.
+- **Next:** TestFlight internal pass, screenshots from the frozen build, then
+  submit. Post-1.0: spell quest, PDF, compare, reader, and the remaining
+  Android-only report features.
+
 ## Status at 23:30 (2026-11-26)
 
 - **1.1.2 is on hold until iOS reaches parity.** The Android AAB and APK are

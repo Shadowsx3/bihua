@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,9 +57,11 @@ fun DictionaryOverviewScreen(
     modeLabel: String,
     includeMature: Boolean,
     search: suspend (String) -> List<WordContext>,
+    onPracticeWord: (WordContext) -> Unit = {},
+    initialQuery: String = "",
     modifier: Modifier = Modifier,
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
     var results by remember { mutableStateOf<List<WordContext>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
@@ -78,7 +81,7 @@ fun DictionaryOverviewScreen(
         searched = true
     }
 
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth().imePadding()) {
         Column(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -138,7 +141,7 @@ fun DictionaryOverviewScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(results, key = { "${it.word}|${it.reading}|${it.meaning}" }) { word ->
-                    WordCard(word)
+                    WordCard(word, onPractice = { onPracticeWord(word) })
                 }
             }
         }
@@ -146,7 +149,7 @@ fun DictionaryOverviewScreen(
 }
 
 @Composable
-private fun WordCard(word: WordContext) {
+private fun WordCard(word: WordContext, onPractice: () -> Unit) {
     SoftCard(Modifier.fillMaxWidth()) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -166,7 +169,15 @@ private fun WordCard(word: WordContext) {
                 word.level?.let { Pill("Level $it", Mint.copy(alpha = 0.26f)) }
             }
             Spacer(Modifier.height(4.dp))
-            Text(word.meaning, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    word.meaning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkSoft,
+                    modifier = Modifier.weight(1f),
+                )
+                androidx.compose.material3.TextButton(onClick = onPractice) { Text("Write") }
+            }
         }
     }
 }

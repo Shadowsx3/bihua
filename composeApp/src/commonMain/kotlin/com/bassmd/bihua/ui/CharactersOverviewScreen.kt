@@ -223,6 +223,7 @@ private fun CharacterCard(entry: CharacterEntry, onClick: () -> Unit) {
 @Composable
 fun CharacterDetailOverviewScreen(
     entry: CharacterEntry,
+    onStrokeOrder: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val reading = Pinyin.display(entry.reading, entry.mode, numbers = false)
@@ -249,6 +250,13 @@ fun CharacterDetailOverviewScreen(
                         if (entry.strokeCount > 0) {
                             Pill("${entry.strokeCount} strokes", PaperWarm)
                         }
+                    }
+                    if (onStrokeOrder != null) {
+                        Spacer(Modifier.height(10.dp))
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onStrokeOrder,
+                            shape = RoundedCornerShape(50),
+                        ) { Text("Stroke order") }
                     }
                 }
             }

@@ -68,7 +68,6 @@ fun ReviewOverviewScreen(
     var revealed by rememberSaveable { mutableStateOf(startRevealed) }
     var grades by remember { mutableStateOf(listOf<Int>()) }
     var strokes by remember { mutableStateOf(listOf<List<Offset>>()) }
-    var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
 
     if (cards.isEmpty() || index >= cards.size) {
         Column(
@@ -108,7 +107,6 @@ fun ReviewOverviewScreen(
         index += 1
         revealed = false
         strokes = emptyList()
-        current = emptyList()
     }
     Box(modifier.fillMaxSize()) {
     LazyColumn(
@@ -169,24 +167,15 @@ fun ReviewOverviewScreen(
         item {
             com.bassmd.bihua.ui.components.InkPad(
                 strokes = strokes,
-                current = current,
+                onStroke = { strokes = strokes + listOf(it) },
                 showCross = !revealed,
                 guideCharacter = if (revealed) card.character else null,
-                onStart = { current = listOf(it) },
-                onMove = { current = current + it },
-                onEnd = {
-                    if (current.isNotEmpty()) strokes = strokes + listOf(current)
-                    current = emptyList()
-                },
             )
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(
-                    onClick = {
-                        strokes = emptyList()
-                        current = emptyList()
-                    },
+                    onClick = { strokes = emptyList() },
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.weight(1f),
                 ) { Text("Clear") }

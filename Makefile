@@ -273,7 +273,10 @@ compliance:
 	@scripts/compliance.sh
 
 ios-ui-test:
-	@scripts/ios.sh ui-test "$${BIHUA_IOS_DEVICE:-iPhone 17 Pro}"
+	@scripts/ios-ui-tests.sh "$${BIHUA_IOS_DEVICE:-iPhone 17 Pro}"
+
+ios-archive:
+	@DEVELOPMENT_TEAM="$${DEVELOPMENT_TEAM:-DUST62RX27}" scripts/ios-archive.sh
 
 hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"

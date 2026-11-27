@@ -4,12 +4,28 @@ This is the working contract for the port. The product plan and phases stay in
 `docs/ios-kmp-plan.md`; this file explains how the code is arranged, what is
 allowed in each source set, and how to build, run, and test both clients.
 
-Status: P3 in progress on `main`. Home, Characters, Progress, Settings, the
-theme, calendar, charts, and pet avatars are shared and render behind a native
-UIKit tab bar and navigation stack. A first review loop and a persisted settings
-store are in place. iOS widgets are deferred from the first build. The shared
-data stores and the remaining Swift seams are next. The Android release stays on
-hold until iOS reaches parity.
+Status: iOS 1.0 feature-complete for the first scope. Real content, stroke
+guides, and FSRS-7 progress are persisted in Application Support; Home, Review,
+Characters, Dictionary, Practice, Word practice, stroke order, Progress,
+Settings, study lists, speech, reminders, and JSON backup export/import run on
+iPhone and iPad behind a native UIKit tab bar. Widgets and sync are absent; PDF,
+spell quest, compare, the ML Kit reader, and sounds are post-1.0.
+
+## iOS data stores
+
+| Store | File | Purpose |
+|---|---|---|
+| `IosSettingsStore` | `NSUserDefaults` `settings_json` / `profile_json` | course, theme, pet, practice and reminder choices |
+| `IosContentRepository` | `Content/content_<mode>.json` | 10k characters, 34k words, meta; parsed one mode at a time |
+| `IosGuideRepository` | `Content/guide_XX.json` | 32 shards of stroke guides, loaded on demand |
+| `IosProgressStore` | `Application Support/bihua_progress.json` | FSRS memory, due dates, history, notes |
+| `IosStudyListStore` | `Application Support/bihua_study_lists.json` | learner-made character lists |
+| Backup | share sheet + Files picker | settings, profile, and the progress document |
+
+All of these are app-private. The progress and list files live under the
+Application Support directory that `IosAppFiles` excludes from iCloud backup.
+The settings preferences may be included in a device backup, but contain no
+review history or notes.
 
 ## Source sets
 

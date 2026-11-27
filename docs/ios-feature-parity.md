@@ -10,35 +10,36 @@ design).
 
 | Area | Android | iOS | Phase | Notes |
 |---|---|---|---|---|
-| Onboarding pages | Yes | shared | P5 | Script, pace, brush, recall; skip works offline |
-| Guided tour | Yes | shared | P5 | Anchors, spotlight, invite, rotation; no Android-only copy |
+| Onboarding pages | Yes | shared | done | Welcome, loop, course, pet; Skip and Start persist the choice |
+| Guided tour | Yes | **not in 1.0** | — | Deferred; the Home invitation is hidden, so no dead control |
 | Home | Yes | shared | done | Today, resume, word of the day, stats, calendar, pet; sample state until the shared stores land |
-| Review session | Yes | shared | P3 | Meet/Trace/Write/Reveal, grades, reasons, undo |
+| Review session | Yes | shared | in progress | Real due cards, FSRS-7 grading, reveal, sticky grade bar, persisted history; recognition check and reasons follow |
 | Pronunciation / meaning tasks | Yes | shared | P3 | Optional modes, no canvas |
-| Characters grid and detail | Yes | shared | in progress | Search, status filters, real tiles, and a read-only detail with example words; notes, synonyms, history, and the store follow |
+| Characters grid and detail | Yes | shared | in progress | Real catalog, search, status filters, detail, example words, structure meta, and a sequential stroke-order guide; notes, synonyms, and review history UI follow |
+| Stroke-order guide | Yes | shared + content export | done | Sequential playback from the Android glyph data; points animate, KanjiVG/Make Me a Hanzi outlines reveal in order; entry from Characters and Practice |
 | Review loop | Yes | shared | in progress | Cue, ink, reveal, grade, next; sample cards and local advance until the shared FSRS/progress store lands |
-| Dictionary | Yes | shared | P3 | Offline, four scripts |
-| Practice canvas | Yes | shared | in progress | Free pad with a guide, clear, and undo; per-character brush, guide fading, and stroke playback follow |
-| Compare | Yes | shared | P3 | Up to four characters |
-| Word practice | Yes | shared | P5 | Whole-word canvas and one-by-one fallback |
-| Spell quest and grimoire | Yes | shared domain + UI | P5 | Puzzle data bundled |
-| Progress | Yes | shared | done | Level, known/review/new, calendar, learned chart; sample state until P2 |
-| Progress PDF | Yes | shared model + Swift writer | P4 | Save/Share through the picker and share sheet |
-| Worksheet PDF | Yes | shared model + Swift writer | P5 | A4/Letter |
-| Study lists | Yes | shared | P5 | Create, rename, import, export |
-| Known-list import | Yes | shared | P5 | Parser and preview; picker seam |
-| Backup export/import | Yes | shared zip + picker | P4 | Android backup round-trips on iOS |
-| Settings and search | Yes | shared | in progress | Appearance, course, pet, About/privacy; platform rows land with their capabilities |
-| Reminders | Yes | seam | P4 | `UNUserNotificationCenter` one-shot |
-| Speech | Yes | seam | P4 | `AVSpeechSynthesizer`, 5 s init timeout |
-| Sounds | Yes | seam | P4 | `AVAudioEngine` with the same tables |
-| Reader / handwriting model | ML Kit Android | seam | P4 | ML Kit iOS on device; zh-Hans probe recognized 一 on the connected iPhone; simulator has no arm64 pod slice |
-| Ink pressure | Android stylus + finger | Compose pressure on device | P4 | Pencil force probed; ship uniform width if it is not reliable |
+| Dictionary | Yes | shared | done | Real offline word search for the active course; mature examples opt-in |
+| Practice canvas | Yes | shared | done | Free pad with guide toggle, clear, undo, and a smooth local stroke; per-character brush sizes follow |
+| Compare | Yes | **not in 1.0** | — | Deferred; no entry point is shown |
+| Word practice | Yes | shared | done | Whole-word pad from Home and Dictionary; never scheduled |
+| Spell quest and grimoire | Yes | **not in 1.0** | — | Deferred; the Home link and Study tools card are hidden |
+| Progress | Yes | shared | in progress | Real level, known/review/new, calendar, learned chart, and study days; range selector and PDF follow |
+| Progress PDF | Yes | **not in 1.0** | — | Deferred |
+| Worksheet PDF | Yes | **not in 1.0** | — | Deferred |
+| Study lists | Yes | shared | in progress | Create, rename, add/remove, persist; Android-format import/export follows |
+| Known-list import | Yes | **not in 1.0** | — | Deferred |
+| Backup export/import | Yes | shared JSON + picker | done | iOS JSON backup of settings, pet, and progress; system share sheet and Files picker. The Android database format is not read yet. |
+| Settings and search | Yes | shared | in progress | Appearance, course, pet, daily goal, practice, mature, motion, reminders, study lists, backup, reset, About/privacy; search row follows |
+| Reminders | Yes | seam | done | Optional local weekday notifications at the saved time; no server. Time/day picker follows. |
+| Speech | Yes | seam | done | `AVSpeechSynthesizer` with a course-matched voice |
+| Sounds | Yes | **not in 1.0** | — | Deferred; the setting is hidden |
+| Reader / handwriting model | ML Kit Android | **not in 1.0** | — | Deferred; the iOS review is self-graded and downloads no model |
+| Ink pressure | Android stylus + finger | **not in 1.0** | — | Uniform width; Pencil pressure deferred |
 | File picker | SAF | seam | P4 | `UIDocumentPickerViewController` |
 | Share sheet | Intent | seam | P4 | `UIActivityViewController` |
 | Avatar / pet | Photo picker (1.1.x) | shared Compose pets | done | Twelve drawn Mò looks in a 3 x 4 picker; no photo library, file read, or image decoder. There is no name field and no photo access. |
-| Rate | Play listing | seam | P4 | App Store URL once the record exists |
-| Clipboard | ClipboardManager | seam | P4 | `UIPasteboard` |
+| Rate | Play listing | **not in 1.0** | — | Deferred until the App Store record exists |
+| Clipboard | ClipboardManager | **not in 1.0** | — | Deferred |
 | Local sync | Yes | **Android** | — | `capabilities.localSync = false`; absent from Settings and search |
 | Widgets and outfits | Yes | **Android** | — | Deferred from the first iOS build. The SwiftUI WidgetKit code stays in `iosApp/BihuaWidgets` but is not an Xcode target and is not embedded; `capabilities.widgets = false`. |
 | Foldable book layouts | Yes | **Android** | — | iOS is iPhone/iPad only, no foldable target; `capabilities.foldables = false` |

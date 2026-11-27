@@ -206,6 +206,23 @@ class IosProgressStore(
         save()
     }
 
+    /** Deletes the local progress document. Settings stay untouched. */
+    fun clear() {
+        files.delete(FILE_NAME)
+        file = IosProgressFile()
+        revision += 1
+    }
+
+    fun exportJson(): String = json.encodeToString(IosProgressFile.serializer(), file)
+
+    fun importJson(text: String): Boolean = runCatching {
+        val next = json.decodeFromString(IosProgressFile.serializer(), text)
+        file = next
+        revision += 1
+        save()
+        true
+    }.getOrDefault(false)
+
     fun note(id: String): String = file.cards[id]?.note.orEmpty()
 
     fun saveNote(id: String, note: String) {

@@ -40,11 +40,12 @@ no developer-run analytics.
 ## iOS port (in progress)
 
 The same Compose Multiplatform client now lives on `main` in `composeApp/` with
-the Xcode host in `iosApp/`. Home, Characters, Practice, Progress, Settings, the
-pet picker, calendar, and charts already render on iPhone and iPad behind a
-native UIKit tab bar and navigation stack; review and character detail use
-native pushes. Widgets are deferred from the first iOS build; the shared data
-stores, dictionary, and the remaining seams are the port work. Android remains the
+the Xcode host in `iosApp/`. The iOS 1.0 build has onboarding, a real offline
+catalog and dictionary, persisted FSRS progress, review, Characters, Practice,
+Word practice, Progress, Settings, study lists, speech, reminders, and JSON
+backup export/import behind a native UIKit tab bar. Character detail, review,
+dictionary, and word practice use native pushes. Widgets and local sync are
+deferred; PDF, spell quest, compare, and the ML Kit reader are post-1.0 work. Android remains the
 shipped client. The plan and parity table live in `docs/ios-kmp-plan.md` and
 `docs/ios-feature-parity.md`. Build and run with `make ios` or `make ios-ipad`.
 iPhone and iPad are the supported devices; there is no iOS foldable target.

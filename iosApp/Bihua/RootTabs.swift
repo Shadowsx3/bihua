@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 import BihuaKit
 
 /// The native iPhone/iPad shell. UITabBarController keeps the tab stacks and
@@ -8,6 +9,7 @@ import BihuaKit
 struct RootTabsView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UITabBarController {
         let controller = UITabBarController()
+        let pickerHost = DocumentPickerHost()
         let routes = ["home", "characters", "practice", "progress", "settings"]
         let select: (String) -> Void = { [weak controller] route in
             guard let controller, let index = routes.firstIndex(of: route) else { return }
@@ -15,6 +17,41 @@ struct RootTabsView: UIViewControllerRepresentable {
         }
         let pop: () -> Void = { [weak controller] in
             (controller?.selectedViewController as? UINavigationController)?.popViewController(animated: true)
+        }
+        let shareFile: (String) -> Void = { [weak controller] path in
+            guard
+                let controller,
+                let navigation = controller.selectedViewController as? UINavigationController
+            else { return }
+            let activity = UIActivityViewController(
+                activityItems: [URL(fileURLWithPath: path)],
+                applicationActivities: nil
+            )
+            if let popover = activity.popoverPresentationController {
+                popover.sourceView = navigation.view
+                popover.sourceRect = CGRect(
+                    x: navigation.view.bounds.midX,
+                    y: navigation.view.bounds.midY,
+                    width: 1,
+                    height: 1
+                )
+                popover.permittedArrowDirections = []
+            }
+            navigation.present(activity, animated: true)
+        }
+        let onboardingChanged: (KotlinBoolean) -> Void = { [weak controller] visible in
+            controller?.tabBar.isHidden = visible.boolValue
+        }
+        let requestFilePicker: () -> Void = { [weak controller] in
+            guard
+                let controller,
+                let navigation = controller.selectedViewController as? UINavigationController
+            else { return }
+            let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.json], asCopy: true)
+            let delegate = DocumentPickerDelegate()
+            pickerHost.delegate = delegate
+            picker.delegate = delegate
+            navigation.present(picker, animated: true)
         }
         let applyTheme: (KotlinBoolean) -> Void = { [weak controller] dark in
             let isDark = dark.boolValue
@@ -53,7 +90,10 @@ struct RootTabsView: UIViewControllerRepresentable {
                 onSelectTab: select,
                 onPush: push,
                 onThemeChange: applyTheme,
-                onPop: pop
+                onPop: pop,
+                onShareFile: shareFile,
+                onRequestFilePicker: requestFilePicker,
+                onOnboardingChanged: onboardingChanged
             )
             screen.navigationItem.title = Self.title(for: route)
             screen.hidesBottomBarWhenPushed = route == "review"
@@ -61,11 +101,11 @@ struct RootTabsView: UIViewControllerRepresentable {
             navigation.pushViewController(screen, animated: true)
         }
         controller.viewControllers = [
-            tab(title: "Home", icon: "house.fill", route: "home", hidesBar: true, onSelect: select, onPush: push, onThemeChange: applyTheme),
-            tab(title: "Characters", icon: "square.grid.2x2.fill", route: "characters", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
-            tab(title: "Practice", icon: "paintbrush.pointed.fill", route: "practice", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
-            tab(title: "Progress", icon: "chart.bar.xaxis", route: "progress", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
-            tab(title: "Settings", icon: "gearshape.fill", route: "settings", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
+            tab(title: "Home", icon: "house.fill", route: "home", hidesBar: true, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
+            tab(title: "Characters", icon: "square.grid.2x2.fill", route: "characters", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
+            tab(title: "Practice", icon: "paintbrush.pointed.fill", route: "practice", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
+            tab(title: "Progress", icon: "chart.bar.xaxis", route: "progress", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
+            tab(title: "Settings", icon: "gearshape.fill", route: "settings", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme, onShareFile: shareFile, onRequestFilePicker: requestFilePicker, onOnboardingChanged: onboardingChanged),
         ]
 
         let ink = UIColor(red: 0.12, green: 0.17, blue: 0.14, alpha: 1)
@@ -97,7 +137,10 @@ struct RootTabsView: UIViewControllerRepresentable {
         hidesBar: Bool,
         onSelect: @escaping (String) -> Void,
         onPush: @escaping (String) -> Void,
-        onThemeChange: @escaping (KotlinBoolean) -> Void
+        onThemeChange: @escaping (KotlinBoolean) -> Void,
+        onShareFile: @escaping (String) -> Void,
+        onRequestFilePicker: @escaping () -> Void,
+        onOnboardingChanged: @escaping (KotlinBoolean) -> Void
     ) -> UINavigationController {
         var screen: UIViewController!
         let navigation = RootNavigationController()
@@ -109,7 +152,10 @@ struct RootTabsView: UIViewControllerRepresentable {
             onThemeChange: onThemeChange,
             onPop: { [weak navigation] in
                 navigation?.popViewController(animated: true)
-            }
+            },
+            onShareFile: onShareFile,
+            onRequestFilePicker: onRequestFilePicker,
+            onOnboardingChanged: onOnboardingChanged
         )
         screen.navigationItem.title = title
         navigation.setViewControllers([screen], animated: false)
@@ -135,6 +181,10 @@ struct RootTabsView: UIViewControllerRepresentable {
     private static func title(for route: String) -> String {
         if route == "review" { return "Review" }
         if route == "dictionary" { return "Dictionary" }
+        if route == "word-practice" { return "Word practice" }
+        if route == "lists" { return "Study lists" }
+        if route.hasPrefix("list/") { return "Study list" }
+        if route.hasPrefix("stroke/") { return "Stroke order" }
         let last = route.split(separator: "/").last.map(String.init) ?? route
         return last.split(separator: ":").last.map(String.init) ?? last
     }
@@ -142,12 +192,17 @@ struct RootTabsView: UIViewControllerRepresentable {
 
 /// A navigation stack that hides its bar only at the tab root, so Home keeps
 /// its own header but a pushed review still gets a native back button.
-final class RootNavigationController: UINavigationController, UINavigationControllerDelegate {
+final class RootNavigationController: UINavigationController,
+    UINavigationControllerDelegate, UIGestureRecognizerDelegate {
     var hidesBarAtRoot = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
+        // Keep the edge swipe aligned with the visible navigation bar. The
+        // default delegate disables it while the bar is hidden, which would
+        // strand the learner on a pushed review or character page.
+        interactivePopGestureRecognizer?.delegate = self
     }
 
     func navigationController(
@@ -155,7 +210,8 @@ final class RootNavigationController: UINavigationController, UINavigationContro
         willShow viewController: UIViewController,
         animated: Bool
     ) {
-        setNavigationBarHidden(false, animated: animated)
+        let atRoot = viewController === viewControllers.first
+        setNavigationBarHidden(hidesBarAtRoot && atRoot, animated: animated)
     }
 
     func navigationController(
@@ -163,7 +219,29 @@ final class RootNavigationController: UINavigationController, UINavigationContro
         didShow viewController: UIViewController,
         animated: Bool
     ) {
-        let atRoot = viewController === viewControllers.first
-        setNavigationBarHidden(hidesBarAtRoot && atRoot, animated: animated)
+        // Never let the root be popped by the edge gesture, even after a
+        // cancelled transition.
+        interactivePopGestureRecognizer?.isEnabled = viewControllers.count > 1
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1 && transitionCoordinator == nil
+    }
+}
+
+private final class DocumentPickerHost {
+    var delegate: DocumentPickerDelegate?
+}
+
+private final class DocumentPickerDelegate: NSObject, UIDocumentPickerDelegate {
+    func documentPicker(
+        _ controller: UIDocumentPickerViewController,
+        didPickDocumentsAt urls: [URL]
+    ) {
+        IosFileImportKt.deliverFilePickerPath(path: urls.first?.path)
+    }
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        IosFileImportKt.deliverFilePickerPath(path: nil)
     }
 }

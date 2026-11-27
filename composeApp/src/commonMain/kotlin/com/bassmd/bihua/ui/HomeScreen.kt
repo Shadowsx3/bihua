@@ -183,13 +183,15 @@ fun HomeScreen(
     var selectedDay by remember { mutableStateOf<DayActivity?>(null) }
     var showMore by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
-    val recentPeek = characters.filter { it.status != StudyStatus.NEW }.take(8)
-        .ifEmpty {
-            Curriculum.order(
-                characters.filter { it.status == StudyStatus.NEW },
-                CharacterOrder.CURRICULUM,
-            ).take(8)
-        }
+    val recentPeek = remember(characters) {
+        characters.filter { it.status != StudyStatus.NEW }.take(8)
+            .ifEmpty {
+                Curriculum.order(
+                    characters.filter { it.status == StudyStatus.NEW },
+                    CharacterOrder.CURRICULUM,
+                ).take(8)
+            }
+    }
     val studySummary = buildList {
         if (studyList.isNotEmpty()) {
             add(
@@ -580,6 +582,24 @@ fun HomeScreen(
                                 onSpeak = onSpeak,
                                 onPracticeWord = onPracticeWord,
                             )
+                        }
+                    }
+                    if (recentPeek.isNotEmpty()) {
+                        item {
+                            SoftCard(Modifier.fillMaxWidth()) {
+                                Column {
+                                    SectionTitle(
+                                        title = if (known + due > 0) "Recent characters" else "Start with these",
+                                        action = "See all",
+                                        onAction = onBrowse,
+                                    )
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        items(recentPeek) { entry ->
+                                            CharacterPeek(entry = entry, onClick = { onOpenCharacter(entry) })
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -3,11 +3,12 @@ import XCTest
 final class BihuaUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
     }
 
     private func launch(_ arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-reset-settings", "-reset-progress"] + arguments
+        app.launchArguments = ["-reset-settings", "-reset-progress", "-skip-onboarding"] + arguments
         app.launch()
         return app
     }
@@ -30,6 +31,20 @@ final class BihuaUITests: XCTestCase {
         let segmented = app.segmentedControls.buttons[label]
         if segmented.waitForExistence(timeout: 2) { return segmented }
         return app.buttons[label].firstMatch
+    }
+
+    func testFirstRunOnboardingReachesHome() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-reset-settings", "-reset-progress"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Write it. Keep it."].waitForExistence(timeout: 15))
+        for _ in 0..<3 {
+            app.buttons["Continue"].tap()
+        }
+        let start = app.buttons["Start studying"]
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        start.tap()
+        XCTAssertTrue(element(app, "Learn 5 new").waitForExistence(timeout: 15))
     }
 
     func testHomeStartsAReviewAndGradesIt() {
@@ -82,7 +97,7 @@ final class BihuaUITests: XCTestCase {
         XCTAssertTrue(characters.waitForExistence(timeout: 15))
         characters.tap()
 
-        let first = element(app, "爱, ài, to love, Review")
+        let first = element(app, "爱, ài, to love, New")
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         first.tap()
 
@@ -104,8 +119,8 @@ final class BihuaUITests: XCTestCase {
         origin.withOffset(CGVector(dx: field.frame.midX, dy: field.frame.midY)).tap()
         app.typeText("ai")
 
-        XCTAssertTrue(element(app, "爱, ài, to love, Review").waitForExistence(timeout: 10))
-        XCTAssertFalse(element(app, "吧, ba, particle indicating polite suggestion, Review").exists)
+        XCTAssertTrue(element(app, "爱, ài, to love, New").waitForExistence(timeout: 10))
+        XCTAssertFalse(element(app, "吧, ba, particle indicating polite suggestion, New").exists)
     }
 
     func testPetChoicePersistsAcrossLaunch() {
@@ -113,11 +128,11 @@ final class BihuaUITests: XCTestCase {
         tabButton(app, "Settings").tap()
         XCTAssertTrue(app.staticTexts["Appearance"].waitForExistence(timeout: 10))
 
-        let reader = element(app, "Reader")
-        XCTAssertTrue(reader.waitForExistence(timeout: 5))
-        for _ in 0..<6 where !reader.isHittable {
+        let reader = containing(app, "Reader")
+        for _ in 0..<8 where !reader.isHittable {
             app.swipeUp()
         }
+        XCTAssertTrue(reader.waitForExistence(timeout: 5))
         XCTAssertTrue(reader.isHittable)
         reader.tap()
         let preview = app.staticTexts.containing(
@@ -140,9 +155,43 @@ final class BihuaUITests: XCTestCase {
         let app = launch()
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
-        let start = element(app, "Start studying")
+        let start = element(app, "Learn 5 new")
         XCTAssertTrue(start.waitForExistence(timeout: 15))
         XCTAssertTrue(start.isHittable)
+    }
+
+    func testSwipeBackFromReview() {
+        let app = launch()
+        let learn = element(app, "Learn 5 new")
+        XCTAssertTrue(learn.waitForExistence(timeout: 15))
+        learn.tap()
+        XCTAssertTrue(app.staticTexts["Write from the cue"].waitForExistence(timeout: 10))
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: target)
+        XCTAssertTrue(element(app, "Learn 5 new").waitForExistence(timeout: 10))
+    }
+
+    func testSwipeBackFromCharacterDetail() {
+        let app = launch()
+        tabButton(app, "Characters").tap()
+        let first = element(app, "爱, ài, to love, New")
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        first.tap()
+        XCTAssertTrue(app.staticTexts["Example words"].waitForExistence(timeout: 10))
+
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: target)
+        XCTAssertTrue(element(app, "Search characters").waitForExistence(timeout: 10))
+    }
+
+    func testWordOfTheDayOpensWordPractice() {
+        let app = launch()
+        let write = element(app, "Write")
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        write.tap()
+        XCTAssertTrue(app.staticTexts["Whole word · not scheduled"].waitForExistence(timeout: 10))
     }
 
     func testDictionarySearchesTheOfflineWords() {
@@ -150,12 +199,93 @@ final class BihuaUITests: XCTestCase {
         tabButton(app, "Characters").tap()
         element(app, "Dictionary").tap()
         XCTAssertTrue(app.staticTexts["Words in Simplified"].waitForExistence(timeout: 10))
-        let field = element(app, "Search a word, reading, or mean...")
+        let field = containing(app, "Search a word")
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
         origin.withOffset(CGVector(dx: field.frame.midX, dy: field.frame.midY)).tap()
         app.typeText("love")
         XCTAssertTrue(element(app, "爱情").waitForExistence(timeout: 10))
+    }
+
+    func testStrokeOrderGuidePlays() {
+        let app = launch(["-push", "stroke/SIMPLIFIED:U+7231"])
+        XCTAssertTrue(app.buttons["Play again"].waitForExistence(timeout: 15))
+        XCTAssertTrue(containing(app, "Stroke").waitForExistence(timeout: 5))
+    }
+
+    func testStartOverClearsProgress() {
+        let app = launch()
+        element(app, "Learn 5 new").tap()
+        XCTAssertTrue(app.staticTexts["Write from the cue"].waitForExistence(timeout: 10))
+        element(app, "Show answer").tap()
+        element(app, "Good").tap()
+        XCTAssertTrue(app.staticTexts["2 / 5"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+
+        tabButton(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Appearance"].waitForExistence(timeout: 10))
+        let startOver = app.buttons["Start over"]
+        for _ in 0..<8 where !startOver.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(startOver.isHittable)
+        usleep(500_000)
+        startOver.tap()
+        let confirm = app.buttons["Confirm start over"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+
+        tabButton(app, "Home").tap()
+        XCTAssertTrue(element(app, "Learn 5 new").waitForExistence(timeout: 10))
+    }
+
+    func testStudyListCanBeCreatedAndFilled() {
+        let app = launch(["-push", "lists"])
+        XCTAssertTrue(app.buttons["New list"].waitForExistence(timeout: 15))
+        app.buttons["New list"].tap()
+        XCTAssertTrue(app.staticTexts["List name"].waitForExistence(timeout: 10))
+
+        let addField = containing(app, "Add a character")
+        XCTAssertTrue(addField.waitForExistence(timeout: 5))
+        let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        origin.withOffset(CGVector(dx: addField.frame.midX, dy: addField.frame.midY)).tap()
+        app.typeText("ai")
+        let add = app.buttons["Add"].firstMatch
+        XCTAssertTrue(add.waitForExistence(timeout: 10))
+        add.tap()
+        XCTAssertTrue(app.staticTexts["1 character"].waitForExistence(timeout: 10))
+    }
+
+    func testBackupExportOpensTheShareSheet() {
+        let app = launch()
+        tabButton(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Appearance"].waitForExistence(timeout: 10))
+        let export = app.buttons["Export backup"]
+        for _ in 0..<8 where !export.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(export.isHittable)
+        usleep(500_000)
+        export.tap()
+        sleep(2)
+        let sheet = app.sheets.firstMatch
+        let activity = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10) || activity.waitForExistence(timeout: 2))
+    }
+
+    func testBackupImportOpensTheFilePicker() {
+        let app = launch()
+        tabButton(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Appearance"].waitForExistence(timeout: 10))
+        let importButton = app.buttons["Import backup"]
+        for _ in 0..<8 where !importButton.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(importButton.isHittable)
+        usleep(500_000)
+        importButton.tap()
+        XCTAssertTrue(app.staticTexts["Recents"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].tap()
     }
 
     func testSettingsShowsThePracticeControls() {
@@ -166,13 +296,13 @@ final class BihuaUITests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(app.staticTexts["Daily new lessons"].waitForExistence(timeout: 5))
-        let write = containing(app, "Write the character")
+        
         let mature = containing(app, "Mature examples")
         let reduce = containing(app, "Reduce motion")
         for _ in 0..<6 where !mature.exists {
             app.swipeUp()
         }
-        XCTAssertTrue(write.exists)
+        XCTAssertTrue(containing(app, "Read aloud").exists)
         XCTAssertTrue(mature.exists)
         XCTAssertTrue(reduce.exists)
     }

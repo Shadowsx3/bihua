@@ -4,12 +4,12 @@ One place for the answers Google Play and the App Store ask, the code or
 document that proves them, and the checks that still need a person. The
 automated part is `make compliance`; the manual part is listed at the end.
 
-Status: Android 1.1.2 is built and held until iOS reaches parity. The iOS client
-is now a working study app: native tab shell, real content, persisted FSRS
-progress, review, Characters, Dictionary, Practice, Progress, and Settings.
-Widgets and sync are absent from the first build. The iOS 1.0 binary does not
-link ML Kit, so App Privacy is **Data Not Collected**. Remaining parity work:
-spell quest, study lists, PDF/backup export, and the Swift seams.
+Status: Android 1.1.2 is built and held until iOS is submitted. The iOS client
+is a working study app: onboarding, real content, persisted FSRS progress,
+review, Characters, Dictionary, Practice, Word practice, Progress, Settings,
+study lists, speech, reminders, and JSON backup export/import. Widgets, sync,
+PDF, spell quest, compare, the ML Kit reader, and sounds are absent. The iOS 1.0
+binary does not link ML Kit, so App Privacy is **Data Not Collected**.
 
 ## Product facts (both stores)
 
@@ -90,6 +90,9 @@ It does not prove the App Privacy/Data safety answers are accepted by the
 stores, replace a real-device pass, or run the UI accessibility matrix.
 
 ## Manual before submission
+
+0. Follow `docs/ios-release.md` for the archive, export, TestFlight, and the
+   exact App Store Connect answers.
 
 1. Deploy `docs/` so the privacy URL is current.
 2. Run the signed build on a real iPhone and iPad; TestFlight internal test.

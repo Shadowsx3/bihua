@@ -77,7 +77,7 @@
     <article class="article" id="article">
       <div class="callout">
         <strong>Short version</strong>
-        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. A full backup or an Android settings sync can include your pet choice, but only when you start it. On Android, Google ML Kit processes limited diagnostics and usage data as a service provider, as described below. The first iOS release does not include ML Kit, has no local sync, widgets, foldables, crash attachment, or Android permissions, and collects no data for the developer.</p>
+        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. An Android full backup or settings sync can include your pet choice, but only when you start it. On Android, Google ML Kit processes limited diagnostics and usage data as a service provider, as described below. The first iOS release does not include ML Kit, has no local sync, widgets, foldables, crash attachment, or Android permissions, and collects no data for the developer.</p>
       </div>
 
       <h2 id="stored">What is stored on the device</h2>
@@ -96,7 +96,7 @@
       <h3>Android</h3>
       <p>Android cloud backup and device-to-device app-data transfer are disabled in the app manifest, so the operating system does not copy the app's database, notes, pet choice, or downloaded models as part of its own backup or migration. Bihua turns that off on purpose: it keeps your study data out of a Google backup account. Use Settings → Data → Export when you want a backup you control.</p>
       <h3>iOS</h3>
-      <p>Progress and downloaded content are written to the app's Application Support directory and excluded from iCloud backup. The pet choice and small settings preferences live in the app's preferences; a device backup may include those preferences, but they contain no review history, notes, or study list. File sharing is off, so the app's data is not browsable in the Files app. Bihua has no CloudKit, iCloud sync, push, or sign-in. Use Settings → Data → Export and the system Files sheet when you want a backup you control.</p>
+      <p>Progress and downloaded content are written to the app's Application Support directory and excluded from iCloud backup. The pet choice and small settings preferences live in the app's preferences; a device backup may include those preferences, but they contain no review history, notes, or study list. File sharing is off, so the app's data is not browsable in the Files app. Bihua has no CloudKit, iCloud sync, push, or sign-in. Use Settings → Data → Export backup to create a JSON backup and choose a destination in the system share sheet. Import backup opens the system Files picker. The file contains progress, settings, and the pet choice; it goes only where you send it.</p>
 
       <h2 id="network">Network access</h2>
       <p>Bihua does not run a developer-operated server. Network access is used only for these actions:</p>

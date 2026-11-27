@@ -52,3 +52,5 @@ iosApp/*.xcodeproj/xcuserdata/
 iosApp/Pods/
 iosApp/Bihua.xcworkspace/
 iosApp/*.xcodeproj/project.xcworkspace/xcuserdata/
+*.p8
+**/AuthKey_*.p8

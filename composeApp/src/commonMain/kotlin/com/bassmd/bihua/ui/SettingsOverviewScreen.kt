@@ -18,12 +18,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,8 +65,15 @@ fun SettingsOverviewScreen(
     onPetChange: (String) -> Unit,
     onOpenPrivacy: () -> Unit,
     onSettingsChange: (AppSettings) -> Unit = {},
+    onStartOver: () -> Unit = {},
+    onOpenStudyLists: () -> Unit = {},
+    onExportBackup: ((String) -> Unit) -> Unit = { it("Backup export is unavailable.") },
+    onImportBackup: ((String) -> Unit) -> Unit = { it("Backup import is unavailable.") },
     modifier: Modifier = Modifier,
 ) {
+    var confirmStartOver by remember { mutableStateOf(false) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+    var confirmMature by remember { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -145,23 +158,12 @@ fun SettingsOverviewScreen(
             SoftCard(Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Practice", style = MaterialTheme.typography.titleMedium, color = InkDark)
-                    ToggleRow("Write the character", "The core task. Keep it on unless you only need to read.", settings.writingPractice) {
-                        onSettingsChange(settings.copy(writingPractice = it))
-                    }
-                    ToggleRow("Say it aloud", "Adds a pronunciation task to the rotation.", settings.pronunciationPractice) {
-                        onSettingsChange(settings.copy(pronunciationPractice = it))
-                    }
-                    ToggleRow("Choose the meaning", "Adds a meaning task to the rotation.", settings.meaningPractice) {
-                        onSettingsChange(settings.copy(meaningPractice = it))
-                    }
                     ToggleRow("Read aloud", "Use the system voice on the word card.", settings.readAloud) {
                         onSettingsChange(settings.copy(readAloud = it))
                     }
-                    ToggleRow("Sound effects", "Short, quiet feedback for a finished action.", settings.soundEffects) {
-                        onSettingsChange(settings.copy(soundEffects = it))
-                    }
-                    ToggleRow("Mature examples", "Show explicit dictionary examples after a confirmation.", settings.includeMatureContent) {
-                        onSettingsChange(settings.copy(includeMatureContent = it))
+                    ToggleRow("Mature examples", "Show explicit dictionary examples after a confirmation.", settings.includeMatureContent) { enabled ->
+                        if (enabled) confirmMature = true
+                        else onSettingsChange(settings.copy(includeMatureContent = false))
                     }
                     ToggleRow("Reduce motion", "Stop bobbing, confetti, and long transitions.", settings.reduceMotion) {
                         onSettingsChange(settings.copy(reduceMotion = it))
@@ -218,8 +220,8 @@ fun SettingsOverviewScreen(
                         Pill(versionLabel, Mint.copy(alpha = 0.28f))
                     }
                     Text(
-                        "No account, no ads, no subscription. Handwriting runs on-device. " +
-                            "Model downloads and privacy details are in the policy.",
+                        "No account, no ads, no subscription. Handwriting and privacy details " +
+                            "are in the policy.",
                         style = MaterialTheme.typography.bodySmall,
                         color = InkSoft,
                     )
@@ -227,6 +229,96 @@ fun SettingsOverviewScreen(
                 }
             }
         }
+        item {
+            SoftCard(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Study lists", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                        Text(
+                            "Keep a small set for a chapter, a trip, or a stubborn group.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkSoft,
+                        )
+                    }
+                    TextButton(onClick = onOpenStudyLists) { Text("Open") }
+                }
+            }
+        }
+        item {
+            SoftCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Data", style = MaterialTheme.typography.titleMedium, color = InkDark)
+                    Text(
+                        "Start over removes every review, note, and schedule on this device. " +
+                            "Your course, theme, and pet stay as they are.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSoft,
+                    )
+                    if (confirmStartOver) {
+                        Text(
+                            "This cannot be undone. Tap Start over again to confirm.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                if (confirmStartOver) {
+                                    onStartOver()
+                                    confirmStartOver = false
+                                } else {
+                                    confirmStartOver = true
+                                }
+                            },
+                            shape = RoundedCornerShape(50),
+                        ) { Text(if (confirmStartOver) "Confirm start over" else "Start over") }
+                        if (confirmStartOver) {
+                            TextButton(onClick = { confirmStartOver = false }) { Text("Cancel") }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                onExportBackup { message -> backupMessage = message }
+                            },
+                            shape = RoundedCornerShape(50),
+                        ) { Text("Export backup") }
+                        OutlinedButton(
+                            onClick = {
+                                onImportBackup { message -> backupMessage = message }
+                            },
+                            shape = RoundedCornerShape(50),
+                        ) { Text("Import backup") }
+                    }
+                    backupMessage?.let { message ->
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = InkSoft)
+                    }
+                }
+            }
+        }
+    }
+    if (confirmMature) {
+        AlertDialog(
+            onDismissRequest = { confirmMature = false },
+            title = { Text("Mature examples?") },
+            text = {
+                Text(
+                    "The dictionary can include explicit or sexual example words for some " +
+                        "characters. They stay hidden until you turn this on, and you can turn " +
+                        "them off again at any time."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmMature = false
+                    onSettingsChange(settings.copy(includeMatureContent = true))
+                }) { Text("Show examples") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmMature = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

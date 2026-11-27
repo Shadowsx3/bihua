@@ -15,9 +15,23 @@ fun MainViewController(
     onPush: (String) -> Unit,
     onThemeChange: (Boolean) -> Unit,
     onPop: () -> Unit,
+    onShareFile: (String) -> Unit,
+    onRequestFilePicker: () -> Unit,
+    onOnboardingChanged: (Boolean) -> Unit,
 ): UIViewController {
     Services.install(IosPlatformServices())
     return ComposeUIViewController {
-        IosDynamicType { IosRouteScreen(route, onSelectTab, onPush, onThemeChange, onPop) }
+        IosDynamicType {
+            IosRouteScreen(
+                routeId = route,
+                onSelectTab = onSelectTab,
+                onPush = onPush,
+                onThemeChange = onThemeChange,
+                onPop = onPop,
+                onShareFile = onShareFile,
+                onRequestFilePicker = onRequestFilePicker,
+                onOnboardingChanged = onOnboardingChanged,
+            )
+        }
     }
 }
