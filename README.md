@@ -3,6 +3,7 @@
 [![CI](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml/badge.svg)](https://github.com/Shadowsx3/bihua/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/code%20license-MIT-2f7d55.svg)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84.svg)](#requirements)
+[![iOS 16+ in progress](https://img.shields.io/badge/iOS-16%2B%20in%20progress-999999.svg)](docs/ios-kmp-plan.md)
 [![Version](https://img.shields.io/badge/version-1.1.2-e89a6b.svg)](CHANGELOG.md)
 
 **An offline, handwriting-first Android app for learning to write and read
@@ -34,6 +35,14 @@ no developer-run analytics.
   ·
   <a href="https://shadowsx3.github.io/bihua/#download"><strong>Download</strong></a>
 </p>
+
+## iOS port (in progress)
+
+The same Compose Multiplatform client is being ported on the `ios/kmp` branch.
+Android on `main` remains the shipped client. The plan, the shared architecture,
+and the feature parity table live in `docs/ios-kmp-plan.md`,
+`docs/ios-architecture.md`, and `docs/ios-feature-parity.md`. Build and run with
+`make ios` or `make ios-ipad`. iPhone and iPad are the supported devices.
 
 ## New in 1.1.2
 

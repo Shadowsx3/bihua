@@ -5,7 +5,8 @@ SHELL := /bin/bash
 
 .PHONY: help check quick test lint audit smoke journey journey-standard journey-full nav-gap apk verify play-audit install run log crash shot status hooks clean clean-shots quality quality-full goldens monkey \
 	devices ui find tap type draw swipe key release install-release visual-matrix \
-	db-pull db-cards db-reviews db-reset seed-review seed-learning content content-bump
+	db-pull db-cards db-reviews db-reset seed-review seed-learning content content-bump \
+	ios ios-iphone ios-ipad ios-build ios-test ios-check ios-pods ios-mlkit-pods ios-devices ios-shot
 
 TEXT ?=
 CHAR ?= 爱
@@ -55,6 +56,19 @@ help:
 	@echo "make seed-review CHAR=爱 [MODE=SIMPLIFIED] [REPS=2]"
 	@echo "make seed-learning CHAR=爱 [MODE=KOREAN] [MINUTES=10]"
 	@echo "make content | content-bump  rebuild the content database"
+	@echo "make ios       build, install, and launch on the iPhone simulator"
+	@echo "make ios-ipad  the same on the iPad Pro 13-inch"
+	@echo "make ios-build Xcode Debug build only"
+	@echo "make ios-test  Android unit tests plus iosSimulatorArm64Test"
+	@echo "make ios-check framework, native tests, and the Xcode Debug build"
+	@echo "make ios-pods  CocoaPods install (simulator-safe, no ML Kit)"
+	@echo "make ios-mlkit-pods  install ML Kit for a device build"
+	@echo "make ios-devices  list iPhone and iPad simulators"
+	@echo "make ios-shot NAME=home  screenshot to .qa/ios/home.png"
+	@echo "make ios-device  build, install, and launch on the connected iPhone"
+	@echo "make ios-device-build  signed device build only"
+	@echo "make ios-device-shot NAME=home  capture the connected iPhone"
+	@echo "make ios-device-id  print the connected iPhone UDID"
 	@echo "make hooks     install the git pre-commit hook"
 	@echo "make clean     remove build output (keeps screenshots)"
 	@echo "make clean-shots  delete screenshots"
@@ -191,6 +205,53 @@ content-bump:
 
 status:
 	@scripts/device.sh status
+
+# iOS port. The simulator uses the shared Compose framework; the device adds
+# ML Kit through BIHUA_MLKIT=1 pod install.
+IOS_DEVICE ?= iPhone 17 Pro
+
+ios:
+	@BIHUA_IOS_DEVICE="$(IOS_DEVICE)" scripts/ios.sh run
+
+ios-iphone:
+	@BIHUA_IOS_DEVICE="iPhone 17 Pro" scripts/ios.sh run
+
+ios-ipad:
+	@BIHUA_IOS_DEVICE="iPad Pro 13-inch (M5)" scripts/ios.sh run
+
+ios-build:
+	@BIHUA_IOS_DEVICE="$(IOS_DEVICE)" scripts/ios.sh build
+
+ios-test:
+	@scripts/ios.sh test
+
+ios-check:
+	@scripts/ios.sh test
+	@BIHUA_IOS_DEVICE="iPhone 17 Pro" scripts/ios.sh build
+
+ios-pods:
+	@scripts/ios.sh pods
+
+ios-mlkit-pods:
+	@scripts/ios.sh mlkit-pods
+
+ios-devices:
+	@scripts/ios.sh devices
+
+ios-shot:
+	@scripts/ios.sh shot $(NAME)
+
+ios-device:
+	@scripts/ios.sh device-run
+
+ios-device-build:
+	@scripts/ios.sh device-build
+
+ios-device-shot:
+	@scripts/ios.sh device-shot $(NAME)
+
+ios-device-id:
+	@scripts/ios.sh device-id
 
 hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"

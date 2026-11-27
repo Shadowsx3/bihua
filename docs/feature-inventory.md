@@ -4,6 +4,13 @@ Status: living document, started 2026-11-23.
 
 Legend: **A** automated, **P** partly automated, **G** automation gap, **M** manual.
 
+Platform note: Android is the shipped client. The iOS port runs on `ios/kmp`
+and is tracked in `docs/ios-feature-parity.md`. Sync, widgets, foldable book
+layouts, and crash attachment are Android-only and absent from the iOS UI, not
+labelled inside the app. Shared rows apply to both clients once the phase in
+`docs/ios-kmp-plan.md` lands.
+
+
 ## Content and scripts
 
 | Feature | Behaviour | A |

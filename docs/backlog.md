@@ -145,20 +145,46 @@ This is the working list for the 1.1.2 stabilization window. Keep it short and
 honest: move an item to Done only after its proof (test, journey, screenshot, or
 release artifact) exists.
 
-## iOS port (`ios/kmp`) — P0 in progress
+## iOS port (`ios/kmp`) — P0 complete, P1 in progress
 
 The port runs on `ios/kmp`, branched from the tagged 1.1.2 candidate
-`android-1.1.2-rc23`. The plan and the platform matrix live in
-`docs/ios-kmp-plan.md`; Android stays shippable on `main`.
+`android-1.1.2-rc23` and kept current with `main`. Android stays shippable on
+`main`. The plan is `docs/ios-kmp-plan.md`; the contract is
+`docs/ios-architecture.md`; parity is `docs/ios-feature-parity.md`; App Store
+answers are `docs/ios-app-store-checklist.md`.
 
 - [x] Freeze the 1.1.2 tree, tag `android-1.1.2-rc23`, branch `ios/kmp`.
-- [x] Add Kotlin Multiplatform, Compose Multiplatform 1.9.3, iOS arm64 and
-      simulator targets; keep the Android sources at `src/main` through
-      `androidMain` source dirs and move only the manifest to `src/androidMain`.
-- [x] Android stays green: `make check` and `make lint` pass after the move.
-- [ ] P0 toolchain spike: framework link, Compose screen on the simulator,
-      ASCII text field, Pencil force probe, ML Kit pod link.
-- [ ] P1 source-set split and pure-package moves.
+- [x] Kotlin Multiplatform and Compose Multiplatform 1.9.3; Android sources stay
+      at `src/main`, only the manifest moved to `src/androidMain`.
+- [x] P0: static `BihuaKit` framework, XcodeGen host, Compose screen on the
+      iPhone and iPad simulators, working text field and keyboard, CJK metrics,
+      pointer-pressure probe. Privacy manifest, icon, listing draft, and the
+      App Store checklist are in.
+- [x] Android stays green: `make check` and `make lint` pass after every move.
+- [x] Platform seams: `AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`, and
+      `Services`, installed in both shells.
+- [x] First pure move: `spellbook` domain and puzzle generation in `commonMain`;
+      Android keeps the asset/SQLite loader; `PuzzleForgeTest` and
+      `QuestGeneratorTest` run in `commonTest` on both targets.
+- [x] Tooling: `make ios`, `ios-ipad`, `ios-duo`, `ios-test`, `ios-check`,
+      `ios-shot`, `ios-pods`, `ios-mlkit-pods`; `qa/ios/driver.py` and
+      `qa/ios/smoke.py`.
+- [x] Device path: signed Debug build on the connected iPhone 17e (iPhone/iPad
+      only, no Duo). `CADisableMinimumFrameDurationOnPhone` added after the
+      first launch crash. ML Kit links, the zh-Hans model downloads, and a
+      synthetic 一 is recognized; `make ios-device`, `ios-device-shot`, and
+      `devicectl` screenshots are wired.
+- [x] Direction set: native iOS navigation shell (tab bar + navigation stack)
+      with Compose content only, following the iOS guidelines; iPhone and iPad
+      are the supported devices.
+- [ ] P1 continues: `content` models and `Pinyin`/`KnownList`, then `fsrs`
+      dates, settings models, and backup.
+- [ ] P2: SQLDelight schema 18 with a real Android fixture; path DataStore;
+      content copy; Okio backup.
+- Finding: ML Kit's digital-ink pod has no arm64 simulator slice and this Mac
+  has no Rosetta, so the pod is device-only (`make ios-mlkit-pods`); the
+  simulator runs the Compose host without recognition. Prove recognition on a
+  real iPad.
 - External: the Apple Developer account is being renewed (simulator work needs
   no account; TestFlight in P7 does).
 

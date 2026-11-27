@@ -33,6 +33,25 @@ make perf           # gfxinfo snapshot for Characters and a daily session
   `ModelDownloadNoticeTest`, `StudyToolsSheetTest`) run on the JVM with
   Robolectric, including 1.5x text and tablet width.
 
+## iOS port (ios/kmp)
+
+P0 complete, P1 in progress. iOS compares against iOS, never against Android:
+text metrics and rendering differ.
+
+| Layer | Command | What |
+|---|---|---|
+| Shared pure tests | `make ios-test` | `commonTest` on the Android and iOS targets (`spellbook` today) |
+| Android tests | `make test` | JVM/Robolectric stay in `androidUnitTest` |
+| iOS native | `iosSimulatorArm64Test` | files, zip, SQL driver, dates (P2) |
+| Simulator smoke | `python3 qa/ios/smoke.py` | boot, install, launch, app label, screenshot |
+| Driver | `qa/ios/driver.py` | idb `find`, `tap_label`, `text`, `swipe`, `screenshot` |
+| Build gate | `make ios-check` | native tests plus the Xcode Debug build |
+| XCUITest | `iosAppTests` (P6) | rotation, keyboard, VoiceOver, permission sheets |
+
+Devices: iPhone 17 Pro, iPad Pro 13-inch, iPhone Duo (foldable), light and dark,
+1.0/1.5/2.0 text. Screenshots go to `.qa/ios/`. The parity table is
+`docs/ios-feature-parity.md`.
+
 ## 1.1.2 additions
 
 | Flow | What is covered | Where |

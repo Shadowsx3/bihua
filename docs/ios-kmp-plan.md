@@ -1,9 +1,20 @@
 # Bihua iOS plan — Compose Multiplatform, no widgets, no local sync
 
-Status: **P0 in progress on `ios/kmp`**, branched from
-`android-1.1.2-rc23`. Android on `main` stays the shippable client; the iOS
-target and Apple dependencies exist only on the port branch. The Apple
-Developer account is being renewed; simulator work continues until TestFlight.
+Status: **P0 complete, P1 in progress on `ios/kmp`**, branched from
+`android-1.1.2-rc23` (then kept current with `main`). Android on `main` stays
+the shippable client; the iOS target and Apple dependencies exist only on the
+port branch. The Apple Developer Program is renewed through November 2027
+(team `DUST62RX27`); a real iPhone is connected for device evidence.
+
+Working documents:
+
+- `docs/ios-architecture.md` - source sets, seams, data, UI, build, tests.
+- `docs/ios-feature-parity.md` - the parity table and hiding rules.
+- `docs/ios-app-store-checklist.md` - what App Store Connect asks and where
+  the answer lives.
+- `docs/ios-design-guidelines.md` - the 100% iOS guideline review list for the
+  native shell and every screen.
+- `store/ios-listing.md` - the local listing draft (never committed).
 
 This document replaces the earlier SwiftUI-over-KMP plan. The decision changed:
 the UI is **shared Compose Multiplatform**, not a second SwiftUI app. Native
@@ -26,6 +37,34 @@ Before P0:
    added until the branch exists.
 
 ---
+
+## P0 findings (November 2026)
+
+- The KMP module, CMP 1.9.3 on Kotlin 2.2.21, the static `BihuaKit` framework,
+  the XcodeGen host, and a Compose screen run on the iPhone and iPad
+  simulators. A text field takes iOS keyboard input and CJK metrics render.
+- Compose pointer changes expose `pressure`; the Pencil probe draws with it.
+  The simulator has no force, so the Pencil decision waits for a real iPad.
+- **ML Kit's digital-ink pod has no arm64 simulator slice.** It ships device
+  arm64 and simulator x86_64. Rosetta 2 is installed, but the iOS 26.5 runtime
+  is arm64-only, so an x86_64 simulator app cannot run. The pod is installed
+  only for device work (`make ios-mlkit-pods`); the Swift seam uses `canImport`,
+  and the simulator stays on the Compose host. Recognition must be proven on a
+  real iPad.
+- Apple documents are started: `PrivacyInfo.xcprivacy`, export compliance,
+  the listing draft, and the review-notes checklist.
+- On the connected iPhone (iOS 27.2, team `DUST62RX27`), the signed build runs.
+  The ML Kit pod links, the `zh-Hans` model downloads, and a synthetic horizontal
+  stroke with a writing-area context is recognized as 一. A missing
+  `CADisableMinimumFrameDurationOnPhone` key crashed the first device launch;
+  the simulator did not catch it.
+- The iOS app supports iPhone and iPad only. There is no iOS foldable target
+  and no Duo test; the Android fold journeys remain the layout referee.
+- Android stayed green after every move (`make check`). `spellbook` is now in
+  `commonMain` with native tests; the shared platform seams are installed in
+  both shells.
+- Do not grow the P0 probe screen. The next evidence comes from the real
+  screens as they move to `commonMain`.
 
 ## 0. Decisions
 
@@ -306,21 +345,36 @@ with Compose rendering each screen's content.
 
 | Option | What it looks like | Cost | Risk |
 |---|---|---|---|
-| **A. Compose chrome** (recommended for v1) | Bihua's own floating paper bar on both platforms | 0 extra | Does not look native on iOS 26; keyboard translucency needs a visual pass |
-| **B. Native UIKit shell** | System tab bar and nav bar with Bihua colours; Compose content | +30 to 50 h, plus a screen renderer and route metadata | Navigation state lives in two places; every screen needs a content-only entry point |
+| **A. Compose chrome** | Bihua's own floating paper bar on both platforms | 0 extra | Does not follow the iOS guidelines; no Liquid Glass, no system back swipe or tab behaviour |
+| **B. Native UIKit shell** (chosen) | System tab bar and nav bar with Bihua colours; Compose renders content | +30 to 50 h, plus a screen renderer and route metadata | Navigation state lives in two places; every screen needs a content-only entry point |
 | **C. Compose plus `UIDesignRequiresCompatibility`** | Pre-iOS 26 appearance, no glass | 0 | Transition flag; Apple may drop it, and the app looks dated on new OSes |
 
-Recommendation: **A now, B later, with the seams already in place.** The brand
-bar is the product's identity, and the app never pretended to be native. But
-build the three things that make B a migration instead of a rewrite:
+Decision: **B. Follow the iOS design guidelines fully.** The iOS app uses a
+system navigation shell, not a Compose-drawn bar: a `UITabBarController` with a
+per-tab `UINavigationController`, large titles, swipe-back, safe-area and
+keyboard handling, system sheets, and the system share and document pickers.
+Compose renders each screen's content, never the chrome. iPhone and iPad are
+the supported devices; there is no iOS foldable target and no Duo test.
+
+Implement the three seams before P3:
 
 - every route carries a `title`, so a native nav bar can label it;
 - a `ScreenContent(route)` renderer that draws one screen without the shell;
 - `App(topLevelRoute, onNavigate, onActivate)` callbacks and a
   `LocalUseNativeNavigation` flag that hides Compose title bars and back buttons.
 
-Then the JetBrains migration guide applies directly, and the decision can be
-taken after the first iOS 26 visual pass without touching screen code.
+Guideline checklist for the shell and every screen:
+
+- system tab bar and navigation bar, large title on top-level routes, back
+  swipe, and the system keyboard avoidance; no Compose bottom bar or Android
+  back button on iOS;
+- safe areas, Dynamic Type, VoiceOver labels and rotor actions, Reduce Motion,
+  and light/dark system appearance;
+- system share sheet, document picker, notification permission, and alert or
+  sheet presentation for destructive confirmations;
+- context menus and swipe actions where the platform expects them;
+- iOS-like press feedback instead of Material ripples; no Android-only terms in
+  the UI.
 
 Do not use option C as the plan. It buys a year at most.
 
@@ -401,6 +455,14 @@ object Services { lateinit var current: PlatformServices }
 | Crash files | `diagnostics/CrashLog`, `CrashHandler` | Not implemented at launch; `capabilities.crashAttach = false` | Low |
 | Rate URL | `settings/RateLinks.kt` (Play) | `https://apps.apple.com/app/id<APP_ID>` | Low |
 | Build info | `BuildConfig` (7 files) | BuildKonfig or a generated `BuildInfo` actual reading `Bundle.main` | Low |
+
+### What is implemented
+
+`commonMain/platform/PlatformServices.kt` now holds `AppInfo`, `AppFiles`,
+`Capabilities`, `LinkOpener`, and `Services`. Android installs
+`AndroidPlatformServices` in `BihuaApplication`; iOS installs
+`IosPlatformServices` in `MainViewController`. The rest of the catalogue below
+is P4. See `docs/ios-architecture.md` for the rules and the migration ledger.
 
 ### Swift side
 
@@ -694,6 +756,26 @@ Golden comparison: reuse `qa/visual.py`'s SSIM idea with a per-platform toleranc
 iOS text rendering differs from Android, so compare iOS against iOS, not across
 platforms.
 
+### Tooling (P0)
+
+```bash
+make ios            # iPhone 17 Pro: build, boot, install, launch
+make ios-ipad       # iPad Pro 13-inch
+make ios-test       # Android unit tests plus iosSimulatorArm64Test
+make ios-check      # native tests plus the Xcode Debug build
+make ios-pods       # CocoaPods, simulator-safe
+make ios-mlkit-pods # ML Kit for a device build
+make ios-shot NAME=home
+make ios-device      # signed build, install, launch on the connected iPhone
+make ios-device-build
+make ios-device-id
+python3 qa/ios/smoke.py
+```
+
+`qa/ios/driver.py` wraps `idb` with the same verbs as `qa/driver.py`
+(`find`, `tap_label`, `text`, `swipe`, `screenshot`). Rotation, the keyboard
+permission sheet, and VoiceOver stay XCUITest jobs.
+
 ### Journey harness
 
 The Android harness is `uiautomator2` over adb, 119 scenarios. Do not try to
@@ -731,6 +813,15 @@ Add `scripts/ios-journey.sh` with the same flags as `scripts/journey.sh`
 ## 8. Policy, landing, and store updates
 
 Nothing here may claim an iOS feature that does not exist.
+
+Updated 26 November 2026: `PRIVACY.md` and `docs/privacy.html` now cover both
+platforms (Android-only sync, iOS Application Support and no iCloud backup, ML
+Kit AI/third-party SDK, both permission sets, App Store rating row). The landing
+page marks widgets, foldables, and sync as Android, states that iOS is in
+progress, and adds no App Store link before the build exists. The App Store
+checklist and local listing are in `docs/ios-app-store-checklist.md` and
+`store/ios-listing.md`. Deploy `docs/` before linking the policy from either
+store.
 
 ### `PRIVACY.md` and `docs/privacy.html`
 

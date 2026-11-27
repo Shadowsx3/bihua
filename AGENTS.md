@@ -13,17 +13,61 @@ glyphs. No streak penalties, no account, no ads, no developer-run analytics.
 
 The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
-## Current state (1.1.2)
+## Current state (1.1.2 + iOS port branch)
 
-- Android is the only client. Version 1.1.2 (code 23) is the release candidate;
-  the signed RC is built and audited but not uploaded. Release is on hold.
-- iOS is a long-term plan only: `docs/ios-kmp-plan.md`. Do not add Apple
-  dependencies or an iOS target during the 1.1.2 maintenance window.
+- Android is the shipped client. Version 1.1.2 (code 23) is the release
+  candidate; the signed RC is built and audited but not uploaded. Release is on
+  hold.
+- The iOS port is **P0 complete, P1 in progress on `ios/kmp`**. `main` stays
+  the shippable Android client; never add Apple dependencies or an iOS target
+  to `main`. Branch rules and the phase order are in `docs/ios-kmp-plan.md`.
+- Shared today: the `spellbook` domain and the platform seams
+  (`AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`). The architecture,
+  source-set rules, and migration ledger are in `docs/ios-architecture.md`.
+- iOS hides sync, widgets, foldable layouts, and crash attachment through
+  `Capabilities`. It never labels them "Android only" inside the app. The
+  parity table is `docs/ios-feature-parity.md`.
+- ML Kit iOS has no arm64 simulator slice. Use `make ios-mlkit-pods` for a
+  device build; the simulator stays on the Compose host. Recognition is proven
+  on a real iPad.
 - New in 1.1.2: Today and Week ahead widgets; Progress All time and the year
   heatmap; local crash files and the report composer; the seamless splash;
   two-page Home/Practice and spell-quest landscape; the 65% chapter-coloured
   guide; and the offline first-run path.
 - The live maintenance checklist is `docs/backlog.md`. Keep it current.
+
+## iOS work (`ios/kmp`)
+
+```bash
+make ios            # iPhone 17 Pro: build, boot, install, launch
+make ios-ipad       # iPad Pro 13-inch
+make ios-test       # Android unit tests + iosSimulatorArm64Test
+make ios-check      # native tests + the Xcode Debug build
+make ios-pods       # CocoaPods, simulator-safe (no ML Kit)
+make ios-mlkit-pods # ML Kit for a device build
+make ios-shot NAME=home
+make ios-device      # signed build, install, launch on the connected iPhone
+make ios-device-build
+make ios-device-id
+python3 qa/ios/smoke.py
+```
+
+- XcodeGen owns `iosApp/Bihua.xcodeproj`; after changing `project.yml` run
+  `cd iosApp && xcodegen generate && pod install`.
+- `qa/ios/driver.py` mirrors the Android Journey verbs for `idb`. Rotation,
+  keyboard permission sheets, and VoiceOver stay XCUITest.
+- Do not grow the P0 probe screen. New evidence comes from real screens as they
+  move to `commonMain`.
+- Keep Android `make check` green after every move; a move is behaviour
+  preserving or behind a capability.
+- App Store questions and answers: `docs/ios-app-store-checklist.md`; the
+  local listing draft is `store/ios-listing.md`; the iOS guideline review list
+  is `docs/ios-design-guidelines.md`.
+- Privacy and store copy move together: `PRIVACY.md`, `docs/privacy.html`,
+  Google Play Data safety, App Store App Privacy, and
+  `PrivacyInfo.xcprivacy` must agree. Never claim an iOS feature before the
+  build ships; mark Android-only features on the landing page, not inside the
+  app.
 
 ## Product feel
 

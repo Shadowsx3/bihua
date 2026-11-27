@@ -71,7 +71,7 @@
 <main id="main">
   <div class="wrap hero">
     <div class="hero-copy reveal">
-      <div class="kicker">Android · pen or finger · offline</div>
+      <div class="kicker">Android today · iOS in progress · pen or finger · offline</div>
       <h1>Learn characters with a pen that <em>feels like a pen.</em></h1>
       <p class="lead">Bihua is a writing app for Chinese, Japanese, and Korean characters. You write with a stylus or a finger; the app reads the ink and schedules the character for the day you would forget it. Everything is included: no account, no ads, no subscription.</p>
       <div class="hero-actions">
@@ -86,6 +86,7 @@
         <span>A4 &amp; Letter print</span>
         <span>No account</span>
         <span>Android 10+ · arm64</span>
+        <span>iOS 16+ in progress</span>
       </div>
       <div class="hero-text-links">
         <a class="hero-text-link" href="method.html">How the scheduling and ink check work <span aria-hidden="true">→</span></a>
@@ -190,7 +191,7 @@
           <div class="point"><b>Words stay context.</b><span>Example words, dictionary entries, and word practice are free practice. They never enter the scheduler or create review debt.</span></div>
           <div class="point"><b>Sound is separate.</b><span>Pronunciation is its own task, so a word can be read without pretending it was written.</span></div>
           <div class="point"><b>The writing is the test.</b><span>If 愛 comes from memory, 愛情 is a word you can use, not a shape you recognise.</span></div>
-          <div class="point"><b>Mò is your guide.</b><span>The optional tour and the widgets use the same paper-ink pet, never a second mascot.</span></div>
+          <div class="point"><b>Mò is your guide.</b><span>The optional tour, and the Android widgets, use the same paper-ink pet, never a second mascot.</span></div>
         </div>
         <div class="philosophy-chips">
           <span class="chip">Scheduler cards are characters</span>
@@ -236,7 +237,7 @@
       <div><b>4</b><span>writing systems</span></div>
       <div><b>1</b><span>focused writing surface</span></div>
     </div>
-    <p class="small note reveal">Designed for Android styluses and touch screens. Emulator pen events, phone, tablet, and foldable layouts are covered; physical pen testing continues. Apple Pencil is not supported because Bihua is an Android app.</p>
+    <p class="small note reveal">Designed for Android styluses and touch screens. Emulator pen events, phone, tablet, and foldable layouts are covered; physical pen testing continues. The iOS port is in progress on the same ink engine. Apple Pencil will draw with it; pressure detail follows the force test and will be stated here when it ships.</p>
   </section>
 
   <section id="engines" class="wrap">
@@ -523,7 +524,7 @@
     <div class="section-head reveal">
       <div class="kicker">08 · Made for the device</div>
       <h2>A book when it opens. A desk when it does not.</h2>
-      <p class="lead">The same screen, designed for the shape it is in. A foldable gets two pages and a compact bar; a tablet gets a navigation rail and the same two-page dashboard. The outer display falls back to the phone layout without squeezing the canvas.</p>
+      <p class="lead">The same screen, designed for the shape it is in. On Android, a foldable gets two pages and a compact bar; a tablet gets a navigation rail and the same two-page dashboard. The outer display falls back to the phone layout without squeezing the canvas. On iPad, the iOS port uses the same wide layouts; iOS does not use Android foldable classes.</p>
     </div>
     <div class="device-grid">
       <figure class="shot reveal">
@@ -593,13 +594,13 @@
     <div class="section-head reveal">
       <div class="kicker">New in 1.1.2</div>
       <h2>Widgets, a longer history, and a report you can hand over.</h2>
-      <p class="lead">Today and Week ahead widgets now show the day's real amounts and the next seven days. Progress gained All time and a GitHub-style year map, and can export a clean PDF for the range you pick. Word practice can take the whole word on one page, with optional clues. Settings can compose a report with a saved crash that never leaves your phone until you send it. Phones in landscape use the same two-page layouts as a tablet, and a clean offline device can skip setup and start a review while the optional reader downloads.</p>
+      <p class="lead">On Android, Today and Week ahead widgets now show the day's real amounts and the next seven days. Progress gained All time and a GitHub-style year map, and can export a clean PDF for the range you pick. Word practice can take the whole word on one page, with optional clues. Settings can compose a report with a saved crash that never leaves your phone until you send it. Phones in landscape use the same two-page layouts as a tablet, and a clean offline device can skip setup and start a review while the optional reader downloads.</p>
     </div>
     <div class="grid two gap-top">
       <article class="card pillar accent-mint reveal">
         <div class="icon">今</div>
         <h3>Today and the week ahead</h3>
-        <p>The Today widget shows done and total reviews and lessons, with one plain line for the next hours. A dedicated Week ahead widget shows the next seven days. Word of the Day remains its own quiet card, and all three keep the same warm paper and pet.</p>
+        <p>On Android, the Today widget shows done and total reviews and lessons, with one plain line for the next hours. A dedicated Week ahead widget shows the next seven days. Word of the Day remains its own quiet card, and all three keep the same warm paper and pet. iOS has no home-screen widgets.</p>
       </article>
       <article class="card pillar accent-sky reveal">
         <div class="icon">年</div>
@@ -628,8 +629,8 @@
       </article>
     </div>
     <div class="license-chips reveal">
-      <span class="chip">Today widget</span>
-      <span class="chip">Week ahead widget</span>
+      <span class="chip">Today widget · Android</span>
+      <span class="chip">Week ahead widget · Android</span>
       <span class="chip">Word of the Day</span>
       <span class="chip">All time</span>
       <span class="chip">Year heatmap</span>
@@ -659,7 +660,7 @@
     <div class="faq reveal">
       <details class="faq-item">
         <summary>Do I need a stylus?</summary>
-        <p>No. A finger or a mouse works, and the ink check still counts strokes and compares order. A stylus adds pressure and speed, and on supported devices the app ignores a resting palm. Bihua is Android only; there is no iPhone version.</p>
+        <p>No. A finger or a mouse works, and the ink check still counts strokes and compares order. A stylus adds pressure and speed, and on supported Android devices the app ignores a resting palm. Bihua is on Android today; the iOS port is in progress on the same engine, and the App Store link will appear here when it ships.</p>
       </details>
       <details class="faq-item">
         <summary>I have never learned a character. Where do I start?</summary>
@@ -675,7 +676,7 @@
       </details>
       <details class="faq-item">
         <summary>Does it really work offline?</summary>
-        <p>Yes. The app starts without a network, progress lives in SQLite on the phone, and the handwriting model downloads once. Two-device sync is optional and stays on your local network. Backups are zip files you create.</p>
+        <p>Yes. The app starts without a network, progress lives in SQLite on the phone, and the handwriting model downloads once. Two-device sync is optional on Android and stays on your local network; iOS has no local sync. Backups are zip files you create on both platforms.</p>
       </details>
       <details class="faq-item">
         <summary>What happens to my data?</summary>
@@ -683,7 +684,7 @@
       </details>
       <details class="faq-item">
         <summary>Will it work on a tablet or a foldable?</summary>
-        <p>Yes. A tablet gets a navigation rail and two-page screens. A foldable gets a book layout when open and the phone layout when closed. A phone in landscape uses the same wide layouts, so the canvas never gets squeezed.</p>
+        <p>On Android, a tablet gets a navigation rail and two-page screens, and a foldable gets a book layout when open and the phone layout when closed. A phone in landscape uses the same wide layouts, so the canvas never gets squeezed. On iPad, the iOS port uses the same wide layouts.</p>
       </details>
       <details class="faq-item">
         <summary>Is it free?</summary>
@@ -704,6 +705,7 @@
         </div>
         <p class="small">APK 1.1.2 · signed test build · Android 10+ · content version 34 · no account</p>
         <p class="small">If you already installed from Play, uninstall that copy first. This APK uses the local release key and may not install over the Play signature.</p>
+        <p class="small"><strong>iPhone and iPad:</strong> in progress. The shared Compose app is being ported on <code>ios/kmp</code>; there is no App Store build yet. The <a href="https://github.com/Shadowsx3/bihua/blob/main/docs/ios-kmp-plan.md">port plan</a> and <a href="https://github.com/Shadowsx3/bihua/blob/main/docs/ios-feature-parity.md">parity table</a> are public.</p>
       </div>
       <div class="download-side">
         <p class="small">SHA-256</p>

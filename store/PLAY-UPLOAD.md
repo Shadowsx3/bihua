@@ -8,10 +8,10 @@ tree before upload; record its SHA-256 in `store/play-assets/README.md` and
 
 - AAB slot: `store/play-assets/upload-1.1.2/bihua-1.1.2.aab`
 - AAB SHA-256:
-  `99f0fa7420e6cfd14e4a0c019587034138c6f76e83fd12b88e8831ce0a11c4c1`
+  `b255ae68c37f25c06f44b2487b267c73a49e3dcfeca9905b20baa9735ef711bc`
 - Test APK: `docs/download/bihua-1.1.2.apk`
 - Test APK SHA-256:
-  `1abfa45fca0f5180d0ff416506a43329d878e11765ba92d25454384ae3ffc305`
+  `7e3bea1baf80fad3a67cea7ce4f216d5889bbe10c4ae00e120a95e9b2b2adfd4`
 - Release name: `1.1.2 closed test`
 - Release notes: `store/release-notes-1.1.2.txt` (`<en-US>` block)
 

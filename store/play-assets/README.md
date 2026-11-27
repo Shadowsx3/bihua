@@ -110,9 +110,9 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 final 1.1.2 tree on 26 November 2026 (versionCode 23):
 
 - `bihua-1.1.2.aab` SHA-256:
-  `99f0fa7420e6cfd14e4a0c019587034138c6f76e83fd12b88e8831ce0a11c4c1`
+  `b255ae68c37f25c06f44b2487b267c73a49e3dcfeca9905b20baa9735ef711bc`
 - `app-release.apk` SHA-256:
-  `1abfa45fca0f5180d0ff416506a43329d878e11765ba92d25454384ae3ffc305`
+  `7e3bea1baf80fad3a67cea7ce4f216d5889bbe10c4ae00e120a95e9b2b2adfd4`
 
 The release name for the closed test is `1.1.2 closed test`. Notes live in
 `store/release-notes-1.1.2.txt`. The renamed image set is:

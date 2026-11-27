@@ -114,7 +114,9 @@ Bihua server.
 - No user-to-user chat, public profiles, or content sharing. Study lists and
   backups stay local or go to the learner's own file provider.
 - Privacy policy and data safety links are present in the app and on the
-  landing page.
+  landing page. The page now covers Android and the iOS port; the Play Data
+  safety answers below stay Android-only, and the iOS App Privacy answers live
+  in `docs/ios-app-store-checklist.md`.
 
 ## Foreground service and background work
 
