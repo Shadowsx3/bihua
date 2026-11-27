@@ -13,7 +13,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTENT = ROOT / "app/src/main/assets/bihua_content.db"
+CONTENT = ROOT / "app/src/androidMain/assets/bihua_content.db"
 QA = ROOT / ".qa"
 SCHEMA_VERSION = 10
 DAY = 86_400_000

@@ -165,7 +165,7 @@ seed_card() {
   [ -n "$character" ] || { echo "usage: seed-$kind <character> [mode] [reps] [dueMinutes]" >&2; exit 1; }
   require_run_as
 
-  local content="$BIHUA_ROOT/app/src/main/assets/bihua_content.db"
+  local content="$BIHUA_ROOT/app/src/androidMain/assets/bihua_content.db"
   local row
   row=$(sqlite3 -separator '|' "$content" \
     "SELECT id, glyph_group_id, mode FROM character WHERE character='$character' AND mode='$mode' LIMIT 1;")
@@ -401,8 +401,8 @@ PY
 
   content)
     python3 tools/import/build_content_db.py
-    ls -lh app/src/main/assets/bihua_content.db
-    sqlite3 app/src/main/assets/bihua_content.db "SELECT key || '=' || value FROM meta WHERE key IN ('structureEntries','words','glyphGroups');"
+    ls -lh app/src/androidMain/assets/bihua_content.db
+    sqlite3 app/src/androidMain/assets/bihua_content.db "SELECT key || '=' || value FROM meta WHERE key IN ('structureEntries','words','glyphGroups');"
     if [ "${1:-}" = "--bump" ]; then
       python3 - <<'PY'
 import re

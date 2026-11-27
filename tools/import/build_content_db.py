@@ -34,7 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "tools/data/raw"
-DEFAULT_OUT = ROOT / "app/src/main/assets/bihua_content.db"
+DEFAULT_OUT = ROOT / "app/src/androidMain/assets/bihua_content.db"
 
 MODE_ORDER = ["SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN"]
 MODE_LABEL = {

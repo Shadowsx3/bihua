@@ -221,8 +221,9 @@ Rules:
 `settings.gradle.kts` keeps one module. No new Gradle modules; the shared UI is
 the app module itself.
 
-During the migration, point the Android source set at the existing tree so no
-commit has to rename 147 files:
+The tree now uses the canonical layout (`src/androidMain`, `src/commonMain`,
+`src/iosMain`, `src/androidUnitTest`, `src/androidDebug`), with no source-dir
+overrides. This was the migration step used to get there:
 
 ```kotlin
 kotlin {
@@ -239,9 +240,8 @@ android {
 }
 ```
 
-Then move one package at a time into `src/commonMain/kotlin`. The end state keeps
-`src/main/java` for Android-only files; a later cleanup can rename it to
-`src/androidMain/kotlin` with no behaviour change.
+Packages moved one at a time into `src/commonMain/kotlin`; the Android tree now
+lives in `src/androidMain/kotlin`.
 
 ```kotlin
 plugins {
@@ -396,8 +396,7 @@ App size: the 30 MB content DB, Skia, and the ML Kit pod put the download near
 60 to 80 MB. Acceptable for a language app with a dictionary inside; measure
 before P7 and state it on the listing.
 
-`app/src/debug` (the QA bridge) maps to `androidDebug` and must not leak into
-`commonMain`.
+`app/src/androidDebug` (the QA bridge) must not leak into `commonMain`.
 
 ---
 
@@ -769,6 +768,8 @@ make ios-shot NAME=home
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
 make ios-device-id
+make ios-ipad-device  # signed build, install, launch on the connected iPad
+make ios-ipad-device-shot NAME=home
 python3 qa/ios/smoke.py
 ```
 

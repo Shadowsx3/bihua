@@ -69,6 +69,8 @@ help:
 	@echo "make ios-device-build  signed device build only"
 	@echo "make ios-device-shot NAME=home  capture the connected iPhone"
 	@echo "make ios-device-id  print the connected iPhone UDID"
+	@echo "make ios-ipad-device  the same on the connected iPad"
+	@echo "make ios-ipad-device-shot NAME=home  capture the iPad"
 	@echo "make hooks     install the git pre-commit hook"
 	@echo "make clean     remove build output (keeps screenshots)"
 	@echo "make clean-shots  delete screenshots"
@@ -242,16 +244,28 @@ ios-shot:
 	@scripts/ios.sh shot $(NAME)
 
 ios-device:
-	@scripts/ios.sh device-run
+	@scripts/ios.sh device-run iphone
 
 ios-device-build:
-	@scripts/ios.sh device-build
+	@scripts/ios.sh device-build iphone
 
 ios-device-shot:
-	@scripts/ios.sh device-shot $(NAME)
+	@scripts/ios.sh device-shot $(NAME) iphone
 
 ios-device-id:
-	@scripts/ios.sh device-id
+	@scripts/ios.sh device-id iphone
+
+ios-ipad-device:
+	@scripts/ios.sh device-run ipad
+
+ios-ipad-device-build:
+	@scripts/ios.sh device-build ipad
+
+ios-ipad-device-shot:
+	@scripts/ios.sh device-shot $(NAME) ipad
+
+ios-ipad-device-id:
+	@scripts/ios.sh device-id ipad
 
 hooks:
 	@git config core.hooksPath .githooks && echo "pre-commit hook installed"

@@ -3399,7 +3399,7 @@ def _spell_character_for(label: str) -> str | None:
     family = FAMILY_IDS.get(label)
     if family is None:
         return None
-    path = Path(__file__).resolve().parents[1] / "app/src/main/assets/spellbook.csv"
+    path = Path(__file__).resolve().parents[1] / "app/src/androidMain/assets/spellbook.csv"
     with path.open(encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             if row["family"] == family:

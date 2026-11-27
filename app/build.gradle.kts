@@ -76,11 +76,6 @@ android {
         buildConfig = true
     }
 
-    // The KMP Android target expects the manifest in src/androidMain. Res and
-    // assets stay in the existing src/main tree.
-    sourceSets["main"].res.srcDir("src/main/res")
-    sourceSets["main"].assets.srcDir("src/main/assets")
-
     androidResources {
         noCompress += "db"
     }
@@ -93,6 +88,9 @@ android {
         // The Compose lint bundled for the KMP mix reports valid `remember`
         // blocks that return a collection as Unit. Keep the rest of the checks.
         disable += "RememberReturnType"
+        // The bundled LiveData detector crashes on the Kotlin 2.2 analysis API.
+        // Bihua has no LiveData; keep the check disabled until AGP is upgraded.
+        disable += "NullSafeMutableLiveData"
     }
 }
 
@@ -100,9 +98,6 @@ kotlin {
     androidTarget {
         compilerOptions {
             freeCompilerArgs.add("-Xskip-metadata-version-check")
-        }
-        compilations.configureEach {
-            if (name == "debug") defaultSourceSet.kotlin.srcDir("src/debug/java")
         }
     }
 
@@ -119,19 +114,15 @@ kotlin {
     }
 
     sourceSets {
-        // During the port the Android sources stay where they are. A later
-        // commit can rename src/main/java to src/androidMain/kotlin with no
-        // behaviour change.
-        val androidMain by getting {
-            kotlin.srcDir("src/main/java")
-        }
-        val androidUnitTest by getting {
-            kotlin.srcDir("src/test/java")
-            resources.srcDir("src/test/resources")
-        }
-
         commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization.json)
         }
 
         commonTest.dependencies {

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTENT = ROOT / "app/src/main/assets/bihua_content.db"
+CONTENT = ROOT / "app/src/androidMain/assets/bihua_content.db"
 
 # A small, coherent Traditional Chinese study set.
 CHARS = [

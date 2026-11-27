@@ -18,10 +18,10 @@
 /* Begin PBXFileReference section */
 		02E01D5A5353BE7B82B3B288 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		10ADA2B723EA595DE9DA3A85 /* BihuaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BihuaApp.swift; sourceTree = "<group>"; };
-		463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		463142BDD076E8496F2F6DAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BC1FF0D4FF12B176461CE31 /* Pods-Bihua.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bihua.release.xcconfig"; path = "Target Support Files/Pods-Bihua/Pods-Bihua.release.xcconfig"; sourceTree = "<group>"; };
 		5CB651110315480FC65479AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		68F9259BE20FC70B401F1E70 /* Bihua.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Bihua.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68F9259BE20FC70B401F1E70 /* Bihua.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bihua.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A61B0793D198136FAAE6AC11 /* MlKitProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MlKitProbe.swift; sourceTree = "<group>"; };
 		BD6048CEBD46BE5718DF4C9C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D6B34EABF05A8B7AA0100BAA /* Pods_Bihua.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Bihua.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,7 +46,6 @@
 				F7764CEA4C9E108BC5D1154A /* Pods-Bihua.debug.xcconfig */,
 				4BC1FF0D4FF12B176461CE31 /* Pods-Bihua.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -127,8 +126,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 4B16F43BF291BE66B73CC42E /* Build configuration list for PBXProject "Bihua" */;
 			developmentRegion = en;
@@ -226,6 +223,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DUST62RX27;
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"$(SRCROOT)/../app/build/bin/iosArm64/$(CONFIGURATION:lower)Framework",
@@ -324,6 +322,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DUST62RX27;
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"$(SRCROOT)/../app/build/bin/iosArm64/$(CONFIGURATION:lower)Framework",

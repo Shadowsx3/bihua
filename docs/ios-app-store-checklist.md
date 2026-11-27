@@ -134,8 +134,9 @@ ship without EU storefronts.**
   x86_64 simulator app cannot run. Recognition is proven on the connected
   iPhone (zh-Hans, 一); real-stroke and iPad accuracy still need the P4 seam.
 - The Apple Developer Program is renewed through 27 November 2027 (team
-  `DUST62RX27`). A paired iPhone 17e (iOS 27.2, Developer Mode on) is connected.
-  The login keychain has an Apple Development identity, so a signed Debug build
-  can run on it. TestFlight is unblocked once the archive is ready.
+  `DUST62RX27`). A paired iPhone 17e (iOS 27.2) and a paired iPad (9th
+  generation), both with Developer Mode on, are connected. The login keychain
+  has an Apple Development identity, so signed Debug builds run on both.
+  TestFlight is unblocked once the archive is ready.
 - The local privacy page and landing are updated for both platforms. The live
   GitHub Pages copy must be deployed before the listing is sent for review.

@@ -9,20 +9,21 @@ grow in P2-P5. Nothing here changes the Android release on `main`.
 
 ## Source sets
 
-One Gradle module, `:app`, with two clients. Android sources still live under
-`src/main/java` and `src/main/res`; the Android target points at them, so no
-file had to move for the first step.
+One Gradle module, `:app`, with two clients and canonical KMP source sets. No
+source-dir overrides remain in `build.gradle.kts`.
 
 ```
 app/src/
-  commonMain/kotlin/        shared domain, and later the shared Compose UI
+  commonMain/kotlin/        shared domain and Compose UI
   commonTest/kotlin/        pure tests that run on Android and iOS
-  androidMain/kotlin/       Android implementations, Activity, Application,
-                            widgets, sync, services, debug bridge
+  androidMain/kotlin/       Android code, services, widgets, sync
+  androidMain/res/          Android resources
+  androidMain/assets/       content databases and spellbook
   androidMain/AndroidManifest.xml
-  main/java/, main/res/, main/assets/   existing Android tree (temporary)
-  debug/java/               QA bridge, Android debug only
-  test/java/                Robolectric and JVM-only tests
+  androidDebug/kotlin/      QA bridge (debug only)
+  androidDebug/AndroidManifest.xml
+  androidUnitTest/kotlin/   Robolectric and JVM-only tests
+  androidUnitTest/resources/
   iosMain/kotlin/           Compose entry point, Foundation platform services
   iosTest/kotlin/           native-driver tests (P2)
 ```
@@ -142,10 +143,13 @@ make ios-shot NAME=home
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
 make ios-device-id
+make ios-ipad-device  # signed build, install, launch on the connected iPad
+make ios-ipad-device-shot NAME=home
 ```
 
-Devices are iPhone and iPad only. The connected iPhone is an iPhone 17e on
-iOS 27.2 with Developer Mode on. The
+Devices are iPhone and iPad only. The connected devices are an iPhone 17e and
+an iPad (9th generation), both on iOS 27.2 with Developer Mode on. The scripts
+choose one with `make ios-device` or `make ios-ipad-device`. The
 script discovers it through `devicectl` and uses the Apple Development identity
 in the login keychain (`BIHUA_IOS_TEAM` overrides the default team id). Run
 `make ios-mlkit-pods` before a device build that should include the reader; the
@@ -183,13 +187,14 @@ iOS, never iOS against Android: text metrics differ.
 
 | Move | Status | Notes |
 |---|---|---|
-| `spellbook` | done | Pure parsing and puzzle generation in `commonMain`; Android keeps the asset/SQLite loader in `androidMain`; `PuzzleForgeTest`/`QuestGeneratorTest` are `commonTest` |
+| `spellbook` | done | Pure parsing and puzzle generation; Android keeps the asset/SQLite loader; puzzle and quest tests run on both |
 | `platform` seams | done | `AppInfo`, `AppFiles`, `Capabilities`, `LinkOpener`, `Services` |
-| `content` models, `Pinyin`, `KnownList` | next | Split `@StringRes` labels and the SQLite repository first |
-| `fsrs` | next | `java.time` needs `kotlinx-datetime` or an expect date seam |
+| `fsrs` | done | Kernel, optimizers, weights, and load estimate; `kotlinx-datetime` only for the export timestamp; `MemoryModel` is shared |
+| `content` models | done | `CharacterEntry`, `StudyMode`, `CharacterOrder`, search, pinyin, romanisation, curriculum, featured words, Han sets, learn items, known list. `StudyMode` now carries English labels instead of `@StringRes`; Compose `@Immutable` was dropped from the data classes (inference keeps them stable) |
+| `learn` pure files | done | Review task/plan, reasons, mnemonic pieces (common code-point helpers) |
+| `settings` pure files | part | `MeaningSanitizer`, `MemoryModel`; `Models.kt` still needs the `LocalDate` boundary moved to `kotlinx-datetime` |
+| `progress` pure files | next | Ranges, queue, session filter, writing pace |
 | `backup` | P2 | Okio zip |
-| `settings` models | P2 | Depends on `content.CharacterOrder` and `fsrs.FsrsWeights` |
-| `learn` pure files | P2 | Review task, reasons, mnemonic pieces |
 | UI packages | P3 | Home, review, characters, dictionary, settings, progress |
 
 ## Ground rules

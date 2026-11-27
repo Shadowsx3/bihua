@@ -1,4 +1,4 @@
-"""Build app/src/main/assets/spellbook.csv for every supported script.
+"""Build app/src/androidMain/assets/spellbook.csv for every supported script.
 
 Run from the repo root: python3 tools/spells/build_spellbook.py
 
@@ -18,8 +18,8 @@ from pathlib import Path
 from spell_catalog import CATEGORY_FAMILIES, FAMILIES, FAMILY_EFFECT
 
 ROOT = Path(__file__).resolve().parents[2]
-DB = ROOT / "app/src/main/assets/bihua_content.db"
-OUT = ROOT / "app/src/main/assets/spellbook.csv"
+DB = ROOT / "app/src/androidMain/assets/bihua_content.db"
+OUT = ROOT / "app/src/androidMain/assets/spellbook.csv"
 PER_CATEGORY = 35
 MODES = ("SIMPLIFIED", "TRADITIONAL", "JAPANESE", "KOREAN")
 

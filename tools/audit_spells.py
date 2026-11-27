@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks app/src/main/assets/spellbook.csv against the shipped content database.
+"""Checks app/src/androidMain/assets/spellbook.csv against the shipped content database.
 
 Fails on structural problems: unknown characters, duplicates, a family in the
 wrong category, or a bad effect id. Reports (does not fail) effects that have
@@ -11,8 +11,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DB = ROOT / "app/src/main/assets/bihua_content.db"
-CSV = ROOT / "app/src/main/assets/spellbook.csv"
+DB = ROOT / "app/src/androidMain/assets/bihua_content.db"
+CSV = ROOT / "app/src/androidMain/assets/spellbook.csv"
 DRAWABLES = ROOT / "app/src/main/res/drawable"
 
 FAMILY_CATEGORY = {

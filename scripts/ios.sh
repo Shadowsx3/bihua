@@ -42,23 +42,33 @@ raise SystemExit(f"no available simulator named {name}")
 ' "$DEVICE"
 }
 
-phone_udid() {
+physical_udid() {
+  local kind="${1:-${BIHUA_IOS_PHYSICAL:-iphone}}"
   local json=/tmp/bihua-devices.json
   xcrun devicectl list devices --json-output "$json" >/dev/null 2>&1
   python3 -c '
 import json, sys
 data = json.load(open(sys.argv[1]))
+kind = sys.argv[2].lower()
 for device in data.get("result", {}).get("devices", []):
     props = device.get("deviceProperties", {})
     hardware = device.get("hardwareProperties", {})
+    connection = device.get("connectionProperties", {})
     if hardware.get("reality") != "physical":
+        continue
+    if connection.get("pairingState") != "paired":
         continue
     if props.get("developerModeStatus") != "enabled":
         continue
+    device_type = (hardware.get("deviceType") or "").lower()
+    if kind in ("ipad", "tablet") and device_type != "ipad":
+        continue
+    if kind in ("iphone", "phone") and device_type != "iphone":
+        continue
     print(hardware["udid"])
     raise SystemExit(0)
-raise SystemExit("no paired iPhone with Developer Mode enabled")
-' "$json"
+raise SystemExit(f"no paired {kind} with Developer Mode enabled")
+' "$json" "$kind"
 }
 
 framework() {
@@ -92,6 +102,7 @@ build() {
 }
 
 device_build() {
+  local kind="${1:-}"
   if [ ! -d iosApp/Pods/MLKitDigitalInkRecognition ]; then
     echo "warning: ML Kit is not installed; run 'make ios-mlkit-pods' for the device reader" >&2
   fi
@@ -100,7 +111,7 @@ device_build() {
     -workspace iosApp/Bihua.xcworkspace \
     -scheme Bihua \
     -configuration Debug \
-    -destination "id=$(phone_udid)" \
+    -destination "id=$(physical_udid "$kind")" \
     -derivedDataPath "$DERIVED" \
     -allowProvisioningUpdates \
     DEVELOPMENT_TEAM="$TEAM" \
@@ -108,14 +119,16 @@ device_build() {
 }
 
 device_run() {
-  device_build
-  local id; id="$(phone_udid)"
+  local kind="${1:-}"
+  device_build "$kind"
+  local id; id="$(physical_udid "$kind")"
   xcrun devicectl device install app --device "$id" "$DEVICE_APP"
   xcrun devicectl device process launch --device "$id" --terminate-existing "$BUNDLE_ID" || true
 }
 
 device_shot() {
-  local id; id="$(phone_udid)"
+  local kind="${2:-}"
+  local id; id="$(physical_udid "$kind")"
   mkdir -p "$SHOTS"
   local name="${1:-device}"
   case "$name" in
@@ -168,10 +181,10 @@ case "${1:-run}" in
   light) xcrun simctl ui "$(sim_udid)" appearance light ;;
   pods) (cd iosApp && pod install) ;;
   mlkit-pods) (cd iosApp && BIHUA_MLKIT=1 pod install) ;;
-  device-build) device_build ;;
-  device-run) device_run ;;
-  device-shot) device_shot "${2:-device}" ;;
-  device-id) phone_udid ;;
+  device-build) device_build "${2:-}" ;;
+  device-run) device_run "${2:-}" ;;
+  device-shot) device_shot "${2:-device}" "${3:-}" ;;
+  device-id) physical_udid "${2:-}" ;;
   *)
     echo "usage: scripts/ios.sh [run|build|test|shot|boot|reset|devices|dark|light|pods|mlkit-pods|device-build|device-run|device-shot|device-id] [simulator or name]" >&2
     exit 2

@@ -61,9 +61,9 @@ Content rules:
 Useful checks:
 
 ```bash
-sqlite3 app/src/main/assets/bihua_content.db \
+sqlite3 app/src/androidMain/assets/bihua_content.db \
   "select mode,count(*),sum(mature) from word_context group by mode;"
-sqlite3 app/src/main/assets/bihua_content.db \
+sqlite3 app/src/androidMain/assets/bihua_content.db \
   "pragma table_info(word_context);"
 ```
 
@@ -87,8 +87,8 @@ Hard-won test details:
 
 - Robolectric test methods must return `Unit`. An expression body returning a
   Boolean fails with `InvalidTestClassError`.
-- `ContentDatabaseTest` resolves `src/main/assets/bihua_content.db` and
-  `app/src/main/assets/bihua_content.db` so it works from the module or root.
+- `ContentDatabaseTest` resolves `src/androidMain/assets/bihua_content.db` and
+  `app/src/androidMain/assets/bihua_content.db` so it works from the module or root.
 - Test the backup round trip when adding a setting. A new `AppSettings` field is
   easy to forget.
 - Test Progress queries with a second course in the database. `gradeMix`,

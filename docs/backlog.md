@@ -177,8 +177,13 @@ answers are `docs/ios-app-store-checklist.md`.
 - [x] Direction set: native iOS navigation shell (tab bar + navigation stack)
       with Compose content only, following the iOS guidelines; iPhone and iPad
       are the supported devices.
-- [ ] P1 continues: `content` models and `Pinyin`/`KnownList`, then `fsrs`
-      dates, settings models, and backup.
+- [x] P1 shared domain: `fsrs` (scheduler, optimizers, weights, load),
+      `content` models (character, script, search, pinyin, curriculum, words,
+      known list), and the pure `learn`/`settings` helpers are in `commonMain`
+      with tests on both targets. `StudyMode` carries English labels, so the
+      shared model no longer needs Android resources.
+- [ ] P1 continues: the `LocalDate` boundary in `settings/Models.kt`, the pure
+      progress helpers, then `backup` with Okio.
 - [ ] P2: SQLDelight schema 18 with a real Android fixture; path DataStore;
       content copy; Okio backup.
 - Finding: ML Kit's digital-ink pod has no arm64 simulator slice and this Mac

@@ -13,6 +13,18 @@ glyphs. No streak penalties, no account, no ads, no developer-run analytics.
 
 The Korean course contains Hangul and Hanja. Do not describe it as Hanja only.
 
+## Repository layout
+
+- `app/src/commonMain/kotlin` shared domain and, from P3, shared Compose UI.
+- `app/src/commonTest/kotlin` tests that run on Android and iOS.
+- `app/src/androidMain/kotlin` Android code, `androidMain/res`, `androidMain/assets`,
+  and `androidMain/AndroidManifest.xml`.
+- `app/src/androidUnitTest` JVM/Robolectric tests; `app/src/androidDebug` the QA
+  bridge and debug manifest.
+- `app/src/iosMain/kotlin` the Compose entry point and Foundation services.
+- `iosApp/` XcodeGen project, Swift host, Info.plist, privacy manifest, Podfile.
+- `qa/ios/` the idb simulator driver; `scripts/ios.sh` the build and device loop.
+
 ## Current state (1.1.2 + iOS port branch)
 
 - Android is the shipped client. Version 1.1.2 (code 23) is the release
@@ -49,6 +61,8 @@ make ios-shot NAME=home
 make ios-device      # signed build, install, launch on the connected iPhone
 make ios-device-build
 make ios-device-id
+make ios-ipad-device  # signed build, install, launch on the connected iPad
+make ios-ipad-device-shot NAME=home
 python3 qa/ios/smoke.py
 ```
 
@@ -441,7 +455,7 @@ Hanja, 29 rows without a decomposition, a full TalkBack/large-text pass, and
 some etymology quality.
 - Dependency policy: `docs/dependency-updates.md`.
 - Practical agent playbook and traps: `docs/agent-playbook.md`.
-- Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/debug`.
+- Local journey harness: `qa/README.md`; debug-only setup bridge is `app/src/androidDebug`.
 - Flow galleries: `scripts/flow-gallery.sh <flow> --name <run>` writes
   `qa/gallery/<run>/phone|tablet|fold/<flow>.png` and an `INDEX.md`; use it
   for visual reviews, not for store assets.
