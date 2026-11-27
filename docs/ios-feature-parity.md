@@ -18,7 +18,7 @@ design).
 | Characters grid and detail | Yes | shared | in progress | Search, status filters, real tiles, and a read-only detail with example words; notes, synonyms, history, and the store follow |
 | Review loop | Yes | shared | in progress | Cue, ink, reveal, grade, next; sample cards and local advance until the shared FSRS/progress store lands |
 | Dictionary | Yes | shared | P3 | Offline, four scripts |
-| Practice canvas | Yes | shared | P3 | Free practice, guide, stroke playback |
+| Practice canvas | Yes | shared | in progress | Free pad with a guide, clear, and undo; per-character brush, guide fading, and stroke playback follow |
 | Compare | Yes | shared | P3 | Up to four characters |
 | Word practice | Yes | shared | P5 | Whole-word canvas and one-by-one fallback |
 | Spell quest and grimoire | Yes | shared domain + UI | P5 | Puzzle data bundled |

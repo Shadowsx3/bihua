@@ -8,7 +8,7 @@ import BihuaKit
 struct RootTabsView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UITabBarController {
         let controller = UITabBarController()
-        let routes = ["home", "characters", "progress", "settings"]
+        let routes = ["home", "characters", "practice", "progress", "settings"]
         let select: (String) -> Void = { [weak controller] route in
             guard let controller, let index = routes.firstIndex(of: route) else { return }
             controller.selectedIndex = index
@@ -63,6 +63,7 @@ struct RootTabsView: UIViewControllerRepresentable {
         controller.viewControllers = [
             tab(title: "Home", icon: "house.fill", route: "home", hidesBar: true, onSelect: select, onPush: push, onThemeChange: applyTheme),
             tab(title: "Characters", icon: "square.grid.2x2.fill", route: "characters", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
+            tab(title: "Practice", icon: "paintbrush.pointed.fill", route: "practice", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
             tab(title: "Progress", icon: "chart.bar.xaxis", route: "progress", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
             tab(title: "Settings", icon: "gearshape.fill", route: "settings", hidesBar: false, onSelect: select, onPush: push, onThemeChange: applyTheme),
         ]

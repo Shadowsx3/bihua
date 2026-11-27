@@ -4,15 +4,15 @@ Bihua's iOS client follows the Apple Human Interface Guidelines and the iOS 26
 system appearance. The shell is native UIKit navigation; Compose renders screen
 content. Nothing here is a claim about the Android app.
 
-Status: P3. Home, Characters, Progress, and Settings render on iPhone and iPad
-inside a native `UITabBarController` with one `UINavigationController` per tab;
-review and character detail use native pushes. Widgets are deferred from the
-first build. Practice, the shared stores, and the remaining seams are next.
+Status: P3. Home, Characters, Practice, Progress, and Settings render on iPhone
+and iPad inside a native `UITabBarController` with one `UINavigationController`
+per tab; review and character detail use native pushes. Widgets are deferred
+from the first build. The shared stores and the remaining seams are next.
 
 ## Shell and navigation
 
-- [x] `UITabBarController` with Home, Characters, Progress, Settings (Practice
-      and Review join as their stores land). One `UINavigationController` per
+- [x] `UITabBarController` with Home, Characters, Practice, Progress, Settings,
+      matching the five Android destinations. One `UINavigationController` per
       tab keeps each stack; the tab bar is the iOS 26 system bar.
 - [x] Character detail is a native push with a native back button and inline
       title, not a Compose modal.

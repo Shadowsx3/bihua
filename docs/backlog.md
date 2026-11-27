@@ -7,7 +7,8 @@ Updated: 2026-11-26
 - **1.1.2 is on hold until iOS reaches parity.** The Android AAB and APK are
   built and audited; do not upload until both clients are ready.
 - **Native iOS shell:** `UITabBarController` + one `UINavigationController` per
-  tab now hosts the shared Home, Characters, Progress, and Settings screens.
+  tab now hosts the shared Home, Characters, Practice, Progress, and Settings
+  screens.
   Home hides the navigation bar; the other tabs use large titles. Character
   detail and the review loop push Compose screens with native back buttons.
   The tab bar is the iOS 26 system glass bar.
@@ -15,8 +16,9 @@ Updated: 2026-11-26
   picker, and About/privacy, and now persists through `IosSettingsStore`.
   Progress covers level, known/review/new, the study calendar, and the learned
   chart. Characters covers search, status filters, a real grid, and a read-only
-  detail with example words. Review has cue, ink, reveal, and grading with a
-  sticky grade bar. The data is sample state until the P2 stores land.
+  detail with example words. Practice has a free ink pad, guide toggle, clear,
+  and undo. Review has cue, ink, reveal, and grading with a sticky grade bar.
+  The data is sample state until the P2 stores land.
 - **Widgets are deferred from the first iOS build.** The SwiftUI WidgetKit
   views stay in `iosApp/BihuaWidgets` but are not an Xcode target, not embedded,
   and have no App Group. This keeps the first review focused on the study app.

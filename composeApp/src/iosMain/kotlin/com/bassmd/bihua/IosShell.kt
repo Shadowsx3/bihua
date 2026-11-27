@@ -22,6 +22,7 @@ import com.bassmd.bihua.ui.LocalPinyinNumbers
 import androidx.compose.material3.Text
 import com.bassmd.bihua.ui.CharacterDetailOverviewScreen
 import com.bassmd.bihua.ui.CharactersOverviewScreen
+import com.bassmd.bihua.ui.PracticeOverviewScreen
 import com.bassmd.bihua.ui.ProgressOverviewScreen
 import com.bassmd.bihua.ui.ReviewOverviewScreen
 import com.bassmd.bihua.ui.SettingsOverviewScreen
@@ -36,6 +37,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 enum class IosRoute(val id: String) {
     HOME("home"),
     CHARACTERS("characters"),
+    PRACTICE("practice"),
     PROGRESS("progress"),
     SETTINGS("settings"),
     ;
@@ -114,7 +116,7 @@ fun IosRouteScreen(
             profile = profile,
             onOpenSettings = { onSelectTab(IosRoute.SETTINGS.id) },
             onStudy = { onPush("review") },
-            onPractice = { onPush("review") },
+            onPractice = { onSelectTab(IosRoute.PRACTICE.id) },
         )
         return
     }
@@ -137,6 +139,11 @@ fun IosRouteScreen(
                             onOpen = { entry ->
                                 onPush("character/${entry.id}")
                             },
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                        IosRoute.PRACTICE -> PracticeOverviewScreen(
+                            modeLabel = settings.studyMode.label,
+                            guide = showcaseCharacters(settings.studyMode).firstOrNull(),
                             modifier = Modifier.padding(bottom = 8.dp),
                         )
                         IosRoute.PROGRESS -> {

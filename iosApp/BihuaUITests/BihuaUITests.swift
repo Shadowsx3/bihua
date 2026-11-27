@@ -133,6 +133,14 @@ final class BihuaUITests: XCTestCase {
         XCTAssertTrue(start.isHittable)
     }
 
+    func testPracticeTabOpensTheFreePad() {
+        let app = launch()
+        tabButton(app, "Practice").tap()
+        XCTAssertTrue(app.staticTexts["Free practice"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, "Undo stroke").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, "Hide guide").waitForExistence(timeout: 5))
+    }
+
     func testDarkModeKeepsTheNativeChromeReadable() {
         let app = launch(["-theme-dark"])
         let settings = tabButton(app, "Settings")

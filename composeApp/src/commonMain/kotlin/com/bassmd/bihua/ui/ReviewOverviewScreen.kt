@@ -165,11 +165,11 @@ fun ReviewOverviewScreen(
             }
         }
         item {
-            InkPad(
+            com.bassmd.bihua.ui.components.InkPad(
                 strokes = strokes,
                 current = current,
-                revealed = revealed,
-                card = card,
+                showCross = !revealed,
+                guideCharacter = if (revealed) card.character else null,
                 onStart = { current = listOf(it) },
                 onMove = { current = current + it },
                 onEnd = {
@@ -253,72 +253,5 @@ private fun GradeButton(
         ),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-    }
-}
-
-@Composable
-private fun InkPad(
-    strokes: List<List<Offset>>,
-    current: List<Offset>,
-    revealed: Boolean,
-    card: CharacterEntry,
-    onStart: (Offset) -> Unit,
-    onMove: (Offset) -> Unit,
-    onEnd: () -> Unit,
-) {
-    val ink = InkDark
-    val guideColor = InkSoft.copy(alpha = 0.16f)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(PaperWarm)
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { onStart(it) },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        onMove(change.position)
-                    },
-                    onDragEnd = { onEnd() },
-                    onDragCancel = { onEnd() },
-                )
-            },
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            // Faint practice cross, drawn only while no answer is shown.
-            if (!revealed) {
-                val stroke = 1.dp.toPx()
-                drawLine(guideColor, Offset(size.width / 2, 0f), Offset(size.width / 2, size.height), stroke)
-                drawLine(guideColor, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), stroke)
-            }
-            strokes.forEach { points -> drawStroke(points, ink) }
-            drawStroke(current, ink)
-        }
-        if (revealed) {
-            Text(
-                card.character,
-                fontSize = 150.sp,
-                color = InkDark.copy(alpha = 0.12f),
-                modifier = Modifier.align(Alignment.Center),
-            )
-        }
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStroke(
-    points: List<Offset>,
-    color: androidx.compose.ui.graphics.Color,
-) {
-    if (points.size < 2) return
-    for (i in 1 until points.size) {
-        drawLine(
-            color = color,
-            start = points[i - 1],
-            end = points[i],
-            strokeWidth = 4.dp.toPx(),
-            cap = StrokeCap.Round,
-        )
     }
 }
