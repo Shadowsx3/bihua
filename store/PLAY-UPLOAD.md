@@ -9,7 +9,7 @@ the final shared tree on 27 November 2026 and passed `make play-audit`
 
 - AAB slot: `store/play-assets/upload-1.1.2/bihua-1.1.2.aab`
 - AAB SHA-256:
-  `416471f612735844dde0677290c3ee1d99d953f98f1f2e7ab54919fa4dfa5b06`
+  `b7ecbc3a182af224e2538a226449df329445707e931725b2a10e810a9c7e26ae`
 - Test APK: `docs/download/bihua-1.1.2.apk`
 - Test APK SHA-256:
   `7e3bea1baf80fad3a67cea7ce4f216d5889bbe10c4ae00e120a95e9b2b2adfd4`

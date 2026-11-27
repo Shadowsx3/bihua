@@ -47,7 +47,7 @@ text metrics and rendering differ.
 | Driver | `qa/ios/driver.py` | idb `find`, `tap_label`, `text`, `swipe`, `screenshot` |
 | Build gate | `make ios-check` | native tests plus the Xcode Debug build |
 | Native shell | `make ios` / `make ios-ipad` | tab bar, large titles, safe areas, Dynamic Type, light/dark |
-| iOS UI journeys | `make ios-ui-test` (add `BIHUA_IOS_DEVICE="iPad Pro 13-inch (M5)"` for iPad) | onboarding, review grading and persistence, tabs, course and pet persistence, character detail and swipe-back, dictionary search, study lists, Start over, backup share/picker, Practice, word practice, landscape, dark mode |
+| iOS UI journeys | `make ios-ui-test` (add `BIHUA_IOS_DEVICE="iPad Pro 13-inch (M5)"` for iPad) | onboarding, review grading and persistence, tabs, course and pet persistence, character detail and swipe-back, dictionary search, compare, stroke order, study lists, Start over, progress PDF, backup share/picker, Practice, word practice, landscape, dark mode |
 | iOS data gate | `make ios-content-check` | exported JSON counts match the Android content DB |
 | Full gate | `make verify-ui` | Android check/lint, compliance, content, iOS unit, iPhone and iPad UI |
 | Store policy | `make compliance` | documents, permissions, privacy manifest, export, other-platform wording |

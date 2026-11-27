@@ -13,7 +13,7 @@ Updated: 2026-11-26
   the Xcode account and distribution profile.
 - **Android 1.1.2:** AAB and release APK rebuilt from the final shared tree;
   versionCode 23, arm64-only, signed; AAB SHA-256
-  `416471f612735844dde0677290c3ee1d99d953f98f1f2e7ab54919fa4dfa5b06`.
+  `b7ecbc3a182af224e2538a226449df329445707e931725b2a10e810a9c7e26ae`.
 - **Docs:** privacy, support, App Privacy answers, age 16+, content rights,
   screenshots, and the release runbook are current. Widgets and local sync are
   absent by design; spell quest, PDF, compare, ML Kit reader, and sounds are
