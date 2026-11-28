@@ -50,7 +50,7 @@
   <div class="wrap article-hero">
     <div class="kicker">Privacy</div>
     <h1>Bihua Privacy Policy</h1>
-    <p class="lead">Bihua has no account, no advertising, and no developer-operated analytics. Your progress is written to local storage on your device. This policy explains what stays on the device on Android and iOS, the few optional network actions, the permissions each platform requests, and the limited diagnostics that Google ML Kit may process on Android. The first iOS build does not include ML Kit.</p>
+    <p class="lead">Bihua has no account, no advertising, and no developer-operated analytics. Your progress is written to local storage on your device. This policy explains what stays on the device on Android and iOS, the few optional network actions, the permissions each platform requests, and the limited diagnostics that Google ML Kit may process on both platforms.</p>
     <div class="article-meta"><span>Last updated: 27 November 2026</span><span>Applies to Bihua for Android 1.1.2 and Bihua for iOS 1.0</span><span>Developer: Shadowsx3</span></div>
   </div>
   <div class="wrap article-layout">
@@ -77,7 +77,7 @@
     <article class="article" id="article">
       <div class="callout">
         <strong>Short version</strong>
-        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. An Android full backup or settings sync can include your pet choice, but only when you start it. On Android, Google ML Kit processes limited diagnostics and usage data as a service provider, as described below. The first iOS release does not include ML Kit, has no local sync, widgets, foldables, crash attachment, or Android permissions, and collects no data for the developer.</p>
+        <p>Bihua does not sell personal data. The developer does not receive your notes, review history, or study list. Data stays in the app's local database until you delete it or uninstall the app. An Android full backup or settings sync can include your pet choice, but only when you start it. Google ML Kit processes limited diagnostics and usage data as a service provider on both platforms, as described below. The iOS release has no local sync, widgets, foldables, crash attachment, or Android permissions, and collects no data for the developer.</p>
       </div>
 
       <h2 id="stored">What is stored on the device</h2>
@@ -92,7 +92,7 @@
         <li>Backups and PDFs you export, wherever you choose to save them.</li>
       </ul>
       <p>Bihua does not create an account. The developer does not receive this local data. Data remains on the device until you delete it from the app, remove the relevant item, or uninstall the app.</p>
-      <p><strong>Platform note.</strong> Android may use optional local Wi-Fi sync, home-screen widgets, and the Google ML Kit handwriting model. The first iOS release has none of those, has no foldable layout, and does not attach crash files to reports. The iOS review is self-graded against the reference. Both platforms run the same study app and keep progress on the device.</p>
+      <p><strong>Platform note.</strong> Android may use optional local Wi-Fi sync and home-screen widgets. Both platforms use the Google ML Kit handwriting model for on-device recognition. iOS has no foldable layout and does not attach crash files to reports. Both platforms run the same study app and keep progress on the device.</p>
       <h3>Android</h3>
       <p>Android cloud backup and device-to-device app-data transfer are disabled in the app manifest, so the operating system does not copy the app's database, notes, pet choice, or downloaded models as part of its own backup or migration. Bihua turns that off on purpose: it keeps your study data out of a Google backup account. Use Settings → Data → Export when you want a backup you control.</p>
       <h3>iOS</h3>
@@ -101,7 +101,7 @@
       <h2 id="network">Network access</h2>
       <p>Bihua does not run a developer-operated server. Network access is used only for these actions:</p>
       <ul>
-        <li><strong>Handwriting model download, Android only.</strong> Android uses ML Kit Digital Ink and downloads the recognition model for the active script. The model runs on the device. The download uses HTTPS, may use mobile data, is about 20 MB per script, and is optional: the app stays usable without it and still gives local shape and stroke-order feedback. The first iOS build does not include ML Kit and does not download a recognition model.</li>
+        <li><strong>Handwriting model download.</strong> Android and iOS use ML Kit Digital Ink and download the recognition model for the active script. The model runs on the device. The download uses HTTPS, may use mobile data, is about 20 MB per script, and is optional: the app stays usable without it and still gives local shape and stroke-order feedback.</li>
         <li><strong>Local Wi-Fi sync, Android only.</strong> Two Android devices on the same network can exchange a backup over a short-lived TLS connection. While the sync screen is open, Bihua advertises a temporary service through Android's network service discovery so the other device can find it; the advertisement stops when sync ends. The sender shows a 10-character pairing code derived from the session certificate. The receiver types the code and pins that certificate. The transfer is direct between the devices and is not relayed through the internet. iOS has no local sync and never asks for local network access.</li>
         <li><strong>Read-aloud.</strong> Bihua uses the text-to-speech engine installed on your device. Depending on the engine and the voices you have downloaded, that engine's provider may process the text under its own privacy policy. Bihua does not send read-aloud text to a Bihua server.</li>
         <li><strong>Links you tap.</strong> Source, licence, privacy, rating, and help links open your browser, Google Play, or the App Store. Those sites and services have their own privacy policies. Bihua does not load web pages inside the app. The App Store rating row sends nothing until you tap it.</li>
@@ -127,11 +127,11 @@
       <p>Bihua does not request camera, microphone, contacts, location, photo library, tracking, or local network permission on iOS. It does not show an App Tracking Transparency prompt because it does not track. The app has no account, no purchase, no chat, and no user-generated public content.</p>
 
       <h2 id="sdk">Third-party SDKs (Android) and AI</h2>
-      <p>On Android, Bihua includes Google ML Kit Digital Ink for handwriting candidates. The first iOS build does not link ML Kit. Your handwriting strokes and the recognition candidates are processed on the device. Bihua does not send the ink itself, your notes, your review history, or your study list to Google.</p>
+      <p>On Android and iOS, Bihua includes Google ML Kit Digital Ink for handwriting candidates. Your handwriting strokes and the recognition candidates are processed on the device. Bihua does not send the ink itself, your notes, your review history, or your study list to Google.</p>
       <p>ML Kit may contact Google servers from time to time to receive bug fixes, updated models, and hardware-accelerator compatibility information. It also sends metrics about its performance and utilisation to Google. According to Google's ML Kit data disclosure, this can include device information (manufacturer, model, OS version, ML accelerators), app package name and version, per-installation identifiers, performance metrics, configured recognition languages, API configuration, feature input and output size, feature version, event type, and error codes. ML Kit encrypts this data in transit with HTTPS and does not transfer it to third parties. Google processes it as a service provider for the SDK; Google's own privacy policy also applies.</p>
       <p>Links: <a href="https://developers.google.com/ml-kit/android-data-disclosure">ML Kit data disclosure</a>, <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a>, and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</p>
       <p>Bihua does not include a separate analytics SDK, a crash-reporting service, or an advertising SDK. ML Kit is the only third-party SDK that processes data for its own diagnostics. The app does not include an advertising ID permission and does not use the advertising identifier on either platform.</p>
-      <p>For Google Play Data safety, the diagnostics above are declared as collected by the app through the SDK and not shared. For the App Store privacy labels, the same diagnostics are declared under App info and performance, not linked to identity and not used for tracking. Bihua itself has no server and receives none of that diagnostic data.</p>
+      <p>For Google Play Data safety, the diagnostics above are declared as collected by the app through the SDK and not shared. For the App Store privacy labels, the same SDK data is declared as Diagnostics (other diagnostic data), Identifiers (device ID), and Usage Data (product interaction and other usage), not linked to identity and not used for tracking, for App Functionality and Analytics. Bihua itself has no server and receives none of that diagnostic data.</p>
 
       <h2 id="sharing">Sharing, sale, and retention</h2>
       <p>Bihua does not sell, rent, or trade personal data. It does not share data for advertising. The developer does not receive your notes, review history, or study data. A backup leaves the app only when you choose a destination in the system file picker. An Android settings sync sends only the parts you select directly to the other device on your local network; the developer does not receive that transfer. A full backup or settings sync can include your pet choice when you have set it. Google ML Kit receives the diagnostic data described above for SDK diagnostics and usage analytics; Google does not receive your notes or study history through Bihua.</p>
@@ -155,7 +155,7 @@
       <p>Local data sits in Bihua's app-private storage inside the platform sandbox. Model downloads use HTTPS. Android local sync uses TLS with a per-session certificate and a pairing code, and the traffic never passes through a Bihua server. iOS has no local sync. Bihua does not operate a server that could hold your study data. No method of storage or transmission is completely secure, so keep your device locked and protect any backup you export.</p>
 
       <h2 id="children">Children and age</h2>
-      <p>Bihua is a general study tool, not a children's app. It is intended for users aged 16 and over, and it is not directed to children under 16. We do not knowingly collect personal information from children under 16. If you are under the age of digital consent in your country, use Bihua only with a parent or guardian. Mature dictionary examples are off by default and require a confirmation before they appear. If you believe a child has used the app, contact us; there is no account to delete, and clearing the app's storage or uninstalling it removes the local data.</p>
+      <p>Bihua is a general study tool, not a children's app. It is intended for users aged 13 and over, and it is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you are under the age of digital consent in your country, use Bihua only with a parent or guardian. Mature dictionary examples are off by default and require a confirmation before they appear. If you believe a child has used the app, contact us; there is no account to delete, and clearing the app's storage or uninstalling it removes the local data.</p>
 
       <h2 id="rights">Your choices and rights</h2>
       <ul>
@@ -174,7 +174,7 @@
       <p>Google may process ML Kit diagnostics in the United States and other countries under its own safeguards and terms. If you send a report to the developer, the email or messaging provider you choose may process it in another country. Android local sync is direct between your devices, and a backup goes only to the destination you choose. Bihua does not transfer your study data internationally on its own.</p>
 
       <h2 id="california">California privacy</h2>
-      <p>Bihua does not sell personal information and does not share it for cross-context behavioral advertising. It does not knowingly collect personal information from consumers under 16. The app has no account; you can delete local data in Settings or by uninstalling. For a request about a report you sent to the developer, contact us using the details below.</p>
+      <p>Bihua does not sell personal information and does not share it for cross-context behavioral advertising. It does not knowingly collect personal information from children under 13. The app has no account; you can delete local data in Settings or by uninstalling. For a request about a report you sent to the developer, contact us using the details below.</p>
 
       <h2 id="changes">Changes to this policy</h2>
       <p>This policy describes the current Android app and the iOS app. If a future version adds a new network service, data source, or SDK, this page and both store declarations (Google Play Data safety and App Store App Privacy) will be updated before that release. The “Last updated” date at the top shows the current version.</p>
